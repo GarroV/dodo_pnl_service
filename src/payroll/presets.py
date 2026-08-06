@@ -5,7 +5,8 @@
 """
 from __future__ import annotations
 
-from functools import lru_cache
+import copy
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +15,7 @@ import yaml
 PRESETS_DIR = Path(__file__).parent / "presets"
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_preset(code: str) -> dict[str, Any]:
     path = PRESETS_DIR / f"{code}.yaml"
     if not path.exists():
@@ -35,8 +36,6 @@ def apply_overrides(preset: dict[str, Any], overrides: dict[str, Any]) -> dict[s
     хранятся в базе (таблица rule_overrides) и складываются слоями:
     страна → партнёр → группа → сотрудник.
     """
-    import copy
-
     result = copy.deepcopy(preset)
     for path, value in overrides.items():
         node = result

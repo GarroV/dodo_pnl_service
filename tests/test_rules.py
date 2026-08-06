@@ -85,11 +85,11 @@ def test_manual_correction_wins_over_rule(engine):
 
 def test_meal_allowance_is_prorated_by_days(engine):
     """Обед считается за рабочий день: половина месяца — половина суммы."""
-    full = engine.calculate(employee(), timesheet(regular=176))
-    half = engine.calculate(employee(), timesheet(regular=88))
-    meal = lambda s: next(c.amount for c in s.components if c.code == "meal_and_vacation_bonus")
-    assert meal(full) == 1500
-    assert meal(half) == 750
+    def meal(slip):
+        return next(c.amount for c in slip.components if c.code == "meal_and_vacation_bonus")
+
+    assert meal(engine.calculate(employee(), timesheet(regular=176))) == 1500
+    assert meal(engine.calculate(employee(), timesheet(regular=88))) == 750
 
 
 def test_half_day_employee_gets_full_meal_for_full_month(engine):

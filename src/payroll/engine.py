@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
 
-
 D = Decimal
 
 
@@ -225,7 +224,8 @@ class PayrollEngine:
         elif method == "min_base":
             share = ts.insured_hours / norm
             half_free = tax_free / 2 * share
-            min_base_part = self.const["min_contribution_base"] * self.rates["employee_contributions"] * share
+            min_base = self.const["min_contribution_base"]
+            min_base_part = min_base * self.rates["employee_contributions"] * share
             slip.gross = (net - half_free * tax_rate + min_base_part) / (1 - tax_rate)
             slip.tax = (slip.gross - half_free) * tax_rate
 
