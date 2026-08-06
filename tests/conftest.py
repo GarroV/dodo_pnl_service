@@ -12,7 +12,15 @@ from payroll.importers import read_plata
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = Path(__file__).parent / "fixtures"
-PLATA_JUNE = FIXTURES / "plata-2026-06.xlsx"
+
+# Обезличенный файл, лежит в репозитории: те же восемь листов и четыре схемы,
+# выдуманные люди. Пересоздаётся `python tools/make_fixture.py`.
+PLATA_SAMPLE = FIXTURES / "plata-sample.xlsx"
+
+# Настоящая таблица бухгалтерии. В репозитории её нет и не будет: ФИО и суммы
+# живых людей. Путь задаётся переменной PAYROLL_FIXTURE, тесты сверки без неё
+# пропускаются.
+PLATA_REAL = os.environ.get("PAYROLL_FIXTURE")
 
 
 @pytest.fixture(scope="session")
@@ -26,11 +34,24 @@ def engine(serbia_preset) -> PayrollEngine:
 
 
 @pytest.fixture(scope="session")
+def sample_rows():
+    """Обезличенный набор из репозитория: регрессия на поведение движка."""
+    if not PLATA_SAMPLE.exists():
+        pytest.fail(
+            f"нет {PLATA_SAMPLE} — пересоздайте: python tools/make_fixture.py"
+        )
+    return read_plata(PLATA_SAMPLE)
+
+
+@pytest.fixture(scope="session")
 def june_rows():
-    """Зарплатная таблица Сербии за июнь 2026 — эталон для сверки."""
-    if not PLATA_JUNE.exists():
-        pytest.skip(f"нет фикстуры {PLATA_JUNE}")
-    return read_plata(PLATA_JUNE)
+    """Настоящая таблица бухгалтерии Сербии за июнь 2026 — сверка с реальностью."""
+    if not PLATA_REAL:
+        pytest.skip("не задан PAYROLL_FIXTURE — сверка с настоящей таблицей пропущена")
+    path = Path(PLATA_REAL)
+    if not path.exists():
+        pytest.skip(f"PAYROLL_FIXTURE указывает на несуществующий файл: {path}")
+    return read_plata(path)
 
 
 # =============================================================================
