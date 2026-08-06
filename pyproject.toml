@@ -2,19 +2,22 @@
 name = "dodo-pnl-service"
 version = "0.1.0"
 description = "Сбор первичных данных и сборка P&L для партнёров Dodo"
-requires-python = ">=3.11"
+# 3.11 и 3.12 уже security-only; Django 6.1 требует 3.12+ (решения D010, D018).
+requires-python = ">=3.13"
 dependencies = [
     "pyyaml>=6.0",
     "openpyxl>=3.1",
+    "django>=6.1,<6.2",
+    # Приложение и тесты схемы ходят в Postgres одним драйвером: расхождений
+    # между тем, что видит ORM, и тем, что видит тест, быть не должно.
+    "psycopg[binary]>=3.1",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pytest-cov>=5.0",
     "ruff>=0.6",
-    # Тесты схемы гоняются на живом Postgres: SQL-логику (разнесение, RLS,
-    # идемпотентность) иначе не проверить. Нет доступной БД — тесты скипаются.
-    "psycopg[binary]>=3.1",
 ]
 
 [tool.setuptools.packages.find]
@@ -27,7 +30,21 @@ addopts = "-q"
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py313"
+# Пакеты живут в src/, тесты импортируют друг друга по имени модуля —
+# без этого ruff считает свой же код чужим и переставляет импорты.
+src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Миграции — снимок схемы на момент времени, длинные литералы SQL в них норма.
+"src/core/migrations/*.py" = ["E501"]
+
+[tool.coverage.run]
+source = ["src"]
+# manage.py гоняется подпроцессом, иначе тест проверял бы не то, что запускает
+# человек. parallel + хук из tests/_coverage_subprocess собирают и его данные.
+parallel = true
+omit = ["*/asgi.py", "*/wsgi.py"]

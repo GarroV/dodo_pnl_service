@@ -21,3 +21,9 @@ htmlcov/
 data/
 *.xlsx
 !tests/fixtures/plata-sample.xlsx
+
+# Метаданные сборки: генерируются pip install -e, в git им делать нечего.
+*.egg-info/
+
+# Данные измерения покрытия
+.coverage.*

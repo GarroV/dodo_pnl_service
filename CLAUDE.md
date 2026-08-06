@@ -40,23 +40,53 @@ Python 3.11+, Supabase (Postgres + RLS + Auth). Веб-интерфейс — о
 ## Структура
 
 ```
+manage.py             точка входа Django
+src/config/           настройки проекта (DATABASE_URL, ATOMIC_REQUESTS)
+src/core/             схема данных
+  models.py           таблицы
+  fields.py           enum-типы Postgres в моделях
+  db_types.py         регистрация доменных типов в драйвере psycopg
+  migrations/         схема, комментарии, политики RLS, роль app_user
+  management/commands/seed_dev.py   тестовые данные из обезличенной фикстуры
 src/payroll/          зарплатный движок: правила в конфиге, не в коде
   engine.py           расчёт
   presets.py          загрузка пресетов и наложение переопределений
   presets/*.yaml      правила стран
   importers/          импорт таблиц партнёров (формат у каждого свой)
-db/migrations/        схема Supabase
+db/migrations/        0004_facts.sql — схема фактов, ждёт своей очереди
 docs/discovery.md     концепция, решения, открытые вопросы
 docs/payroll-engine.md разбор правил Сербии и что осталось неясным
-tests/                регрессия на реальных данных + юнит-тесты правил
+docs/forge/           документы стройки: спека, план, решения, блоки, задачи
+tests/                регрессия движка + тесты схемы и доступа
 ```
+
+Схема ведётся миграциями Django. Всё, чего Django не видит — enum-типы, функции
+контекста, политики RLS, роль приложения, — пишется руками через `RunSQL`.
+Движок `src/payroll/` остаётся чистым Python без ORM: Django его вызывает,
+но не переписывает.
 
 ## Тесты
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[dev]"       # нужен Python 3.13
 pytest
 ```
+
+Тесты схемы (`tests/test_schema_access.py`, `tests/test_seed_dev.py`) сами
+создают временную базу, накатывают миграции и удаляют её за собой. Нет
+доступного Postgres — пропускаются.
+
+Покрытие меряется вместе с подпроцессами — `manage.py` тесты гоняют настоящим
+подпроцессом, иначе проверялось бы не то, что запускает человек:
+
+```bash
+COVERAGE_PROCESS_START=$PWD/pyproject.toml pytest --cov
+```
+
+Тест доступа обязан гоняться ролью `app_user` (`as_app_user` в `conftest.py`):
+владелец таблиц и суперпользователь обходят RLS, поэтому политики можно написать
+неправильно и получить зелёный прогон. Проверено на живой базе — именно так
+дефект видимости регистров и прожил незамеченным.
 
 Постоянная регрессия — `tests/test_regression_sample.py` на обезличенном файле
 `tests/fixtures/plata-sample.xlsx` (пересобрать: `python tools/make_fixture.py`).
