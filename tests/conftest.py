@@ -107,6 +107,11 @@ def run_manage(dsn: str, *args: str) -> subprocess.CompletedProcess:
         "SECRET_KEY": "test-only-not-a-secret",
         "DJANGO_SETTINGS_MODULE": "config.settings",
     }
+    if env.get("COVERAGE_PROCESS_START"):
+        # Покрытие подпроцесса включается только под coverage — в обычном
+        # прогоне лишнего каталога в PYTHONPATH не появляется.
+        hook = str(Path(__file__).parent / "_coverage_subprocess")
+        env["PYTHONPATH"] = os.pathsep.join(filter(None, [hook, env.get("PYTHONPATH", "")]))
     return subprocess.run(
         [sys.executable, str(MANAGE_PY), *args],
         env=env, check=True, capture_output=True, text=True,
