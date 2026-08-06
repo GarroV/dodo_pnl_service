@@ -1,0 +1,133 @@
+# Пресет правил начисления: Сербия, 2026
+# Все значения вытащены из формул PLATA 06/2026 и подтверждены расчетом.
+# Уровень: country. Партнер может переопределить любой блок на своем уровне.
+
+preset: serbia-2026
+country: RS
+currency: RSD
+valid_from: 2026-01-01
+
+# --- Базовые константы страны ---
+constants:
+  min_hourly_rate: 371.00        # минимальная цена труда, нето/час
+  tax_free_monthly: 34221.00     # необлагаемый минимум в месяц
+  min_contribution_base: 51297.00 # минимальная месячная база для взносов
+  reference_norm_hours: 176      # база для пропорций (необлагаемый минимум)
+  full_day_hours: 8              # полный рабочий день
+
+# --- Ставки налогов и взносов ---
+rates:
+  income_tax: 0.10               # налог с (бруто − необлагаемое)
+  employee_contributions: 0.199  # взносы с работника
+  employer_contributions: 0.1515 # взносы с работодателя
+  net_factor: 0.701              # 1 − 0.10 − 0.199, для обратного пересчета нето → бруто
+  combined_contributions: 0.3505 # 0.199 + 0.1515, для схем с минимальной базой
+  temporary_contract: 0.4505     # взносы по договору о временных работах
+
+# --- Типы часов ---
+# pay_percent — процент от часовой ставки сотрудника
+# counts_as_worked — участвует ли в пропорции топли оброка
+# insured — входит ли в базу для взносов
+hour_types:
+  regular:   { title: "Отработанные",  pay_percent: 1.00, counts_as_worked: true,  insured: true }
+  holiday:   { title: "Праздничные",   pay_percent: 1.10, counts_as_worked: false, insured: true }
+  vacation:  { title: "Отпуск",        pay_percent: 1.00, counts_as_worked: false, insured: true }
+  sick:      { title: "Больничный",    pay_percent: 0.65, counts_as_worked: false, insured: true }
+  # заготовки, в июне не встречались — уточнить у бухгалтера
+  night:     { title: "Ночные",        pay_percent: 1.26, counts_as_worked: true,  insured: true, status: unverified }
+  overtime:  { title: "Переработка",   pay_percent: 1.26, counts_as_worked: true,  insured: true, status: unverified }
+
+# --- Надбавки ---
+allowances:
+  meal_and_vacation_bonus:
+    title: "Топли оброк и регрес"   # компенсация питания + отпускное пособие
+    amount_per_norm: 1500.00
+    prorate_by: worked_days         # за рабочий ДЕНЬ, не за час
+    layer: white
+    taxable: true
+    # У полной ставки день = 8 часов, поэтому пропорция по дням и по часам совпадают.
+    # У полставки день = 4 часа, и разница становится видна: сотрудник, отработавший
+    # 88 часов на полставке, закрыл все 22 рабочих дня и получает полные 1500.
+    # Это часть зарплаты, а не статья «Питание персонала» в P&L.
+
+# --- Гарантированный минимум ---
+# Если начисление за час оказалось ниже гарантированного уровня, доплачиваем разницу.
+# В таблице это столбец "korekcija do minimalca", вносится вручную.
+minimum_guarantee:
+  enabled: true
+  base: min_hourly_rate         # ВАРИАНТ 1: доводим до минималки страны
+  # base: personal_rate         # ВАРИАНТ 2: доводим до личной ставки сотрудника
+  # Различить по данным июня нельзя: единственный случай пришелся на сотрудника
+  # с коэффициентом 1.0, где оба варианта дают одно число. Вопрос бухгалтеру.
+  applies_to: [sick]            # какие типы часов вызывают доплату — уточнить
+
+# --- Схемы расчета ---
+# Определяют, как из нето получить бруто и взносы.
+schemes:
+
+  standard:
+    title: "Полный расчет"
+    hours_per_day: 8
+    worked_hours_source: input
+    gross_up:
+      method: net_minus_prorated_allowance
+      # бруто = (нето − (необлагаемое × налог / норма) × застрахованные_часы) / net_factor
+    contributions:
+      method: employer_plus_withheld
+      # взносы = бруто × employer_contributions + (бруто − нето)
+
+  half_time:
+    title: "Полставки"
+    hours_per_day: 4
+    worked_hours_source: half_of_norm
+    # ВНИМАНИЕ: в этом листе таблицы обед считают по часам, а в листе
+    # half_time_min_base — по дням. Противоречие внутри одной бухгалтерии.
+    # Воспроизводим как есть, вопрос вынесен бухгалтеру.
+    allowance_prorate: { meal_and_vacation_bonus: worked_hours }
+    gross_up:
+      method: net_minus_prorated_allowance
+      hours_divisor: 2
+    contributions:
+      method: employer_plus_withheld
+
+  half_time_min_base:
+    title: "Полставки со взносами от минимальной базы"
+    hours_per_day: 4
+    worked_hours_source: input
+    gross_up:
+      method: min_base
+      # бруто = (нето − необлагаемое/2 × доля + минбаза × взносы_работника × доля) / 0.9
+      # доля = застрахованные_часы / норма
+    tax:
+      method: gross_minus_half_allowance
+      # налог = (бруто − необлагаемое/2 × доля) × income_tax
+    contributions:
+      method: min_base_combined
+      # взносы = минбаза × доля × combined_contributions
+
+  temporary:
+    title: "Временные работы"
+    hours_per_day: 8
+    worked_hours_source: input
+    allowances: []                # топли оброк не платится
+    gross_up:
+      method: flat
+      # бруто = нето / net_factor
+    contributions:
+      method: flat_rate
+      rate_key: temporary_contract
+
+# --- Группы сотрудников ---
+# Слой учета и схема расчета привязаны к группе; на уровне сотрудника переопределяются.
+groups:
+  office:      { title: "Офис",              scheme: standard, layer: white, pnl_line: "Расходы на управление" }
+  management:  { title: "Управляющие",       scheme: standard, layer: white, pnl_line: "LC / GMC" }
+  kitchen:     { title: "Кухня и касса",     scheme: standard, layer: grey,  pnl_line: "LC / КС" }
+  doughmaker:  { title: "Тестомейкер",       scheme: standard, layer: grey,  pnl_line: "LC / Тестомейкер" }
+  couriers:    { title: "Курьеры",           scheme: none,     layer: black, pnl_line: "LC / DC" }
+  temporary:   { title: "Временные работы",  scheme: temporary, layer: white, pnl_line: "LC / КС" }
+
+# --- Производственный календарь ---
+calendar:
+  2026-06: { norm_hours: 176, holidays: [] }
+  # остальные месяцы подтягиваются из официального календаря Сербии

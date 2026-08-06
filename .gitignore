@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+.DS_Store
+.idea/
+*.swp
+
+# рабочие выгрузки и данные партнёров — в репозиторий не кладём
+data/
+*.xlsx
+!tests/fixtures/*.xlsx
