@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import json
 import os
+import subprocess
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -57,15 +58,14 @@ def june_rows():
 # =============================================================================
 # Тесты схемы: живой Postgres
 # =============================================================================
-# Разнесение, RLS и идемпотентность живут в SQL, поэтому проверять их можно
-# только на настоящей базе. Тесты сами создают временную БД, накатывают
-# миграции и удаляют её за собой. Нет доступного Postgres — тесты скипаются,
-# остальной прогон остаётся зелёным.
+# Разграничение доступа живёт в SQL, поэтому проверять его можно только на
+# настоящей базе. Тесты сами создают временную БД, накатывают миграции Django
+# и удаляют её за собой. Нет доступного Postgres — тесты скипаются, остальной
+# прогон остаётся зелёным.
 #
 # Куда подключаться: DODO_TEST_ADMIN_DSN, по умолчанию локальный кластер.
 
-PLATFORM_SQL = ROOT / "db" / "platform" / "postgres.sql"
-MIGRATIONS_DIR = ROOT / "db" / "migrations"
+MANAGE_PY = ROOT / "manage.py"
 
 ADMIN_DSN = os.environ.get("DODO_TEST_ADMIN_DSN", "postgresql:///postgres")
 
@@ -95,13 +95,27 @@ JUNE = "2026-06-01"
 JULY = "2026-07-01"
 
 
-def _sql_files() -> list[Path]:
-    return [PLATFORM_SQL, *sorted(MIGRATIONS_DIR.glob("*.sql"))]
+def run_manage(dsn: str, *args: str) -> subprocess.CompletedProcess:
+    """Выполнить команду Django на указанной базе.
+
+    Через подпроцесс, а не импортом: так тест проверяет ровно то, что запустит
+    человек руками, вместе с настройками и каркасом проекта.
+    """
+    env = {
+        **os.environ,
+        "DATABASE_URL": dsn,
+        "SECRET_KEY": "test-only-not-a-secret",
+        "DJANGO_SETTINGS_MODULE": "config.settings",
+    }
+    return subprocess.run(
+        [sys.executable, str(MANAGE_PY), *args],
+        env=env, check=True, capture_output=True, text=True,
+    )
 
 
-@pytest.fixture(scope="session")
-def pg_dsn():
-    """Временная БД со накатанной схемой. Создаётся один раз на прогон."""
+@contextmanager
+def temp_database(suffix: str):
+    """Временная база с накатанной схемой. Удаляется в любом случае."""
     psycopg = pytest.importorskip("psycopg", reason="нужен psycopg: pip install -e '.[dev]'")
     from psycopg.conninfo import make_conninfo
 
@@ -110,20 +124,25 @@ def pg_dsn():
     except psycopg.OperationalError as exc:
         pytest.skip(f"нет доступного Postgres по {ADMIN_DSN}: {exc}")
 
-    dbname = f"dodo_pnl_test_{os.getpid()}"
+    dbname = f"dodo_pnl_test_{suffix}_{os.getpid()}"
     with admin:
         admin.execute(f'drop database if exists "{dbname}"')
         admin.execute(f'create database "{dbname}"')
 
     dsn = make_conninfo(ADMIN_DSN, dbname=dbname)
     try:
-        with psycopg.connect(dsn, autocommit=True) as conn:
-            for path in _sql_files():
-                conn.execute(path.read_text())
+        run_manage(dsn, "migrate", "--no-input")
         yield dsn
     finally:
         with psycopg.connect(ADMIN_DSN, autocommit=True) as admin2:
             admin2.execute(f'drop database if exists "{dbname}" with (force)')
+
+
+@pytest.fixture(scope="session")
+def pg_dsn():
+    """База под тесты доступа. Создаётся один раз на прогон."""
+    with temp_database("rls") as dsn:
+        yield dsn
 
 
 @pytest.fixture
@@ -131,7 +150,10 @@ def db(pg_dsn):
     """Соединение на один тест. Всё, что тест написал, откатывается."""
     import psycopg
 
+    from core.db_types import register_enum_types
+
     conn = psycopg.connect(pg_dsn)
+    register_enum_types(conn)
     try:
         _seed(conn)
         yield conn
@@ -181,9 +203,8 @@ def _seed(conn) -> None:
                (%s, null, 'utilities',     'Коммунальные',      'expense',  30),
                (%s, null, 'labour_cost',   'Зарплата',          'expense',  40),
                (%s, null, 'payroll_taxes', 'Налоги с зарплаты', 'expense',  50),
-               (%s, null, 'total',         'Результат',         'subtotal', 90),
-               (%s, null, 'cash_transfer', 'Переводы',          'transfer', 95)""",
-        (I_REVENUE, I_FOOD, I_UTILITIES, I_LABOUR, I_TAXES, I_TOTAL, I_TRANSFER),
+               (%s, null, 'total',         'Результат',         'subtotal', 90)""",
+        (I_REVENUE, I_FOOD, I_UTILITIES, I_LABOUR, I_TAXES, I_TOTAL),
     )
     conn.execute(
         """insert into counterparties (id, tenant_id, title)
@@ -221,14 +242,16 @@ def _seed(conn) -> None:
 
 
 @contextmanager
-def as_user(conn, user_id: str):
-    """Работать от лица пользователя приложения, чтобы RLS действовала.
+def as_app_user(conn, user_id: str | None):
+    """Работать ролью приложения, чтобы RLS вообще действовала.
 
-    Тесты подключаются владельцем схемы, а на владельца политики не действуют.
-    Поэтому переключаемся на роль приложения — ровно как это делает сервис.
+    Тесты подключаются владельцем схемы. На владельца политики не действуют
+    (а суперпользователь обходит даже `force row level security`), поэтому
+    любой тест доступа обязан переключиться на `app_user` — ровно так, как это
+    делает сервис. `user_id = None` — проверка «контекст не выставлен».
     """
-    conn.execute("set local role pnl_app")
-    conn.execute("select set_config('app.user_id', %s, true)", (user_id,))
+    conn.execute("set local role app_user")
+    conn.execute("select set_config('app.user_id', %s, true)", (user_id or "",))
     try:
         yield conn
     finally:
@@ -236,44 +259,27 @@ def as_user(conn, user_id: str):
         conn.execute("select set_config('app.user_id', '', true)")
 
 
-def upsert_fact(conn, **payload) -> tuple[str, str]:
-    """Записать факт так, как это делает импортёр. Возвращает (id, действие)."""
-    raw = json.dumps(payload, default=str)
-    row = conn.execute("select fact_id, action from upsert_fact(%s::jsonb)", (raw,)).fetchone()
-    return row[0], row[1]
-
-
-def invoice_line(conn, *, dedup_key, amount, counterparty=CP_EPS, period=JUNE,
-                 pnl_item=I_UTILITIES, legal_entity=LE1, layer="white", **extra) -> str:
-    """Позиция фактуры на юрлицо: точка ещё неизвестна, ждёт разнесения."""
-    payload = dict(
-        tenant_id=T1,
-        period=period,
-        doc_date="2026-07-05",   # счёт за июнь приходит в июле
-        legal_entity_id=legal_entity,
-        pnl_item_id=pnl_item,
-        counterparty_id=counterparty,
-        amount=amount,
-        currency="RSD",
-        title="Электричество",
-        source="einvoice",
-        dedup_key=dedup_key,
-        allocation="pending",
-        layer=layer,
-    )
-    payload.update(extra)
-    fact_id, _ = upsert_fact(conn, **payload)
-    return fact_id
-
-
-def revenue_fact(conn, *, unit, amount, period=JUNE, dedup_key=None) -> str:
-    """Выручка точки: приходит из Dodo IS сразу с точкой."""
-    fact_id, _ = upsert_fact(
-        conn,
-        tenant_id=T1, period=period, doc_date=period, unit_id=unit,
-        legal_entity_id=LE1, pnl_item_id=I_REVENUE, amount=amount, currency="RSD",
-        title="Выручка", source="dodo_is",
-        dedup_key=dedup_key or f"dodo_is:revenue:{unit}:{period}",
-        allocation="direct",
-    )
-    return fact_id
+def pay_component(conn, *, layer: str, amount: str = "1000.00", code: str = "hours.regular",
+                  tenant: str = T1) -> str:
+    """Компонент выплаты нужного регистра — материал для проверки видимости."""
+    employee_id = conn.execute(
+        """insert into employees (tenant_id, external_id, first_name, last_name)
+           values (%s, %s, 'Тест', 'Тестов') returning id""",
+        (tenant, f"ext-{layer}-{code}-{amount}"),
+    ).fetchone()[0]
+    payrun_id = conn.execute(
+        """insert into payruns (tenant_id, period) values (%s, %s)
+           on conflict (tenant_id, period) do update set period = excluded.period
+           returning id""",
+        (tenant, JUNE),
+    ).fetchone()[0]
+    payslip_id = conn.execute(
+        """insert into payslips (tenant_id, payrun_id, employee_id, net)
+           values (%s, %s, %s, %s) returning id""",
+        (tenant, payrun_id, employee_id, amount),
+    ).fetchone()[0]
+    return conn.execute(
+        """insert into pay_components (tenant_id, payslip_id, code, title, amount, layer)
+           values (%s, %s, %s, %s, %s, %s) returning id""",
+        (tenant, payslip_id, code, "Часы", amount, layer),
+    ).fetchone()[0]
