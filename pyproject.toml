@@ -12,6 +12,9 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
+    # Тесты схемы гоняются на живом Postgres: SQL-логику (разнесение, RLS,
+    # идемпотентность) иначе не проверить. Нет доступной БД — тесты скипаются.
+    "psycopg[binary]>=3.1",
 ]
 
 [tool.setuptools.packages.find]
