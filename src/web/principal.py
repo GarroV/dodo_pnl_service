@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from uuid import UUID
 
-from core.models import Membership
+from core.models import Membership, Unit
 
 from .format import ledger_title
 
@@ -34,6 +34,9 @@ class Principal:
     role_title: str = ""
     tenant_title: str = ""
     display_name: str = ""
+    # Коды точек, которыми ограничен человек. Пусто — ограничения нет, показывать
+    # в шапке нечего: объяснять надо срезанные данные, а не полные.
+    units_title: str = ""
 
 
 def get_current_principal(request) -> Principal | None:
@@ -64,15 +67,30 @@ def _load(request) -> Principal | None:
         # выкидывать его со страницы незачем: пароль он поменять может.
         return Principal(user_id=user.pk, display_name=display_name)
 
+    unit_ids = list(membership.unit_ids or [])
     return Principal(
         user_id=user.pk,
         tenant_id=membership.tenant_id,
-        unit_ids=list(membership.unit_ids or []),
+        unit_ids=unit_ids,
         visible_ledgers=list(membership.role.visible_ledgers or []),
         permissions=list(membership.role.permissions or []),
         role_title=membership.role.title,
         tenant_title=membership.tenant.title,
         display_name=display_name,
+        units_title=_units_title(unit_ids),
+    )
+
+
+def _units_title(unit_ids: list) -> str:
+    """Коды точек для шапки. Пустой список — «все точки», подписывать нечего.
+
+    Названия читаются обычной выборкой под теми же политиками: показать код
+    точки, которую человеку видеть не положено, шапка не может физически.
+    """
+    if not unit_ids:
+        return ""
+    return ", ".join(
+        Unit.objects.filter(pk__in=unit_ids).order_by("code").values_list("code", flat=True)
     )
 
 

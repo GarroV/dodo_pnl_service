@@ -114,6 +114,11 @@
       {# У учёток сида имя человека совпадает с названием роли — не повторяем его дважды. #}
       <span><strong>{{ principal.display_name }}</strong>{% if principal.role_title and principal.role_title != principal.display_name %} · {{ principal.role_title }}{% endif %}{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
       {% if visible_ledgers_title %}<span>регистры: {{ visible_ledgers_title }}</span>{% endif %}
+      {% comment %}
+      Точка пишется, только когда человек ею ограничен: объяснять надо срезанные
+      данные, а не полные. Пусто = все точки партнёра.
+      {% endcomment %}
+      {% if principal.units_title %}<span title="Данные и итоги на всех страницах — только по этой точке">точка: {{ principal.units_title }}</span>{% endif %}
       <a class="btn" href="{% url 'password-change' %}">пароль</a>
       <form class="inline" method="post" action="{% url 'logout' %}">{% csrf_token %}
         <button type="submit">выйти</button>
