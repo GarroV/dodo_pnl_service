@@ -597,6 +597,60 @@ class Timesheet(models.Model):
         ]
 
 
+class TimesheetDay(models.Model):
+    """Из каких дней сложился месячный итог табеля.
+
+    Зачем она есть, когда часы вводятся числом за месяц (D011): смысл подневного
+    хранения не в подневном вводе, а в том, чтобы перевод сотрудника между
+    точками посреди месяца не требовал переноса данных. Точка стоит на строке
+    `timesheets`, поэтому человек на двух точках — это две строки; разрезать
+    месяц по дате можно только имея дни.
+
+    Инвариант: `timesheets.hours[тип]` равен сумме часов этого типа по дням.
+    Держится единственной точкой записи (`timesheets.store`) — не триггером и не
+    формой: писать в табель будут и экран, и импорт, и коннектор Dodo IS.
+
+    Точки на дне намеренно нет: она есть у строки-родителя, и второе место для
+    того же факта разъехалось бы с первым.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    # db_constraint=False: внешний ключ создаётся руками в миграции — с
+    # `on delete cascade` в самой базе. Django исполняет каскад в Python, то
+    # есть удаление табеля мимо ORM (сид, обслуживание, `delete from`) оставило
+    # бы дни сиротами.
+    timesheet = models.ForeignKey(
+        Timesheet, on_delete=models.CASCADE, db_column="timesheet_id",
+        db_constraint=False, related_name="days",
+    )
+    work_date = models.DateField()
+    hour_type = models.TextField()  # ключ из hour_types пресета страны
+    hours = models.DecimalField(max_digits=6, decimal_places=2)
+    # Откуда день взялся. `spread` — ровная раскладка месячного числа: настоящих
+    # дат за ней нет, и когда придут подневные данные из Dodo IS, отличить их от
+    # раскладки надо будет по этому полю, а не по догадке.
+    source = models.TextField(db_default="spread")  # spread | manual | dodo_is
+    created_at = models.DateTimeField(db_default=now_default())
+
+    class Meta:
+        db_table = "timesheet_days"
+        indexes = [
+            models.Index("tenant", "timesheet", name="timesheet_days_lookup_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant", "timesheet", "work_date", "hour_type"],
+                name="timesheet_days_uniq",
+            ),
+            # Отрицательных часов не бывает. Проверка стоит в базе, потому что
+            # писать сюда будут три разных пути, и договориться они не обязаны.
+            models.CheckConstraint(
+                condition=models.Q(hours__gte=0), name="timesheet_days_hours_check"
+            ),
+        ]
+
+
 class Payrun(models.Model):
     """Расчёт за месяц целиком."""
 

@@ -101,6 +101,11 @@
   .alert .details { color: var(--ink); font-size: 13px; margin-top: 6px; }
   .ok { color: #14532d; background: #f0fdf4; border: 1px solid #bbf7d0; }
 </style>
+{% comment %}
+Своя статика страницы. Пусто на всех экранах, кроме табеля: он единственный
+интерактивный (D017), и тащить htmx на список периодов незачем.
+{% endcomment %}
+{% block head %}{% endblock %}
 </head>
 <body>
 <header>

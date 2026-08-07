@@ -26,8 +26,13 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.sessions",
     "django.contrib.postgres",
+    # Отдаёт статику экрана табеля (htmx, стили, островок) под runserver. Файлы
+    # лежат внутри пакета `timesheets`, а не в корневом static/: в образ
+    # копируется только src/, и корневой каталог до контейнера бы не доехал.
+    "django.contrib.staticfiles",
     "core",
     "web",
+    "timesheets",
 ]
 
 MIDDLEWARE = [

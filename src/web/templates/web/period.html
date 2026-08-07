@@ -25,6 +25,8 @@
 
 <form method="post" action="{% url 'period-calculate' period.id %}">{% csrf_token %}
   <button type="submit" class="primary">Посчитать период</button>
+  {# Часы вводятся до расчёта, поэтому ссылка стоит рядом с кнопкой, а не в общей навигации: там она не знала бы, о каком периоде речь. #}
+  <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
   <span class="note">Считается сразу, повторный запуск пересобирает ведомость заново.</span>
 </form>
 
