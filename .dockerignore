@@ -1,0 +1,40 @@
+# Контекст сборки: чем меньше, тем быстрее и тем меньше шансов утащить в образ
+# лишнее. Секреты и данные партнёров сюда не попадают ни при каких условиях.
+
+.git/
+.github/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Секреты — только через переменные окружения контейнера, не слоем образа.
+.env
+.env.*
+!.env.example
+
+# Данные партнёров. Единственное исключение — обезличенная фикстура, из которой
+# сеется тестовый тенант (D028).
+data/
+*.xlsx
+!tests/fixtures/plata-sample.xlsx
+
+# Всё, что не нужно работающему приложению.
+tests/
+!tests/fixtures/
+!tests/fixtures/plata-sample.xlsx
+tools/
+docs/
+db/
+*.md
+!README.md
+
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.DS_Store
+.idea/
+*.swp
