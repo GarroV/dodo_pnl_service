@@ -259,11 +259,19 @@ def test_pages_are_marked_as_dev_only(client):
     assert "dev" in body(client.get("/periods/")).lower()
 
 
-def test_no_template_source_leaks_onto_the_page(client):
+@pytest.mark.parametrize("user", [None, "director", "accountant", "manager"])
+def test_no_template_source_leaks_onto_the_page(client, user):
     """Многострочный `{# … #}` — не комментарий: он вываливается на страницу текстом.
 
     Поймано в браузере 2026-08-07, до того страницы начинались с исходника шаблона.
+
+    Роли перебираются не для красоты. Первая версия этой проверки смотрела на
+    страницу **гостя**, поэтому весь блок шапки за `{% if principal %}` вообще не
+    отрисовывался — и второй такой же комментарий, добавленный туда позже,
+    проверка пропустила. Нашёл его снова браузер (2026-08-07, T044).
     """
+    if user:
+        login_as(client, user)
     text = body(client.get("/periods/"))
     assert "{#" not in text
     assert "{% comment" not in text
