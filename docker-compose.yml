@@ -1,0 +1,76 @@
+# Локальный запуск всего продукта: база + приложение.
+#
+# Значения берутся из .env (скопировать с .env.example). Портов в этом файле
+# нет ни одного зашитого: локально 8000/5440, на площадке 8030/5440 — разница
+# только в .env, не в коде (решение D006).
+#
+# Имя проекта задано явно: на площадке рядом живут чужие стеки, и наши
+# контейнеры не должны склеиться с ними по именам.
+name: dodo-pnl
+
+services:
+  db:
+    # Тот же образ, что стоит на площадке: расхождение версий Postgres между
+    # разработкой и сервером — источник ошибок, которые видны только на сервере.
+    image: pgvector/pgvector:pg17
+    labels:
+      # По этой метке контейнер находит ночная задача резервного копирования
+      # сервера (C:\backups, ретеншн 14 дней). Без метки база не бэкапится.
+      backup.pgdump: "true"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?задайте POSTGRES_USER в .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+      POSTGRES_DB: ${POSTGRES_DB:?задайте POSTGRES_DB в .env}
+    ports:
+      # Наружу — только на localhost. База с персональными данными сотрудников
+      # не должна слушать на всех интерфейсах ни локально, ни на сервере.
+      - "127.0.0.1:${POSTGRES_HOST_PORT:?задайте POSTGRES_HOST_PORT в .env}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Не «процесс жив», а «база принимает подключения»: приложение стартует
+      # с миграций и падает, если подключиться нельзя.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        # Именно service_healthy, а не service_started: контейнер базы отвечает
+        # раньше, чем сам Postgres готов, и миграции падали бы на старте.
+        condition: service_healthy
+    environment:
+      # Внутри сети compose база — это хост db на своём обычном порту.
+      # DATABASE_URL из .env описывает путь с хоста (localhost:POSTGRES_HOST_PORT)
+      # и нужен для pytest и manage.py из venv, а не контейнеру.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY:?задайте SECRET_KEY в .env}
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+    ports:
+      # Слева порт на хосте (APP_PORT), справа — всегда 8000 внутри контейнера.
+      - "${APP_PORT:?задайте APP_PORT в .env}:8000"
+    # Миграции накатываются на старте: они идемпотентны, а альтернатива —
+    # отдельный шаг, который однажды забудут и получат продукт на старой схеме.
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    healthcheck:
+      # Проверка ходит и в веб, и в базу — см. docker/healthcheck.py, там
+      # объяснено, почему проверки только порта недостаточно.
+      test: ["CMD", "python", "docker/healthcheck.py"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  pgdata:
