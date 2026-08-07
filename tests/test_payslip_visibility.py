@@ -106,13 +106,23 @@ def test_totals_of_a_mixed_payslip_are_invisible_to_the_accountant(db):
         assert conn.execute("select count(*) from payslips").fetchone()[0] == 1
 
 
-def test_totals_of_a_fully_official_payslip_stay_visible(db):
-    """Ограничение не должно превращаться в «бухгалтер не видит ничего»."""
+def test_a_partial_role_gets_no_totals_even_from_a_clean_row(db):
+    """Цена T071, записанная тестом, а не только словами.
+
+    До T071 бухгалтер видела итоги полностью официальных строк — и ровно эта
+    выборочность её и выдавала: «у кого итога нет» и есть поимённый список тех,
+    у кого скрытые регистры (T071, ниже по файлу). Поэтому итогов ей не видно
+    вовсе, включая чистую строку. На экране это не сказывается: ведомость
+    собирается из `pay_components`, а `payslip_totals` в продукте не читает
+    никто, пишет только расчёт.
+    """
     make_payslip(db, "clean", [("official", "500.00")])
 
     with as_app_user(db, USER_ACCOUNTANT) as conn:
-        rows = visible_totals(conn)
-    assert [row[1] for row in rows] == [Decimal("500.00")]
+        assert visible_totals(conn) == []
+
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        assert [row[1] for row in visible_totals(conn)] == [Decimal("500.00")]
 
 
 def each_visible_payslip_is_built_from_visible_components(conn) -> int:
@@ -134,35 +144,52 @@ def each_visible_payslip_is_built_from_visible_components(conn) -> int:
 
 
 def test_visible_payslips_contain_nothing_hidden(db):
-    """Главная проверка задачи, в точной форме."""
+    """Главная проверка задачи, в точной форме — на всех трёх ролях.
+
+    Требование T050 («ни рубля скрытого в том, что роль читает») от T071 не
+    ослабло, а усилилось: теперь оно выполняется не потому, что видимые строки
+    подобраны удачно, а потому, что итоги видит только роль, от которой скрывать
+    нечего. Проверяется по-прежнему равенством нето и суммы видимых компонентов,
+    чтобы тест ловил и возврат прежнего устройства.
+    """
     make_payslip(db, "mixed-1", [("official", "100.00"), ("supplementary", "400.00")])
     make_payslip(db, "mixed-2", [("official", "50.00"), ("internal", "700.00")])
     make_payslip(db, "clean-1", [("official", "300.00")])
 
+    for user in (USER_ACCOUNTANT, USER_MANAGER, USER_DIRECTOR):
+        with as_app_user(db, user) as conn:
+            each_visible_payslip_is_built_from_visible_components(conn)
+
     with as_app_user(db, USER_ACCOUNTANT) as conn:
-        assert each_visible_payslip_is_built_from_visible_components(conn) == 1
         visible_components = conn.execute(
             "select coalesce(sum(amount), 0) from pay_components"
         ).fetchone()[0]
         net = conn.execute("select coalesce(sum(net), 0) from payslip_totals").fetchone()[0]
 
-    # Бухгалтеру видны 450 из компонентов (100 + 50 + 300), а ведомостей — одна,
-    # на 300: две смешанные строки скрыты целиком.
+    # Компоненты бухгалтер видит как и раньше — 450 (100 + 50 + 300): её работа
+    # от T071 не пострадала. А итогов нет ни одного, поэтому и вычитать нечего.
     assert visible_components == Decimal("450.00")
-    assert net == Decimal("300.00")
+    assert net == Decimal("0")
 
     with as_app_user(db, USER_DIRECTOR) as conn:
         assert each_visible_payslip_is_built_from_visible_components(conn) == 3
 
 
-def test_manager_sees_two_ledgers_but_not_the_third(db):
-    """Проверка не сводится к «бухгалтеру не видно»: границу двигает роль."""
+def test_two_ledgers_out_of_three_are_still_partial(db):
+    """Граница проходит не «между бухгалтером и остальными», а по полноте набора.
+
+    Управляющий видит два регистра из трёх (D031) — и итогов не получает тоже.
+    Иначе по нему опознавались бы люди с внутренним регистром ровно так же, как
+    по бухгалтеру.
+    """
     make_payslip(db, "two", [("official", "100.00"), ("supplementary", "200.00")])
     make_payslip(db, "three", [("supplementary", "200.00"), ("internal", "300.00")])
 
     with as_app_user(db, USER_MANAGER) as conn:  # официальный + дополнительный
-        rows = visible_totals(conn)
-    assert [row[1] for row in rows] == [Decimal("300.00")]
+        assert visible_totals(conn) == []
+
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        assert len(visible_totals(conn)) == 2
 
 
 # --- как это устроено --------------------------------------------------------
@@ -191,19 +218,29 @@ def test_totals_without_components_are_not_hidden(db):
     payslip = make_payslip(db, "empty", [("official", "10.00")])
     db.execute("delete from pay_components where payslip_id = %s", (payslip,))
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    # Спрашиваем ролью, которая период и считает: расчёт отказывает тому, кто
+    # видит не все регистры (`check_ledgers` в `payrun/calc.py`), поэтому
+    # пересобирает ведомость именно полный набор.
+    with as_app_user(db, USER_DIRECTOR) as conn:
         assert conn.execute(
             "select count(*) from payslip_totals where payslip_id = %s", (payslip,)
         ).fetchone()[0] == 1
 
 
 def test_hiding_is_not_blanket(db):
-    """Страховка от фиктивной зелени: без скрытых компонентов ничего не прячется."""
-    make_payslip(db, "visible-1", [("official", "10.00")])
-    make_payslip(db, "visible-2", [("official", "20.00")])
+    """Страховка от фиктивной зелени: «спрятали всем» — не решение.
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
-        assert len(visible_totals(conn)) == 2
+    После T071 прятать выборочно нечего, поэтому единственное, что удерживает
+    от вырожденной защиты, — полный набор у директора: он обязан видеть и
+    чистые строки, и смешанные.
+    """
+    make_payslip(db, "visible-1", [("official", "10.00")])
+    make_payslip(db, "mixed-2", [("official", "20.00"), ("internal", "30.00")])
+
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        assert sorted(row[1] for row in visible_totals(conn)) == [
+            Decimal("10.00"), Decimal("50.00"),
+        ]
 
 
 def test_the_protection_is_the_policy_and_not_luck(db):
@@ -379,9 +416,204 @@ def test_accountant_cannot_reconstruct_hidden_ledgers_on_seeded_data(client, web
             net = scoped.execute(
                 "select coalesce(sum(net), 0) from payslip_totals"
             ).fetchone()[0]
+            each_visible_payslip_is_built_from_visible_components(scoped)
+        with as_app_user(conn, str(det_id("user", "director"))) as scoped:
             slips = each_visible_payslip_is_built_from_visible_components(scoped)
 
     assert components > 0, "расчёт не прошёл — проверять нечего"
-    assert slips > 0, "бухгалтеру не видно ни одной строки — проверка стала бы пустой"
+    assert slips > 0, "директору не видно ни одной строки итогов — расчёт не записался"
     assert net <= components, f"нето {net} выдаёт скрытое: видимых компонентов {components}"
 
+
+
+# =============================================================================
+# Отсутствие итога само называет человека (T071)
+# =============================================================================
+# Что течёт. `payslips` видна всем в тенанте (это идентификация, чисел в ней
+# нет), а `payslip_totals` — только тому, кому видны все регистры строки.
+# Значит **дырка в производной таблице** и есть сообщение: под бухгалтером
+#
+#     select e.last_name
+#       from payslips p
+#       join employees e on e.id = p.employee_id
+#       left join payslip_totals t on t.payslip_id = p.id
+#      where t.payslip_id is null
+#
+# отдаёт поимённый список тех, у кого есть выплаты в закрытых от неё регистрах —
+# на сиде 27 фамилий из 35. Чисел нет, но D023 требует «ни строк, ни следа».
+#
+# Почему чинится не запрос и не строка ведомости. Течёт общая форма: пока
+# **видимость производной строки зависит от её содержимого**, любая пара
+# «строка видна всегда — производная видна не всегда» называет людей, и закрытие
+# одного запроса ничего не меняет. Спрятать саму `payslips` нельзя дважды: по
+# подмножеству регистров — уносит видимые официальные компоненты смешанного
+# сотрудника (на этом обожглись в T050), по пересечению — вектор остаётся
+# открытым, а запись ломается (ограничивающая политика режет и update/delete,
+# то есть роль с неполным набором регистров не досчитает период).
+#
+# Поэтому правило другое: **видимость итогов определяется только ролью**. Итоги
+# видит тот, кому видны все регистры вообще; всем остальным не видно ни одного,
+# независимо от содержимого строки. Тогда состояний ровно два — «итогов столько
+# же, сколько строк» и «итогов нет», — и опознать по ним некого.
+
+
+def orphan_payslips(conn) -> tuple[int, int]:
+    """Сколько строк ведомости видно и у скольких из них не видно итога."""
+    return conn.execute(
+        """select count(*), count(*) filter (where t.payslip_id is null)
+             from payslips p
+             left join payslip_totals t on t.payslip_id = p.id"""
+    ).fetchone()
+
+
+def assert_absence_names_nobody(conn, who: str) -> None:
+    """Либо все строки без итога, либо ни одной — третьего быть не должно.
+
+    Промежуточное состояние и есть утечка: оно делит людей на тех, у кого всё
+    видно, и тех, у кого есть скрытое.
+    """
+    slips, orphans = orphan_payslips(conn)
+    assert orphans in (0, slips), (
+        f"{who}: строк ведомости {slips}, из них без итога {orphans} — "
+        f"по этой разнице видно поимённо, у кого есть выплаты в закрытых регистрах"
+    )
+
+
+def test_the_absence_of_totals_names_nobody(db):
+    """Главная проверка T071 на трёх ролях сразу."""
+    make_payslip(db, "t071-mixed", [("official", "100.00"), ("internal", "900.00")])
+    make_payslip(db, "t071-clean", [("official", "300.00")])
+    make_payslip(db, "t071-hidden", [("internal", "700.00")])
+    make_payslip(db, "t071-two", [("official", "50.00"), ("supplementary", "60.00")])
+
+    for user, who in (
+        (USER_ACCOUNTANT, "бухгалтер"),
+        (USER_MANAGER, "управляющий"),
+        (USER_DIRECTOR, "директор"),
+    ):
+        with as_app_user(db, user) as conn:
+            assert_absence_names_nobody(conn, who)
+
+
+def test_no_function_answers_whether_a_row_has_hidden_ledgers(db):
+    """Вторая дырка той же формы, найденная по дороге к T071.
+
+    `app_payslip_ledgers_visible(uuid)` из T065 — `security definer`, и, как
+    всякая функция по умолчанию, исполнима кем угодно. Под бухгалтером
+    `select p.id, app_payslip_ledgers_visible(p.id) from payslips p` отвечал
+    `false` ровно на строках со скрытым регистром: закрытую колонку выдавала
+    функция, заведённая, чтобы её закрыть. Воспроизведено на живой базе до
+    правки.
+
+    Отзывать у неё `execute` было бы починкой симптома: пока признак считается
+    по строке, он остаётся признаком строки. Поэтому функции больше нет, а
+    видимость итогов спрашивает `app_sees_every_ledger(tenant)` — про роль, а
+    не про строку.
+    """
+    import psycopg
+
+    make_payslip(db, "t071-probe", [("official", "1.00"), ("internal", "9.00")])
+
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        conn.execute("savepoint attempt")
+        with pytest.raises(psycopg.errors.UndefinedFunction):
+            conn.execute("select app_payslip_ledgers_visible(id) from payslips").fetchall()
+        conn.execute("rollback to savepoint attempt")
+
+    # И ни одна другая функция контекста не отвечает про чужую строку: у всех
+    # оставшихся аргумент — тенант или сам пользователь, а не строка ведомости.
+    leftovers = [
+        row[0]
+        for row in db.execute(
+            """select p.proname
+                 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                where n.nspname = 'public' and p.proname like 'app\\_%'
+                  and p.proname like '%payslip%'"""
+        ).fetchall()
+    ]
+    assert leftovers == [], f"функция про строку ведомости вернулась: {leftovers}"
+
+
+def test_the_full_access_role_still_gets_its_totals(db):
+    """Страховка от «спрятали всем и объявили победу»."""
+    make_payslip(db, "t071-for-director", [("official", "100.00"), ("internal", "900.00")])
+
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        slips, orphans = orphan_payslips(conn)
+    assert slips == 1 and orphans == 0, "директору итоги обязаны быть видны"
+
+
+def test_the_rule_does_not_depend_on_what_is_in_the_row(db):
+    """Видимость итогов — свойство роли, а не строки.
+
+    Форма проверки важнее числа: две строки, отличающиеся только составом
+    регистров, обязаны быть видны бухгалтеру одинаково. Пока они отличаются,
+    разница и есть сообщение.
+    """
+    clean = make_payslip(db, "t071-only-official", [("official", "300.00")])
+    mixed = make_payslip(db, "t071-with-hidden", [("official", "300.00"), ("internal", "1.00")])
+
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        seen = {
+            row[0]
+            for row in conn.execute("select payslip_id from payslip_totals").fetchall()
+        }
+    assert (clean in seen) == (mixed in seen), (
+        "итоги полностью официальной строки видны, а смешанной — нет: "
+        "по этой разнице и опознают человека"
+    )
+
+
+def test_the_old_rule_would_bring_the_leak_back(db):
+    """Возвращаем прежнюю политику — утечка обязана вернуться.
+
+    Иначе нельзя отличить «закрыто правилом» от «в этих данных просто нечему
+    было утечь». Прежнее устройство (видимость итогов по составу регистров
+    строки) поднимается внутри транзакции теста и уезжает с её откатом.
+    """
+    make_payslip(db, "t071-mixed", [("official", "100.00"), ("internal", "900.00")])
+    make_payslip(db, "t071-clean", [("official", "300.00")])
+
+    db.execute("savepoint before_damage")
+    db.execute("""
+        create or replace function app_payslip_ledgers_visible(p_payslip uuid)
+        returns boolean language sql stable security definer set search_path = public
+        as $$ select exists (select 1 from payslips p where p.id = p_payslip
+                              and p.ledgers <@ app_visible_ledgers(p.tenant_id)) $$;
+        drop policy ledger_visibility on payslip_totals;
+        create policy ledger_visibility on payslip_totals as restrictive for select
+            using (app_payslip_ledgers_visible(payslip_totals.payslip_id));
+    """)
+    try:
+        with as_app_user(db, USER_ACCOUNTANT) as conn:
+            slips, orphans = orphan_payslips(conn)
+        assert (slips, orphans) == (2, 1), (
+            "со старой политикой бухгалтер обязана видеть 2 строки и 1 без итога — "
+            f"иначе проверка ничего не значит; получено {(slips, orphans)}"
+        )
+    finally:
+        db.execute("rollback to savepoint before_damage")
+
+
+def test_the_absence_of_totals_names_nobody_on_seeded_data(client, web_env):
+    """То же на настоящем расчёте месяца: именно там нашли 27 фамилий из 35."""
+    import psycopg
+
+    from conftest import login_as, period_url, wipe_payruns
+    from core.db_types import register_enum_types
+    from core.management.commands.seed_dev import det_id
+
+    wipe_payruns(web_env)
+    login_as(client, "director")
+    client.post(period_url(client) + "calculate/", follow=True)
+
+    with psycopg.connect(web_env) as conn:
+        register_enum_types(conn)
+        for code in ("accountant", "manager", "director"):
+            with as_app_user(conn, str(det_id("user", code))) as scoped:
+                slips, orphans = orphan_payslips(scoped)
+                assert slips > 0, f"{code}: строк ведомости не видно — проверять нечего"
+                assert orphans in (0, slips), (
+                    f"{code}: строк {slips}, без итога {orphans} — "
+                    "поимённый список тех, у кого есть скрытые регистры"
+                )
