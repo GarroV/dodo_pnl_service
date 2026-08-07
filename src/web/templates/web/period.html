@@ -4,14 +4,68 @@
 <h1>{{ title }}</h1>
 <p class="sub">{{ period.tenant.title }}</p>
 
+{% if error %}
+<div class="alert">
+  <strong>Расчёт не выполнен.</strong> {{ error }}
+  {% if details %}<div class="details">{{ details|join:", " }}</div>{% endif %}
+</div>
+{% endif %}
+
+{% if calculated %}
+<div class="ok">Расчёт выполнен. Ниже — то, что видно вашей роли.</div>
+{% endif %}
+
 <dl class="facts">
   <dt>Состояние</dt><dd>{{ status }}</dd>
   <dt>Сотрудников в табеле</dt><dd>{{ employees }}</dd>
   {% if norm_hours %}<dt>Норма часов</dt><dd>{{ norm_hours }}</dd>{% endif %}
+  <dt>Последний расчёт</dt>
+  <dd>{% if calculated_at %}{{ calculated_at }}{% else %}не считался{% endif %}</dd>
 </dl>
 
+<form method="post" action="{% url 'period-calculate' period.id %}">{% csrf_token %}
+  <button type="submit" class="primary">Посчитать период</button>
+  <span class="note">Считается сразу, повторный запуск пересобирает ведомость заново.</span>
+</form>
+
+<h2>Ведомость</h2>
+{% if sheet.rows %}
+{% comment %}
+Одна таблица на все регистры с меткой в строке (D023). Строка — пара
+«сотрудник × регистр»: регистр — свойство компонента выплаты, и у одного
+человека часы и надбавка попадают в разные регистры.
+{% endcomment %}
+<div class="scroll">
+<table class="sheet">
+  <thead>
+    <tr>
+      <th>Сотрудник</th><th>Точка</th><th>Регистр</th>
+      {% for column in sheet.columns %}<th class="num">{{ column }}</th>{% endfor %}
+      <th class="num">Итого</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in sheet.rows %}
+    <tr>
+      <td>{{ row.employee }}</td>
+      <td>{{ row.unit }}</td>
+      <td><span class="ledger">{{ row.ledger }}</span></td>
+      {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
+      <td class="num strong">{{ row.total }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="grand">
+      <td colspan="3">Итого · {{ sheet.employees }} чел.</td>
+      {% for cell in sheet.column_totals %}<td class="num">{{ cell }}</td>{% endfor %}
+      <td class="num">{{ total }}</td>
+    </tr>
+  </tfoot>
+</table>
+</div>
+
 <h2>Итоги по регистрам</h2>
-{% if ledgers %}
 <table>
   <thead><tr><th>Регистр</th><th class="num">Сумма</th></tr></thead>
   <tbody>
@@ -30,6 +84,4 @@
 {% else %}
 <p class="empty">Расчёта за этот период ещё не было.</p>
 {% endif %}
-
-<p class="note">Ведомость и запуск расчёта появятся здесь следующей задачей (T042).</p>
 {% endblock %}

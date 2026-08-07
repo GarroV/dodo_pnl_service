@@ -8,12 +8,13 @@
 """
 from __future__ import annotations
 
-import os
 from decimal import Decimal
 
 import pytest
 
-from conftest import run_manage, temp_database
+# Фикстуры живого Django и помощники лежат в conftest: база у веб-тестов общая,
+# потому что настройки Django читаются один раз на процесс.
+from conftest import body, login_as, period_url, wipe_payruns
 
 JUNE = "2026-06-01"
 
@@ -24,46 +25,19 @@ AMOUNT_SUPPLEMENTARY = Decimal("50000.00")
 AMOUNT_INTERNAL = Decimal("25000.00")
 
 
-@pytest.fixture(scope="session")
-def web_env():
-    """Временная база с миграциями и сидом + настроенный Django в этом процессе."""
-    with temp_database("web") as dsn:
-        run_manage(dsn, "seed_dev")
-
-        os.environ["DATABASE_URL"] = dsn
-        os.environ.setdefault("SECRET_KEY", "test-only-not-a-secret")
-        os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
-
-        import django
-        from django.test.utils import setup_test_environment, teardown_test_environment
-
-        django.setup()
-        setup_test_environment()
-        try:
-            yield dsn
-        finally:
-            from django.db import connection
-
-            connection.close()
-            teardown_test_environment()
-
-
-@pytest.fixture
-def client(web_env):
-    from django.test import Client
-
-    return Client()
-
-
 @pytest.fixture
 def ledger_rows(web_env):
     """Компоненты выплаты в трёх регистрах — материал для проверки видимости.
 
-    Кладём мимо ORM и мимо политик (суперпользователем): расчёт появится в T042,
-    а проверять видимость нужно уже сейчас.
+    Кладём мимо ORM и мимо политик (суперпользователем): здесь проверяется
+    показ, а не расчёт, и суммы должны быть узнаваемыми в HTML.
+
+    Расчёты сносим: в той же базе работает `test_payrun`, и без этого итоги
+    зависели бы от того, считал ли кто-то период до нас.
     """
     import psycopg
 
+    wipe_payruns(web_env)
     with psycopg.connect(web_env, autocommit=True) as conn:
         tenant = conn.execute("select id from tenants where code = 'rs-dev'").fetchone()[0]
         employee = conn.execute(
@@ -92,24 +66,6 @@ def ledger_rows(web_env):
                 (tenant, payslip, f"hours.{layer}", "Часы", amount, layer),
             )
     return None
-
-
-def login_as(client, code: str):
-    return client.post("/dev/login/", {"user": code})
-
-
-def body(response) -> str:
-    return response.content.decode()
-
-
-def period_url(client) -> str:
-    """Ссылка на страницу периода со списка — так же, как её берёт человек."""
-    import re
-
-    html = body(client.get("/periods/"))
-    match = re.search(r'href="(/periods/[0-9a-f-]+/)"', html)
-    assert match, f"на списке периодов нет ссылки на период:\n{html}"
-    return match.group(1)
 
 
 # --- форматирование чисел ----------------------------------------------------

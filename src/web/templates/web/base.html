@@ -42,7 +42,7 @@
     color: var(--warn); background: var(--warn-bg);
     border: 1px solid #f3d3bf; border-radius: 3px; padding: 2px 6px;
   }
-  main { max-width: 980px; margin: 32px auto; padding: 0 32px; }
+  main { max-width: 1360px; margin: 32px auto; padding: 0 32px; }
   h1 { font-size: 24px; margin: 0 0 4px; }
   .sub { color: var(--muted); margin: 0 0 28px; }
   table { border-collapse: collapse; width: 100%; background: #fff; }
@@ -65,6 +65,33 @@
   dl.facts { display: grid; grid-template-columns: max-content auto; gap: 6px 20px; margin: 0 0 28px; }
   dl.facts dt { color: var(--muted); }
   dl.facts dd { margin: 0; }
+  h2 { font-size: 17px; margin: 32px 0 12px; }
+  /* Ведомость шире экрана — прокручивается сама, страница по горизонтали не едет. */
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; }
+  table.sheet { font-size: 13px; }
+  table.sheet th, table.sheet td { padding: 6px 10px; white-space: nowrap; }
+  /* Заголовки колонок переносятся: названия компонентов приходят из пресета,
+     они длинные, и без переноса колонка «Итого» уезжает за край экрана. */
+  table.sheet th { white-space: normal; vertical-align: bottom; }
+  table.sheet .strong { font-weight: 600; }
+  /* Колонка «Итого» прилипает к правому краю: главное число строки должно быть
+     видно всегда, а компонентов у страны может стать сколько угодно. */
+  table.sheet th:last-child, table.sheet td:last-child {
+    position: sticky; right: 0; background: #fff; box-shadow: -1px 0 0 var(--line);
+  }
+  table.sheet tbody tr:hover td:last-child { background: #f6f8ff; }
+  table.sheet tfoot .grand td { background: #fff; }
+  /* Метка регистра, а не заливка строки: заливка мешает читать числа (D023). */
+  .ledger {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
+  }
+  button.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
+  button.primary:hover { background: #1740b4; }
+  .alert, .ok { padding: 12px 16px; border-radius: 4px; margin: 0 0 20px; }
+  .alert { color: var(--warn); background: var(--warn-bg); border: 1px solid #f3d3bf; }
+  .alert .details { color: var(--ink); font-size: 13px; margin-top: 6px; }
+  .ok { color: #14532d; background: #f0fdf4; border: 1px solid #bbf7d0; }
 </style>
 </head>
 <body>

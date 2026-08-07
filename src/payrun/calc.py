@@ -1,0 +1,237 @@
+"""Расчёт периода: из данных тенанта в ведомость.
+
+Порядок и его причины:
+
+1. **Собрать вход** — табели за месяц плюс условия найма, действующие в этом
+   месяце. Сотрудник с табелем, но без условий найма — не «пропустим молча», а
+   отказ с именем: посчитанный без него месяц выглядел бы правильным.
+2. **Посчитать** движком `payroll` на пресете страны. Ничего странового здесь
+   нет и быть не должно.
+3. **Проверить регистры до записи.** Расчёт раскладывается по регистрам учёта,
+   и роль, которая какой-то из них не видит, не может его записать: база
+   отвергнет `insert ... returning` (политика `select` применяется к
+   возвращаемым строкам). Проверка до записи превращает ошибку драйвера в
+   объяснение — а база остаётся страховкой, не единственным контуром.
+4. **Записать** одной транзакцией, снеся прежний результат этого же периода:
+   повторный запуск обязан давать то же самое, а не второй комплект ведомостей.
+
+Чего здесь нет и не должно быть до третьей очереди: статусов периода и
+переходов, утверждения, отката, блокировок, ретро-дельты, следа расчёта (D025).
+Расчёт синхронный — 32 человека считаются мгновенно, очередь пришлось бы
+объяснять пользователю зря.
+"""
+from __future__ import annotations
+
+import calendar
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from decimal import ROUND_HALF_UP, Decimal
+from uuid import UUID
+
+from django.db import transaction
+from django.utils import timezone
+
+from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, Tenant
+from core.models import Timesheet as TimesheetRow
+from payroll import Employee, PayrollEngine, Timesheet, d
+
+from .errors import LedgerAccessDenied, PayrunRefused
+from .rules import select_preset
+
+__all__ = ["CalcOutcome", "LedgerAccessDenied", "PayrunRefused", "calculate_period"]
+
+CENT = Decimal("0.01")
+
+
+def money(value) -> Decimal:
+    """Округление до копейки в одном месте.
+
+    Явно, а не «как сложится в numeric(14,2)»: половина округляется вверх, и это
+    видно в коде, а не выводится из типа колонки.
+    """
+    return d(value).quantize(CENT, rounding=ROUND_HALF_UP)
+
+
+def month_end(period: date) -> date:
+    return period.replace(day=calendar.monthrange(period.year, period.month)[1])
+
+
+@dataclass(frozen=True)
+class Case:
+    """Один человек на входе расчёта: кто, где и с какими часами."""
+
+    employee_id: UUID
+    unit_id: UUID | None
+    external_id: str
+    employee: Employee
+    timesheet: Timesheet
+
+
+@dataclass(frozen=True)
+class CalcOutcome:
+    """Что получилось. Показывается человеку после нажатия кнопки."""
+
+    payrun_id: UUID
+    preset_code: str
+    slips: int
+    components: int
+    calculated_at: datetime
+    ledgers: list[str] = field(default_factory=list)
+
+
+def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
+    """Табели периода вместе с действующими условиями найма.
+
+    Условия версионируются, поэтому берётся версия, действующая **в этом
+    месяце**: правка ставки будущим числом не должна менять закрытый расчёт.
+    """
+    end = month_end(period)
+    terms: dict[UUID, EmploymentTerm] = {}
+    for term in (
+        EmploymentTerm.objects.filter(tenant_id=tenant_id, valid_from__lte=end)
+        .exclude(valid_to__lte=period)
+        .select_related("group")
+        .order_by("valid_from")
+    ):
+        # order_by возрастающий, поэтому последняя запись побеждает — это и есть
+        # «самая поздняя версия, начавшая действовать не позже конца месяца».
+        terms[term.employee_id] = term
+
+    cases: list[Case] = []
+    missing: list[str] = []
+    for sheet in (
+        TimesheetRow.objects.filter(tenant_id=tenant_id, period=period)
+        .select_related("employee")
+        .order_by("employee__last_name", "employee__first_name")
+    ):
+        term = terms.get(sheet.employee_id)
+        if term is None:
+            missing.append(sheet.employee.external_id)
+            continue
+        cases.append(
+            Case(
+                employee_id=sheet.employee_id,
+                # Точка берётся из табеля: человек мог отработать месяц не там,
+                # где записан по условиям найма.
+                unit_id=sheet.unit_id or term.unit_id,
+                external_id=sheet.employee.external_id,
+                employee=Employee(
+                    ext_id=sheet.employee.external_id,
+                    name=f"{sheet.employee.last_name} {sheet.employee.first_name}".strip(),
+                    group=term.group.code,
+                    scheme=term.scheme or term.group.scheme,
+                    base_rate=d(term.base_rate),
+                    coefficient=d(term.coefficient),
+                    # Регистр учёта берём из базы, а не из пресета: политики
+                    # доступа стоят на нём, и второй источник истины здесь
+                    # означал бы показ строки не тому человеку.
+                    layer=term.layer or term.group.layer,
+                ),
+                timesheet=Timesheet(
+                    hours={k: d(v) for k, v in (sheet.hours or {}).items()},
+                    insured_hours=d(sheet.insured_hours),
+                    norm_hours=d(sheet.norm_hours),
+                    deduction=d(sheet.deduction),
+                    # Выплата наличными и ручная корректировка в схеме табеля
+                    # пока не хранятся — колонок нет (см. журнал блока db).
+                ),
+            )
+        )
+
+    if missing:
+        raise PayrunRefused(
+            f"нет условий найма на этот месяц: {len(missing)} чел. "
+            "Расчёт без них выглядел бы верным, поэтому не выполняется.",
+            details=sorted(missing),
+        )
+    if not cases:
+        raise PayrunRefused(
+            "за этот период нет ни одного табеля — считать нечего. "
+            "Внесите часы и повторите."
+        )
+    return cases
+
+
+def check_schemes(cases: list[Case], preset: dict) -> None:
+    """Схема расчёта, которой нет в пресете, — отказ с именами, а не KeyError."""
+    unknown = sorted({case.employee.scheme for case in cases} - set(preset["schemes"]))
+    if unknown:
+        raise PayrunRefused(
+            f"в правилах страны нет схем расчёта: {', '.join(unknown)}. "
+            "Поправьте группу сотрудников или пресет.",
+            details=[c.external_id for c in cases if c.employee.scheme in unknown],
+        )
+
+
+def check_ledgers(slips: list, visible_ledgers) -> list[str]:
+    """Записывать можно только то, что роль видит. Иначе — отказ до записи."""
+    used = sorted({component.layer for _, slip in slips for component in slip.components})
+    hidden = [layer for layer in used if layer not in set(visible_ledgers or [])]
+    if hidden:
+        refusal = LedgerAccessDenied(
+            "Ведомость этого периода попадает в регистры учёта, недоступные "
+            "вашей роли. Запустить расчёт может тот, кто видит их все."
+        )
+        refusal.ledgers = hidden
+        raise refusal
+    return used
+
+
+def calculate_period(*, tenant_id: UUID, period: date, visible_ledgers) -> CalcOutcome:
+    """Посчитать месяц и сохранить результат. Повторный запуск даёт то же самое."""
+    with transaction.atomic():
+        tenant = Tenant.objects.filter(pk=tenant_id).first()
+        if tenant is None:
+            # Не «пустой расчёт»: тенанта не видно — значит, и права на него нет.
+            raise PayrunRefused("партнёр недоступен")
+
+        preset_code, preset = select_preset(tenant.country_code, period)
+        cases = collect_cases(tenant_id, period)
+        check_schemes(cases, preset)
+
+        engine = PayrollEngine(preset)
+        slips = [(case, engine.calculate(case.employee, case.timesheet)) for case in cases]
+        ledgers = check_ledgers(slips, visible_ledgers)
+
+        return _store(tenant_id, period, preset_code, slips, ledgers)
+
+
+def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
+    """Сохранить расчёт, заменив прежний за тот же период."""
+    payrun, _ = Payrun.objects.get_or_create(tenant_id=tenant_id, period=period)
+    # Ведомости пересобираются целиком: правка входных данных не должна
+    # оставлять в базе строки, посчитанные по прежним.
+    Payslip.objects.filter(payrun=payrun).delete()
+
+    rows = [
+        Payslip(
+            tenant_id=tenant_id, payrun=payrun,
+            employee_id=case.employee_id, unit_id=case.unit_id,
+            net=money(slip.net), gross=money(slip.gross), tax=money(slip.tax),
+            contributions=money(slip.contributions), total_cost=money(slip.total_cost),
+            to_bank=money(slip.to_bank), to_cash=money(slip.to_cash),
+            notes=list(slip.notes),
+        )
+        for case, slip in slips
+    ]
+    Payslip.objects.bulk_create(rows)
+
+    components = [
+        PayComponent(
+            tenant_id=tenant_id, payslip=row, code=component.code, title=component.title,
+            amount=money(component.amount), layer=component.layer,
+            channel=component.channel, taxable=component.taxable,
+        )
+        for row, (_, slip) in zip(rows, slips, strict=True)
+        for component in slip.components
+    ]
+    PayComponent.objects.bulk_create(components)
+
+    calculated_at = timezone.now()
+    Payrun.objects.filter(pk=payrun.pk).update(calculated_at=calculated_at)
+    # Статус остаётся черновиком намеренно: переходы черновик → посчитан →
+    # утверждён и их правила — задача T023, здесь их придумывать нельзя.
+    return CalcOutcome(
+        payrun_id=payrun.pk, preset_code=preset_code, slips=len(rows),
+        components=len(components), calculated_at=calculated_at, ledgers=ledgers,
+    )
