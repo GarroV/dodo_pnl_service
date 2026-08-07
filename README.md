@@ -14,15 +14,59 @@
 
 ## Быстрый старт
 
-Нужны Python 3.13+ и Postgres 16+ (на площадке — 17).
+Нужен только Docker. Больше ничего ставить не надо: Python, Postgres и схема
+приезжают сами.
+
+```bash
+cp .env.example .env          # значения в примере рабочие, править не обязательно
+docker compose up -d --build  # собрать образ, поднять базу, накатить миграции
+docker compose exec app python manage.py seed_dev   # тестовые данные
+open http://localhost:8000/
+```
+
+Миграции накатываются на старте приложения — отдельного шага для схемы нет.
+База поднимается на том же образе `pgvector/pgvector:pg17`, что стоит на площадке.
+
+Что видно в браузере сегодня: стартовая страница Django. Экранов ещё нет, их
+делает блок `web`; продукт при этом поднят — данные в базе, схема применена.
+
+**Порты** берутся из `.env` и нигде не зашиты. По умолчанию приложение на 8000,
+база на 5440 — только на `127.0.0.1`, наружу она не смотрит. Порт занят
+(например, 8000 держит `runserver` из venv) — поменяйте `APP_PORT` в `.env`
+и повторите `docker compose up -d`. На площадке те же переменные равны 8030 и 5440.
+
+**Проверить, что живо:**
+
+```bash
+docker compose ps                                  # оба контейнера healthy
+docker compose exec app python docker/healthcheck.py
+```
+
+Проверка ходит и в веб, и в базу: она краснеет не только когда упал процесс,
+но и когда сервер жив, а база недоступна. Проверка, которая проходит всегда,
+хуже отсутствующей.
+
+**Остановить и убрать:**
+
+```bash
+docker compose down       # остановить, данные в томе остаются
+docker compose down -v    # то же и стереть базу целиком
+```
+
+---
+
+## Разработка без Docker
+
+Движок, тесты и `manage.py` работают и напрямую. Нужны Python 3.13+ и Postgres
+16+ (на площадке — 17); базу удобно взять из compose, она слушает на 5440.
 
 ```bash
 python3.13 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-createdb dodo_pnl
-DATABASE_URL=postgresql:///dodo_pnl python manage.py migrate     # схема с нуля
-DATABASE_URL=postgresql:///dodo_pnl python manage.py seed_dev    # тестовые данные
+set -a; . ./.env; set +a          # DATABASE_URL, DODO_TEST_ADMIN_DSN и прочее
+python manage.py migrate          # схема с нуля
+python manage.py seed_dev         # тестовые данные
 
 pytest
 ```
@@ -129,6 +173,9 @@ src/payroll/
   importers/             импорт таблиц партнёров
 db/migrations/           0004_facts.sql — схема фактов, ждёт своей очереди
 tests/                   регрессия движка + тесты схемы и доступа
+docker-compose.yml       локальный запуск: база + приложение
+Dockerfile               образ приложения на Python 3.13
+docker/healthcheck.py    проверка здоровья: веб + база
 ```
 
 ---
