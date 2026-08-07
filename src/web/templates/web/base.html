@@ -111,7 +111,8 @@
       <span class="badge" title="На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)">dev-вход</span>
     {% endif %}
     {% if principal %}
-      <span><strong>{{ principal.display_name }}</strong>{% if principal.role_title %} · {{ principal.role_title }}{% endif %}{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
+      {# У учёток сида имя человека совпадает с названием роли — не повторяем его дважды. #}
+      <span><strong>{{ principal.display_name }}</strong>{% if principal.role_title and principal.role_title != principal.display_name %} · {{ principal.role_title }}{% endif %}{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
       {% if visible_ledgers_title %}<span>регистры: {{ visible_ledgers_title }}</span>{% endif %}
       <a class="btn" href="{% url 'password-change' %}">пароль</a>
       <form class="inline" method="post" action="{% url 'logout' %}">{% csrf_token %}
