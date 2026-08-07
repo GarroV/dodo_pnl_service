@@ -132,8 +132,14 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
                     insured_hours=d(sheet.insured_hours),
                     norm_hours=d(sheet.norm_hours),
                     deduction=d(sheet.deduction),
-                    # Выплата наличными и ручная корректировка в схеме табеля
-                    # пока не хранятся — колонок нет (см. журнал блока db).
+                    cash_payout=d(sheet.cash_payout),
+                    # Пусто и ноль здесь разные вещи: пусто значит «правки не
+                    # было», и движок сам считает доплату до минимума. Поэтому
+                    # None передаётся как None, а не приводится к нулю.
+                    manual_correction=(
+                        None if sheet.manual_correction is None
+                        else d(sheet.manual_correction)
+                    ),
                 ),
             )
         )

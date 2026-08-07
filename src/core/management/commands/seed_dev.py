@@ -13,7 +13,9 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 from django.conf import settings
@@ -54,6 +56,45 @@ ROLES = [
     ("director", "Оперативный директор", ["official", "supplementary", "internal"], None),
     ("accountant", "Бухгалтер", ["official"], None),
     ("manager", "Управляющий точки", ["official", "supplementary"], "NS1"),
+]
+
+
+@dataclass(frozen=True)
+class Extra:
+    """Выдуманный человек, которого нет в обезличенной таблице.
+
+    Зачем такие вообще нужны: фикстура покрывает только два регистра из трёх
+    (офис и кухня) и не содержит ни выплат наличными, ни ручных правок. То есть
+    сид сам по себе не показывал бы ни скрытие внутреннего регистра, ни след
+    корректировки — при сверке первой очереди строку внутреннего регистра
+    пришлось вставлять руками (T045, T051).
+    """
+
+    ext_id: str
+    first_name: str
+    last_name: str
+    group: str
+    scheme: str
+    unit: str
+    base_rate: Decimal
+    hours: Decimal
+    cash_payout: Decimal = Decimal(0)
+    manual_correction: Decimal | None = None
+    correction_reason: str = ""
+
+
+# Схема курьеров в пресете — `none`, а такой схемы движок не знает: как считать
+# курьеров, у партнёра пока не выяснено, и это вопрос не блока db. Чтобы месяц
+# считался, условия найма переопределяют схему на действующую — переопределение
+# видно в данных, а не спрятано в коде.
+EXTRA_EMPLOYEES = [
+    Extra("dev-courier-1", "Марко", "Курир", "couriers", "temporary", "BG1",
+          Decimal("420.00"), Decimal(168), cash_payout=Decimal("12000.00")),
+    Extra("dev-courier-2", "Ана", "Курир", "couriers", "temporary", "NS1",
+          Decimal("420.00"), Decimal(120), cash_payout=Decimal("8000.00")),
+    Extra("dev-correction-1", "Джордже", "Исправка", "kitchen", "standard", "NS2",
+          Decimal("390.00"), Decimal(150), manual_correction=Decimal("1200.00"),
+          correction_reason="доплата до минималца, письмо бухгалтера от 30.06"),
 ]
 
 
@@ -107,6 +148,7 @@ class Command(BaseCommand):
             self._roles_and_users(tenant)
             self._calendar(preset)
             employees = self._employees(tenant, groups, rows)
+            employees += self._extra_employees(tenant, groups)
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -252,6 +294,53 @@ class Command(BaseCommand):
                 # в деньгах и часах не используем нигде.
                 hours={k: str(v) for k, v in row.timesheet.hours.items()},
                 deduction=row.timesheet.deduction,
+                cash_payout=row.timesheet.cash_payout,
+                # Обезличенная фикстура правок не содержит, но путь один и тот
+                # же: придёт правка из таблицы — приедет со следом импорта.
+                manual_correction=row.timesheet.manual_correction,
+                correction_reason=(
+                    "перенесено из таблицы бухгалтерии при импорте"
+                    if row.timesheet.manual_correction is not None else None
+                ),
+                corrected_by=(
+                    det_id("user", "director")
+                    if row.timesheet.manual_correction is not None else None
+                ),
                 source="import",
             )
         return len(seen)
+
+    def _extra_employees(self, tenant, groups: dict) -> int:
+        """Люди, дописанные к фикстуре: третий регистр, наличные и правка.
+
+        Причина, почему они здесь, а не в самой фикстуре: фикстура собирается из
+        настоящей таблицы партнёра обезличиванием (`tools/make_fixture.py`), и
+        дописать в неё выдуманных курьеров нельзя, не имея на руках оригинала.
+        """
+        units = {u.code: u for u in models.Unit.objects.filter(tenant=tenant)}
+        director = det_id("user", "director")
+
+        for extra in EXTRA_EMPLOYEES:
+            employee = models.Employee.objects.create(
+                id=det_id("employee", extra.ext_id), tenant=tenant,
+                external_id=extra.ext_id, first_name=extra.first_name,
+                last_name=extra.last_name, hired_at=date(2025, 1, 1),
+            )
+            models.EmploymentTerm.objects.create(
+                id=det_id("term", extra.ext_id), tenant=tenant, employee=employee,
+                group=groups[extra.group], unit=units[extra.unit],
+                base_rate=extra.base_rate, coefficient=1,
+                scheme=extra.scheme, valid_from=date(2025, 1, 1),
+            )
+            models.Timesheet.objects.create(
+                id=det_id("timesheet", extra.ext_id), tenant=tenant, employee=employee,
+                unit=units[extra.unit], period=PERIOD,
+                insured_hours=extra.hours, norm_hours=176,
+                hours={"regular": str(extra.hours)},
+                cash_payout=extra.cash_payout,
+                manual_correction=extra.manual_correction,
+                correction_reason=extra.correction_reason or None,
+                corrected_by=director if extra.manual_correction is not None else None,
+                source="manual",
+            )
+        return len(EXTRA_EMPLOYEES)

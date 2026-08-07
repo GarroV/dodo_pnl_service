@@ -76,13 +76,50 @@ def test_seed_creates_open_period(conn):
 
 
 def test_seed_loads_all_employees_from_fixture(conn, sample_rows):
-    count = conn.execute("select count(*) from employees").fetchone()[0]
-    assert count == len({row.employee.ext_id for row in sample_rows})
-    assert count >= 30
+    from_fixture = {row.employee.ext_id for row in sample_rows}
+    loaded = {
+        row[0] for row in conn.execute("select external_id from employees").fetchall()
+    }
+    assert from_fixture <= loaded, "часть людей из фикстуры не доехала"
+    assert len(loaded) >= 30
 
     # У каждого — действующие условия найма и часы за период
+    count = len(loaded)
     assert conn.execute("select count(*) from employment_terms").fetchone()[0] == count
     assert conn.execute("select count(*) from timesheets").fetchone()[0] == count
+
+
+def test_seed_covers_all_three_ledgers(conn):
+    """Все три регистра представлены строками — иначе сид не показывает продукт.
+
+    Обезличенная фикстура даёт только официальный и дополнительный: курьеров
+    (внутренний регистр) в ней нет. Пока их не было в сиде, сценарий скрытия
+    регистра приходилось проверять вставкой строки руками (T045).
+    """
+    ledgers = {
+        row[0]
+        for row in conn.execute(
+            """select coalesce(t.ledger, g.ledger)
+                 from employment_terms t join employee_groups g on g.id = t.group_id"""
+        ).fetchall()
+    }
+    assert ledgers == {"official", "supplementary", "internal"}
+
+
+def test_seed_keeps_cash_payout_and_manual_correction(conn):
+    """Значения, которые движок принимает, а схема раньше теряла (T051)."""
+    with_cash = conn.execute(
+        "select count(*) from timesheets where cash_payout > 0"
+    ).fetchone()[0]
+    assert with_cash >= 1, "в сиде нет ни одной выплаты наличными"
+
+    corrections = conn.execute(
+        """select manual_correction, correction_reason, corrected_by
+             from timesheets where manual_correction is not null"""
+    ).fetchall()
+    assert corrections, "в сиде нет ни одной ручной корректировки"
+    for amount, reason, author in corrections:
+        assert amount is not None and reason and author, "правка без следа (D025)"
 
 
 def test_engine_calculates_on_seeded_data(conn, engine):

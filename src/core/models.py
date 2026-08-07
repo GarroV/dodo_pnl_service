@@ -507,6 +507,20 @@ class Timesheet(models.Model):
     norm_hours = models.DecimalField(max_digits=8, decimal_places=2)
     hours = models.JSONField(db_default={})  # {regular: 176, sick: 20, ...}
     deduction = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    # Выплата наличными — не особый случай, а канал: в таблице партнёра это
+    # столбец «ISPLATA U KES». Отсюда берётся `payslips.to_cash`.
+    cash_payout = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    # Ручная правка бухгалтера («KOREKCIJA DO MINIMALCA»). Пусто и ноль — разные
+    # вещи: пусто значит «правки не было», и тогда движок считает доплату до
+    # минимума сам. Ноль значит «правка есть, и она нулевая».
+    manual_correction = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
+    # След правки (D025). Держится ограничением ниже, а не формой: в табель
+    # пишут интерфейс, импорт и фоновая задача — совпадать они не обязаны.
+    correction_reason = models.TextField(null=True, blank=True)
+    corrected_by = models.UUIDField(null=True, blank=True)
+    corrected_at = models.DateTimeField(null=True, blank=True)
     source = models.TextField(db_default="manual")  # manual | dodo_is | import
     created_at = models.DateTimeField(db_default=now_default())
 
@@ -515,6 +529,23 @@ class Timesheet(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["tenant", "employee", "period", "unit"], name="timesheets_uniq"
+            ),
+            # Правка без «кто» и «почему» через полгода неотличима от ошибки
+            # ввода — а объяснять её придётся именно тогда. `\S` вместо
+            # «непусто»: пробел не причина, иначе проверка обходится одним
+            # нажатием клавиши.
+            #
+            # Проверка на null обязательна и стоит отдельно: `null ~ '\S'` даёт
+            # null, а CHECK пропускает всё, что не false. Без неё правка вообще
+            # без причины проходила бы — проверено, тест был зелёным зря.
+            models.CheckConstraint(
+                condition=models.Q(manual_correction__isnull=True)
+                | (
+                    models.Q(corrected_by__isnull=False)
+                    & models.Q(correction_reason__isnull=False)
+                    & models.Q(correction_reason__regex=r"\S")
+                ),
+                name="timesheets_correction_trace_check",
             ),
         ]
 
