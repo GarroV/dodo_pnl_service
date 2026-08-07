@@ -289,3 +289,14 @@ def test_dev_login_can_be_switched_off(client):
 def test_pages_are_marked_as_dev_only(client):
     """Пока вход ненастоящий, об этом должно быть написано на экране."""
     assert "dev" in body(client.get("/periods/")).lower()
+
+
+def test_no_template_source_leaks_onto_the_page(client):
+    """Многострочный `{# … #}` — не комментарий: он вываливается на страницу текстом.
+
+    Поймано в браузере 2026-08-07, до того страницы начинались с исходника шаблона.
+    """
+    text = body(client.get("/periods/"))
+    assert "{#" not in text
+    assert "{% comment" not in text
+    assert not text.lstrip().startswith("Базовый шаблон")
