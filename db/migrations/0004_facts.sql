@@ -49,7 +49,8 @@ alter table pnl_items add constraint pnl_items_kind_check
 
 
 -- --- Личность пользователя без привязки к платформе --------------------------
--- app_user_id() приходит из db/platform/<платформа>.sql. Всё остальное ниже —
+-- app_user_id() создаётся миграцией Django core/0004_rls: каталог db/platform/
+-- с привязкой к внешней платформе входа удалён (T003). Всё остальное ниже —
 -- чистый Postgres. Функции security definer: они читают memberships и roles,
 -- на которых сама же висит RLS, иначе получилась бы рекурсия политик.
 
