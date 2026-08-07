@@ -264,6 +264,26 @@ def test_ledger_visibility_holds_without_a_bypass(app_conn, two_ledgers):
     assert seen == {"official"}, seen
 
 
+def test_the_application_can_still_write(app_conn):
+    """Не только чтение: запись под контекстом тоже не должна требовать обхода.
+
+    Вставка тянет за собой `with check` четырёх таблиц и триггер, который
+    дописывает набор регистров в строку ведомости, — то есть весь путь, каким
+    расчёт кладёт результат.
+    """
+    from conftest import pay_component
+
+    with as_app_user(app_conn, USER_DIRECTOR) as conn:
+        component_id = pay_component(conn, ledger="supplementary", amount="1.00", code="probe")
+        ledgers = conn.execute(
+            """select p.ledgers from payslips p
+                 join pay_components c on c.payslip_id = p.id
+                where c.id = %s""",
+            (component_id,),
+        ).fetchone()[0]
+    assert ledgers == ["supplementary"], ledgers
+
+
 def test_nothing_is_visible_without_context(app_conn):
     """Без выставленного пользователя — ноль строк во всех закрытых таблицах."""
     tables = [row[0] for row in app_conn.execute(PRODUCT_TABLES_SQL).fetchall()]
@@ -276,6 +296,42 @@ def test_nothing_is_visible_without_context(app_conn):
             if count:
                 leaking[table] = count
     assert leaking == {}, f"без контекста видны строки: {leaking}"
+
+
+def test_the_recursion_would_come_back_with_the_old_policy(plain_owner, app_conn):
+    """Проверка на осмысленность: с прежней политикой всё это снова падает.
+
+    Тест, зелёный и до, и после починки, ничего не доказывает. Здесь политика
+    `memberships` на время возвращается к прежнему виду — «тенант из
+    app_tenant_ids()» — и запрос обязан упасть рекурсией. Политика меняется
+    отдельным соединением и возвращается в `finally`; база модульная и
+    временная, поэтому даже сорванный прогон никому не мешает.
+    """
+    import psycopg
+    from psycopg.conninfo import make_conninfo
+
+    admin_dsn = make_conninfo(ADMIN_DSN, dbname=plain_owner["dbname"])
+    with psycopg.connect(admin_dsn, autocommit=True) as admin:
+        admin.execute("drop policy tenant_isolation on memberships")
+        admin.execute("""
+            create policy tenant_isolation on memberships
+                for all
+                using (tenant_id in (select app_tenant_ids()))
+                with check (tenant_id in (select app_tenant_ids()))
+        """)
+        try:
+            with pytest.raises(psycopg.errors.StatementTooComplex):
+                with as_app_user(app_conn, USER_DIRECTOR) as conn:
+                    conn.execute("select tenant_id from units").fetchall()
+        finally:
+            app_conn.rollback()
+            admin.execute("drop policy tenant_isolation on memberships")
+            admin.execute("""
+                create policy tenant_isolation on memberships
+                    for all
+                    using (user_id = app_user_id())
+                    with check (user_id = app_user_id())
+            """)
 
 
 def test_a_connection_that_forgets_the_role_sees_nothing(app_conn):
