@@ -1,0 +1,33 @@
+{% extends "web/base.html" %}
+{% block title %}Периоды{% endblock %}
+{% block content %}
+<h1>Периоды</h1>
+<p class="sub">Учётные месяцы партнёра и их состояние.</p>
+
+{% if periods %}
+<table>
+  <thead>
+    <tr><th>Месяц</th><th>Состояние</th><th>Партнёр</th></tr>
+  </thead>
+  <tbody>
+    {% for period in periods %}
+    <tr>
+      <td><a href="{% url 'period' period.id %}">{{ period.title }}</a></td>
+      <td>{{ period.status }}</td>
+      <td>{{ period.tenant }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">
+  {% if principal %}
+    Периодов не видно. Либо база пуста — наполните её командой
+    <code>manage.py seed_dev</code>, — либо их не видно вашей роли.
+  {% else %}
+    Пользователь не выбран, поэтому база не показывает ничего: без контекста
+    политики доступа отдают пустой результат, а не чужие данные.
+  {% endif %}
+</p>
+{% endif %}
+{% endblock %}

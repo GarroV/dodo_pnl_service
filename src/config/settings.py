@@ -23,14 +23,30 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.postgres",
     "core",
+    "web",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Последним: транзакцию запроса и контекст пользователя в базе нужно
+    # открыть как можно ближе к представлению, но обязательно ДО него.
+    "web.dbcontext.DbContextMiddleware",
 ]
+
+# Сессии — в подписанной cookie, без таблицы в базе. Причина не в удобстве:
+# запрос идёт ролью app_user внутри транзакции с контекстом, и запись сессии
+# в базу тянула бы за собой права и политики на служебную таблицу. Настоящий
+# вход (блок auth) выберет хранилище сам.
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+
+# Вход «на время стройки»: переключатель пользователей сида вместо настоящей
+# аутентификации. На площадке выключается DEV_LOGIN=0 — тогда страниц входа
+# нет и контекст пользователя не выставляется вовсе.
+DEV_LOGIN_ENABLED = os.environ.get("DEV_LOGIN", "1") == "1"
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -44,6 +60,8 @@ TEMPLATES = [
             "context_processors": [
                 "django.contrib.auth.context_processors.auth",
                 "django.template.context_processors.request",
+                # Кем вошли — видно в шапке на каждой странице.
+                "web.principal.principal",
             ],
         },
     },

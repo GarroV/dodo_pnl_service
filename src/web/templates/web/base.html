@@ -1,0 +1,90 @@
+{% comment %}
+Базовый шаблон: шапка с навигацией и указанием, кем вошли.
+Оформление пока живёт здесь же: своей статики в первой очереди нет, htmx и
+грид появятся вместе с табелем — тогда же заведётся static/.
+
+Комментарий именно {% comment %}: однострочный {# … #} многострочным не бывает
+и вывалился бы на страницу текстом (проверено в браузере 2026-08-07).
+{% endcomment %}<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Периоды{% endblock %} · Dodo P&amp;L</title>
+<style>
+  :root {
+    --ink: #16181d;
+    --muted: #6b7280;
+    --line: #e3e6ea;
+    --bg: #fbfbfc;
+    --accent: #1f4fd8;
+    --warn: #9a3412;
+    --warn-bg: #fff4ed;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 24px; flex-wrap: wrap;
+    padding: 14px 32px; background: #fff; border-bottom: 1px solid var(--line);
+  }
+  .brand { font-weight: 600; letter-spacing: .02em; text-decoration: none; color: var(--ink); }
+  nav a { color: var(--accent); text-decoration: none; margin-right: 16px; }
+  nav a:hover, .brand:hover { text-decoration: underline; }
+  .who { margin-left: auto; display: flex; align-items: baseline; gap: 12px; color: var(--muted); font-size: 13px; }
+  .who strong { color: var(--ink); font-weight: 600; }
+  .badge {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--warn); background: var(--warn-bg);
+    border: 1px solid #f3d3bf; border-radius: 3px; padding: 2px 6px;
+  }
+  main { max-width: 980px; margin: 32px auto; padding: 0 32px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 28px; }
+  table { border-collapse: collapse; width: 100%; background: #fff; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  tbody tr:hover { background: #f6f8ff; }
+  /* Деньги — по правому краю моноширинным: колонка читается столбиком,
+     а ноль не путается с пустым значением. */
+  .num { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  tfoot td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; }
+  .empty { color: var(--muted); background: #fff; border: 1px dashed var(--line); padding: 24px; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 24px; }
+  button, .btn {
+    font: inherit; color: var(--accent); background: none;
+    border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover, .btn:hover { border-color: var(--accent); }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  form.inline { display: inline; }
+  dl.facts { display: grid; grid-template-columns: max-content auto; gap: 6px 20px; margin: 0 0 28px; }
+  dl.facts dt { color: var(--muted); }
+  dl.facts dd { margin: 0; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="{% url 'periods' %}">Dodo P&amp;L</a>
+  <nav><a href="{% url 'periods' %}">Периоды</a></nav>
+  <div class="who">
+    <span class="badge" title="Вход ненастоящий: переключатель пользователей сида">dev-вход</span>
+    {% if principal %}
+      <span><strong>{{ principal.role_title }}</strong>{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
+      <span>регистры: {{ visible_ledgers_title }}</span>
+      <a class="btn" href="{% url 'dev-login' %}">сменить</a>
+      <form class="inline" method="post" action="{% url 'dev-logout' %}">{% csrf_token %}
+        <button type="submit">выйти</button>
+      </form>
+    {% else %}
+      <a class="btn" href="{% url 'dev-login' %}">войти</a>
+    {% endif %}
+  </div>
+</header>
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>
