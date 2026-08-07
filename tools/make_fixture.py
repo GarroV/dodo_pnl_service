@@ -118,10 +118,6 @@ def build() -> None:
             )
 
             slip = engine.calculate(employee, timesheet)
-            meal = next(
-                (c.amount for c in slip.components if c.code == "meal_and_vacation_bonus"),
-                Decimal(0),
-            )
 
             values = {
                 "coefficient": float(coefficient),
@@ -134,7 +130,14 @@ def build() -> None:
                 "correction": None,
                 "deduction": None,
                 "cash": None,
-                "meal": money(meal),
+                # Колонка надбавки в обезличенном файле остаётся пустой намеренно.
+                # В настоящей таблице бухгалтер иногда проставляет её руками, и
+                # проверка подменяет расчётное значение табличным — чтобы сверять
+                # схемы расчёта, а не ввод. Но если заполнить её здесь, подмена
+                # сработает на всех строках, и регрессия перестанет замечать
+                # изменение самого правила начисления: правку ставки надбавки
+                # тест пропускал молча. Проверено порчей 2026-08-07.
+                "meal": None,
                 "exp_net": money(slip.net),
                 "exp_gross": money(slip.gross),
                 "exp_contrib": money(slip.contributions),

@@ -54,6 +54,16 @@ services:
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      # Вход-заглушка на время стройки. Переменную обязательно передавать в
+      # контейнер: без этой строки `DEV_LOGIN=0` в .env не доезжал до приложения,
+      # умолчание в настройках включало заглушку обратно, и на площадке любой
+      # открывший страницу входил директором. Найдено сверкой 2026-08-07.
+      DEV_LOGIN: ${DEV_LOGIN:-1}
+      # Проверка здоровья читает их из окружения; без передачи молча берёт
+      # умолчания, и перенацелить её на площадке было бы нечем.
+      HEALTHCHECK_PORT: ${HEALTHCHECK_PORT:-8000}
+      HEALTHCHECK_PATH: ${HEALTHCHECK_PATH:-/}
+      HEALTHCHECK_TIMEOUT: ${HEALTHCHECK_TIMEOUT:-5}
     ports:
       # Слева порт на хосте (APP_PORT), справа — всегда 8000 внутри контейнера.
       - "${APP_PORT:?задайте APP_PORT в .env}:8000"
