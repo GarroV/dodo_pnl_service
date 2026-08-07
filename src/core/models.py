@@ -11,13 +11,17 @@
 """
 from __future__ import annotations
 
-from django.contrib.postgres.fields import ArrayField
+import uuid
+
+from django.contrib.postgres.constraints import ExclusionConstraint
+from django.contrib.postgres.fields import ArrayField, DateRangeField, RangeOperators
 from django.db import models
+from django.db.models.functions import Coalesce
 
 from .fields import EnumField
 
 # Названия типов создаёт миграция 0001_types — здесь только ссылки на них.
-LAYER = "accounting_layer"
+LEDGER = "ledger"
 PAYOUT_CHANNEL = "payout_channel"
 ALLOCATION_METHOD = "allocation_method"
 PERIOD_STATUS = "period_status"
@@ -45,8 +49,39 @@ def uuid_pk() -> models.UUIDField:
     )
 
 
-def layer_field(**kwargs) -> EnumField:
-    return EnumField(db_type_name=LAYER, **kwargs)
+def ledger_field(**kwargs) -> EnumField:
+    return EnumField(db_type_name=LEDGER, **kwargs)
+
+
+# --- Версионирование правил по датам -----------------------------------------
+# Правила действуют с даты по дату, и двух версий на одну дату быть не может:
+# расчёт взял бы одну из них молча и посчитал бы месяц не тем правилом. Инвариант
+# держит база (D015) — ограничение EXCLUDE поверх btree_gist, а не дисциплина в
+# коде: сюда пишет и импорт, и админка, и миграция данных.
+
+
+class DateRange(models.Func):
+    """`daterange(valid_from, valid_to, '[)')` — период действия версии правила."""
+
+    function = "daterange"
+    output_field = DateRangeField()
+
+
+def validity_range() -> DateRange:
+    """Период действия. Конец не входит: «по 1 июля» и «с 1 июля» — не пересечение.
+
+    Так же читает границы код расчёта (`.exclude(valid_to__lte=period)`), и так
+    оформляется обычный перевод сотрудника серединой месяца. Пустой `valid_to` —
+    бесконечность: версия действует, пока её не закроют.
+    """
+    return DateRange("valid_from", "valid_to", models.Value("[)"))
+
+
+# Пустой scope_id — это «нет уровня», то есть страна или партнёр целиком.
+# В EXCLUDE сравнение идёт оператором `=`, а `null = null` даёт null, то есть
+# «не совпало»: без приведения к константе ограничение молча не защищало бы
+# самый частый уровень переопределений.
+NO_SCOPE = uuid.UUID(int=0)
 
 
 class Tenant(models.Model):
@@ -109,7 +144,7 @@ class Role(models.Model):
     code = models.TextField()
     title = models.TextField()
     permissions = models.JSONField(db_default=[])
-    visible_layers = ArrayField(layer_field(), db_default=["white"])
+    visible_ledgers = ArrayField(ledger_field(), db_default=["official"])
 
     class Meta:
         db_table = "roles"
@@ -212,7 +247,7 @@ class AllocationRule(models.Model):
     unit = models.ForeignKey(
         Unit, on_delete=models.CASCADE, null=True, blank=True, db_column="unit_id",
     )  # для fixed_unit
-    layer = layer_field(db_default="white")
+    ledger = ledger_field(db_default="official")
     valid_from = models.DateField()
     valid_to = models.DateField(null=True, blank=True)
     created_by = models.UUIDField(null=True, blank=True)
@@ -235,6 +270,21 @@ class AllocationRule(models.Model):
                 condition=models.Q(valid_to__isnull=True)
                 | models.Q(valid_to__gt=models.F("valid_from")),
                 name="allocation_rules_period_check",
+            ),
+            # Одному контрагенту — одно действующее правило разнесения в каждом
+            # регистре: двух ответов на вопрос «куда относить счёт от EPS в
+            # марте» быть не должно. Регистр входит в ключ намеренно — один и тот
+            # же поставщик может оплачиваться и официально, и из кассы, и это
+            # разные строки P&L, а не спорные версии одного правила. Отсюда
+            # следует, что искать правило нужно по паре «контрагент + регистр».
+            ExclusionConstraint(
+                name="allocation_rules_no_overlap",
+                expressions=[
+                    ("tenant", RangeOperators.EQUAL),
+                    ("counterparty", RangeOperators.EQUAL),
+                    ("ledger", RangeOperators.EQUAL),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
             ),
         ]
 
@@ -294,6 +344,15 @@ class RulePreset(models.Model):
             models.UniqueConstraint(
                 fields=["code", "valid_from"], name="rule_presets_code_valid_from_uniq"
             ),
+            # Пресет на дату должен собираться однозначно: две версии
+            # `serbia-2026` на один июнь — это два разных расчёта одного месяца.
+            ExclusionConstraint(
+                name="rule_presets_no_overlap",
+                expressions=[
+                    ("code", RangeOperators.EQUAL),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
+            ),
         ]
 
 
@@ -325,6 +384,24 @@ class RuleOverride(models.Model):
                 | models.Q(valid_to__gt=models.F("valid_from")),
                 name="rule_overrides_period_check",
             ),
+            # Ключ — «что переопределяем и на каком уровне»: одно правило одного
+            # уровня не может иметь двух значений на одну дату. Разные уровни
+            # (страна и группа) спорить друг с другом имеют право — их разводит
+            # сборка пресета, а не это ограничение.
+            ExclusionConstraint(
+                name="rule_overrides_no_overlap",
+                expressions=[
+                    ("tenant", RangeOperators.EQUAL),
+                    ("scope_type", RangeOperators.EQUAL),
+                    (
+                        Coalesce("scope_id", models.Value(NO_SCOPE),
+                                 output_field=models.UUIDField()),
+                        RangeOperators.EQUAL,
+                    ),
+                    ("path", RangeOperators.EQUAL),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
+            ),
         ]
 
 
@@ -336,7 +413,7 @@ class EmployeeGroup(models.Model):
     code = models.TextField()
     title = models.TextField()
     scheme = models.TextField()  # ключ схемы из пресета
-    layer = layer_field(db_default="white")
+    ledger = ledger_field(db_default="official")
     pnl_item = models.ForeignKey(
         PnlItem, on_delete=models.SET_NULL, null=True, blank=True, db_column="pnl_item_id",
     )
@@ -384,7 +461,7 @@ class EmploymentTerm(models.Model):
     base_rate = models.DecimalField(max_digits=12, decimal_places=4)
     coefficient = models.DecimalField(max_digits=8, decimal_places=4, db_default=1)
     scheme = models.TextField(null=True, blank=True)  # переопределяет схему группы
-    layer = layer_field(null=True, blank=True)  # переопределяет регистр группы
+    ledger = ledger_field(null=True, blank=True)  # переопределяет регистр группы
     valid_from = models.DateField()
     valid_to = models.DateField(null=True, blank=True)
 
@@ -401,6 +478,17 @@ class EmploymentTerm(models.Model):
                 condition=models.Q(valid_to__isnull=True)
                 | models.Q(valid_to__gt=models.F("valid_from")),
                 name="employment_terms_period_check",
+            ),
+            # У человека в один момент одни условия найма. Расчёт берёт версию,
+            # действующую в месяце (`calc.collect_cases`); две версии на один
+            # месяц дали бы правдоподобный, но неверный расчёт и промолчали.
+            ExclusionConstraint(
+                name="employment_terms_no_overlap",
+                expressions=[
+                    ("tenant", RangeOperators.EQUAL),
+                    ("employee", RangeOperators.EQUAL),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
             ),
         ]
 
@@ -419,6 +507,20 @@ class Timesheet(models.Model):
     norm_hours = models.DecimalField(max_digits=8, decimal_places=2)
     hours = models.JSONField(db_default={})  # {regular: 176, sick: 20, ...}
     deduction = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    # Выплата наличными — не особый случай, а канал: в таблице партнёра это
+    # столбец «ISPLATA U KES». Отсюда берётся `payslips.to_cash`.
+    cash_payout = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    # Ручная правка бухгалтера («KOREKCIJA DO MINIMALCA»). Пусто и ноль — разные
+    # вещи: пусто значит «правки не было», и тогда движок считает доплату до
+    # минимума сам. Ноль значит «правка есть, и она нулевая».
+    manual_correction = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
+    # След правки (D025). Держится ограничением ниже, а не формой: в табель
+    # пишут интерфейс, импорт и фоновая задача — совпадать они не обязаны.
+    correction_reason = models.TextField(null=True, blank=True)
+    corrected_by = models.UUIDField(null=True, blank=True)
+    corrected_at = models.DateTimeField(null=True, blank=True)
     source = models.TextField(db_default="manual")  # manual | dodo_is | import
     created_at = models.DateTimeField(db_default=now_default())
 
@@ -427,6 +529,23 @@ class Timesheet(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["tenant", "employee", "period", "unit"], name="timesheets_uniq"
+            ),
+            # Правка без «кто» и «почему» через полгода неотличима от ошибки
+            # ввода — а объяснять её придётся именно тогда. `\S` вместо
+            # «непусто»: пробел не причина, иначе проверка обходится одним
+            # нажатием клавиши.
+            #
+            # Проверка на null обязательна и стоит отдельно: `null ~ '\S'` даёт
+            # null, а CHECK пропускает всё, что не false. Без неё правка вообще
+            # без причины проходила бы — проверено, тест был зелёным зря.
+            models.CheckConstraint(
+                condition=models.Q(manual_correction__isnull=True)
+                | (
+                    models.Q(corrected_by__isnull=False)
+                    & models.Q(correction_reason__isnull=False)
+                    & models.Q(correction_reason__regex=r"\S")
+                ),
+                name="timesheets_correction_trace_check",
             ),
         ]
 
@@ -461,14 +580,12 @@ class Payslip(models.Model):
     unit = models.ForeignKey(
         Unit, on_delete=models.SET_NULL, null=True, blank=True, db_column="unit_id",
     )
-    net = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    gross = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    tax = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    contributions = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    total_cost = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    to_bank = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    to_cash = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
     notes = ArrayField(models.TextField(), db_default=[])
+    # Регистры учёта, из которых собрана строка. Заполняется триггером по
+    # компонентам (миграция `0009_payslip_ledgers`), а не тем, кто пишет: по
+    # этому набору видны итоги, и забытое значение означало бы показ суммы не
+    # тому человеку.
+    ledgers = ArrayField(ledger_field(), db_default=[])
 
     class Meta:
         db_table = "payslips"
@@ -477,6 +594,34 @@ class Payslip(models.Model):
                 fields=["payrun", "employee"], name="payslips_payrun_employee_uniq"
             ),
         ]
+
+
+class PayslipTotals(models.Model):
+    """Итоги строки ведомости: нето, бруто, налоги, взносы, что на карту и в кассу.
+
+    Отдельная таблица, а не колонки в `payslips`, потому что это единственный
+    способ закрыть их по регистрам учёта: защиты на уровне колонок в Postgres
+    нет, а прятать саму строку ведомости нельзя — вместе с ней у роли пропадают
+    и **видимые** ей компоненты смешанного сотрудника (ведомость собирается
+    присоединением к `payslips`). Итоги посчитаны по всем регистрам сразу,
+    поэтому видны только тому, кому видны все регистры строки: политика
+    `ledger_visibility` в миграции `0009_payslip_ledgers`.
+    """
+
+    payslip = models.OneToOneField(
+        Payslip, on_delete=models.CASCADE, primary_key=True, db_column="payslip_id"
+    )
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    net = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    gross = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    tax = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    contributions = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    total_cost = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    to_bank = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    to_cash = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+
+    class Meta:
+        db_table = "payslip_totals"
 
 
 class PayComponent(models.Model):
@@ -488,7 +633,7 @@ class PayComponent(models.Model):
     code = models.TextField()  # 'hours.regular', 'minimum_guarantee'
     title = models.TextField()
     amount = models.DecimalField(max_digits=14, decimal_places=2)
-    layer = layer_field()
+    ledger = ledger_field()
     channel = EnumField(db_type_name=PAYOUT_CHANNEL, db_default="bank")
     taxable = models.BooleanField(db_default=True)
 

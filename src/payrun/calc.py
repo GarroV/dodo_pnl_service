@@ -31,7 +31,7 @@ from uuid import UUID
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, Tenant
+from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, PayslipTotals, Tenant
 from core.models import Timesheet as TimesheetRow
 from payroll import Employee, PayrollEngine, Timesheet, d
 
@@ -125,15 +125,21 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
                     # Регистр учёта берём из базы, а не из пресета: политики
                     # доступа стоят на нём, и второй источник истины здесь
                     # означал бы показ строки не тому человеку.
-                    layer=term.layer or term.group.layer,
+                    ledger=term.ledger or term.group.ledger,
                 ),
                 timesheet=Timesheet(
                     hours={k: d(v) for k, v in (sheet.hours or {}).items()},
                     insured_hours=d(sheet.insured_hours),
                     norm_hours=d(sheet.norm_hours),
                     deduction=d(sheet.deduction),
-                    # Выплата наличными и ручная корректировка в схеме табеля
-                    # пока не хранятся — колонок нет (см. журнал блока db).
+                    cash_payout=d(sheet.cash_payout),
+                    # Пусто и ноль здесь разные вещи: пусто значит «правки не
+                    # было», и движок сам считает доплату до минимума. Поэтому
+                    # None передаётся как None, а не приводится к нулю.
+                    manual_correction=(
+                        None if sheet.manual_correction is None
+                        else d(sheet.manual_correction)
+                    ),
                 ),
             )
         )
@@ -165,8 +171,8 @@ def check_schemes(cases: list[Case], preset: dict) -> None:
 
 def check_ledgers(slips: list, visible_ledgers) -> list[str]:
     """Записывать можно только то, что роль видит. Иначе — отказ до записи."""
-    used = sorted({component.layer for _, slip in slips for component in slip.components})
-    hidden = [layer for layer in used if layer not in set(visible_ledgers or [])]
+    used = sorted({component.ledger for _, slip in slips for component in slip.components})
+    hidden = [ledger for ledger in used if ledger not in set(visible_ledgers or [])]
     if hidden:
         refusal = LedgerAccessDenied(
             "Ведомость этого периода попадает в регистры учёта, недоступные "
@@ -207,19 +213,28 @@ def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
         Payslip(
             tenant_id=tenant_id, payrun=payrun,
             employee_id=case.employee_id, unit_id=case.unit_id,
-            net=money(slip.net), gross=money(slip.gross), tax=money(slip.tax),
-            contributions=money(slip.contributions), total_cost=money(slip.total_cost),
-            to_bank=money(slip.to_bank), to_cash=money(slip.to_cash),
             notes=list(slip.notes),
         )
         for case, slip in slips
     ]
     Payslip.objects.bulk_create(rows)
 
+    # Итоги — отдельной таблицей: они посчитаны по всем регистрам сразу и видны
+    # только тому, кому видны все регистры строки (миграция 0009, issue #42).
+    PayslipTotals.objects.bulk_create([
+        PayslipTotals(
+            tenant_id=tenant_id, payslip=row,
+            net=money(slip.net), gross=money(slip.gross), tax=money(slip.tax),
+            contributions=money(slip.contributions), total_cost=money(slip.total_cost),
+            to_bank=money(slip.to_bank), to_cash=money(slip.to_cash),
+        )
+        for row, (_, slip) in zip(rows, slips, strict=True)
+    ])
+
     components = [
         PayComponent(
             tenant_id=tenant_id, payslip=row, code=component.code, title=component.title,
-            amount=money(component.amount), layer=component.layer,
+            amount=money(component.amount), ledger=component.ledger,
             channel=component.channel, taxable=component.taxable,
         )
         for row, (_, slip) in zip(rows, slips, strict=True)

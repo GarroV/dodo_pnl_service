@@ -143,11 +143,12 @@ slip = engine.calculate(
 
 print(slip.net, slip.gross, slip.contributions, slip.total_cost)
 for component in slip.components:
-    print(component.code, component.amount, component.layer, component.channel)
+    print(component.code, component.amount, component.ledger, component.channel)
 ```
 
-Расчёт возвращает не одно число, а набор компонентов. У каждого свой слой учёта
-(белый, серый, чёрный), канал выплаты (банк или касса) и признак налогообложения.
+Расчёт возвращает не одно число, а набор компонентов. У каждого свой регистр учёта
+(`official`, `supplementary`, `internal`), канал выплаты (банк или касса)
+и признак налогообложения.
 Из этого собирается и ведомость к выплате, и строки P&L, где зарплата и налоги
 идут раздельно.
 

@@ -43,7 +43,7 @@ allowances:
     title: "Топли оброк и регрес"   # компенсация питания + отпускное пособие
     amount_per_norm: 1500.00
     prorate_by: worked_days         # за рабочий ДЕНЬ, не за час
-    layer: white
+    ledger: official
     taxable: true
     # У полной ставки день = 8 часов, поэтому пропорция по дням и по часам совпадают.
     # У полставки день = 4 часа, и разница становится видна: сотрудник, отработавший
@@ -118,14 +118,14 @@ schemes:
       rate_key: temporary_contract
 
 # --- Группы сотрудников ---
-# Слой учета и схема расчета привязаны к группе; на уровне сотрудника переопределяются.
+# Регистр учёта и схема расчета привязаны к группе; на уровне сотрудника переопределяются.
 groups:
-  office:      { title: "Офис",              scheme: standard, layer: white, pnl_line: "Расходы на управление" }
-  management:  { title: "Управляющие",       scheme: standard, layer: white, pnl_line: "LC / GMC" }
-  kitchen:     { title: "Кухня и касса",     scheme: standard, layer: grey,  pnl_line: "LC / КС" }
-  doughmaker:  { title: "Тестомейкер",       scheme: standard, layer: grey,  pnl_line: "LC / Тестомейкер" }
-  couriers:    { title: "Курьеры",           scheme: none,     layer: black, pnl_line: "LC / DC" }
-  temporary:   { title: "Временные работы",  scheme: temporary, layer: white, pnl_line: "LC / КС" }
+  office:      { title: "Офис",              scheme: standard, ledger: official, pnl_line: "Расходы на управление" }
+  management:  { title: "Управляющие",       scheme: standard, ledger: official, pnl_line: "LC / GMC" }
+  kitchen:     { title: "Кухня и касса",     scheme: standard, ledger: supplementary,  pnl_line: "LC / КС" }
+  doughmaker:  { title: "Тестомейкер",       scheme: standard, ledger: supplementary,  pnl_line: "LC / Тестомейкер" }
+  couriers:    { title: "Курьеры",           scheme: none,     ledger: internal, pnl_line: "LC / DC" }
+  temporary:   { title: "Временные работы",  scheme: temporary, ledger: official, pnl_line: "LC / КС" }
 
 # --- Производственный календарь ---
 calendar:

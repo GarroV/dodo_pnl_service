@@ -87,8 +87,8 @@ I_TOTAL = "b1111111-0000-0000-0000-000000000006"
 I_TRANSFER = "b1111111-0000-0000-0000-000000000007"
 CP_EPS = "c1111111-0000-0000-0000-000000000001"   # поставщик электричества
 CP_METRO = "c1111111-0000-0000-0000-000000000002"
-USER_DIRECTOR = "d1111111-0000-0000-0000-000000000001"    # видит все слои и точки
-USER_ACCOUNTANT = "d1111111-0000-0000-0000-000000000002"  # только белый слой
+USER_DIRECTOR = "d1111111-0000-0000-0000-000000000001"    # видит все регистры и точки
+USER_ACCOUNTANT = "d1111111-0000-0000-0000-000000000002"  # только белый регистр
 USER_MANAGER = "d1111111-0000-0000-0000-000000000003"     # только точка NS1
 USER_OTHER = "d1111111-0000-0000-0000-00000000000f"       # второй тенант
 JUNE = "2026-06-01"
@@ -170,6 +170,7 @@ def db(pg_dsn):
 R_DIRECTOR = "e1111111-0000-0000-0000-000000000001"
 R_ACCOUNTANT = "e1111111-0000-0000-0000-000000000002"
 R_MANAGER = "e1111111-0000-0000-0000-000000000003"
+R_SYSTEM = "e1111111-0000-0000-0000-000000000010"  # роль без тенанта, общая для всех
 R_OTHER = "e1111111-0000-0000-0000-00000000000f"
 
 
@@ -217,12 +218,15 @@ def _seed(conn) -> None:
         (CP_EPS, T1, CP_METRO, T1),
     )
     conn.execute(
-        """insert into roles (id, tenant_id, code, title, visible_layers) values
-               (%s, %s, 'director',   'Оперативный директор', '{white,grey,black}'),
-               (%s, %s, 'accountant', 'Бухгалтер',            '{white}'),
-               (%s, %s, 'manager',    'Управляющий точки',    '{white,grey}'),
-               (%s, %s, 'director',   'Директор партнёра',    '{white,grey,black}')""",
-        (R_DIRECTOR, T1, R_ACCOUNTANT, T1, R_MANAGER, T1, R_OTHER, T2),
+        """insert into roles (id, tenant_id, code, title, visible_ledgers) values
+               (%s, %s,   'director',   'Оперативный директор',
+                   '{official,supplementary,internal}'),
+               (%s, %s,   'accountant', 'Бухгалтер',            '{official}'),
+               (%s, %s,   'manager',    'Управляющий точки',    '{official,supplementary}'),
+               (%s, null, 'support',    'Поддержка сервиса',    '{official}'),
+               (%s, %s,   'director',   'Директор партнёра',
+                   '{official,supplementary,internal}')""",
+        (R_DIRECTOR, T1, R_ACCOUNTANT, T1, R_MANAGER, T1, R_SYSTEM, R_OTHER, T2),
     )
     conn.execute(
         """insert into memberships (tenant_id, user_id, role_id, unit_ids) values
@@ -318,6 +322,7 @@ def wipe_payruns(dsn: str) -> None:
     with psycopg.connect(dsn, autocommit=True) as conn:
         tenants = "(select id from tenants where code = 'rs-dev')"
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
+        conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")
         conn.execute(f"delete from payruns where tenant_id in {tenants}")
 
@@ -340,13 +345,13 @@ def as_app_user(conn, user_id: str | None):
         conn.execute("select set_config('app.user_id', '', true)")
 
 
-def pay_component(conn, *, layer: str, amount: str = "1000.00", code: str = "hours.regular",
+def pay_component(conn, *, ledger: str, amount: str = "1000.00", code: str = "hours.regular",
                   tenant: str = T1) -> str:
     """Компонент выплаты нужного регистра — материал для проверки видимости."""
     employee_id = conn.execute(
         """insert into employees (tenant_id, external_id, first_name, last_name)
            values (%s, %s, 'Тест', 'Тестов') returning id""",
-        (tenant, f"ext-{layer}-{code}-{amount}"),
+        (tenant, f"ext-{ledger}-{code}-{amount}"),
     ).fetchone()[0]
     payrun_id = conn.execute(
         """insert into payruns (tenant_id, period) values (%s, %s)
@@ -355,12 +360,12 @@ def pay_component(conn, *, layer: str, amount: str = "1000.00", code: str = "hou
         (tenant, JUNE),
     ).fetchone()[0]
     payslip_id = conn.execute(
-        """insert into payslips (tenant_id, payrun_id, employee_id, net)
-           values (%s, %s, %s, %s) returning id""",
-        (tenant, payrun_id, employee_id, amount),
+        """insert into payslips (tenant_id, payrun_id, employee_id)
+           values (%s, %s, %s) returning id""",
+        (tenant, payrun_id, employee_id),
     ).fetchone()[0]
     return conn.execute(
-        """insert into pay_components (tenant_id, payslip_id, code, title, amount, layer)
+        """insert into pay_components (tenant_id, payslip_id, code, title, amount, ledger)
            values (%s, %s, %s, %s, %s, %s) returning id""",
-        (tenant, payslip_id, code, "Часы", amount, layer),
+        (tenant, payslip_id, code, "Часы", amount, ledger),
     ).fetchone()[0]

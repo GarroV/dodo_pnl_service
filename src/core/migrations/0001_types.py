@@ -15,7 +15,7 @@ create extension if not exists "pgcrypto";
 create extension if not exists "btree_gist";
 
 -- Регистры учёта. Свойство сотрудника, группы или операции — не компании.
-create type accounting_layer as enum ('white', 'grey', 'black');
+create type ledger as enum ('official', 'supplementary', 'internal');
 
 -- Куда уходит выплата. Надбавка наличными — не особый случай, а канал.
 create type payout_channel as enum ('bank', 'cash');
@@ -41,7 +41,7 @@ drop type if exists payrun_status;
 drop type if exists period_status;
 drop type if exists allocation_method;
 drop type if exists payout_channel;
-drop type if exists accounting_layer;
+drop type if exists ledger;
 """
 
 

@@ -54,11 +54,11 @@ def test_seed_creates_roles_with_different_ledgers(conn):
     """Три роли спеки: директор видит всё, бухгалтер — только официальный регистр."""
     roles = dict(
         conn.execute(
-            "select code, visible_layers from roles where tenant_id is not null"
+            "select code, visible_ledgers from roles where tenant_id is not null"
         ).fetchall()
     )
-    assert set(roles["director"]) == {"white", "grey", "black"}
-    assert set(roles["accountant"]) == {"white"}
+    assert set(roles["director"]) == {"official", "supplementary", "internal"}
+    assert set(roles["accountant"]) == {"official"}
     assert "manager" in roles
 
     # У управляющего доступ ограничен одной точкой
@@ -76,20 +76,57 @@ def test_seed_creates_open_period(conn):
 
 
 def test_seed_loads_all_employees_from_fixture(conn, sample_rows):
-    count = conn.execute("select count(*) from employees").fetchone()[0]
-    assert count == len({row.employee.ext_id for row in sample_rows})
-    assert count >= 30
+    from_fixture = {row.employee.ext_id for row in sample_rows}
+    loaded = {
+        row[0] for row in conn.execute("select external_id from employees").fetchall()
+    }
+    assert from_fixture <= loaded, "часть людей из фикстуры не доехала"
+    assert len(loaded) >= 30
 
     # У каждого — действующие условия найма и часы за период
+    count = len(loaded)
     assert conn.execute("select count(*) from employment_terms").fetchone()[0] == count
     assert conn.execute("select count(*) from timesheets").fetchone()[0] == count
+
+
+def test_seed_covers_all_three_ledgers(conn):
+    """Все три регистра представлены строками — иначе сид не показывает продукт.
+
+    Обезличенная фикстура даёт только официальный и дополнительный: курьеров
+    (внутренний регистр) в ней нет. Пока их не было в сиде, сценарий скрытия
+    регистра приходилось проверять вставкой строки руками (T045).
+    """
+    ledgers = {
+        row[0]
+        for row in conn.execute(
+            """select coalesce(t.ledger, g.ledger)
+                 from employment_terms t join employee_groups g on g.id = t.group_id"""
+        ).fetchall()
+    }
+    assert ledgers == {"official", "supplementary", "internal"}
+
+
+def test_seed_keeps_cash_payout_and_manual_correction(conn):
+    """Значения, которые движок принимает, а схема раньше теряла (T051)."""
+    with_cash = conn.execute(
+        "select count(*) from timesheets where cash_payout > 0"
+    ).fetchone()[0]
+    assert with_cash >= 1, "в сиде нет ни одной выплаты наличными"
+
+    corrections = conn.execute(
+        """select manual_correction, correction_reason, corrected_by
+             from timesheets where manual_correction is not null"""
+    ).fetchall()
+    assert corrections, "в сиде нет ни одной ручной корректировки"
+    for amount, reason, author in corrections:
+        assert amount is not None and reason and author, "правка без следа (D025)"
 
 
 def test_engine_calculates_on_seeded_data(conn, engine):
     """Главное: на данных сида движок считает, а не падает и не выдаёт нули."""
     rows = conn.execute(
         """select e.external_id, g.code, coalesce(t.scheme, g.scheme),
-                  t.base_rate, t.coefficient, coalesce(t.layer, g.layer),
+                  t.base_rate, t.coefficient, coalesce(t.ledger, g.ledger),
                   ts.hours, ts.insured_hours, ts.norm_hours, ts.deduction
              from employees e
              join employment_terms t on t.employee_id = e.id
@@ -98,11 +135,11 @@ def test_engine_calculates_on_seeded_data(conn, engine):
     ).fetchall()
     assert len(rows) >= 30
 
-    for ext_id, group, scheme, rate, coeff, layer, hours, insured, norm, deduction in rows:
+    for ext_id, group, scheme, rate, coeff, ledger, hours, insured, norm, deduction in rows:
         slip = engine.calculate(
             Employee(
                 ext_id=ext_id, name=ext_id, group=group, scheme=scheme,
-                base_rate=d(rate), coefficient=d(coeff), layer=layer,
+                base_rate=d(rate), coefficient=d(coeff), ledger=ledger,
             ),
             Timesheet(
                 hours={k: d(v) for k, v in hours.items()},
@@ -123,7 +160,7 @@ def test_enum_array_without_registration_is_a_string(seeded):
     psycopg = pytest.importorskip("psycopg")
 
     with psycopg.connect(seeded) as raw:
-        value = raw.execute("select visible_layers from roles limit 1").fetchone()[0]
+        value = raw.execute("select visible_ledgers from roles limit 1").fetchone()[0]
     assert isinstance(value, str)
 
 
@@ -133,10 +170,10 @@ def test_orm_reads_enum_array_as_list(seeded):
         seeded, "shell", "-c",
         "from core.models import Role;"
         "r = Role.objects.get(code='director');"
-        "print(type(r.visible_layers).__name__, sorted(r.visible_layers))",
+        "print(type(r.visible_ledgers).__name__, sorted(r.visible_ledgers))",
     ).stdout
     # shell печатает свою шапку про автоимпорт — интересна последняя строка
-    assert out.strip().splitlines()[-1] == "list ['black', 'grey', 'white']"
+    assert out.strip().splitlines()[-1] == "list ['internal', 'official', 'supplementary']"
 
 
 def test_seed_is_idempotent(seeded, conn):

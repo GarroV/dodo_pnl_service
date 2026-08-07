@@ -104,21 +104,21 @@ def test_temporary_scheme_has_no_meal_allowance(engine):
     assert all(c.code != "meal_and_vacation_bonus" for c in slip.components)
 
 
-# --- слои учёта --------------------------------------------------------------
+# --- регистры учёта --------------------------------------------------------------
 
 def test_layer_comes_from_group(engine):
     """Курьеры в чёрной, офис в белой — свойство группы, а не компании."""
     couriers = engine.calculate(employee(group="couriers"), timesheet(regular=176))
     office = engine.calculate(employee(group="office"), timesheet(regular=176))
-    assert next(c.layer for c in couriers.components if c.code == "hours.regular") == "black"
-    assert next(c.layer for c in office.components if c.code == "hours.regular") == "white"
+    assert next(c.ledger for c in couriers.components if c.code == "hours.regular") == "internal"
+    assert next(c.ledger for c in office.components if c.code == "hours.regular") == "official"
 
 
 def test_employee_layer_overrides_group(engine):
     emp = employee(group="couriers")
-    emp.layer = "grey"
+    emp.ledger = "supplementary"
     slip = engine.calculate(emp, timesheet(regular=176))
-    assert next(c.layer for c in slip.components if c.code == "hours.regular") == "grey"
+    assert next(c.ledger for c in slip.components if c.code == "hours.regular") == "supplementary"
 
 
 # --- конфигурируемость -------------------------------------------------------

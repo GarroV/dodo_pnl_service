@@ -49,7 +49,7 @@ def current_principal(request) -> Principal | None:
         user_id=user.user_id,
         tenant_id=membership.tenant_id,
         unit_ids=list(membership.unit_ids or []),
-        visible_ledgers=list(membership.role.visible_layers or []),
+        visible_ledgers=list(membership.role.visible_ledgers or []),
         permissions=list(membership.role.permissions or []),
         role_title=membership.role.title,
         tenant_title=membership.tenant.title,

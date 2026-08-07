@@ -43,7 +43,7 @@ def rows_from_db(dsn: str) -> list[tuple]:
 
     with psycopg.connect(dsn) as conn:
         return conn.execute(
-            """select e.external_id, c.code, c.amount, c.layer
+            """select e.external_id, c.code, c.amount, c.ledger
                  from pay_components c
                  join payslips p on p.id = c.payslip_id
                  join employees e on e.id = p.employee_id
@@ -64,9 +64,10 @@ def engine_expectation(dsn: str) -> dict[tuple[str, str], Decimal]:
     engine = PayrollEngine(load_preset("serbia-2026"))
     with psycopg.connect(dsn) as conn:
         rows = conn.execute(
-            """select e.external_id, g.code, g.layer::text,
+            """select e.external_id, g.code, coalesce(t.ledger, g.ledger)::text,
                       coalesce(t.scheme, g.scheme), t.base_rate, t.coefficient,
-                      ts.hours, ts.insured_hours, ts.norm_hours
+                      ts.hours, ts.insured_hours, ts.norm_hours,
+                      ts.deduction, ts.cash_payout, ts.manual_correction
                  from timesheets ts
                  join employees e on e.id = ts.employee_id
                  join employment_terms t on t.employee_id = e.id
@@ -76,15 +77,19 @@ def engine_expectation(dsn: str) -> dict[tuple[str, str], Decimal]:
         ).fetchall()
 
     expected: dict[tuple[str, str], Decimal] = {}
-    for ext_id, group, layer, scheme, base_rate, coefficient, hours, insured, norm in rows:
+    for row in rows:
+        (ext_id, group, ledger, scheme, base_rate, coefficient,
+         hours, insured, norm, deduction, cash_payout, correction) = row
         slip = engine.calculate(
             Employee(
                 ext_id=ext_id, name=ext_id, group=group, scheme=scheme,
-                base_rate=d(base_rate), coefficient=d(coefficient), layer=layer,
+                base_rate=d(base_rate), coefficient=d(coefficient), ledger=ledger,
             ),
             Timesheet(
                 hours={k: d(v) for k, v in hours.items()},
-                insured_hours=d(insured), norm_hours=d(norm),
+                insured_hours=d(insured), norm_hours=d(norm), deduction=d(deduction),
+                cash_payout=d(cash_payout),
+                manual_correction=None if correction is None else d(correction),
             ),
         )
         for component in slip.components:
@@ -168,16 +173,19 @@ def test_sheet_puts_hours_first_and_sums_by_visible_rows():
     from payrun.sheet import Cell, assemble
 
     sheet = assemble([
-        Cell("Петров", "BG1", "white", "meal", "Обед", Decimal("1500.00")),
-        Cell("Петров", "BG1", "white", "hours.regular", "Отработанные", Decimal("1000.00")),
-        Cell("Иванов", "NS1", "grey", "hours.regular", "Отработанные", Decimal("2000.00")),
+        Cell("Петров", "BG1", "official", "meal", "Обед", Decimal("1500.00")),
+        Cell("Петров", "BG1", "official", "hours.regular", "Отработанные", Decimal("1000.00")),
+        Cell("Иванов", "NS1", "supplementary", "hours.regular", "Отработанные", Decimal("2000.00")),
     ])
     assert [c.code for c in sheet.columns] == ["hours.regular", "meal"]
     assert [(r.employee, r.ledger) for r in sheet.rows] == [
-        ("Иванов", "grey"), ("Петров", "white"),
+        ("Иванов", "supplementary"), ("Петров", "official"),
     ]
     assert sheet.total == Decimal("4500.00")
-    assert sheet.ledger_totals == [("white", Decimal("2500.00")), ("grey", Decimal("2000.00"))]
+    assert sheet.ledger_totals == [
+        ("official", Decimal("2500.00")),
+        ("supplementary", Decimal("2000.00")),
+    ]
     # Сумма строк равна показанному итогу — то, что бухгалтер проверяет глазами.
     assert sum(r.total for r in sheet.rows) == sheet.total
 
@@ -187,12 +195,12 @@ def test_one_employee_with_two_ledgers_gives_two_rows():
     from payrun.sheet import Cell, assemble
 
     sheet = assemble([
-        Cell("Петров", "BG1", "grey", "hours.regular", "Отработанные", Decimal("1000.00")),
-        Cell("Петров", "BG1", "white", "meal", "Обед", Decimal("1500.00")),
+        Cell("Петров", "BG1", "supplementary", "hours.regular", "Отработанные", Decimal("1000.00")),
+        Cell("Петров", "BG1", "official", "meal", "Обед", Decimal("1500.00")),
     ])
     assert len(sheet.rows) == 2
     assert sheet.employees == 1
-    assert [r.ledger for r in sheet.rows] == ["white", "grey"]
+    assert [r.ledger for r in sheet.rows] == ["official", "supplementary"]
 
 
 # --- расчёт из интерфейса ----------------------------------------------------
@@ -213,7 +221,7 @@ def test_calculation_matches_direct_engine_call(client, clean_payruns):
 
 
 def test_calculation_covers_every_employee_of_the_period(client, clean_payruns):
-    """32 табеля — 32 ведомости. Молчаливый пропуск сотрудника недопустим."""
+    """Сколько табелей — столько ведомостей. Молчаливый пропуск недопустим."""
     import psycopg
 
     login_as(client, "director")
@@ -226,7 +234,8 @@ def test_calculation_covers_every_employee_of_the_period(client, clean_payruns):
             """select count(distinct coalesce(t.scheme, g.scheme))
                  from employment_terms t join employee_groups g on g.id = t.group_id"""
         ).fetchone()[0]
-    assert slips == sheets == 32
+    assert slips == sheets, "часть табелей не доехала до ведомости"
+    assert sheets >= 32, "сид похудел — проверка стала бы слабее, чем задумано"
     assert schemes == 4, "в сиде должны быть все четыре схемы расчёта"
 
 
@@ -243,7 +252,10 @@ def test_recalculation_does_not_duplicate_anything(client, clean_payruns):
     assert first == second
     with psycopg.connect(clean_payruns) as conn:
         assert conn.execute("select count(*) from payruns").fetchone()[0] == 1
-        assert conn.execute("select count(*) from payslips").fetchone()[0] == 32
+        assert (
+            conn.execute("select count(*) from payslips").fetchone()[0]
+            == conn.execute("select count(*) from timesheets").fetchone()[0]
+        )
 
 
 def test_employee_without_terms_is_reported_not_skipped_silently(client, clean_payruns):
@@ -341,8 +353,8 @@ def test_database_refuses_a_component_of_an_invisible_ledger(clean_payruns):
         with pytest.raises(psycopg.errors.Error):
             conn.execute(
                 """insert into pay_components
-                       (tenant_id, payslip_id, code, title, amount, layer)
-                   values (%s, %s, 'hours.regular', 'Часы', 100, 'grey') returning id""",
+                       (tenant_id, payslip_id, code, title, amount, ledger)
+                   values (%s, %s, 'hours.regular', 'Часы', 100, 'supplementary') returning id""",
                 (tenant, payslip),
             )
         # После отказа базы транзакция аварийная — откатываем целиком.
@@ -379,8 +391,13 @@ def test_totals_match_the_rows_the_role_can_see(client, clean_payruns):
     assert grand_total(accountant) < grand_total(director)
 
 
-def test_supplementary_ledger_leaves_no_trace_for_the_accountant(client, clean_payruns):
-    """Ни строк, ни следа в итогах: разницу нельзя получить вычитанием."""
+def test_hidden_ledgers_leave_no_trace_for_the_accountant(client, clean_payruns):
+    """Ни строк, ни следа в итогах: разницу нельзя получить вычитанием.
+
+    Проверяются оба скрытых от бухгалтера регистра. Внутренний появился в сиде
+    задачей T045 — до неё этот сценарий приходилось воспроизводить вставкой
+    строки руками, то есть на самих данных продукта он не проверялся.
+    """
     import psycopg
 
     from web.format import money
@@ -390,23 +407,26 @@ def test_supplementary_ledger_leaves_no_trace_for_the_accountant(client, clean_p
 
     director = body(client.get(period_url(client)))
     with psycopg.connect(clean_payruns) as conn:
-        white, grey = conn.execute(
-            """select sum(amount) filter (where layer = 'white'),
-                      sum(amount) filter (where layer = 'grey')
-                 from pay_components"""
-        ).fetchone()
-    assert grey > 0, "в сиде нет дополнительного регистра — проверять нечего"
+        totals = dict(
+            conn.execute(
+                "select ledger::text, sum(amount) from pay_components group by ledger"
+            ).fetchall()
+        )
+    assert set(totals) == {"official", "supplementary", "internal"}, (
+        f"в сиде представлены не все регистры: {sorted(totals)}"
+    )
 
     login_as(client, "accountant")
     accountant = body(client.get(period_url(client)))
 
     # Ни одной строки чужого регистра и ни следа его суммы.
-    assert "Дополнительный" in director and "Дополнительный" not in accountant
-    assert money(grey) not in accountant
+    for title, ledger in (("Дополнительный", "supplementary"), ("Внутренний", "internal")):
+        assert title in director and title not in accountant
+        assert money(totals[ledger]) not in accountant
     # Итог бухгалтера — ровно официальный регистр: разницу нельзя получить
     # вычитанием, потому что общей суммы он нигде не видит.
-    assert grand_total(accountant) == white
-    assert grand_total(director) == white + grey
+    assert grand_total(accountant) == totals["official"]
+    assert grand_total(director) == sum(totals.values())
     # Суммарные поля ведомости (нето, бруто, взносы) не показываются вовсе:
     # политики видимости регистров на них нет, и они выдали бы скрытое.
     assert "Нето" not in accountant and "Бруто" not in accountant
