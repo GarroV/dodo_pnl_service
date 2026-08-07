@@ -11,6 +11,9 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
 
+from .presets import FILE_ORIGIN
+from .trace import TraceStep
+
 D = Decimal
 
 
@@ -78,10 +81,24 @@ class Payslip:
     to_bank: Decimal = D(0)
     to_cash: Decimal = D(0)
     notes: list[str] = field(default_factory=list)
+    # След расчёта (D025). Пишется по ходу, тем же кодом, что считает суммы:
+    # объяснение, собранное отдельно, разъехалось бы с расчётом молча.
+    trace: list[TraceStep] = field(default_factory=list)
 
-    def add(self, **kw) -> None:
+    def add(self, *, step: TraceStep | None = None, **kw) -> None:
         if d(kw.get("amount")) != 0:
             self.components.append(Component(**kw))
+            if step is not None:
+                self.trace.append(step)
+
+    def derive(self, step: TraceStep) -> None:
+        """Шаг производной величины: бруто, налог, взносы, полная стоимость.
+
+        Заменяет прежний шаг того же назначения, а не копится рядом: пересчёт
+        бруто после правки нето — это то же самое бруто, а не второе.
+        """
+        self.trace = [s for s in self.trace if s.contributes_to != step.contributes_to]
+        self.trace.append(step)
 
 
 # --------------------------------------------------------------------------
@@ -98,6 +115,22 @@ class PayrollEngine:
         self.groups = preset.get("groups", {})
 
     # -- вспомогательное --------------------------------------------------
+
+    def step(self, code: str, title: str, value: Decimal, *, rule_path: str,
+             inputs: dict[str, Any], contributes_to: str = "net") -> TraceStep:
+        """Шаг следа с версией правила, по которой посчитано.
+
+        Откуда взялось значение, знает сам пресет: собранный из базы помнит, на
+        каком уровне его переопределили и какой строкой. Пресет из файла версии
+        не имеет — и шаг честно остаётся без неё.
+        """
+        origin_of = getattr(self.p, "origin_of", None)
+        origin = origin_of(rule_path) if origin_of else FILE_ORIGIN
+        return TraceStep(
+            rule_code=code, title=title, applied_value=value, rule_code_path=rule_path,
+            input_values=inputs, rule_version_id=origin.version_id,
+            source_level=origin.level, contributes_to=contributes_to,
+        )
 
     def hourly_rate(self, e: Employee) -> Decimal:
         return d(e.base_rate) * d(e.coefficient)
@@ -127,6 +160,14 @@ class PayrollEngine:
                 title=cfg["title"],
                 amount=amount,
                 ledger=ledger,
+                step=self.step(
+                    f"hours.{kind}", cfg["title"], amount,
+                    rule_path=f"hour_types.{kind}.pay_percent",
+                    inputs={
+                        "hours": hours, "rate": rate, "pay_percent": pct,
+                        "base_rate": d(e.base_rate), "coefficient": d(e.coefficient),
+                    },
+                ),
             )
             total += amount
         return total
@@ -148,6 +189,7 @@ class PayrollEngine:
             floor = self.const["min_hourly_rate"]
 
         total = D(0)
+        topped_up: list[str] = []
         for kind in cfg.get("applies_to", []):
             hours = ts.get(kind)
             if hours == 0:
@@ -155,6 +197,7 @@ class PayrollEngine:
             paid = rate * d(self.hour_types[kind]["pay_percent"])
             if paid < floor:
                 total += (floor - paid) * hours
+                topped_up.append(kind)
 
         if total:
             slip.add(
@@ -162,6 +205,17 @@ class PayrollEngine:
                 title="Доплата до минимума",
                 amount=total,
                 ledger=self.ledger_of(e),
+                step=self.step(
+                    "minimum_guarantee", "Доплата до минимума", total,
+                    rule_path="minimum_guarantee",
+                    inputs={
+                        # Какая именно база — открытый вопрос бухгалтеру (Q001),
+                        # поэтому в следе видно и то, что применили, и почему.
+                        "base": cfg.get("base"), "floor": floor, "rate": rate,
+                        "hour_types": topped_up,
+                        "hours": {k: ts.get(k) for k in topped_up},
+                    },
+                ),
             )
         return total
 
@@ -199,6 +253,20 @@ class PayrollEngine:
                 amount=amount,
                 ledger=cfg.get("ledger", self.ledger_of(slip.employee)),
                 taxable=cfg.get("taxable", True),
+                step=self.step(
+                    code, cfg["title"], amount,
+                    rule_path=f"allowances.{code}.amount_per_norm",
+                    inputs={
+                        "amount_per_norm": d(cfg["amount_per_norm"]),
+                        # По дням или по часам — у бухгалтерии два несовместимых
+                        # подхода на разных листах (Q003). В следе видно, какой
+                        # применён к этой строке.
+                        "prorate_by": mode,
+                        "worked_hours": worked,
+                        "hours_per_day": d(scheme.get("hours_per_day", full_day)),
+                        "norm_days": norm_days,
+                    },
+                ),
             )
             total += amount
         return total
@@ -211,15 +279,24 @@ class PayrollEngine:
         tax_free = self.const["tax_free_monthly"]
         norm = self.const["reference_norm_hours"]
         tax_rate = self.rates["income_tax"]
+        rule_path = f"schemes.{slip.employee.scheme}.gross_up"
+        inputs: dict[str, Any] = {"method": method, "net": net}
 
         if method == "flat":
             slip.gross = net / self.rates["net_factor"]
+            inputs["net_factor"] = self.rates["net_factor"]
 
         elif method == "net_minus_prorated_allowance":
             hours = ts.insured_hours
             divisor = d(scheme["gross_up"].get("hours_divisor", 1))
             credit = (tax_free * tax_rate / norm) * (hours / divisor)
             slip.gross = (net - credit) / self.rates["net_factor"]
+            inputs |= {
+                "insured_hours": hours, "hours_divisor": divisor,
+                "tax_free_monthly": tax_free, "reference_norm_hours": norm,
+                "income_tax": tax_rate, "net_factor": self.rates["net_factor"],
+                "credit": credit,
+            }
 
         elif method == "min_base":
             share = ts.insured_hours / norm
@@ -228,13 +305,35 @@ class PayrollEngine:
             min_base_part = min_base * self.rates["employee_contributions"] * share
             slip.gross = (net - half_free * tax_rate + min_base_part) / (1 - tax_rate)
             slip.tax = (slip.gross - half_free) * tax_rate
+            inputs |= {
+                "insured_hours": ts.insured_hours, "share": share,
+                "half_tax_free": half_free, "min_contribution_base": min_base,
+                "employee_contributions": self.rates["employee_contributions"],
+                "income_tax": tax_rate,
+            }
+            slip.derive(self.step(
+                "tax", "Налог на доход", slip.tax,
+                rule_path=f"schemes.{slip.employee.scheme}.tax",
+                inputs={"method": scheme.get("tax", {}).get("method", method),
+                        "gross": slip.gross, "half_tax_free": half_free,
+                        "income_tax": tax_rate},
+                contributes_to="tax",
+            ))
+
+        elif method == "none":
+            # Выплата без пересчёта: нето и есть вся сумма (см. схему `direct`).
+            slip.gross = net
 
         else:
             raise ValueError(f"неизвестный метод пересчета: {method}")
 
+        slip.derive(self.step("gross", "Бруто", slip.gross, rule_path=f"{rule_path}.method",
+                              inputs=inputs, contributes_to="gross"))
+
     def contributions(self, slip: Payslip, ts: Timesheet, scheme: dict) -> None:
         cfg = scheme["contributions"]
         method = cfg["method"]
+        inputs: dict[str, Any] = {"method": method, "gross": slip.gross, "net": slip.net}
 
         if method == "employer_plus_withheld":
             # взносы работодателя + всё, что удержано с работника (налог + его взносы)
@@ -242,6 +341,10 @@ class PayrollEngine:
                 slip.gross * self.rates["employer_contributions"] + (slip.gross - slip.net)
             )
             slip.total_cost = slip.net + slip.contributions
+            inputs |= {
+                "employer_contributions": self.rates["employer_contributions"],
+                "withheld": slip.gross - slip.net,
+            }
 
         elif method == "min_base_combined":
             share = ts.insured_hours / self.const["reference_norm_hours"]
@@ -249,13 +352,33 @@ class PayrollEngine:
                 self.const["min_contribution_base"] * share * self.rates["combined_contributions"]
             )
             slip.total_cost = slip.net + slip.tax + slip.contributions
+            inputs |= {
+                "insured_hours": ts.insured_hours, "share": share,
+                "min_contribution_base": self.const["min_contribution_base"],
+                "combined_contributions": self.rates["combined_contributions"],
+            }
 
         elif method == "flat_rate":
             slip.contributions = slip.gross * self.rates[cfg["rate_key"]]
             slip.total_cost = slip.net + slip.contributions
+            inputs |= {"rate_key": cfg["rate_key"], "rate": self.rates[cfg["rate_key"]]}
+
+        elif method == "none":
+            # Выплата мимо начислений: взносов нет, стоимость равна выплате.
+            slip.contributions = D(0)
+            slip.total_cost = slip.net
 
         else:
             raise ValueError(f"неизвестный метод взносов: {method}")
+
+        path = f"schemes.{slip.employee.scheme}.contributions.method"
+        slip.derive(self.step("contributions", "Взносы", slip.contributions,
+                              rule_path=path, inputs=inputs, contributes_to="contributions"))
+        slip.derive(self.step(
+            "total_cost", "Полная стоимость", slip.total_cost, rule_path=path,
+            inputs={"net": slip.net, "tax": slip.tax, "contributions": slip.contributions},
+            contributes_to="total_cost",
+        ))
 
     # -- главный вход -----------------------------------------------------
 
@@ -277,6 +400,14 @@ class PayrollEngine:
                 title="Ручная корректировка",
                 amount=d(ts.manual_correction),
                 ledger=self.ledger_of(e),
+                # Правка руками — не правило, а ввод. Выдавать её в следе за
+                # сработавшее правило нельзя: объяснять тогда будет нечего.
+                step=TraceStep(
+                    rule_code="manual_correction", title="Ручная корректировка",
+                    applied_value=d(ts.manual_correction),
+                    input_values={"amount": d(ts.manual_correction)},
+                    rule_version_id=None, source_level="input",
+                ),
             )
             earned += d(ts.manual_correction)
             slip.notes.append("применена ручная корректировка")

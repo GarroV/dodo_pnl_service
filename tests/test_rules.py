@@ -143,3 +143,54 @@ def test_overrides_do_not_mutate_source_preset(serbia_preset):
 def test_unknown_scheme_fails_loudly(engine):
     with pytest.raises(KeyError):
         engine.calculate(employee(scheme="не-существует"), timesheet(regular=176))
+
+
+# --- схемы, объявленные группами (T053, issue #45) ---------------------------
+
+
+def test_every_group_names_a_scheme_the_engine_knows(serbia_preset):
+    """Пресет не имеет права обещать схему, которой нет.
+
+    Ровно этим и был issue #45: у курьеров стояло `scheme: none`, такой схемы в
+    разделе `schemes` не было, и посчитать их было нельзя вообще — а курьеры и
+    есть весь внутренний регистр. Проверка общая: она поймает следующую такую
+    группу, а не только курьеров.
+    """
+    unknown = {
+        code: body.get("scheme")
+        for code, body in serbia_preset["groups"].items()
+        if body.get("scheme") not in serbia_preset["schemes"]
+    }
+    assert not unknown, f"группы ссылаются на несуществующие схемы: {unknown}"
+
+
+def test_direct_scheme_pays_out_the_whole_accrual(engine):
+    """Выплата мимо начислений: нето и есть вся сумма.
+
+    Это не «схема без налогов ради удобства»: удержать налог с выплаты, которую
+    не объявляют, не с чего. Регистр учёта у группы курьеров — внутренний, и
+    пересчитывать нето в бруто там нечего.
+    """
+    slip = engine.calculate(employee(group="couriers", scheme="direct", rate=420),
+                            timesheet(regular=168))
+    assert slip.net == Decimal("420") * 168
+    assert slip.gross == slip.net
+    assert slip.tax == 0
+    assert slip.contributions == 0
+    assert slip.total_cost == slip.net
+
+
+def test_direct_scheme_pays_no_meal_allowance(engine):
+    """Топли оброк — часть официальной зарплаты, к выплате мимо неё не идёт."""
+    slip = engine.calculate(employee(group="couriers", scheme="direct", rate=420),
+                            timesheet(regular=168))
+    assert [c.code for c in slip.components] == ["hours.regular"]
+
+
+def test_couriers_are_calculated_by_the_group_without_any_workaround(engine, serbia_preset):
+    """Схема курьеров берётся из группы: обход на условиях найма больше не нужен."""
+    scheme = serbia_preset["groups"]["couriers"]["scheme"]
+    slip = engine.calculate(employee(group="couriers", scheme=scheme, rate=420),
+                            timesheet(regular=100))
+    assert slip.net == Decimal("420") * 100
+    assert next(c.ledger for c in slip.components) == "internal"

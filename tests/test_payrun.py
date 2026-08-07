@@ -133,37 +133,47 @@ def clean_payruns(web_env):
 # --- выбор пресета -----------------------------------------------------------
 
 
-def test_preset_is_chosen_by_country_and_date():
-    """Страна и дата, а не `if country == 'RS'` в коде расчёта."""
+def seeded_tenant():
+    from core.models import Tenant
+
+    return Tenant.objects.get(code="rs-dev").id
+
+
+def test_preset_is_chosen_by_country_and_date(web_env):
+    """Страна и дата, а не `if country == 'RS'` в коде расчёта.
+
+    После T011 правила приезжают из таблицы `rule_presets`, поэтому тест ходит
+    в базу: выбор из файлов больше не тот путь, по которому идёт расчёт.
+    """
     from datetime import date
 
-    from payrun.rules import select_preset
+    from payrun.rules import select_rules
 
-    code, preset = select_preset("RS", date(2026, 6, 1))
-    assert code == "serbia-2026"
-    assert preset["currency"] == "RSD"
+    rules = select_rules(seeded_tenant(), "RS", date(2026, 6, 1))
+    assert rules.code == "serbia-2026"
+    assert rules.base["currency"] == "RSD"
 
 
-def test_unknown_country_is_refused_with_a_readable_reason():
+def test_unknown_country_is_refused_with_a_readable_reason(web_env):
     from datetime import date
 
     from payrun.errors import PayrunRefused
-    from payrun.rules import select_preset
+    from payrun.rules import select_rules
 
     with pytest.raises(PayrunRefused) as exc:
-        select_preset("ZZ", date(2026, 6, 1))
+        select_rules(seeded_tenant(), "ZZ", date(2026, 6, 1))
     assert "ZZ" in str(exc.value)
 
 
-def test_preset_from_the_future_is_not_used():
+def test_preset_from_the_future_is_not_used(web_env):
     """Правила 2026 года не должны применяться к периоду 2025-го."""
     from datetime import date
 
     from payrun.errors import PayrunRefused
-    from payrun.rules import select_preset
+    from payrun.rules import select_rules
 
     with pytest.raises(PayrunRefused):
-        select_preset("RS", date(2025, 6, 1))
+        select_rules(seeded_tenant(), "RS", date(2025, 6, 1))
 
 
 # --- сборка ведомости (чистая функция) ---------------------------------------
@@ -230,13 +240,18 @@ def test_calculation_covers_every_employee_of_the_period(client, clean_payruns):
     with psycopg.connect(clean_payruns) as conn:
         slips = conn.execute("select count(*) from payslips").fetchone()[0]
         sheets = conn.execute("select count(*) from timesheets").fetchone()[0]
-        schemes = conn.execute(
-            """select count(distinct coalesce(t.scheme, g.scheme))
-                 from employment_terms t join employee_groups g on g.id = t.group_id"""
-        ).fetchone()[0]
+        schemes = {
+            row[0] for row in conn.execute(
+                """select distinct coalesce(t.scheme, g.scheme)
+                     from employment_terms t join employee_groups g on g.id = t.group_id"""
+            ).fetchall()
+        }
     assert slips == sheets, "часть табелей не доехала до ведомости"
     assert sheets >= 32, "сид похудел — проверка стала бы слабее, чем задумано"
-    assert schemes == 4, "в сиде должны быть все четыре схемы расчёта"
+    # Четыре схемы эталонной таблицы обязаны быть все; пятая, `direct`, — это
+    # курьеры внутреннего регистра, которых в эталоне нет (T053).
+    assert {"standard", "half_time", "half_time_min_base", "temporary"} <= schemes
+    assert "direct" in schemes, "курьеры пропали из сида — внутренний регистр не проверяется"
 
 
 def test_recalculation_does_not_duplicate_anything(client, clean_payruns):

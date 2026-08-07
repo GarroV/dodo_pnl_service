@@ -23,6 +23,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from core import models
+from core.rules import import_presets
 from payroll import load_preset
 from payroll.importers import read_plata
 
@@ -74,7 +75,10 @@ class Extra:
     first_name: str
     last_name: str
     group: str
-    scheme: str
+    # Пусто — значит «как у группы»: схема берётся из пресета, а не дублируется
+    # в условиях найма. Заполняется только там, где человек считается иначе,
+    # чем его группа (в таблице партнёра так бывает внутри кухни).
+    scheme: str | None
     unit: str
     base_rate: Decimal
     hours: Decimal
@@ -83,14 +87,12 @@ class Extra:
     correction_reason: str = ""
 
 
-# Схема курьеров в пресете — `none`, а такой схемы движок не знает: как считать
-# курьеров, у партнёра пока не выяснено, и это вопрос не блока db. Чтобы месяц
-# считался, условия найма переопределяют схему на действующую — переопределение
-# видно в данных, а не спрятано в коде.
+# Курьеры идут по схеме своей группы (`direct` в пресете, T053): обход, который
+# раньше подставлял им чужую схему на условиях найма, больше не нужен.
 EXTRA_EMPLOYEES = [
-    Extra("dev-courier-1", "Марко", "Курир", "couriers", "temporary", "BG1",
+    Extra("dev-courier-1", "Марко", "Курир", "couriers", None, "BG1",
           Decimal("420.00"), Decimal(168), cash_payout=Decimal("12000.00")),
-    Extra("dev-courier-2", "Ана", "Курир", "couriers", "temporary", "NS1",
+    Extra("dev-courier-2", "Ана", "Курир", "couriers", None, "NS1",
           Decimal("420.00"), Decimal(120), cash_payout=Decimal("8000.00")),
     Extra("dev-correction-1", "Джордже", "Исправка", "kitchen", "standard", "NS2",
           Decimal("390.00"), Decimal(150), manual_correction=Decimal("1200.00"),
@@ -142,6 +144,9 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             self._wipe()
+            # Правила расчёта живут в таблице, а не в файле (T011). Сид обязан
+            # положить их туда: без пресета в базе посчитать период нечем.
+            import_presets()
             tenant = self._org()
             items = self._pnl_items()
             groups = self._groups(tenant, preset, items)

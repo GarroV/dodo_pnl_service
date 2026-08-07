@@ -36,7 +36,7 @@ from core.models import Timesheet as TimesheetRow
 from payroll import Employee, PayrollEngine, Timesheet, d
 
 from .errors import LedgerAccessDenied, PayrunRefused
-from .rules import select_preset
+from .rules import select_rules
 
 __all__ = ["CalcOutcome", "LedgerAccessDenied", "PayrunRefused", "calculate_period"]
 
@@ -65,6 +65,9 @@ class Case:
     external_id: str
     employee: Employee
     timesheet: Timesheet
+    # Кому какие правила: переопределения бывают на группе и на человеке, и
+    # применяются они здесь, а не в движке — движок получает готовый пресет.
+    group_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -115,6 +118,7 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
                 # где записан по условиям найма.
                 unit_id=sheet.unit_id or term.unit_id,
                 external_id=sheet.employee.external_id,
+                group_id=term.group_id,
                 employee=Employee(
                     ext_id=sheet.employee.external_id,
                     name=f"{sheet.employee.last_name} {sheet.employee.first_name}".strip(),
@@ -183,6 +187,23 @@ def check_ledgers(slips: list, visible_ledgers) -> list[str]:
     return used
 
 
+def _calculate_all(rules, cases: list[Case]) -> list:
+    """Посчитать всех, каждого по его правилам.
+
+    Пресет собирается на пару «группа + человек»: переопределения этих двух
+    уровней у разных людей разные. Движок на пресет заводится один раз на
+    сочетание — без переопределений это ровно один движок на весь расчёт, то
+    есть прежнее поведение слово в слово.
+    """
+    shared = PayrollEngine(rules.base)
+    result = []
+    for case in cases:
+        preset = rules.preset(group_id=case.group_id, employee_id=case.employee_id)
+        engine = shared if preset is rules.base else PayrollEngine(preset)
+        result.append((case, engine.calculate(case.employee, case.timesheet)))
+    return result
+
+
 def calculate_period(*, tenant_id: UUID, period: date, visible_ledgers) -> CalcOutcome:
     """Посчитать месяц и сохранить результат. Повторный запуск даёт то же самое."""
     with transaction.atomic():
@@ -191,15 +212,14 @@ def calculate_period(*, tenant_id: UUID, period: date, visible_ledgers) -> CalcO
             # Не «пустой расчёт»: тенанта не видно — значит, и права на него нет.
             raise PayrunRefused("партнёр недоступен")
 
-        preset_code, preset = select_preset(tenant.country_code, period)
+        rules = select_rules(tenant_id, tenant.country_code, period)
         cases = collect_cases(tenant_id, period)
-        check_schemes(cases, preset)
+        check_schemes(cases, rules.base)
 
-        engine = PayrollEngine(preset)
-        slips = [(case, engine.calculate(case.employee, case.timesheet)) for case in cases]
+        slips = _calculate_all(rules, cases)
         ledgers = check_ledgers(slips, visible_ledgers)
 
-        return _store(tenant_id, period, preset_code, slips, ledgers)
+        return _store(tenant_id, period, rules.code, slips, ledgers)
 
 
 def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
