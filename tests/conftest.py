@@ -246,6 +246,79 @@ def _seed(conn) -> None:
     )
 
 
+# =============================================================================
+# Живой Django поверх временной базы с сидом
+# =============================================================================
+# Настройки Django читаются один раз на процесс, поэтому база у всех веб-тестов
+# общая — фикстура сессионная и живёт здесь, а не в одном из модулей. Тесты,
+# которым важны суммы, обязаны сначала привести зарплатные таблицы в известное
+# состояние: расчёт (`test_payrun`) и ручные компоненты (`test_web`) пишут в
+# одни и те же `payruns`, и порядок модулей не гарантирован.
+
+
+@pytest.fixture(scope="session")
+def web_env():
+    """Временная база с миграциями и сидом + настроенный Django в этом процессе."""
+    with temp_database("web") as dsn:
+        run_manage(dsn, "seed_dev")
+
+        os.environ["DATABASE_URL"] = dsn
+        os.environ.setdefault("SECRET_KEY", "test-only-not-a-secret")
+        os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
+
+        import django
+        from django.test.utils import setup_test_environment, teardown_test_environment
+
+        django.setup()
+        setup_test_environment()
+        try:
+            yield dsn
+        finally:
+            from django.db import connection
+
+            connection.close()
+            teardown_test_environment()
+
+
+@pytest.fixture
+def client(web_env):
+    from django.test import Client
+
+    return Client()
+
+
+def login_as(client, code: str):
+    return client.post("/dev/login/", {"user": code})
+
+
+def body(response) -> str:
+    return response.content.decode()
+
+
+def period_url(client) -> str:
+    """Ссылка на страницу периода со списка — так же, как её берёт человек."""
+    import re
+
+    html = body(client.get("/periods/"))
+    match = re.search(r'href="(/periods/[0-9a-f-]+/)"', html)
+    assert match, f"на списке периодов нет ссылки на период:\n{html}"
+    return match.group(1)
+
+
+def wipe_payruns(dsn: str) -> None:
+    """Снести все расчёты тенанта сида — суперпользователем, мимо политик.
+
+    Нужно тестам, которые проверяют конкретные суммы: без этого их результат
+    зависел бы от того, успел ли соседний модуль посчитать период.
+    """
+    import psycopg
+
+    with psycopg.connect(dsn, autocommit=True) as conn:
+        conn.execute(
+            "delete from payruns where tenant_id in (select id from tenants where code = 'rs-dev')"
+        )
+
+
 @contextmanager
 def as_app_user(conn, user_id: str | None):
     """Работать ролью приложения, чтобы RLS вообще действовала.
