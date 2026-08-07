@@ -298,9 +298,10 @@ def row_totals(html: str) -> list[Decimal]:
 def ledger_totals(html: str) -> dict[str, Decimal]:
     """Таблица «Итоги по регистрам»: регистр -> сумма, без строки «Итого»."""
     tail = html.split("Итоги по регистрам", 1)[-1]
+    pattern = r'<tr><td>([^<]+)</td><td class="num">([^<]+)</td></tr>'
     return {
         title: amount(cell)
-        for title, cell in re.findall(r'<tr><td>([^<]+)</td><td class="num">([^<]+)</td></tr>', tail)
+        for title, cell in re.findall(pattern, tail)
         if title != "Итого"
     }
 
@@ -322,8 +323,8 @@ def test_manager_totals_carry_no_trace_of_other_units(client, calculated):
 
     # Итог сходится ровно с показанными строками — значит скрытая точка не
     # осталась в нём слагаемым.
-    assert grand_total(manager) == sum(row_totals(manager)) == sum(ledger_totals(manager).values())
-    assert grand_total(director) == sum(row_totals(director)) == sum(ledger_totals(director).values())
+    for html in (manager, director):
+        assert grand_total(html) == sum(row_totals(html)) == sum(ledger_totals(html).values())
 
     # Контроль сравнивает **один и тот же регистр**: общий итог у управляющего
     # меньше и без фильтра по точкам — просто потому, что внутренний регистр ему

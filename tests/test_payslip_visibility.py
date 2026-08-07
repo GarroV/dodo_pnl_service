@@ -222,6 +222,135 @@ def test_the_protection_is_the_policy_and_not_luck(db):
             each_visible_payslip_is_built_from_visible_components(conn)
 
 
+# =============================================================================
+# Факт наличия скрытого регистра (T065)
+# =============================================================================
+# Суммы закрыты выше, а `payslips.ledgers` до T065 читался всеми в тенанте.
+# Ролью `app_user` под бухгалтером запрос
+#     select e.last_name, p.ledgers from payslips p join employees e ...
+# отдавал пары «Курир → {internal}», «ANDRIC → {official, supplementary}»:
+# поимённо видно, у кого есть выплаты в закрытых от неё регистрах. Чисел нет,
+# но D023 требует «ни строк, ни следа» — а это след.
+#
+# Почему починено привилегией на колонку, а не политикой и не ещё одной
+# таблицей: набор регистров нужен **самой базе** (на нём стоит видимость итогов)
+# и не нужен приложению ни в одной роли. Прятать строку `payslips` нельзя — на
+# этом уже обжигались (см. шапку модуля). Показать значение колонки одной роли и
+# скрыть от другой RLS не умеет: она режет строки, а не столбцы. Зато колонку
+# можно закрыть от роли приложения целиком — политика и триггер читают её
+# правами владельца и работают по-прежнему.
+
+PAYSLIP_COLUMNS_FOR_THE_APP = {
+    "id", "tenant_id", "payrun_id", "employee_id", "unit_id", "notes",
+}
+
+
+def granted_columns(conn, table: str) -> set[str]:
+    return {
+        row[0]
+        for row in conn.execute(
+            """select column_name from information_schema.column_privileges
+                where grantee = 'app_user' and table_name = %s and privilege_type = 'SELECT'""",
+            (table,),
+        ).fetchall()
+    }
+
+
+def test_the_set_of_ledgers_is_unreadable_by_the_application(db):
+    """Главная проверка задачи: значения колонки не получает ни одна роль."""
+    import psycopg
+
+    make_payslip(db, "mixed", [("official", "100.00"), ("internal", "900.00")])
+
+    for user in (USER_ACCOUNTANT, USER_MANAGER, USER_DIRECTOR):
+        with as_app_user(db, user) as conn:
+            conn.execute("savepoint attempt")
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                conn.execute("select ledgers from payslips").fetchall()
+            conn.execute("rollback to savepoint attempt")
+
+            # И через звёздочку тоже: иначе первый же `select *` в отчёте
+            # вернул бы то, что закрыто поимённо.
+            conn.execute("savepoint attempt")
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                conn.execute("select * from payslips").fetchall()
+            conn.execute("rollback to savepoint attempt")
+
+
+def test_the_sheet_still_shows_official_components_of_a_mixed_person(db):
+    """Цена ошибки прошлого захода: строку `payslips` прятать нельзя.
+
+    Ведомость собирается присоединением к `payslips`, и спрятанная строка
+    утаскивает за собой видимые официальные компоненты смешанного сотрудника.
+    Здесь проверяется, что починка факта регистров этого не повторила.
+    """
+    make_payslip(db, "mixed", [("official", "100.00"), ("internal", "900.00")])
+
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        rows = conn.execute(
+            """select c.amount from pay_components c
+                 join payslips p on p.id = c.payslip_id"""
+        ).fetchall()
+    assert [row[0] for row in rows] == [Decimal("100.00")]
+
+
+def test_the_columns_the_application_may_read_are_listed_on_purpose(db):
+    """Сторож на будущее: новая колонка `payslips` должна выдаваться явно.
+
+    Табличная привилегия снята, поэтому колонки выданы поимённо. Если кто-то
+    добавит колонку и не выдаст её, приложение получит `permission denied for
+    table payslips` — этот тест обязан упасть раньше и объяснить, что делать.
+    """
+    all_columns = {
+        row[0]
+        for row in db.execute(
+            "select column_name from information_schema.columns where table_name = 'payslips'"
+        ).fetchall()
+    }
+    assert granted_columns(db, "payslips") == PAYSLIP_COLUMNS_FOR_THE_APP, (
+        "список колонок, доступных роли приложения, разъехался с миграцией "
+        "0021_payslip_ledgers_hidden — выдайте новую колонку явно"
+    )
+    assert all_columns - PAYSLIP_COLUMNS_FOR_THE_APP == {"ledgers"}, (
+        f"в payslips появилась колонка без привилегии: {sorted(all_columns)}"
+    )
+
+
+def test_the_trigger_still_fills_the_set_under_the_application_role(db):
+    """Триггер обязан работать из-под роли, которая колонку не читает.
+
+    Он читает и пишет `ledgers`, поэтому исполняется правами владельца
+    (`security definer`). Отменить это нельзя: расчёт упал бы отказом в
+    привилегии, а набор регистров, собранный не до конца, открыл бы итоги
+    строки тому, кому они закрыты.
+    """
+    payslip = make_payslip(db, "by-app", [("official", "10.00")])
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        conn.execute(
+            """insert into pay_components (tenant_id, payslip_id, code, title, amount, ledger)
+               values (%s, %s, 'hours.extra', 'Часы', 20, 'internal')""",
+            (T1, payslip),
+        )
+    ledgers = db.execute("select ledgers from payslips where id = %s", (payslip,)).fetchone()[0]
+    assert sorted(ledgers) == ["internal", "official"]
+
+
+def test_the_protection_is_the_privilege_and_not_luck(db):
+    """Возвращаем табличную привилегию — проверка обязана покраснеть."""
+    make_payslip(db, "leak", [("official", "100.00"), ("internal", "900.00")])
+    db.execute("savepoint before_damage")
+    db.execute("grant select on payslips to app_user")
+    try:
+        with as_app_user(db, USER_ACCOUNTANT) as conn:
+            leaked = conn.execute("select ledgers from payslips").fetchall()
+        assert sorted(leaked[0][0]) == ["internal", "official"], (
+            "без отзыва привилегии бухгалтер обязан видеть чужие регистры — "
+            "иначе тест ничего не проверяет"
+        )
+    finally:
+        db.execute("rollback to savepoint before_damage")
+
+
 # --- на данных сида ----------------------------------------------------------
 
 

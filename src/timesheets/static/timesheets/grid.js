@@ -106,8 +106,10 @@
     }
 
     mark(input, "failed");
+    // 422 — не принято значение, 403 — не хватает права роли. В обоих случаях
+    // сервер прислал текст для человека, и показывать надо его, а не номер кода.
     errorBox.textContent =
-      xhr.status === 422
+      xhr.status === 422 || xhr.status === 403
         ? xhr.responseText
         : "Не удалось сохранить: " + (xhr.status || "нет связи с сервером");
     errorBox.hidden = false;
