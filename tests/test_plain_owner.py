@@ -264,13 +264,24 @@ def test_ledger_visibility_holds_without_a_bypass(app_conn, two_ledgers):
     assert seen == {"official"}, seen
 
 
-def test_the_application_can_still_write(app_conn):
+def test_the_application_can_still_write(app_conn, plain_owner):
     """Не только чтение: запись под контекстом тоже не должна требовать обхода.
 
     Вставка тянет за собой `with check` четырёх таблиц и триггер, который
     дописывает набор регистров в строку ведомости, — то есть весь путь, каким
     расчёт кладёт результат.
+
+    Раньше срабатывание триггера проверялось последствием: бухгалтеру не видны
+    итоги строки дополнительного регистра. После T071 итоги ей не видны никогда
+    и ни в какой строке, так что такая проверка стала бы пустой — зелёной и при
+    молча не сработавшем триггере. Поэтому колонка читается прямо, соединением
+    администратора: роли приложения она закрыта нарочно (T065). Ради этого
+    написанное приходится закоммитить (в этом модуле `as_app_user` всё
+    откатывает) и убрать за собой руками.
     """
+    import psycopg
+    from psycopg.conninfo import make_conninfo
+
     from conftest import pay_component
 
     with as_app_user(app_conn, USER_DIRECTOR) as conn:
@@ -282,20 +293,32 @@ def test_the_application_can_still_write(app_conn):
             "insert into payslip_totals (tenant_id, payslip_id, net) values (%s, %s, 1.00)",
             (T1, payslip),
         )
+        conn.commit()  # иначе администратору нечего будет прочитать
 
-        # Сработал ли триггер, спрашиваем не колонкой, а последствием: колонка
-        # `payslips.ledgers` от роли приложения закрыта нарочно (T065). Зато на
-        # ней стоит видимость итогов, и пустой набор прошёл бы у **любой** роли
-        # (`'{}' <@ что угодно`) — то есть молча не сработавший триггер виден
-        # здесь как утечка, а не как «ну и ладно».
-        conn.execute("select set_config('app.user_id', %s, true)", (USER_ACCOUNTANT,))
-        visible = conn.execute(
-            "select count(*) from payslip_totals where payslip_id = %s", (payslip,)
-        ).fetchone()[0]
-    assert visible == 0, (
-        "бухгалтеру видны итоги строки дополнительного регистра — значит набор "
-        "регистров строки не заполнился"
-    )
+    admin_dsn = make_conninfo(ADMIN_DSN, dbname=plain_owner["dbname"])
+    try:
+        with psycopg.connect(admin_dsn) as admin:
+            # Без регистрации доменных типов массив `ledger[]` приезжает одной
+            # строкой — на это уже наступали, см. `core/db_types.py`.
+            from core.db_types import register_enum_types
+
+            register_enum_types(admin)
+            ledgers = admin.execute(
+                "select ledgers from payslips where id = %s", (payslip,)
+            ).fetchone()[0]
+        assert ledgers == ["supplementary"], (
+            f"триггер не заполнил набор регистров строки: {ledgers}"
+        )
+    finally:
+        # База модульная, и следующие тесты считают строки — уносим за собой.
+        with psycopg.connect(admin_dsn, autocommit=True) as admin:
+            admin.execute("delete from payslip_totals where payslip_id = %s", (payslip,))
+            admin.execute("delete from pay_components where payslip_id = %s", (payslip,))
+            employee = admin.execute(
+                "select employee_id from payslips where id = %s", (payslip,)
+            ).fetchone()[0]
+            admin.execute("delete from payslips where id = %s", (payslip,))
+            admin.execute("delete from employees where id = %s", (employee,))
 
 
 def test_nothing_is_visible_without_context(app_conn):
