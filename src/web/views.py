@@ -21,7 +21,7 @@ from payrun.calc import calculate_period
 from payrun.errors import PayrunRefused
 from payrun.sheet import build_sheet
 
-from . import auth
+from . import auth, permissions
 from .format import hours, ledger_title, money
 from .principal import get_current_principal
 
@@ -169,6 +169,16 @@ def period_calculate(request, period_id):
     if who is None or who.tenant_id is None:
         # Вошёл, но ни к какому партнёру не приписан: считать ему нечего.
         raise Http404("период не найден")
+
+    # Право проверяется до расчёта и **раньше регистров**. Порядок важен:
+    # администратору сети раньше отказывали за видимость регистров, и ту же
+    # плашку он получил бы, даже если бы право у него было (T064).
+    try:
+        permissions.check(who, permissions.PAYRUN_CALCULATE)
+    except permissions.PermissionRefused as refusal:
+        return period_page(
+            request, period, error=refusal.message, status=refusal.http_status,
+        )
 
     try:
         calculate_period(

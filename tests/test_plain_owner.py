@@ -275,13 +275,27 @@ def test_the_application_can_still_write(app_conn):
 
     with as_app_user(app_conn, USER_DIRECTOR) as conn:
         component_id = pay_component(conn, ledger="supplementary", amount="1.00", code="probe")
-        ledgers = conn.execute(
-            """select p.ledgers from payslips p
-                 join pay_components c on c.payslip_id = p.id
-                where c.id = %s""",
-            (component_id,),
+        payslip = conn.execute(
+            "select payslip_id from pay_components where id = %s", (component_id,)
         ).fetchone()[0]
-    assert ledgers == ["supplementary"], ledgers
+        conn.execute(
+            "insert into payslip_totals (tenant_id, payslip_id, net) values (%s, %s, 1.00)",
+            (T1, payslip),
+        )
+
+        # Сработал ли триггер, спрашиваем не колонкой, а последствием: колонка
+        # `payslips.ledgers` от роли приложения закрыта нарочно (T065). Зато на
+        # ней стоит видимость итогов, и пустой набор прошёл бы у **любой** роли
+        # (`'{}' <@ что угодно`) — то есть молча не сработавший триггер виден
+        # здесь как утечка, а не как «ну и ладно».
+        conn.execute("select set_config('app.user_id', %s, true)", (USER_ACCOUNTANT,))
+        visible = conn.execute(
+            "select count(*) from payslip_totals where payslip_id = %s", (payslip,)
+        ).fetchone()[0]
+    assert visible == 0, (
+        "бухгалтеру видны итоги строки дополнительного регистра — значит набор "
+        "регистров строки не заполнился"
+    )
 
 
 def test_nothing_is_visible_without_context(app_conn):

@@ -20,6 +20,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
 from payrun.errors import PayrunRefused
+from web import permissions
 from web.principal import get_current_principal
 from web.views import find_period, month_title
 
@@ -78,6 +79,18 @@ def grid(request, period_id):
 def cell(request, period_id):
     period = find_period(period_id)
     who = _context(request, period)
+
+    # Право править табель — не то же самое, что видеть его. Без этой проверки
+    # запись всё равно не прошла бы (её режет политика базы), но человек получил
+    # бы ошибку сервера вместо объяснения (T064).
+    try:
+        permissions.check(who, permissions.TIMESHEET_EDIT)
+    except permissions.PermissionRefused as refusal:
+        return HttpResponse(
+            refusal.message,
+            status=refusal.http_status,
+            content_type="text/plain; charset=utf-8",
+        )
 
     row = (
         visible_rows(period.tenant_id, period.period, who.unit_ids)

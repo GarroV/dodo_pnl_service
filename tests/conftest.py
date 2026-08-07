@@ -90,6 +90,7 @@ CP_METRO = "c1111111-0000-0000-0000-000000000002"
 USER_DIRECTOR = "d1111111-0000-0000-0000-000000000001"    # видит все регистры и точки
 USER_ACCOUNTANT = "d1111111-0000-0000-0000-000000000002"  # только белый регистр
 USER_MANAGER = "d1111111-0000-0000-0000-000000000003"     # только точка NS1
+USER_ADMIN = "d1111111-0000-0000-0000-000000000004"       # видит всё, данных не правит
 USER_OTHER = "d1111111-0000-0000-0000-00000000000f"       # второй тенант
 JUNE = "2026-06-01"
 JULY = "2026-07-01"
@@ -170,8 +171,18 @@ def db(pg_dsn):
 R_DIRECTOR = "e1111111-0000-0000-0000-000000000001"
 R_ACCOUNTANT = "e1111111-0000-0000-0000-000000000002"
 R_MANAGER = "e1111111-0000-0000-0000-000000000003"
+R_ADMIN = "e1111111-0000-0000-0000-000000000004"  # все регистры и точки, но данных не правит
 R_SYSTEM = "e1111111-0000-0000-0000-000000000010"  # роль без тенанта, общая для всех
 R_OTHER = "e1111111-0000-0000-0000-00000000000f"
+
+# Права ролей. Ими закрыты действия, которые от видимости не зависят: право
+# считать период и править табель проверяется отдельно от набора регистров
+# (T064). У администратора сети их нет намеренно — и регистры ему в фикстуре
+# выданы все, чтобы отказ нельзя было списать на видимость.
+P_DIRECTOR = '["timesheet.edit", "payrun.calculate", "period.approve", "period.reopen"]'
+P_ACCOUNTANT = '["timesheet.edit", "payrun.calculate", "period.approve"]'
+P_MANAGER = '["timesheet.edit", "unit.close"]'
+P_ADMIN = '["directory.manage", "rules.manage", "roles.manage"]'
 
 
 def _seed(conn) -> None:
@@ -218,26 +229,37 @@ def _seed(conn) -> None:
         (CP_EPS, T1, CP_METRO, T1),
     )
     conn.execute(
-        """insert into roles (id, tenant_id, code, title, visible_ledgers) values
+        """insert into roles (id, tenant_id, code, title, visible_ledgers, permissions) values
                (%s, %s,   'director',   'Оперативный директор',
-                   '{official,supplementary,internal}'),
-               (%s, %s,   'accountant', 'Бухгалтер',            '{official}'),
-               (%s, %s,   'manager',    'Управляющий точки',    '{official,supplementary}'),
-               (%s, null, 'support',    'Поддержка сервиса',    '{official}'),
+                   '{official,supplementary,internal}', %s),
+               (%s, %s,   'accountant', 'Бухгалтер',            '{official}', %s),
+               (%s, %s,   'manager',    'Управляющий точки',    '{official,supplementary}', %s),
+               (%s, %s,   'admin',      'Администратор сети',
+                   '{official,supplementary,internal}', %s),
+               (%s, null, 'support',    'Поддержка сервиса',    '{official}', '[]'),
                (%s, %s,   'director',   'Директор партнёра',
-                   '{official,supplementary,internal}')""",
-        (R_DIRECTOR, T1, R_ACCOUNTANT, T1, R_MANAGER, T1, R_SYSTEM, R_OTHER, T2),
+                   '{official,supplementary,internal}', %s)""",
+        (
+            R_DIRECTOR, T1, P_DIRECTOR,
+            R_ACCOUNTANT, T1, P_ACCOUNTANT,
+            R_MANAGER, T1, P_MANAGER,
+            R_ADMIN, T1, P_ADMIN,
+            R_SYSTEM,
+            R_OTHER, T2, P_DIRECTOR,
+        ),
     )
     conn.execute(
         """insert into memberships (tenant_id, user_id, role_id, unit_ids) values
                (%s, %s, %s, null),
                (%s, %s, %s, null),
                (%s, %s, %s, array[%s]::uuid[]),
+               (%s, %s, %s, null),
                (%s, %s, %s, null)""",
         (
             T1, USER_DIRECTOR, R_DIRECTOR,
             T1, USER_ACCOUNTANT, R_ACCOUNTANT,
             T1, USER_MANAGER, R_MANAGER, U_NS1,
+            T1, USER_ADMIN, R_ADMIN,
             T2, USER_OTHER, R_OTHER,
         ),
     )
