@@ -17,7 +17,7 @@ from django.db import models
 from .fields import EnumField
 
 # Названия типов создаёт миграция 0001_types — здесь только ссылки на них.
-LAYER = "accounting_layer"
+LEDGER = "ledger"
 PAYOUT_CHANNEL = "payout_channel"
 ALLOCATION_METHOD = "allocation_method"
 PERIOD_STATUS = "period_status"
@@ -45,8 +45,8 @@ def uuid_pk() -> models.UUIDField:
     )
 
 
-def layer_field(**kwargs) -> EnumField:
-    return EnumField(db_type_name=LAYER, **kwargs)
+def ledger_field(**kwargs) -> EnumField:
+    return EnumField(db_type_name=LEDGER, **kwargs)
 
 
 class Tenant(models.Model):
@@ -109,7 +109,7 @@ class Role(models.Model):
     code = models.TextField()
     title = models.TextField()
     permissions = models.JSONField(db_default=[])
-    visible_layers = ArrayField(layer_field(), db_default=["white"])
+    visible_ledgers = ArrayField(ledger_field(), db_default=["official"])
 
     class Meta:
         db_table = "roles"
@@ -212,7 +212,7 @@ class AllocationRule(models.Model):
     unit = models.ForeignKey(
         Unit, on_delete=models.CASCADE, null=True, blank=True, db_column="unit_id",
     )  # для fixed_unit
-    layer = layer_field(db_default="white")
+    ledger = ledger_field(db_default="official")
     valid_from = models.DateField()
     valid_to = models.DateField(null=True, blank=True)
     created_by = models.UUIDField(null=True, blank=True)
@@ -336,7 +336,7 @@ class EmployeeGroup(models.Model):
     code = models.TextField()
     title = models.TextField()
     scheme = models.TextField()  # ключ схемы из пресета
-    layer = layer_field(db_default="white")
+    ledger = ledger_field(db_default="official")
     pnl_item = models.ForeignKey(
         PnlItem, on_delete=models.SET_NULL, null=True, blank=True, db_column="pnl_item_id",
     )
@@ -384,7 +384,7 @@ class EmploymentTerm(models.Model):
     base_rate = models.DecimalField(max_digits=12, decimal_places=4)
     coefficient = models.DecimalField(max_digits=8, decimal_places=4, db_default=1)
     scheme = models.TextField(null=True, blank=True)  # переопределяет схему группы
-    layer = layer_field(null=True, blank=True)  # переопределяет регистр группы
+    ledger = ledger_field(null=True, blank=True)  # переопределяет регистр группы
     valid_from = models.DateField()
     valid_to = models.DateField(null=True, blank=True)
 
@@ -488,7 +488,7 @@ class PayComponent(models.Model):
     code = models.TextField()  # 'hours.regular', 'minimum_guarantee'
     title = models.TextField()
     amount = models.DecimalField(max_digits=14, decimal_places=2)
-    layer = layer_field()
+    ledger = ledger_field()
     channel = EnumField(db_type_name=PAYOUT_CHANNEL, db_default="bank")
     taxable = models.BooleanField(db_default=True)
 

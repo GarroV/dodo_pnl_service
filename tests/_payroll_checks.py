@@ -78,7 +78,7 @@ def check_components_sum_to_net(engine, rows, tolerance: Decimal) -> None:
 
 def check_ledgers_assigned(engine, rows) -> None:
     """У каждого компонента должен быть регистр учёта — на нём строится видимость."""
-    valid = {"white", "grey", "black"}
+    valid = {"official", "supplementary", "internal"}
     for row in rows:
         for component in engine.calculate(row.employee, row.timesheet).components:
-            assert component.layer in valid, f"{row.name}: неизвестный регистр {component.layer}"
+            assert component.ledger in valid, f"{row.name}: неизвестный регистр {component.ledger}"

@@ -33,7 +33,7 @@ def apply_overrides(preset: dict[str, Any], overrides: dict[str, Any]) -> dict[s
     Накладывает переопределения на пресет.
 
     Ключ — путь через точку: 'hour_types.night.pay_percent'. Так переопределения
-    хранятся в базе (таблица rule_overrides) и складываются слоями:
+    хранятся в базе (таблица rule_overrides) и складываются регистрами:
     страна → партнёр → группа → сотрудник.
     """
     result = copy.deepcopy(preset)

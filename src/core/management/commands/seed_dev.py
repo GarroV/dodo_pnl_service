@@ -51,9 +51,9 @@ PNL_ITEMS = [
 
 # Роли спеки. Видимость регистров — то, ради чего вообще нужна роль.
 ROLES = [
-    ("director", "Оперативный директор", ["white", "grey", "black"], None),
-    ("accountant", "Бухгалтер", ["white"], None),
-    ("manager", "Управляющий точки", ["white", "grey"], "NS1"),
+    ("director", "Оперативный директор", ["official", "supplementary", "internal"], None),
+    ("accountant", "Бухгалтер", ["official"], None),
+    ("manager", "Управляющий точки", ["official", "supplementary"], "NS1"),
 ]
 
 
@@ -186,7 +186,7 @@ class Command(BaseCommand):
             groups[code] = models.EmployeeGroup.objects.create(
                 id=det_id("group", code), tenant=tenant, code=code,
                 title=body.get("title", code), scheme=body.get("scheme", "standard"),
-                layer=body.get("layer", "white"), pnl_item=items["labour_cost"],
+                ledger=body.get("ledger", "official"), pnl_item=items["labour_cost"],
             )
         return groups
 
@@ -195,7 +195,7 @@ class Command(BaseCommand):
         for code, title, ledgers, unit_code in ROLES:
             role = models.Role.objects.create(
                 id=det_id("role", code), tenant=tenant, code=code, title=title,
-                visible_layers=ledgers,
+                visible_ledgers=ledgers,
             )
             models.Membership.objects.create(
                 id=det_id("membership", code), tenant=tenant,

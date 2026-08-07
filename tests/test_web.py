@@ -55,15 +55,15 @@ def ledger_rows(web_env):
                values (%s, %s, %s, %s) returning id""",
             (tenant, payrun, employee, AMOUNT_OFFICIAL),
         ).fetchone()[0]
-        for layer, amount in (
-            ("white", AMOUNT_OFFICIAL),
-            ("grey", AMOUNT_SUPPLEMENTARY),
-            ("black", AMOUNT_INTERNAL),
+        for ledger, amount in (
+            ("official", AMOUNT_OFFICIAL),
+            ("supplementary", AMOUNT_SUPPLEMENTARY),
+            ("internal", AMOUNT_INTERNAL),
         ):
             conn.execute(
-                """insert into pay_components (tenant_id, payslip_id, code, title, amount, layer)
+                """insert into pay_components (tenant_id, payslip_id, code, title, amount, ledger)
                    values (%s, %s, %s, %s, %s, %s)""",
-                (tenant, payslip, f"hours.{layer}", "Часы", amount, layer),
+                (tenant, payslip, f"hours.{ledger}", "Часы", amount, ledger),
             )
     return None
 

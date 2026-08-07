@@ -24,7 +24,7 @@ from uuid import UUID
 
 # Порядок регистров на экране — от самого «внешнего» к внутреннему, всегда
 # одинаковый: перескакивающие местами строки читаются как разные данные.
-LEDGER_ORDER = ["white", "grey", "black"]
+LEDGER_ORDER = ["official", "supplementary", "internal"]
 
 
 @dataclass(frozen=True)
@@ -144,7 +144,7 @@ def build_sheet(tenant_id: UUID, period: date) -> Sheet:
             employee=f"{component.payslip.employee.last_name} "
                      f"{component.payslip.employee.first_name}".strip(),
             unit=component.payslip.unit.code if component.payslip.unit_id else "",
-            ledger=component.layer,
+            ledger=component.ledger,
             code=component.code,
             title=component.title,
             amount=component.amount,

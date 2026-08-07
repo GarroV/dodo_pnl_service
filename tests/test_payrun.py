@@ -43,7 +43,7 @@ def rows_from_db(dsn: str) -> list[tuple]:
 
     with psycopg.connect(dsn) as conn:
         return conn.execute(
-            """select e.external_id, c.code, c.amount, c.layer
+            """select e.external_id, c.code, c.amount, c.ledger
                  from pay_components c
                  join payslips p on p.id = c.payslip_id
                  join employees e on e.id = p.employee_id
@@ -64,7 +64,7 @@ def engine_expectation(dsn: str) -> dict[tuple[str, str], Decimal]:
     engine = PayrollEngine(load_preset("serbia-2026"))
     with psycopg.connect(dsn) as conn:
         rows = conn.execute(
-            """select e.external_id, g.code, g.layer::text,
+            """select e.external_id, g.code, g.ledger::text,
                       coalesce(t.scheme, g.scheme), t.base_rate, t.coefficient,
                       ts.hours, ts.insured_hours, ts.norm_hours
                  from timesheets ts
@@ -76,11 +76,11 @@ def engine_expectation(dsn: str) -> dict[tuple[str, str], Decimal]:
         ).fetchall()
 
     expected: dict[tuple[str, str], Decimal] = {}
-    for ext_id, group, layer, scheme, base_rate, coefficient, hours, insured, norm in rows:
+    for ext_id, group, ledger, scheme, base_rate, coefficient, hours, insured, norm in rows:
         slip = engine.calculate(
             Employee(
                 ext_id=ext_id, name=ext_id, group=group, scheme=scheme,
-                base_rate=d(base_rate), coefficient=d(coefficient), layer=layer,
+                base_rate=d(base_rate), coefficient=d(coefficient), ledger=ledger,
             ),
             Timesheet(
                 hours={k: d(v) for k, v in hours.items()},
@@ -168,16 +168,19 @@ def test_sheet_puts_hours_first_and_sums_by_visible_rows():
     from payrun.sheet import Cell, assemble
 
     sheet = assemble([
-        Cell("Петров", "BG1", "white", "meal", "Обед", Decimal("1500.00")),
-        Cell("Петров", "BG1", "white", "hours.regular", "Отработанные", Decimal("1000.00")),
-        Cell("Иванов", "NS1", "grey", "hours.regular", "Отработанные", Decimal("2000.00")),
+        Cell("Петров", "BG1", "official", "meal", "Обед", Decimal("1500.00")),
+        Cell("Петров", "BG1", "official", "hours.regular", "Отработанные", Decimal("1000.00")),
+        Cell("Иванов", "NS1", "supplementary", "hours.regular", "Отработанные", Decimal("2000.00")),
     ])
     assert [c.code for c in sheet.columns] == ["hours.regular", "meal"]
     assert [(r.employee, r.ledger) for r in sheet.rows] == [
-        ("Иванов", "grey"), ("Петров", "white"),
+        ("Иванов", "supplementary"), ("Петров", "official"),
     ]
     assert sheet.total == Decimal("4500.00")
-    assert sheet.ledger_totals == [("white", Decimal("2500.00")), ("grey", Decimal("2000.00"))]
+    assert sheet.ledger_totals == [
+        ("official", Decimal("2500.00")),
+        ("supplementary", Decimal("2000.00")),
+    ]
     # Сумма строк равна показанному итогу — то, что бухгалтер проверяет глазами.
     assert sum(r.total for r in sheet.rows) == sheet.total
 
@@ -187,12 +190,12 @@ def test_one_employee_with_two_ledgers_gives_two_rows():
     from payrun.sheet import Cell, assemble
 
     sheet = assemble([
-        Cell("Петров", "BG1", "grey", "hours.regular", "Отработанные", Decimal("1000.00")),
-        Cell("Петров", "BG1", "white", "meal", "Обед", Decimal("1500.00")),
+        Cell("Петров", "BG1", "supplementary", "hours.regular", "Отработанные", Decimal("1000.00")),
+        Cell("Петров", "BG1", "official", "meal", "Обед", Decimal("1500.00")),
     ])
     assert len(sheet.rows) == 2
     assert sheet.employees == 1
-    assert [r.ledger for r in sheet.rows] == ["white", "grey"]
+    assert [r.ledger for r in sheet.rows] == ["official", "supplementary"]
 
 
 # --- расчёт из интерфейса ----------------------------------------------------
@@ -341,8 +344,8 @@ def test_database_refuses_a_component_of_an_invisible_ledger(clean_payruns):
         with pytest.raises(psycopg.errors.Error):
             conn.execute(
                 """insert into pay_components
-                       (tenant_id, payslip_id, code, title, amount, layer)
-                   values (%s, %s, 'hours.regular', 'Часы', 100, 'grey') returning id""",
+                       (tenant_id, payslip_id, code, title, amount, ledger)
+                   values (%s, %s, 'hours.regular', 'Часы', 100, 'supplementary') returning id""",
                 (tenant, payslip),
             )
         # После отказа базы транзакция аварийная — откатываем целиком.
@@ -390,23 +393,23 @@ def test_supplementary_ledger_leaves_no_trace_for_the_accountant(client, clean_p
 
     director = body(client.get(period_url(client)))
     with psycopg.connect(clean_payruns) as conn:
-        white, grey = conn.execute(
-            """select sum(amount) filter (where layer = 'white'),
-                      sum(amount) filter (where layer = 'grey')
+        official, supplementary = conn.execute(
+            """select sum(amount) filter (where ledger = 'official'),
+                      sum(amount) filter (where ledger = 'supplementary')
                  from pay_components"""
         ).fetchone()
-    assert grey > 0, "в сиде нет дополнительного регистра — проверять нечего"
+    assert supplementary > 0, "в сиде нет дополнительного регистра — проверять нечего"
 
     login_as(client, "accountant")
     accountant = body(client.get(period_url(client)))
 
     # Ни одной строки чужого регистра и ни следа его суммы.
     assert "Дополнительный" in director and "Дополнительный" not in accountant
-    assert money(grey) not in accountant
+    assert money(supplementary) not in accountant
     # Итог бухгалтера — ровно официальный регистр: разницу нельзя получить
     # вычитанием, потому что общей суммы он нигде не видит.
-    assert grand_total(accountant) == white
-    assert grand_total(director) == white + grey
+    assert grand_total(accountant) == official
+    assert grand_total(director) == official + supplementary
     # Суммарные поля ведомости (нето, бруто, взносы) не показываются вовсе:
     # политики видимости регистров на них нет, и они выдали бы скрытое.
     assert "Нето" not in accountant and "Бруто" not in accountant

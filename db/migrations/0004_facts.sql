@@ -63,7 +63,7 @@ as $$
 $$;
 
 create or replace function app_visible_layers(p_tenant uuid)
-returns accounting_layer[]
+returns ledger[]
 language sql stable security definer
 set search_path = public
 as $$
@@ -71,9 +71,9 @@ as $$
         (select array_agg(distinct l)
            from memberships m
            join roles r on r.id = m.role_id
-           cross join unnest(r.visible_layers) as l
+           cross join unnest(r.visible_ledgers) as l
           where m.user_id = app_user_id() and m.tenant_id = p_tenant),
-        '{}'::accounting_layer[]
+        '{}'::ledger[]
     )
 $$;
 
@@ -99,21 +99,21 @@ as $$
 $$;
 
 
--- --- Исправление политик слоёв из 0003 ---------------------------------------
+-- --- Исправление политик регистров из 0003 ---------------------------------------
 -- В 0003 политики layer_visibility созданы как permissive. Permissive-политики
 -- в Postgres объединяются через OR, то есть они не сужали доступ, а расширяли:
--- строку чужого тенанта становилось видно, если совпал слой учёта. Сужать
+-- строку чужого тенанта становилось видно, если совпал регистр учёта. Сужать
 -- умеет только restrictive. Миграции append-only, поэтому правим здесь.
 
 drop policy if exists layer_visibility on pay_components;
 create policy layer_visibility on pay_components
     as restrictive for select
-    using (layer = any (app_visible_layers(tenant_id)));
+    using (ledger = any (app_visible_layers(tenant_id)));
 
 drop policy if exists layer_visibility on allocation_rules;
 create policy layer_visibility on allocation_rules
     as restrictive for select
-    using (layer = any (app_visible_layers(tenant_id)));
+    using (ledger = any (app_visible_layers(tenant_id)));
 
 -- Там же: единый справочник статей лежит с tenant_id = null, а политика
 -- из 0003 проверяет `tenant_id in (...)`, что на null даёт null, то есть
@@ -225,7 +225,7 @@ create table facts (
     unit_id          uuid references units on delete restrict,
     legal_entity_id  uuid references legal_entities on delete restrict,
     pnl_item_id      uuid not null references pnl_items on delete restrict,
-    layer            accounting_layer not null default 'white',
+    ledger            ledger not null default 'official',
     counterparty_id  uuid references counterparties on delete set null,
 
     -- Суммы. Знак: обычно положительный, отрицательный = возврат или
@@ -372,13 +372,13 @@ returns boolean
 language sql immutable
 as $$
     select (a.period, a.doc_date, a.unit_id, a.legal_entity_id, a.pnl_item_id,
-            a.layer, a.counterparty_id, a.amount, a.currency, a.amount_report,
+            a.ledger, a.counterparty_id, a.amount, a.currency, a.amount_report,
             a.report_currency, a.quantity, a.uom, a.title, a.note, a.channel,
             a.source, a.source_ref, a.document_id, a.line_no,
             a.allocation, a.allocation_rule_id, a.allocation_share, a.parent_fact_id)
         is not distinct from
            (b.period, b.doc_date, b.unit_id, b.legal_entity_id, b.pnl_item_id,
-            b.layer, b.counterparty_id, b.amount, b.currency, b.amount_report,
+            b.ledger, b.counterparty_id, b.amount, b.currency, b.amount_report,
             b.report_currency, b.quantity, b.uom, b.title, b.note, b.channel,
             b.source, b.source_ref, b.document_id, b.line_no,
             b.allocation, b.allocation_rule_id, b.allocation_share, b.parent_fact_id)
@@ -428,7 +428,7 @@ begin
     end if;
 
     v_new.allocation := coalesce(v_new.allocation, 'direct');
-    v_new.layer      := coalesce(v_new.layer, 'white');
+    v_new.ledger      := coalesce(v_new.ledger, 'official');
     v_new.currency   := coalesce(v_new.currency,
                                  (select base_currency from tenants where id = v_new.tenant_id));
     v_new.report_currency := coalesce(v_new.report_currency,
@@ -640,7 +640,7 @@ begin
             'unit_id',            p.unit_id,
             'legal_entity_id',    f.legal_entity_id,
             'pnl_item_id',        f.pnl_item_id,
-            'layer',              f.layer,
+            'ledger',              f.ledger,
             'counterparty_id',    f.counterparty_id,
             'amount',             p.amount,
             'currency',           f.currency,
@@ -740,7 +740,7 @@ begin
                 'unit_id',            p.unit_id,
                 'legal_entity_id',    f.legal_entity_id,
                 'pnl_item_id',        f.pnl_item_id,
-                'layer',              f.layer,
+                'ledger',              f.ledger,
                 'counterparty_id',    f.counterparty_id,
                 'amount',             p.amount,
                 'currency',           f.currency,
@@ -842,11 +842,11 @@ begin
         'period',      v_period
     ));
 
-    -- Начисления. Слой и канал берём из компонента: «надбавка кешем» —
+    -- Начисления. Регистр и канал берём из компонента: «надбавка кешем» —
     -- обычный компонент, а не особый случай.
     for r in
         select ps.unit_id,
-               pc.layer,
+               pc.ledger,
                g.pnl_item_id,
                pc.channel,
                sum(pc.amount) as amount
@@ -870,7 +870,7 @@ begin
             'doc_date',    v_period_end,
             'unit_id',     r.unit_id,
             'pnl_item_id', r.pnl_item_id,
-            'layer',       r.layer,
+            'ledger',       r.ledger,
             'amount',      r.amount,
             'title',       'Зарплата, начисления',
             'channel',     r.channel,
@@ -878,7 +878,7 @@ begin
             'source_ref',  p_payrun_id::text,
             'document_id', v_doc,
             'dedup_key',   format('payroll:%s:%s:%s:%s:%s', p_payrun_id,
-                                  coalesce(r.unit_id::text, '-'), r.layer,
+                                  coalesce(r.unit_id::text, '-'), r.ledger,
                                   r.pnl_item_id, r.channel),
             -- Ведомость без точки бывает (офис, не привязанный к пиццерии):
             -- такую сумму отправляем на разнесение, а не теряем.
@@ -887,7 +887,7 @@ begin
         if v_action <> 'unchanged' then n := n + 1; end if;
     end loop;
 
-    -- Налоги и взносы — отдельными строками, как и договаривались: слой
+    -- Налоги и взносы — отдельными строками, как и договаривались: регистр
     -- всегда белый, потому что платятся официально.
     for r in
         select ps.unit_id, sum(ps.tax + ps.contributions) as amount
@@ -902,7 +902,7 @@ begin
             'doc_date',    v_period_end,
             'unit_id',     r.unit_id,
             'pnl_item_id', v_tax_item,
-            'layer',       'white',
+            'ledger',       'official',
             'amount',      r.amount,
             'title',       'Налоги и взносы с зарплаты',
             'channel',     'bank',
@@ -974,7 +974,7 @@ end $$;
 
 -- --- Сборка P&L --------------------------------------------------------------
 -- security_invoker = true обязателен: иначе представление читает данные
--- правами владельца и RLS перестаёт работать — и слои, и тенанты потекут.
+-- правами владельца и RLS перестаёт работать — и регистры, и тенанты потекут.
 
 -- Действующие факты, годные к счёту. 'split' исключён: его заменили дети.
 create view pnl_lines with (security_invoker = true) as
@@ -990,7 +990,7 @@ select f.id           as fact_id,
        i.code         as pnl_code,
        i.title        as pnl_title,
        i.kind,
-       f.layer,
+       f.ledger,
        f.counterparty_id,
        f.allocation,
        f.allocation_rule_id,
@@ -1116,7 +1116,7 @@ comment on function pnl_report(uuid, date, uuid) is
 
 -- --- Изоляция данных --------------------------------------------------------
 -- Три ограничения, все restrictive (то есть сужают, объединяются через AND):
--- свой тенант, видимый слой учёта, доступная точка.
+-- свой тенант, видимый регистр учёта, доступная точка.
 
 alter table facts            enable row level security;
 alter table source_documents enable row level security;
@@ -1136,12 +1136,12 @@ begin
     end loop;
 end $$;
 
--- Бухгалтер не видит чёрную кассу. Пишем тоже только в свой слой, иначе
+-- Бухгалтер не видит чёрную кассу. Пишем тоже только в свой регистр, иначе
 -- ограничение обходится вставкой.
 create policy layer_visibility on facts
     as restrictive for all
-    using (layer = any (app_visible_layers(tenant_id)))
-    with check (layer = any (app_visible_layers(tenant_id)));
+    using (ledger = any (app_visible_layers(tenant_id)))
+    with check (ledger = any (app_visible_layers(tenant_id)));
 
 -- Управляющий точки видит только свою. Факты без точки (ещё не разнесённые)
 -- видны всем, кто вообще имеет доступ к тенанту: разносит их не управляющий.

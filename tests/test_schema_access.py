@@ -70,14 +70,14 @@ def test_force_rls_on_every_tenant_table(db):
 def test_enum_array_reads_as_list(db):
     """Массив регистров учёта должен приезжать списком, а не строкой.
 
-    Без регистрации типа в драйвере `accounting_layer[]` приходит одной строкой
-    `'{white,grey,black}'`, и проверка «регистр входит в видимые» начинает
+    Без регистрации типа в драйвере `ledger[]` приходит одной строкой
+    `'{official,supplementary,internal}'`, и проверка «регистр входит в видимые» начинает
     работать по символам, ничего не сообщая. Что проверка не фиктивная —
     показано в test_seed_dev.test_enum_array_without_registration_is_a_string.
     """
-    row = db.execute("select visible_layers from roles where code = 'director'").fetchone()
+    row = db.execute("select visible_ledgers from roles where code = 'director'").fetchone()
     assert isinstance(row[0], list)
-    assert set(row[0]) == {"white", "grey", "black"}
+    assert set(row[0]) == {"official", "supplementary", "internal"}
 
 
 # --- Изоляция тенантов -------------------------------------------------------
@@ -188,19 +188,19 @@ def test_ledger_visibility_narrows_not_widens(db):
     вообще — строку своего тенанта пропускала политика изоляции. Сужает только
     `as restrictive`.
     """
-    pay_component(db, layer="white", amount="100.00", code="white.one")
-    pay_component(db, layer="black", amount="200.00", code="black.one")
+    pay_component(db, ledger="official", amount="100.00", code="official.one")
+    pay_component(db, ledger="internal", amount="200.00", code="internal.one")
 
     with as_app_user(db, USER_ACCOUNTANT) as conn:
-        layers = {row[0] for row in conn.execute("select layer from pay_components").fetchall()}
-    assert layers == {"white"}
+        ledgers = {row[0] for row in conn.execute("select ledger from pay_components").fetchall()}
+    assert ledgers == {"official"}
 
 
 def test_ledger_visibility_affects_totals(db):
     """Невидимый регистр не должен просачиваться и в итоги."""
-    pay_component(db, layer="white", amount="100.00", code="white.one")
-    pay_component(db, layer="grey", amount="30.00", code="grey.one")
-    pay_component(db, layer="black", amount="200.00", code="black.one")
+    pay_component(db, ledger="official", amount="100.00", code="official.one")
+    pay_component(db, ledger="supplementary", amount="30.00", code="supplementary.one")
+    pay_component(db, ledger="internal", amount="200.00", code="internal.one")
 
     with as_app_user(db, USER_ACCOUNTANT) as conn:
         total = conn.execute("select coalesce(sum(amount), 0) from pay_components").fetchone()[0]
@@ -215,14 +215,14 @@ def test_ledger_visibility_applies_to_allocation_rules(db):
     """Вторая таблица с регистром — правила разнесения — закрыта так же."""
     cp = db.execute("select id from counterparties limit 1").fetchone()[0]
     item = db.execute("select id from pnl_items limit 1").fetchone()[0]
-    for layer in ("white", "black"):
+    for ledger in ("official", "internal"):
         db.execute(
             """insert into allocation_rules
-                   (tenant_id, counterparty_id, pnl_item_id, method, layer, valid_from)
+                   (tenant_id, counterparty_id, pnl_item_id, method, ledger, valid_from)
                values (%s, %s, %s, 'even', %s, '2026-01-01')""",
-            (T1, cp, item, layer),
+            (T1, cp, item, ledger),
         )
 
     with as_app_user(db, USER_ACCOUNTANT) as conn:
-        layers = {row[0] for row in conn.execute("select layer from allocation_rules").fetchall()}
-    assert layers == {"white"}
+        ledgers = {row[0] for row in conn.execute("select ledger from allocation_rules").fetchall()}
+    assert ledgers == {"official"}

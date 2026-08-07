@@ -77,7 +77,7 @@ comment on function app_tenant_ids() is
 -- Регистры учёта, видимые пользователю в этом тенанте. Для чужого тенанта
 -- членства нет, поэтому возвращается пустой массив — и ни одна строка не пройдёт.
 create or replace function app_visible_ledgers(p_tenant uuid)
-returns accounting_layer[]
+returns ledger[]
 language sql stable security definer
 set search_path = public
 as $$
@@ -85,14 +85,14 @@ as $$
         (select array_agg(distinct l)
            from memberships m
            join roles r on r.id = m.role_id
-           cross join unnest(r.visible_layers) as l
+           cross join unnest(r.visible_ledgers) as l
           where m.user_id = app_user_id() and m.tenant_id = p_tenant),
-        '{}'::accounting_layer[]
+        '{}'::ledger[]
     )
 $$;
 
 comment on function app_visible_ledgers(uuid) is
-    'Регистры учёта, видимые пользователю в тенанте. Тип переименуется вместе с регистрами (T004)';
+    'Регистры учёта, видимые пользователю в тенанте. Пустой массив = не видно ничего';
 """
 
 DROP_FUNCTIONS = """
@@ -127,7 +127,7 @@ create policy tenant_isolation on {table}
         parts.append(f"""
 create policy ledger_visibility on {table}
     as restrictive for select
-    using (layer = any (app_visible_ledgers(tenant_id)));
+    using (ledger = any (app_visible_ledgers(tenant_id)));
 """)
     return "\n".join(parts)
 

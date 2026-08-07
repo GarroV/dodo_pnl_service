@@ -2,7 +2,7 @@
 Движок начисления зарплаты.
 
 Принцип: правила лежат в конфиге (пресете), движок не знает ничего про конкретную
-страну. Расчет всегда разбирается на компоненты выплаты — у каждого свой слой учета,
+страну. Расчет всегда разбирается на компоненты выплаты — у каждого свой регистр учёта,
 канал выплаты и признак налогообложения. Это то, что потом уходит в P&L.
 """
 from __future__ import annotations
@@ -34,7 +34,7 @@ class Employee:
     scheme: str
     base_rate: Decimal              # cena rada
     coefficient: Decimal = D("1.0")
-    layer: str | None = None        # переопределяет слой группы
+    ledger: str | None = None        # переопределяет регистр группы
     unit: str | None = None
 
 
@@ -58,7 +58,7 @@ class Component:
     code: str
     title: str
     amount: Decimal
-    layer: str
+    ledger: str
     channel: str = "bank"     # bank | cash
     taxable: bool = True
 
@@ -102,10 +102,10 @@ class PayrollEngine:
     def hourly_rate(self, e: Employee) -> Decimal:
         return d(e.base_rate) * d(e.coefficient)
 
-    def layer_of(self, e: Employee) -> str:
-        if e.layer:
-            return e.layer
-        return self.groups.get(e.group, {}).get("layer", "white")
+    def ledger_of(self, e: Employee) -> str:
+        if e.ledger:
+            return e.ledger
+        return self.groups.get(e.group, {}).get("ledger", "official")
 
     # -- начисление -------------------------------------------------------
 
@@ -113,7 +113,7 @@ class PayrollEngine:
         """Начисление по типам часов. Каждый тип — отдельный компонент."""
         e = slip.employee
         rate = self.hourly_rate(e)
-        layer = self.layer_of(e)
+        ledger = self.ledger_of(e)
         total = D(0)
 
         for kind, cfg in self.hour_types.items():
@@ -126,7 +126,7 @@ class PayrollEngine:
                 code=f"hours.{kind}",
                 title=cfg["title"],
                 amount=amount,
-                layer=layer,
+                ledger=ledger,
             )
             total += amount
         return total
@@ -161,7 +161,7 @@ class PayrollEngine:
                 code="minimum_guarantee",
                 title="Доплата до минимума",
                 amount=total,
-                layer=self.layer_of(e),
+                ledger=self.ledger_of(e),
             )
         return total
 
@@ -197,7 +197,7 @@ class PayrollEngine:
                 code=code,
                 title=cfg["title"],
                 amount=amount,
-                layer=cfg.get("layer", self.layer_of(slip.employee)),
+                ledger=cfg.get("ledger", self.ledger_of(slip.employee)),
                 taxable=cfg.get("taxable", True),
             )
             total += amount
@@ -276,7 +276,7 @@ class PayrollEngine:
                 code="manual_correction",
                 title="Ручная корректировка",
                 amount=d(ts.manual_correction),
-                layer=self.layer_of(e),
+                ledger=self.ledger_of(e),
             )
             earned += d(ts.manual_correction)
             slip.notes.append("применена ручная корректировка")

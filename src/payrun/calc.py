@@ -125,7 +125,7 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
                     # Регистр учёта берём из базы, а не из пресета: политики
                     # доступа стоят на нём, и второй источник истины здесь
                     # означал бы показ строки не тому человеку.
-                    layer=term.layer or term.group.layer,
+                    ledger=term.ledger or term.group.ledger,
                 ),
                 timesheet=Timesheet(
                     hours={k: d(v) for k, v in (sheet.hours or {}).items()},
@@ -165,8 +165,8 @@ def check_schemes(cases: list[Case], preset: dict) -> None:
 
 def check_ledgers(slips: list, visible_ledgers) -> list[str]:
     """Записывать можно только то, что роль видит. Иначе — отказ до записи."""
-    used = sorted({component.layer for _, slip in slips for component in slip.components})
-    hidden = [layer for layer in used if layer not in set(visible_ledgers or [])]
+    used = sorted({component.ledger for _, slip in slips for component in slip.components})
+    hidden = [ledger for ledger in used if ledger not in set(visible_ledgers or [])]
     if hidden:
         refusal = LedgerAccessDenied(
             "Ведомость этого периода попадает в регистры учёта, недоступные "
@@ -219,7 +219,7 @@ def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
     components = [
         PayComponent(
             tenant_id=tenant_id, payslip=row, code=component.code, title=component.title,
-            amount=money(component.amount), layer=component.layer,
+            amount=money(component.amount), ledger=component.ledger,
             channel=component.channel, taxable=component.taxable,
         )
         for row, (_, slip) in zip(rows, slips, strict=True)

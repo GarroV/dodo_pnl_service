@@ -54,11 +54,11 @@ def test_seed_creates_roles_with_different_ledgers(conn):
     """Три роли спеки: директор видит всё, бухгалтер — только официальный регистр."""
     roles = dict(
         conn.execute(
-            "select code, visible_layers from roles where tenant_id is not null"
+            "select code, visible_ledgers from roles where tenant_id is not null"
         ).fetchall()
     )
-    assert set(roles["director"]) == {"white", "grey", "black"}
-    assert set(roles["accountant"]) == {"white"}
+    assert set(roles["director"]) == {"official", "supplementary", "internal"}
+    assert set(roles["accountant"]) == {"official"}
     assert "manager" in roles
 
     # У управляющего доступ ограничен одной точкой
@@ -89,7 +89,7 @@ def test_engine_calculates_on_seeded_data(conn, engine):
     """Главное: на данных сида движок считает, а не падает и не выдаёт нули."""
     rows = conn.execute(
         """select e.external_id, g.code, coalesce(t.scheme, g.scheme),
-                  t.base_rate, t.coefficient, coalesce(t.layer, g.layer),
+                  t.base_rate, t.coefficient, coalesce(t.ledger, g.ledger),
                   ts.hours, ts.insured_hours, ts.norm_hours, ts.deduction
              from employees e
              join employment_terms t on t.employee_id = e.id
@@ -98,11 +98,11 @@ def test_engine_calculates_on_seeded_data(conn, engine):
     ).fetchall()
     assert len(rows) >= 30
 
-    for ext_id, group, scheme, rate, coeff, layer, hours, insured, norm, deduction in rows:
+    for ext_id, group, scheme, rate, coeff, ledger, hours, insured, norm, deduction in rows:
         slip = engine.calculate(
             Employee(
                 ext_id=ext_id, name=ext_id, group=group, scheme=scheme,
-                base_rate=d(rate), coefficient=d(coeff), layer=layer,
+                base_rate=d(rate), coefficient=d(coeff), ledger=ledger,
             ),
             Timesheet(
                 hours={k: d(v) for k, v in hours.items()},
@@ -123,7 +123,7 @@ def test_enum_array_without_registration_is_a_string(seeded):
     psycopg = pytest.importorskip("psycopg")
 
     with psycopg.connect(seeded) as raw:
-        value = raw.execute("select visible_layers from roles limit 1").fetchone()[0]
+        value = raw.execute("select visible_ledgers from roles limit 1").fetchone()[0]
     assert isinstance(value, str)
 
 
@@ -133,10 +133,10 @@ def test_orm_reads_enum_array_as_list(seeded):
         seeded, "shell", "-c",
         "from core.models import Role;"
         "r = Role.objects.get(code='director');"
-        "print(type(r.visible_layers).__name__, sorted(r.visible_layers))",
+        "print(type(r.visible_ledgers).__name__, sorted(r.visible_ledgers))",
     ).stdout
     # shell печатает свою шапку про автоимпорт — интересна последняя строка
-    assert out.strip().splitlines()[-1] == "list ['black', 'grey', 'white']"
+    assert out.strip().splitlines()[-1] == "list ['internal', 'official', 'supplementary']"
 
 
 def test_seed_is_idempotent(seeded, conn):
