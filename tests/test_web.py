@@ -51,9 +51,9 @@ def ledger_rows(web_env):
             (tenant, JUNE),
         ).fetchone()[0]
         payslip = conn.execute(
-            """insert into payslips (tenant_id, payrun_id, employee_id, net)
-               values (%s, %s, %s, %s) returning id""",
-            (tenant, payrun, employee, AMOUNT_OFFICIAL),
+            """insert into payslips (tenant_id, payrun_id, employee_id)
+               values (%s, %s, %s) returning id""",
+            (tenant, payrun, employee),
         ).fetchone()[0]
         for ledger, amount in (
             ("official", AMOUNT_OFFICIAL),

@@ -580,14 +580,12 @@ class Payslip(models.Model):
     unit = models.ForeignKey(
         Unit, on_delete=models.SET_NULL, null=True, blank=True, db_column="unit_id",
     )
-    net = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    gross = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    tax = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    contributions = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    total_cost = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    to_bank = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
-    to_cash = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
     notes = ArrayField(models.TextField(), db_default=[])
+    # Регистры учёта, из которых собрана строка. Заполняется триггером по
+    # компонентам (миграция `0009_payslip_ledgers`), а не тем, кто пишет: по
+    # этому набору видны итоги, и забытое значение означало бы показ суммы не
+    # тому человеку.
+    ledgers = ArrayField(ledger_field(), db_default=[])
 
     class Meta:
         db_table = "payslips"
@@ -596,6 +594,34 @@ class Payslip(models.Model):
                 fields=["payrun", "employee"], name="payslips_payrun_employee_uniq"
             ),
         ]
+
+
+class PayslipTotals(models.Model):
+    """Итоги строки ведомости: нето, бруто, налоги, взносы, что на карту и в кассу.
+
+    Отдельная таблица, а не колонки в `payslips`, потому что это единственный
+    способ закрыть их по регистрам учёта: защиты на уровне колонок в Postgres
+    нет, а прятать саму строку ведомости нельзя — вместе с ней у роли пропадают
+    и **видимые** ей компоненты смешанного сотрудника (ведомость собирается
+    присоединением к `payslips`). Итоги посчитаны по всем регистрам сразу,
+    поэтому видны только тому, кому видны все регистры строки: политика
+    `ledger_visibility` в миграции `0009_payslip_ledgers`.
+    """
+
+    payslip = models.OneToOneField(
+        Payslip, on_delete=models.CASCADE, primary_key=True, db_column="payslip_id"
+    )
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    net = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    gross = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    tax = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    contributions = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    total_cost = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    to_bank = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+    to_cash = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
+
+    class Meta:
+        db_table = "payslip_totals"
 
 
 class PayComponent(models.Model):

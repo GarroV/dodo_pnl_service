@@ -322,6 +322,7 @@ def wipe_payruns(dsn: str) -> None:
     with psycopg.connect(dsn, autocommit=True) as conn:
         tenants = "(select id from tenants where code = 'rs-dev')"
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
+        conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")
         conn.execute(f"delete from payruns where tenant_id in {tenants}")
 
@@ -359,9 +360,9 @@ def pay_component(conn, *, ledger: str, amount: str = "1000.00", code: str = "ho
         (tenant, JUNE),
     ).fetchone()[0]
     payslip_id = conn.execute(
-        """insert into payslips (tenant_id, payrun_id, employee_id, net)
-           values (%s, %s, %s, %s) returning id""",
-        (tenant, payrun_id, employee_id, amount),
+        """insert into payslips (tenant_id, payrun_id, employee_id)
+           values (%s, %s, %s) returning id""",
+        (tenant, payrun_id, employee_id),
     ).fetchone()[0]
     return conn.execute(
         """insert into pay_components (tenant_id, payslip_id, code, title, amount, ledger)

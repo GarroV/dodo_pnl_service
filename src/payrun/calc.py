@@ -31,7 +31,7 @@ from uuid import UUID
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, Tenant
+from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, PayslipTotals, Tenant
 from core.models import Timesheet as TimesheetRow
 from payroll import Employee, PayrollEngine, Timesheet, d
 
@@ -213,14 +213,23 @@ def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
         Payslip(
             tenant_id=tenant_id, payrun=payrun,
             employee_id=case.employee_id, unit_id=case.unit_id,
-            net=money(slip.net), gross=money(slip.gross), tax=money(slip.tax),
-            contributions=money(slip.contributions), total_cost=money(slip.total_cost),
-            to_bank=money(slip.to_bank), to_cash=money(slip.to_cash),
             notes=list(slip.notes),
         )
         for case, slip in slips
     ]
     Payslip.objects.bulk_create(rows)
+
+    # Итоги — отдельной таблицей: они посчитаны по всем регистрам сразу и видны
+    # только тому, кому видны все регистры строки (миграция 0009, issue #42).
+    PayslipTotals.objects.bulk_create([
+        PayslipTotals(
+            tenant_id=tenant_id, payslip=row,
+            net=money(slip.net), gross=money(slip.gross), tax=money(slip.tax),
+            contributions=money(slip.contributions), total_cost=money(slip.total_cost),
+            to_bank=money(slip.to_bank), to_cash=money(slip.to_cash),
+        )
+        for row, (_, slip) in zip(rows, slips, strict=True)
+    ])
 
     components = [
         PayComponent(

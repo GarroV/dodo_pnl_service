@@ -150,7 +150,10 @@ def test_calculation_applies_the_correction_and_the_cash_payout(client, clean_pa
             (employee_id,),
         ).fetchone()
         slip = conn.execute(
-            "select to_cash, notes from payslips where employee_id = %s", (employee_id,)
+            """select t.to_cash, p.notes
+                 from payslips p join payslip_totals t on t.payslip_id = p.id
+                where p.employee_id = %s""",
+            (employee_id,),
         ).fetchone()
 
     assert component == (Decimal("1200.00"),), "корректировка не дошла до компонентов"
