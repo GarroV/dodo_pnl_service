@@ -55,14 +55,71 @@ def test_app_user_does_not_own_tables(db):
     assert owned == []
 
 
-def test_force_rls_on_every_tenant_table(db):
-    """Без force политики не действуют на владельца — а миграции идут владельцем."""
+# Таблицы каркаса Django. Данных продукта в них нет, политик на них не заводим —
+# всё остальное в схеме обязано быть закрыто.
+FRAMEWORK_TABLES = {
+    "django_migrations", "django_content_type", "django_session",
+    "auth_permission", "auth_group", "auth_group_permissions",
+    "auth_user", "auth_user_groups", "auth_user_user_permissions",
+}
+
+
+def domain_tables(conn) -> list[str]:
+    """Таблицы продукта — как они есть в базе, а не как их помнит тест.
+
+    Список берётся из схемы специально: новая таблица, заведённая без политик,
+    должна ронять проверку сама, без того чтобы кто-то вспомнил дописать её сюда.
+    """
+    rows = conn.execute(
+        "select tablename from pg_tables where schemaname = 'public'"
+    ).fetchall()
+    tables = sorted({row[0] for row in rows} - FRAMEWORK_TABLES)
+    assert len(tables) >= 20, f"таблиц подозрительно мало ({len(tables)}) — проверка фиктивна"
+    return tables
+
+
+def test_force_rls_on_every_domain_table(db):
+    """Без force политики не действуют на владельца — а миграции идут владельцем.
+
+    Проверяется вся схема, а не список из головы: незакрытая таблица — это
+    утечка между партнёрами, и обнаружиться она должна здесь.
+    """
     rows = db.execute(
         """select relname from pg_class
             where relname = any(%s) and not (relrowsecurity and relforcerowsecurity)""",
-        (TENANT_TABLES,),
+        (domain_tables(db),),
     ).fetchall()
     assert rows == [], f"RLS не принудительная на: {[r[0] for r in rows]}"
+
+
+def test_schema_wide_checks_catch_an_unprotected_table(db):
+    """Обе проверки выше обязаны падать на незакрытой таблице.
+
+    Иначе они декоративные: список таблиц берётся из схемы, и без этого теста
+    нельзя отличить «всё закрыто» от «ничего не нашли». Таблица создаётся внутри
+    транзакции теста и исчезает вместе с ней.
+    """
+    db.execute("create table leaky_check (tenant_id uuid, note text)")
+    db.execute("insert into leaky_check values (gen_random_uuid(), 'чужое')")
+    db.execute("grant select on leaky_check to app_user")
+
+    assert "leaky_check" in domain_tables(db)
+    with pytest.raises(AssertionError):
+        test_force_rls_on_every_domain_table(db)
+    with pytest.raises(AssertionError):
+        test_no_domain_table_returns_rows_without_context(db)
+
+
+def test_no_domain_table_returns_rows_without_context(db):
+    """Гарантия наружу: без контекста пусто везде, а не только там, где смотрели."""
+    tables = domain_tables(db)
+    with as_app_user(db, None) as conn:
+        leaking = [
+            table
+            for table in tables
+            if conn.execute(f"select count(*) from {table}").fetchone()[0] > 0
+        ]
+    assert leaking == [], f"без контекста видны строки: {leaking}"
 
 
 # --- Доменные типы -----------------------------------------------------------

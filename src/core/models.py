@@ -11,8 +11,12 @@
 """
 from __future__ import annotations
 
-from django.contrib.postgres.fields import ArrayField
+import uuid
+
+from django.contrib.postgres.constraints import ExclusionConstraint
+from django.contrib.postgres.fields import ArrayField, DateRangeField, RangeOperators
 from django.db import models
+from django.db.models.functions import Coalesce
 
 from .fields import EnumField
 
@@ -47,6 +51,37 @@ def uuid_pk() -> models.UUIDField:
 
 def ledger_field(**kwargs) -> EnumField:
     return EnumField(db_type_name=LEDGER, **kwargs)
+
+
+# --- Версионирование правил по датам -----------------------------------------
+# Правила действуют с даты по дату, и двух версий на одну дату быть не может:
+# расчёт взял бы одну из них молча и посчитал бы месяц не тем правилом. Инвариант
+# держит база (D015) — ограничение EXCLUDE поверх btree_gist, а не дисциплина в
+# коде: сюда пишет и импорт, и админка, и миграция данных.
+
+
+class DateRange(models.Func):
+    """`daterange(valid_from, valid_to, '[)')` — период действия версии правила."""
+
+    function = "daterange"
+    output_field = DateRangeField()
+
+
+def validity_range() -> DateRange:
+    """Период действия. Конец не входит: «по 1 июля» и «с 1 июля» — не пересечение.
+
+    Так же читает границы код расчёта (`.exclude(valid_to__lte=period)`), и так
+    оформляется обычный перевод сотрудника серединой месяца. Пустой `valid_to` —
+    бесконечность: версия действует, пока её не закроют.
+    """
+    return DateRange("valid_from", "valid_to", models.Value("[)"))
+
+
+# Пустой scope_id — это «нет уровня», то есть страна или партнёр целиком.
+# В EXCLUDE сравнение идёт оператором `=`, а `null = null` даёт null, то есть
+# «не совпало»: без приведения к константе ограничение молча не защищало бы
+# самый частый уровень переопределений.
+NO_SCOPE = uuid.UUID(int=0)
 
 
 class Tenant(models.Model):
@@ -236,6 +271,21 @@ class AllocationRule(models.Model):
                 | models.Q(valid_to__gt=models.F("valid_from")),
                 name="allocation_rules_period_check",
             ),
+            # Одному контрагенту — одно действующее правило разнесения в каждом
+            # регистре: двух ответов на вопрос «куда относить счёт от EPS в
+            # марте» быть не должно. Регистр входит в ключ намеренно — один и тот
+            # же поставщик может оплачиваться и официально, и из кассы, и это
+            # разные строки P&L, а не спорные версии одного правила. Отсюда
+            # следует, что искать правило нужно по паре «контрагент + регистр».
+            ExclusionConstraint(
+                name="allocation_rules_no_overlap",
+                expressions=[
+                    ("tenant", RangeOperators.EQUAL),
+                    ("counterparty", RangeOperators.EQUAL),
+                    ("ledger", RangeOperators.EQUAL),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
+            ),
         ]
 
 
@@ -294,6 +344,15 @@ class RulePreset(models.Model):
             models.UniqueConstraint(
                 fields=["code", "valid_from"], name="rule_presets_code_valid_from_uniq"
             ),
+            # Пресет на дату должен собираться однозначно: две версии
+            # `serbia-2026` на один июнь — это два разных расчёта одного месяца.
+            ExclusionConstraint(
+                name="rule_presets_no_overlap",
+                expressions=[
+                    ("code", RangeOperators.EQUAL),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
+            ),
         ]
 
 
@@ -324,6 +383,24 @@ class RuleOverride(models.Model):
                 condition=models.Q(valid_to__isnull=True)
                 | models.Q(valid_to__gt=models.F("valid_from")),
                 name="rule_overrides_period_check",
+            ),
+            # Ключ — «что переопределяем и на каком уровне»: одно правило одного
+            # уровня не может иметь двух значений на одну дату. Разные уровни
+            # (страна и группа) спорить друг с другом имеют право — их разводит
+            # сборка пресета, а не это ограничение.
+            ExclusionConstraint(
+                name="rule_overrides_no_overlap",
+                expressions=[
+                    ("tenant", RangeOperators.EQUAL),
+                    ("scope_type", RangeOperators.EQUAL),
+                    (
+                        Coalesce("scope_id", models.Value(NO_SCOPE),
+                                 output_field=models.UUIDField()),
+                        RangeOperators.EQUAL,
+                    ),
+                    ("path", RangeOperators.EQUAL),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
             ),
         ]
 
@@ -401,6 +478,17 @@ class EmploymentTerm(models.Model):
                 condition=models.Q(valid_to__isnull=True)
                 | models.Q(valid_to__gt=models.F("valid_from")),
                 name="employment_terms_period_check",
+            ),
+            # У человека в один момент одни условия найма. Расчёт берёт версию,
+            # действующую в месяце (`calc.collect_cases`); две версии на один
+            # месяц дали бы правдоподобный, но неверный расчёт и промолчали.
+            ExclusionConstraint(
+                name="employment_terms_no_overlap",
+                expressions=[
+                    ("tenant", RangeOperators.EQUAL),
+                    ("employee", RangeOperators.EQUAL),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
             ),
         ]
 
