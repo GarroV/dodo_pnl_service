@@ -43,6 +43,22 @@ def _context(request, period):
     return who
 
 
+def _refused(status: int, text: str, row, hour_type: str) -> HttpResponse:
+    """Отказ на запись ячейки — одним и тем же способом, каким бы он ни был.
+
+    Три вещи, которые обязан получить экран: код ответа, текст для человека и
+    значение, оставшееся **в базе**. Последнее — не мелочь: без него в поле
+    оставался бы непринятый ввод, и человек читал бы отказ, глядя на число,
+    которого в базе нет (T066). Здесь это одно место на все причины отказа,
+    чтобы новая причина не завела себе третий способ объясняться.
+    """
+    response = HttpResponse(
+        text, status=status, content_type="text/plain; charset=utf-8"
+    )
+    response["X-Cell-Value"] = f"{Decimal(str((row.hours or {}).get(hour_type, 0))):.2f}"
+    return response
+
+
 @login_required
 def grid(request, period_id):
     period = find_period(period_id)
@@ -58,6 +74,12 @@ def grid(request, period_id):
     except PayrunRefused as denied:
         refusal = denied
 
+    # Ячейки — поля ввода только у того, кому правка табеля разрешена (T072).
+    # Роль без права раньше получала ту же редактируемую сетку 35×6 и узнавала
+    # о запрете, лишь покинув ячейку: значение уходило на сервер и возвращалось
+    # отказом. Проверку в `cell` это не отменяет — она ниже и остаётся.
+    denied = permissions.explain(who, permissions.TIMESHEET_EDIT)
+
     return render(
         request,
         "timesheets/grid.html",
@@ -69,6 +91,8 @@ def grid(request, period_id):
             "details": refusal.details if refusal else [],
             # Управляющему честно говорим, что он видит срез, а не весь табель.
             "limited_to_units": bool(who.unit_ids),
+            "can_edit": not denied,
+            "edit_denied": denied,
         },
         status=refusal.http_status if refusal else 200,
     )
@@ -106,17 +130,17 @@ def cell(request, period_id):
     try:
         hours = parse_hours(request.POST.get("hours", ""))
         set_cell(timesheet=row, hour_type=hour_type, hours=hours)
+        table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
     except CellRefused as refusal:
-        response = HttpResponse(
-            str(refusal), status=REFUSED, content_type="text/plain; charset=utf-8"
-        )
-        # Что осталось в базе — тем же заголовком, что и при удачной записи.
-        # Иначе в поле оставался бы непринятый ввод, и экран показывал бы
-        # число, которого в базе нет: на этом экране это часы человека.
-        response["X-Cell-Value"] = f"{Decimal(str((row.hours or {}).get(hour_type, 0))):.2f}"
-        return response
+        return _refused(REFUSED, str(refusal), row, hour_type)
+    except PayrunRefused as refusal:
+        # Колонки сетки — типы часов страны, то есть те же правила, на которых
+        # стоит расчёт. Страница могла открыться, когда они ещё действовали, а
+        # ячейка уходит на сервер уже после того, как перестали (T073). Без этой
+        # ветки человек получал 500 — «Server Error» ровно тому, кто набирал
+        # часы, — вместо того же объяснения, что даёт страница с T062.
+        return _refused(refusal.http_status, refusal.message, row, hour_type)
 
-    table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
     changed = next((item for item in table.rows if item.timesheet_id == row.id), None)
     response = render(
         request,

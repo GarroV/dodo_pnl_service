@@ -1,0 +1,308 @@
+/*
+ * Смоук прав на экране (T072) и отказа на записи ячейки (T073).
+ *
+ * Проверяет ровно то, что нельзя доказать разбором разметки: что живой человек
+ * под каждой из четырёх ролей видит на странице периода и в табеле, и что
+ * отказ на досылке ячейки доезжает до экрана плашкой, а не «Server Error».
+ *
+ * Клики и ввод — настоящими событиями мыши и клавиатуры (`Input.dispatch*`),
+ * а не вызовами обработчиков: обработчик, вызванный напрямую, доказывает
+ * работоспособность обработчика, а не экрана.
+ *
+ *     node tools/smoke_permissions.mjs            (APP=http://127.0.0.1:8047)
+ */
+import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+
+const APP = process.env.APP || "http://127.0.0.1:8047";
+
+// Кому что положено — из сида (`seed_dev.ROLES`), а не из головы.
+const ROLES = [
+  { code: "director", calculate: true, edit: true },
+  { code: "accountant", calculate: true, edit: true },
+  { code: "manager", calculate: false, edit: true },
+  { code: "admin", calculate: false, edit: false },
+];
+
+const { evalIn, goto, send, key, type, check, report, logs } = await attach();
+const login = loginWith(APP, evalIn, goto);
+
+const state = {};
+
+// Период считается один раз, настоящим нажатием кнопки под директором: без
+// расчёта ведомости на странице нет, и числа-ориентиры сверять было бы не с чем.
+await login("director");
+{
+  const { periodHref } = await findPeriodAndGrid(APP, evalIn, goto);
+  await goto(APP + periodHref);
+  const box = await evalIn(`
+    (() => {
+      const b = [...document.querySelectorAll("button")]
+        .find(x => x.textContent.includes("Посчитать период"));
+      if (!b) return null;
+      const r = b.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    })()
+  `);
+  check("директор видит кнопку расчёта", !!box);
+  for (const t of ["mousePressed", "mouseReleased"]) {
+    await send("Input.dispatchMouseEvent", { type: t, x: box.x, y: box.y, button: "left", clickCount: 1 });
+  }
+  await new Promise((r) => setTimeout(r, 2500));
+  const done = await evalIn(`document.body.innerText.includes("Расчёт выполнен")`);
+  check("расчёт запущен нажатием кнопки", done);
+}
+
+for (const role of ROLES) {
+  await login(role.code);
+  const { periodHref, gridHref } = await findPeriodAndGrid(APP, evalIn, goto);
+
+  // --- страница периода ------------------------------------------------------
+  await goto(APP + periodHref);
+  const page = await evalIn(`
+    (() => {
+      const button = [...document.querySelectorAll("button")]
+        .find(b => b.textContent.includes("Посчитать период"));
+      const rows = document.querySelectorAll("table.sheet tbody tr").length;
+      const total = document.querySelector("table.sheet tfoot .num:last-child");
+      const norm = [...document.querySelectorAll("dl.facts dt")]
+        .findIndex(dt => dt.textContent.includes("Норма часов"));
+      const dd = document.querySelectorAll("dl.facts dd");
+      return {
+        button: !!button,
+        forms: document.querySelectorAll('form[action*="calculate/"]').length,
+        explained: document.body.innerText.includes("Расчёт периода не входит в права"),
+        rows,
+        total: total ? total.textContent.trim() : "",
+        norm: norm >= 0 ? dd[norm].textContent.trim() : "",
+        role: document.body.innerText,
+      };
+    })()
+  `);
+
+  check(`${role.code}: кнопка «Посчитать период» ${role.calculate ? "есть" : "скрыта"}`,
+    page.button === role.calculate && page.forms === (role.calculate ? 1 : 0));
+  check(`${role.code}: запрет расчёта объяснён словами`,
+    page.explained === !role.calculate);
+  state[role.code] = { rows: page.rows, total: page.total, norm: page.norm };
+  console.log(`      строк ведомости ${page.rows}, итог ${page.total}, норма ${page.norm}`);
+
+  // --- табель ----------------------------------------------------------------
+  await goto(APP + gridHref);
+  const grid = await evalIn(`
+    (() => {
+      const inputs = document.querySelectorAll("input.cell").length;
+      const rows = document.querySelectorAll("#timesheet-grid tbody tr").length;
+      return {
+        inputs,
+        rows,
+        htmx: typeof window.htmx !== "undefined",
+        total: (document.getElementById("grand-total") || {}).textContent || "",
+        explained: document.body.innerText.toLowerCase()
+          .includes("правка табеля не входит в права"),
+      };
+    })()
+  `);
+
+  check(`${role.code}: сетка ${role.edit ? "редактируемая" : "на чтение"}`,
+    role.edit ? grid.inputs > 0 : grid.inputs === 0,
+    `полей ввода ${grid.inputs}, строк ${grid.rows}, итог ${grid.total}`);
+  check(`${role.code}: запрет правки объяснён словами`, grid.explained === !role.edit);
+  check(`${role.code}: htmx ${role.edit ? "поднят" : "не грузится на страницу чтения"}`,
+    grid.htmx === role.edit);
+  state[role.code].gridRows = grid.rows;
+  state[role.code].gridTotal = grid.total;
+}
+
+// --- сетка на чтение показывает те же данные ---------------------------------
+// Запрет правки не должен превращаться в скрытие данных: администратор видит
+// весь табель тенанта, как и директор.
+check("администратор видит в табеле те же строки и тот же итог, что директор",
+  state.admin.gridRows === state.director.gridRows &&
+    state.admin.gridTotal === state.director.gridTotal,
+  `${state.admin.gridRows} строк, итог ${state.admin.gridTotal}`);
+
+// --- клик по единственной оставшейся кнопке ----------------------------------
+// Управляющий: кнопки расчёта нет, но ссылка на табель рядом с ней должна
+// работать — иначе «спрятали кнопку» означало бы «сломали строку действий».
+await login("manager");
+{
+  const { periodHref } = await findPeriodAndGrid(APP, evalIn, goto);
+  await goto(APP + periodHref);
+  const box = await evalIn(`
+    (() => {
+      const link = [...document.querySelectorAll("a")]
+        .find(a => a.textContent.trim() === "Табель");
+      if (!link) return null;
+      const r = link.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    })()
+  `);
+  if (!box) check("управляющий: ссылка «Табель» на месте", false);
+  else {
+    for (const type of ["mousePressed", "mouseReleased"]) {
+      await send("Input.dispatchMouseEvent", {
+        type, x: box.x, y: box.y, button: "left", clickCount: 1,
+      });
+    }
+    await new Promise((r) => setTimeout(r, 1200));
+    const url = await evalIn("location.pathname");
+    check("управляющий: клик по «Табель» открывает табель", url.startsWith("/timesheets/"), url);
+  }
+}
+
+// --- T073: отказ на записи ячейки --------------------------------------------
+// Правила на месяц выключаются на время проверки прямо в базе стенда: сценарий
+// узкий и другим способом не воспроизводится.
+async function rulesShiftedTo(year) {
+  // execFile с массивом аргументов, а не строкой в оболочке: год здесь свой, но
+  // заводить в проекте пример сборки команды строкой не стоит.
+  const { execFileSync } = await import("node:child_process");
+  execFileSync(
+    "docker",
+    ["exec", "dodo-pnl-ui-db-1", "psql", "-U", "app", "-d", "dodo_pnl",
+     "-c", `update rule_presets set valid_from = '${year}-01-01'`],
+    { stdio: "pipe" },
+  );
+}
+
+await login("director");
+{
+  const { gridHref } = await findPeriodAndGrid(APP, evalIn, goto);
+  await goto(APP + gridHref);
+
+  // Ставим известное число обычным путём: клик в ячейку, набор, уход фокуса.
+  const cell = await evalIn(`
+    (() => {
+      const input = document.querySelector("input.cell");
+      input.scrollIntoView({ block: "center" });
+      const r = input.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    })()
+  `);
+  for (const t of ["mousePressed", "mouseReleased"]) {
+    await send("Input.dispatchMouseEvent", { type: t, x: cell.x, y: cell.y, button: "left", clickCount: 1 });
+  }
+  await evalIn(`document.activeElement.select()`);
+  await type("12");
+  await key("Enter", "Enter", 13);
+  await new Promise((r) => setTimeout(r, 900));
+  const saved = await evalIn(`document.querySelector("input.cell").value`);
+  check("ячейка сохранена обычным путём", saved === "12.00", saved);
+
+  await rulesShiftedTo(2030);
+  try {
+    // Тот же ввод, но правил на месяц больше нет.
+    for (const t of ["mousePressed", "mouseReleased"]) {
+      await send("Input.dispatchMouseEvent", { type: t, x: cell.x, y: cell.y, button: "left", clickCount: 1 });
+    }
+    await evalIn(`document.activeElement.select()`);
+    await type("9");
+    await key("Enter", "Enter", 13);
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const refusal = await evalIn(`
+      (() => {
+        const box = document.getElementById("cell-error");
+        const input = document.querySelector("input.cell");
+        const r = box.hidden ? null : box.getBoundingClientRect();
+        const c = input.getBoundingClientRect();
+        return {
+          shown: !box.hidden,
+          text: box.textContent,
+          distance: r ? Math.round(Math.abs(r.top - c.bottom)) : null,
+          inWindow: r ? r.top >= 0 && r.bottom <= window.innerHeight : false,
+          value: input.value,
+          invalid: input.getAttribute("aria-invalid"),
+        };
+      })()
+    `);
+    check("T073: отказ показан у ячейки, а не «Server Error»",
+      refusal.shown && refusal.text.includes("нет правил расчёта"), refusal.text.slice(0, 90));
+    check("T073: плашка в окне, рядом с ячейкой", refusal.inWindow && refusal.distance < 60,
+      `${refusal.distance} px от ячейки`);
+    check("T073: в ячейке значение из базы", refusal.value === "12.00", refusal.value);
+    check("T073: ячейка помечена для доступности", refusal.invalid === "true");
+
+    // Страница целиком в том же состоянии объясняет то же самое (T062).
+    await goto(APP + gridHref);
+    const page = await evalIn(`document.body.innerText`);
+    check("страница табеля объясняет то же самое",
+      page.includes("нет правил расчёта") && page.includes("load_presets"));
+  } finally {
+    await rulesShiftedTo(2026);
+  }
+
+  // Правила вернули — ячейка снова пишется, и в базе то, что показано.
+  await goto(APP + gridHref);
+  const back = await evalIn(`document.querySelector("input.cell").value`);
+  check("после возврата правил ячейка снова редактируется", back === "12.00", back);
+}
+
+// --- контуры отказа на сервере остались на месте -----------------------------
+// Скрытая кнопка — не контур доступа. Адреса рабочие, и роль без права обязана
+// получать на них тот же отказ, что и до T072: запросы идут настоящим fetch со
+// страницы, с её же защитой от подделки, — то есть ровно так, как их отправил
+// бы подделанный интерфейс.
+// Ответ на расчёт — целая страница периода с плашкой, поэтому наличие текста
+// проверяется по всему телу, а наружу отдаётся только признак и начало ответа:
+// сверять срез первых строк значило бы сверять <head>.
+async function post(path, params, expect) {
+  return evalIn(`
+    (async () => {
+      const token = document.querySelector("[name=csrfmiddlewaretoken]").value;
+      const r = await fetch(${JSON.stringify(path)}, {
+        method: "POST",
+        headers: { "X-CSRFToken": token },
+        body: new URLSearchParams(${JSON.stringify(params)}),
+      });
+      const text = await r.text();
+      return {
+        status: r.status,
+        found: text.includes(${JSON.stringify(expect)}),
+        text: text.replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim().slice(0, 160),
+      };
+    })()
+  `);
+}
+
+await login("admin");
+{
+  const { periodHref, gridHref } = await findPeriodAndGrid(APP, evalIn, goto);
+  await goto(APP + periodHref);
+  const calculate = await post(
+    periodHref + "calculate/", {}, "Расчёт периода не входит в права",
+  );
+  check("сервер по-прежнему отказывает администратору в расчёте",
+    calculate.status === 403 && calculate.found, `${calculate.status}: ${calculate.text}`);
+
+  // Строку табеля берём глазами директора: у администратора её id на странице
+  // теперь тоже есть (сетка на чтение), но честнее взять адрес так, как его
+  // взял бы подделывающий запрос — со страницы того, кто правит.
+  await login("director");
+  await goto(APP + gridHref);
+  const row = await evalIn(`
+    (() => {
+      const i = document.querySelector("input.cell");
+      return { row: i.dataset.row, kind: i.dataset.kind };
+    })()
+  `);
+  await login("admin");
+  await goto(APP + gridHref);
+  const cell = await post(
+    gridHref + "cell/", { row: row.row, kind: row.kind, hours: "7" },
+    "Правка табеля не входит в права",
+  );
+  check("сервер по-прежнему отказывает администратору в правке ячейки",
+    cell.status === 403 && cell.found, `${cell.status}: ${cell.text}`);
+
+  await login("director");
+  await goto(APP + gridHref);
+  const kept = await evalIn(`document.querySelector("input.cell").value`);
+  check("отказ ничего не изменил в базе", kept === "12.00", kept);
+}
+
+const noise = logs.filter((line) => !/422|409|403|Failed to load resource/.test(line));
+check("консоль браузера чиста", noise.length === 0, noise.join(" | ").slice(0, 200));
+
+console.log("\nЧисла по ролям:", JSON.stringify(state, null, 1));
+report();

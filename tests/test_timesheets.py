@@ -506,6 +506,43 @@ def test_grid_explains_missing_rules_instead_of_500(client):
         RulePreset.objects.update(valid_from=date(2026, 1, 1))
 
 
+def test_cell_explains_missing_rules_instead_of_500(client):
+    """Тот же отказ, но на записи ячейки, а не на открытии страницы (T073).
+
+    Сценарий узкий и оттого незаметный: страница открылась, когда правила ещё
+    действовали, а значение ячейки уходит на сервер уже после того, как они
+    перестали. `grid` это объясняет с T062, `cell` падал пятисоткой — то есть
+    показывал «Server Error» ровно тому, кто набирал часы.
+
+    Проверяется здесь и механизм показа: отказ приходит теми же тремя вещами,
+    что и остальные отказы ячейки, — код ответа, текст для человека и значение,
+    оставшееся в базе, заголовком. Третьего способа объяснить отказ на этом
+    экране быть не должно.
+    """
+    from core.models import RulePreset, Timesheet
+
+    login_as(client, "director")
+    url = grid_url(client)
+    row_id, kind = _first_cell(body(client.get(url)))
+    client.post(f"{url}cell/", {"row": row_id, "kind": kind, "hours": "12.00"})
+
+    RulePreset.objects.update(valid_from=date(2030, 1, 1))
+    try:
+        response = client.post(f"{url}cell/", {"row": row_id, "kind": kind, "hours": "9"})
+        assert response.status_code == 409, "правил нет — это отказ, а не ошибка сервера"
+        text = response.content.decode()
+        assert "нет правил расчёта" in text
+        assert "load_presets" in text
+        assert response["X-Cell-Value"] == "12.00"
+    finally:
+        RulePreset.objects.update(valid_from=date(2026, 1, 1))
+
+    # Отказ обязан ничего не менять: иначе в базе осталось бы число, посчитать
+    # которое всё равно нечем.
+    stored = Timesheet.objects.get(pk=row_id).hours or {}
+    assert Decimal(str(stored.get(kind, 0))) == Decimal("12.00")
+
+
 def test_refused_cell_answers_with_value_from_base(client):
     """Отказ возвращает то, что осталось в базе: экран не показывает непринятое.
 
