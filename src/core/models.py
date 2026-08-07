@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import uuid
 
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import ArrayField, DateRangeField, RangeOperators
 from django.db import models
@@ -132,6 +133,52 @@ class Unit(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["tenant", "code"], name="units_tenant_code_uniq"),
         ]
+
+
+class UserManager(BaseUserManager):
+    """Заведение учёток. Пароль всегда через `set_password` — хэшем, не текстом."""
+
+    def create_user(self, username: str, password: str | None = None, **extra):
+        if not username:
+            raise ValueError("у учётки должен быть логин")
+        user = self.model(username=username, **extra)
+        # Пустой пароль — не «пускать без пароля»: set_password(None) даёт
+        # непригодный хэш, с которым не сойдётся ни один ввод.
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+
+class User(AbstractBaseUser):
+    """Учётка человека. Её `id` — тот самый, что уходит в контекст базы.
+
+    Ключ общий с `memberships.user_id` намеренно: иначе появилась бы вторая
+    таблица соответствий «учётка → пользователь тенанта», и однажды в ней
+    оказалась бы не та строка. Внешнего ключа при этом нет: блок `db` оставил
+    `memberships.user_id` голым uuid, чтобы схема не зависела от того, чем
+    окажется вход (D013).
+
+    Прав внутри учётки нет: что человек видит, решает роль в `memberships`, а
+    применяют — политики базы. Поэтому `PermissionsMixin` не подмешан.
+    """
+
+    id = uuid_pk()
+    username = models.TextField(unique=True)
+    full_name = models.TextField(db_default="")
+    email = models.TextField(db_default="")
+    is_active = models.BooleanField(db_default=True)
+    created_at = models.DateTimeField(db_default=now_default())
+
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS: list[str] = []
+
+    objects = UserManager()
+
+    class Meta:
+        db_table = "users"
+
+    def __str__(self) -> str:
+        return self.username
 
 
 class Role(models.Model):

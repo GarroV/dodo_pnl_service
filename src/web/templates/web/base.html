@@ -88,6 +88,14 @@
   }
   button.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
   button.primary:hover { background: #1740b4; }
+  /* Формы входа и смены пароля: одна колонка, поле шире подписи — читается
+     сверху вниз без метаний глазом. */
+  form.card { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 18px 22px; max-width: 420px; }
+  form.card p { margin: 0 0 16px; }
+  form.card p:last-child { margin-bottom: 0; }
+  form.card label { color: var(--muted); font-size: 13px; }
+  form.card input { font: inherit; width: 100%; padding: 7px 10px; margin-top: 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
+  form.card input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .alert, .ok { padding: 12px 16px; border-radius: 4px; margin: 0 0 20px; }
   .alert { color: var(--warn); background: var(--warn-bg); border: 1px solid #f3d3bf; }
   .alert .details { color: var(--ink); font-size: 13px; margin-top: 6px; }
@@ -99,16 +107,19 @@
   <a class="brand" href="{% url 'periods' %}">Dodo P&amp;L</a>
   <nav><a href="{% url 'periods' %}">Периоды</a></nav>
   <div class="who">
-    <span class="badge" title="Вход ненастоящий: переключатель пользователей сида">dev-вход</span>
+    {% if dev_login %}
+      <span class="badge" title="На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)">dev-вход</span>
+    {% endif %}
     {% if principal %}
-      <span><strong>{{ principal.role_title }}</strong>{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
-      <span>регистры: {{ visible_ledgers_title }}</span>
-      <a class="btn" href="{% url 'dev-login' %}">сменить</a>
-      <form class="inline" method="post" action="{% url 'dev-logout' %}">{% csrf_token %}
+      {# У учёток сида имя человека совпадает с названием роли — не повторяем его дважды. #}
+      <span><strong>{{ principal.display_name }}</strong>{% if principal.role_title and principal.role_title != principal.display_name %} · {{ principal.role_title }}{% endif %}{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
+      {% if visible_ledgers_title %}<span>регистры: {{ visible_ledgers_title }}</span>{% endif %}
+      <a class="btn" href="{% url 'password-change' %}">пароль</a>
+      <form class="inline" method="post" action="{% url 'logout' %}">{% csrf_token %}
         <button type="submit">выйти</button>
       </form>
     {% else %}
-      <a class="btn" href="{% url 'dev-login' %}">войти</a>
+      <a class="btn" href="{% url 'login' %}">войти</a>
     {% endif %}
   </div>
 </header>

@@ -163,19 +163,28 @@ def test_unknown_period_is_not_found(client):
 
 
 def test_without_login_no_data_leaks(client):
-    """Контекст не выставлен — политики базы обязаны отдать пустоту."""
+    """Не вошёл — страницу с данными не показывают, а уводят на вход.
+
+    Второй контур — политики базы: даже если однажды кто-то снимет проверку
+    входа с представления, контекст не выставлен и выборки пусты (это
+    проверяется в `test_context_leak.py`).
+    """
     response = client.get("/periods/")
-    assert response.status_code == 200
-    text = body(response)
+    assert response.status_code == 302
+    assert "/login/" in response["Location"]
+
+    text = body(client.get("/login/"))
     assert "2026" not in text
     assert "Dodo Serbia" not in text
 
 
-def test_period_page_without_login_is_not_found(client):
+def test_period_page_without_login_sends_to_the_entrance(client):
     login_as(client, "director")
     url = period_url(client)
-    client.post("/dev/logout/")
-    assert client.get(url).status_code == 404
+    client.post("/logout/")
+    response = client.get(url)
+    assert response.status_code == 302
+    assert "/login/" in response["Location"]
 
 
 def test_accountant_does_not_see_other_ledgers(client, ledger_rows):
@@ -217,11 +226,13 @@ def test_logout_drops_context(client):
     assert "Dodo Serbia" not in body(client.get("/periods/"))
 
 
-def test_dev_login_page_lists_three_users(client):
-    text = body(client.get("/dev/login/"))
+def test_login_page_lists_the_dev_shortcuts(client):
+    """Кнопки быстрого входа живут на общей странице входа, отдельной больше нет."""
+    text = body(client.get("/dev/login/", follow=True))
     assert "Оперативный директор" in text
     assert "Бухгалтер" in text
     assert "Управляющий точки" in text
+    assert "Администратор сети" in text
 
 
 def test_unknown_dev_user_is_rejected(client):
@@ -243,7 +254,8 @@ def test_dev_login_can_be_switched_off(client):
 
 
 def test_pages_are_marked_as_dev_only(client):
-    """Пока вход ненастоящий, об этом должно быть написано на экране."""
+    """Пока на странице входа есть кнопки-ярлыки, об этом написано в шапке."""
+    login_as(client, "director")
     assert "dev" in body(client.get("/periods/")).lower()
 
 
