@@ -106,6 +106,32 @@ def test_seed_covers_all_three_ledgers(conn):
     assert ledgers == {"official", "supplementary", "internal"}
 
 
+def test_seed_does_not_work_around_the_courier_scheme(conn):
+    """T053: курьеры считаются схемой своей группы, а не подставленной чужой.
+
+    До этого сид переопределял им схему на условиях найма (`temporary`), потому
+    что схемы `none` из пресета движок не знал (issue #45). Обход — это заглушка
+    ради тестовых данных, и она обязана исчезнуть вместе с причиной.
+    """
+    rows = conn.execute(
+        """select t.scheme, g.scheme
+             from employment_terms t join employee_groups g on g.id = t.group_id
+            where g.code = 'couriers'"""
+    ).fetchall()
+    assert rows, "в сиде нет ни одного курьера"
+    for own, from_group in rows:
+        assert own is None, f"курьеру подставлена схема {own} вместо групповой {from_group}"
+        assert from_group == "direct"
+
+
+def test_seed_loads_country_rules_into_the_table(conn):
+    """Правила расчёта живут в базе (T011): без них расчёт периода не пойдёт."""
+    presets = conn.execute(
+        "select code, country_code from rule_presets where country_code = 'RS'"
+    ).fetchall()
+    assert [p[0] for p in presets] == ["serbia-2026"]
+
+
 def test_seed_keeps_cash_payout_and_manual_correction(conn):
     """Значения, которые движок принимает, а схема раньше теряла (T051)."""
     with_cash = conn.execute(

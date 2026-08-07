@@ -117,6 +117,24 @@ schemes:
       method: flat_rate
       rate_key: temporary_contract
 
+  direct:
+    title: "Прямая выплата без пересчета"
+    hours_per_day: 8
+    worked_hours_source: input
+    allowances: []                # топли оброк — часть официальной зарплаты
+    gross_up:
+      method: none                # бруто = нето, пересчитывать нечего
+    contributions:
+      method: none                # взносов нет, полная стоимость = выплата
+    # Это не «схема без налогов ради удобства». Удержать налог с выплаты,
+    # которую не объявляют, не с чего: во внутреннем регистре нет ни бруто, ни
+    # взносов — есть сумма на руки. Раньше здесь стояло `scheme: none`, схемы с
+    # таким именем движок не знал, и посчитать курьеров было нельзя (issue #45).
+    #
+    # Что этим НЕ решено и остается вопросом к бухгалтеру: чем меряется работа
+    # курьера — часами, сменами или доставками. Сейчас начисляется по часам, как
+    # у всех; появится ответ — меняется ввод часов и ставка, а не эта схема.
+
 # --- Группы сотрудников ---
 # Регистр учёта и схема расчета привязаны к группе; на уровне сотрудника переопределяются.
 groups:
@@ -124,7 +142,7 @@ groups:
   management:  { title: "Управляющие",       scheme: standard, ledger: official, pnl_line: "LC / GMC" }
   kitchen:     { title: "Кухня и касса",     scheme: standard, ledger: supplementary,  pnl_line: "LC / КС" }
   doughmaker:  { title: "Тестомейкер",       scheme: standard, ledger: supplementary,  pnl_line: "LC / Тестомейкер" }
-  couriers:    { title: "Курьеры",           scheme: none,     ledger: internal, pnl_line: "LC / DC" }
+  couriers:    { title: "Курьеры",           scheme: direct,   ledger: internal, pnl_line: "LC / DC" }
   temporary:   { title: "Временные работы",  scheme: temporary, ledger: official, pnl_line: "LC / КС" }
 
 # --- Производственный календарь ---
