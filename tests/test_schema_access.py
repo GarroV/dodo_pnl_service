@@ -124,6 +124,60 @@ def test_write_into_other_tenant_is_rejected(db):
             )
 
 
+# --- Общие данные без тенанта (T002) -----------------------------------------
+# Часть справочников по замыслу не принадлежит никому: системные роли и общий
+# справочник статей P&L (`tenant_id is null`). Единый справочник — цель проекта,
+# поэтому «не видно никому» здесь не мелочь: на нём собирается P&L всей сети.
+
+
+def test_shared_pnl_items_are_visible(db):
+    """Общий справочник статей виден пользователю любого тенанта.
+
+    Дефект, ради которого написан тест: `null in (select ...)` даёт null, то есть
+    «не проходит», и строки без тенанта не видел никто.
+    """
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        codes = {row[0] for row in conn.execute("select code from pnl_items").fetchall()}
+    assert "revenue" in codes and "labour_cost" in codes
+
+
+def test_system_roles_are_visible(db):
+    """Системная роль (без тенанта) видна — иначе экран управления ролями пуст."""
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        codes = {row[0] for row in conn.execute("select code from roles").fetchall()}
+    assert "support" in codes, "системная роль не видна"
+    assert "director" in codes, "роль своего тенанта пропала вместе с починкой"
+
+
+def test_shared_rows_stay_hidden_without_context(db):
+    """Общее — не значит публичное: без контекста по-прежнему пусто."""
+    with as_app_user(db, None) as conn:
+        assert conn.execute("select count(*) from pnl_items").fetchone()[0] == 0
+        assert conn.execute("select count(*) from roles").fetchone()[0] == 0
+
+
+def test_other_tenant_rows_stay_hidden_after_the_fix(db):
+    """Починка общего не должна открыть чужое: у второго тенанта своя роль."""
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        titles = {row[0] for row in conn.execute("select title from roles").fetchall()}
+    assert "Директор партнёра" not in titles
+
+
+def test_app_user_cannot_create_shared_rows(db):
+    """Записывать общий справочник приложению незачем: только читать.
+
+    Иначе любой пользователь любого партнёра правил бы справочник всей сети.
+    """
+    import psycopg
+
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            conn.execute(
+                "insert into pnl_items (tenant_id, code, title, kind)"
+                " values (null, 'hack', 'Своя статья', 'expense')"
+            )
+
+
 # --- Видимость регистров учёта ----------------------------------------------
 
 def test_ledger_visibility_narrows_not_widens(db):

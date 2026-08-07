@@ -170,6 +170,7 @@ def db(pg_dsn):
 R_DIRECTOR = "e1111111-0000-0000-0000-000000000001"
 R_ACCOUNTANT = "e1111111-0000-0000-0000-000000000002"
 R_MANAGER = "e1111111-0000-0000-0000-000000000003"
+R_SYSTEM = "e1111111-0000-0000-0000-000000000010"  # роль без тенанта, общая для всех
 R_OTHER = "e1111111-0000-0000-0000-00000000000f"
 
 
@@ -218,11 +219,12 @@ def _seed(conn) -> None:
     )
     conn.execute(
         """insert into roles (id, tenant_id, code, title, visible_layers) values
-               (%s, %s, 'director',   'Оперативный директор', '{white,grey,black}'),
-               (%s, %s, 'accountant', 'Бухгалтер',            '{white}'),
-               (%s, %s, 'manager',    'Управляющий точки',    '{white,grey}'),
-               (%s, %s, 'director',   'Директор партнёра',    '{white,grey,black}')""",
-        (R_DIRECTOR, T1, R_ACCOUNTANT, T1, R_MANAGER, T1, R_OTHER, T2),
+               (%s, %s,   'director',   'Оперативный директор', '{white,grey,black}'),
+               (%s, %s,   'accountant', 'Бухгалтер',            '{white}'),
+               (%s, %s,   'manager',    'Управляющий точки',    '{white,grey}'),
+               (%s, null, 'support',    'Поддержка сервиса',    '{white}'),
+               (%s, %s,   'director',   'Директор партнёра',    '{white,grey,black}')""",
+        (R_DIRECTOR, T1, R_ACCOUNTANT, T1, R_MANAGER, T1, R_SYSTEM, R_OTHER, T2),
     )
     conn.execute(
         """insert into memberships (tenant_id, user_id, role_id, unit_ids) values

@@ -18,12 +18,11 @@
 Суперпользователь обходит RLS всегда, включая force. Это осознанно: сид,
 восстановление из дампа и обслуживание идут именно им.
 
-Известный дефект, оставленный намеренно (задача T002, следующая очередь):
-строки с `tenant_id is null` — системные роли и общий справочник статей —
-не проходят политику изоляции (`null in (...)` даёт null, то есть «не видно»)
-и не видны никому. Сейчас это ни на что не влияет: `app_visible_ledgers` —
-security definer и читает роли в обход RLS. Проявится на экране управления
-ролями и на сборке P&L по общему справочнику.
+3. Общие строки (`tenant_id is null`) — системные роли и общий справочник
+   статей — читаются всеми, у кого есть контекст, но пишутся только в обход
+   политик (миграцией или сидом). `null in (select ...)` даёт null, поэтому без
+   отдельной ветки такие строки не видел никто; без проверки на `app_user_id()`
+   они стали бы видны и без контекста, а это уже публикация справочника.
 """
 from django.db import migrations
 
@@ -38,6 +37,13 @@ TENANT_TABLES = [
 
 # Таблицы, где у строки есть собственный регистр учёта.
 LEDGER_TABLES = ["pay_components", "allocation_rules"]
+
+# Таблицы, где `tenant_id is null` — это не «ничьё», а «общее для всех»:
+# системные роли и общий справочник статей P&L. Единый справочник — цель
+# проекта, поэтому такие строки обязаны быть видны каждому, у кого есть
+# контекст. Правило читается только на чтение: править общее из приложения
+# нельзя, иначе пользователь одного партнёра менял бы справочник всей сети.
+SHARED_ROW_TABLES = ["roles", "pnl_items"]
 
 FUNCTIONS = """
 -- Единственная точка привязки к системе входа. Приложение выставляет GUC
@@ -99,12 +105,21 @@ drop function if exists app_user_id();
 def _tenant_policies() -> str:
     parts = []
     for table in TENANT_TABLES:
+        # `null in (select ...)` даёт null, то есть «не проходит»: без этой
+        # добавки общие строки не видны никому, включая того, для кого они
+        # заведены. Проверка на app_user_id() обязательна — «общее» не значит
+        # «публичное», без контекста выборка обязана остаться пустой.
+        shared = (
+            " or (tenant_id is null and app_user_id() is not null)"
+            if table in SHARED_ROW_TABLES
+            else ""
+        )
         parts.append(f"""
 alter table {table} enable row level security;
 alter table {table} force row level security;
 create policy tenant_isolation on {table}
     for all
-    using (tenant_id in (select app_tenant_ids()))
+    using (tenant_id in (select app_tenant_ids()){shared})
     with check (tenant_id in (select app_tenant_ids()));
 """)
     for table in LEDGER_TABLES:
