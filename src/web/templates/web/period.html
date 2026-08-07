@@ -18,7 +18,13 @@
 <dl class="facts">
   <dt>Состояние</dt><dd>{{ status }}</dd>
   <dt>Сотрудников в табеле</dt><dd>{{ employees }}</dd>
-  {% if norm_hours %}<dt>Норма часов</dt><dd>{{ norm_hours }}</dd>{% endif %}
+  {% comment %}
+  Норма часов показывается всегда, даже когда её нет. Пропасть строке нельзя:
+  она общая для всех ролей, и разное число у разных людей было дефектом (её
+  брали из первого попавшегося табеля, где норма персональная).
+  {% endcomment %}
+  <dt>Норма часов <span class="hint">{{ norm_hours_hint }}</span></dt>
+  <dd>{{ norm_hours }}</dd>
   <dt>Последний расчёт</dt>
   <dd>{% if calculated_at %}{{ calculated_at }}{% else %}не считался{% endif %}</dd>
 </dl>

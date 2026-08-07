@@ -65,6 +65,8 @@
   dl.facts { display: grid; grid-template-columns: max-content auto; gap: 6px 20px; margin: 0 0 28px; }
   dl.facts dt { color: var(--muted); }
   dl.facts dd { margin: 0; }
+  /* Откуда взялось число: подпись мельче самой строки — она поясняет, а не спорит. */
+  dl.facts .hint { font-size: 12px; opacity: .75; }
   h2 { font-size: 17px; margin: 32px 0 12px; }
   /* Ведомость шире экрана — прокручивается сама, страница по горизонтали не едет. */
   .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; }
