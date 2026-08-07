@@ -52,4 +52,31 @@
 
 ## Статус
 
-not_started — 2026-08-06
+in_progress — 2026-08-07 (T035, локальный запуск; ветка `feat/deploy`)
+
+## Журнал работы
+
+### 2026-08-07 — старт, разведка площадки
+
+Прочитаны контракт блока, конституция, спека, план, решения (D006, D018, D019,
+D028) и журнал блока `db`. Задача в этот заход — **только T035**, локальный
+запуск через Docker Compose. MUSPELHEIM (T036) и CI (T037) — четвёртая очередь,
+в этот заход не входят, на сервер не хожу.
+
+Проверено фактически на машине:
+
+- Docker Server 29.6.2, запущен;
+- контейнеров нет вообще (`docker ps -a` пуст), том один — чужой
+  `supabase_edge_runtime_swarm`, не трогаю;
+- порты: 5432 занят (Postgres из homebrew), **8000, 8030 и 5440 свободны**
+  (`lsof -nP -iTCP:<порт> -sTCP:LISTEN`). Значит дефолты `APP_PORT=8000` и
+  `POSTGRES_HOST_PORT=5440` из `.env.example` ни с чем не конфликтуют.
+
+Переменные окружения, которые реально читает код (сверено грепом по `src`,
+`tests`, `manage.py`, а не по памяти): `SECRET_KEY`, `DJANGO_DEBUG`,
+`DJANGO_ALLOWED_HOSTS`, `DATABASE_URL`, `DJANGO_SETTINGS_MODULE`,
+`PAYROLL_FIXTURE`, `DODO_TEST_ADMIN_DSN`. Из них в `.env.example` не хватало
+`DJANGO_DEBUG` и `DJANGO_ALLOWED_HOSTS`, а `DATABASE_URL` расходился по паролю
+с `POSTGRES_PASSWORD` — то есть скопировать пример и получить рабочее окружение
+было нельзя. `DEMO_DATABASE_URL` в коде пока не читает никто: он из контракта,
+за ним придёт блок `demo`.
