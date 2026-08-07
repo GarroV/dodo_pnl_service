@@ -20,6 +20,9 @@ class PayrunRefused(Exception):
         super().__init__(message)
         self.message = message
         self.details = details or []
+        # Коды регистров учёта, из-за которых отказ. Человеческие названия —
+        # дело интерфейса: в расчёте их знать неоткуда и незачем.
+        self.ledgers: list[str] = []
 
 
 class LedgerAccessDenied(PayrunRefused):

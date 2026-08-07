@@ -141,9 +141,11 @@ def period_calculate(request, period_id):
             visible_ledgers=who.visible_ledgers,
         )
     except PayrunRefused as refusal:
+        # Регистры расчёт называет кодами; человеку показываем их названия.
+        details = refusal.details or [ledger_title(name) for name in refusal.ledgers]
         return period_page(
             request, period,
-            error=refusal.message, details=refusal.details, status=refusal.http_status,
+            error=refusal.message, details=details, status=refusal.http_status,
         )
 
     # Перенаправление после записи: обновление страницы не повторяет расчёт.

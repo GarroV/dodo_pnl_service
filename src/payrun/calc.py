@@ -168,11 +168,12 @@ def check_ledgers(slips: list, visible_ledgers) -> list[str]:
     used = sorted({component.layer for _, slip in slips for component in slip.components})
     hidden = [layer for layer in used if layer not in set(visible_ledgers or [])]
     if hidden:
-        raise LedgerAccessDenied(
-            "расчёт затрагивает регистры учёта, недоступные вашей роли: "
-            f"{', '.join(hidden)}. Запустить расчёт может тот, кто видит все "
-            "регистры периода."
+        refusal = LedgerAccessDenied(
+            "Ведомость этого периода попадает в регистры учёта, недоступные "
+            "вашей роли. Запустить расчёт может тот, кто видит их все."
         )
+        refusal.ledgers = hidden
+        raise refusal
     return used
 
 
