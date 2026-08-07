@@ -1,4 +1,6 @@
-"""Маршруты. Пока пусто: интерфейс — задача блока web."""
-from django.urls import path
+"""Маршруты проекта. Интерфейс живёт в приложении `web`."""
+from django.urls import include, path
 
-urlpatterns: list[path] = []
+urlpatterns = [
+    path("", include("web.urls")),
+]

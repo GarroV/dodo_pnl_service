@@ -12,6 +12,7 @@ import os
 from decimal import Decimal
 
 import pytest
+
 from conftest import run_manage, temp_database
 
 JUNE = "2026-06-01"
@@ -165,7 +166,8 @@ def test_no_session_wide_set_in_source():
     import web.dbcontext as module
 
     source = Path(module.__file__).read_text()
-    statements = re.findall(r"(?im)^\s*set\s+(\w+)", source)
+    # Ищем начало SQL-оператора в литерале: `"set local role ...`
+    statements = re.findall(r"""(?i)["'f]\s*set\s+(\w+)""", source)
     assert statements, "в модуле не нашлось ни одного SET — тест перестал что-либо проверять"
     assert all(word.lower() == "local" for word in statements), statements
     assert "set_config(" in source and "true" in source

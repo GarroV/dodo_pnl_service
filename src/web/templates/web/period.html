@@ -1,0 +1,35 @@
+{% extends "web/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="sub">{{ period.tenant.title }}</p>
+
+<dl class="facts">
+  <dt>Состояние</dt><dd>{{ status }}</dd>
+  <dt>Сотрудников в табеле</dt><dd>{{ employees }}</dd>
+  {% if norm_hours %}<dt>Норма часов</dt><dd>{{ norm_hours }}</dd>{% endif %}
+</dl>
+
+<h2>Итоги по регистрам</h2>
+{% if ledgers %}
+<table>
+  <thead><tr><th>Регистр</th><th class="num">Сумма</th></tr></thead>
+  <tbody>
+    {% for row in ledgers %}
+    <tr><td>{{ row.title }}</td><td class="num">{{ row.total }}</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr><td>Итого</td><td class="num">{{ total }}</td></tr>
+  </tfoot>
+</table>
+<p class="note">
+  Итог посчитан по тому, что видно вашей роли: строки чужих регистров не
+  доезжают до страницы и не входят в сумму.
+</p>
+{% else %}
+<p class="empty">Расчёта за этот период ещё не было.</p>
+{% endif %}
+
+<p class="note">Ведомость и запуск расчёта появятся здесь следующей задачей (T042).</p>
+{% endblock %}
