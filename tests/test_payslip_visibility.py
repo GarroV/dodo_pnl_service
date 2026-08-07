@@ -385,3 +385,126 @@ def test_accountant_cannot_reconstruct_hidden_ledgers_on_seeded_data(client, web
     assert slips > 0, "бухгалтеру не видно ни одной строки — проверка стала бы пустой"
     assert net <= components, f"нето {net} выдаёт скрытое: видимых компонентов {components}"
 
+
+
+# =============================================================================
+# Отсутствие итога само называет человека (T071)
+# =============================================================================
+# Что течёт. `payslips` видна всем в тенанте (это идентификация, чисел в ней
+# нет), а `payslip_totals` — только тому, кому видны все регистры строки.
+# Значит **дырка в производной таблице** и есть сообщение: под бухгалтером
+#
+#     select e.last_name
+#       from payslips p
+#       join employees e on e.id = p.employee_id
+#       left join payslip_totals t on t.payslip_id = p.id
+#      where t.payslip_id is null
+#
+# отдаёт поимённый список тех, у кого есть выплаты в закрытых от неё регистрах —
+# на сиде 27 фамилий из 35. Чисел нет, но D023 требует «ни строк, ни следа».
+#
+# Почему чинится не запрос и не строка ведомости. Течёт общая форма: пока
+# **видимость производной строки зависит от её содержимого**, любая пара
+# «строка видна всегда — производная видна не всегда» называет людей, и закрытие
+# одного запроса ничего не меняет. Спрятать саму `payslips` нельзя дважды: по
+# подмножеству регистров — уносит видимые официальные компоненты смешанного
+# сотрудника (на этом обожглись в T050), по пересечению — вектор остаётся
+# открытым, а запись ломается (ограничивающая политика режет и update/delete,
+# то есть роль с неполным набором регистров не досчитает период).
+#
+# Поэтому правило другое: **видимость итогов определяется только ролью**. Итоги
+# видит тот, кому видны все регистры вообще; всем остальным не видно ни одного,
+# независимо от содержимого строки. Тогда состояний ровно два — «итогов столько
+# же, сколько строк» и «итогов нет», — и опознать по ним некого.
+
+
+def orphan_payslips(conn) -> tuple[int, int]:
+    """Сколько строк ведомости видно и у скольких из них не видно итога."""
+    return conn.execute(
+        """select count(*), count(*) filter (where t.payslip_id is null)
+             from payslips p
+             left join payslip_totals t on t.payslip_id = p.id"""
+    ).fetchone()
+
+
+def assert_absence_names_nobody(conn, who: str) -> None:
+    """Либо все строки без итога, либо ни одной — третьего быть не должно.
+
+    Промежуточное состояние и есть утечка: оно делит людей на тех, у кого всё
+    видно, и тех, у кого есть скрытое.
+    """
+    slips, orphans = orphan_payslips(conn)
+    assert orphans in (0, slips), (
+        f"{who}: строк ведомости {slips}, из них без итога {orphans} — "
+        f"по этой разнице видно поимённо, у кого есть выплаты в закрытых регистрах"
+    )
+
+
+def test_the_absence_of_totals_names_nobody(db):
+    """Главная проверка T071 на трёх ролях сразу."""
+    make_payslip(db, "t071-mixed", [("official", "100.00"), ("internal", "900.00")])
+    make_payslip(db, "t071-clean", [("official", "300.00")])
+    make_payslip(db, "t071-hidden", [("internal", "700.00")])
+    make_payslip(db, "t071-two", [("official", "50.00"), ("supplementary", "60.00")])
+
+    for user, who in (
+        (USER_ACCOUNTANT, "бухгалтер"),
+        (USER_MANAGER, "управляющий"),
+        (USER_DIRECTOR, "директор"),
+    ):
+        with as_app_user(db, user) as conn:
+            assert_absence_names_nobody(conn, who)
+
+
+def test_the_full_access_role_still_gets_its_totals(db):
+    """Страховка от «спрятали всем и объявили победу»."""
+    make_payslip(db, "t071-for-director", [("official", "100.00"), ("internal", "900.00")])
+
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        slips, orphans = orphan_payslips(conn)
+    assert slips == 1 and orphans == 0, "директору итоги обязаны быть видны"
+
+
+def test_the_rule_does_not_depend_on_what_is_in_the_row(db):
+    """Видимость итогов — свойство роли, а не строки.
+
+    Форма проверки важнее числа: две строки, отличающиеся только составом
+    регистров, обязаны быть видны бухгалтеру одинаково. Пока они отличаются,
+    разница и есть сообщение.
+    """
+    clean = make_payslip(db, "t071-only-official", [("official", "300.00")])
+    mixed = make_payslip(db, "t071-with-hidden", [("official", "300.00"), ("internal", "1.00")])
+
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        seen = {
+            row[0]
+            for row in conn.execute("select payslip_id from payslip_totals").fetchall()
+        }
+    assert (clean in seen) == (mixed in seen), (
+        "итоги полностью официальной строки видны, а смешанной — нет: "
+        "по этой разнице и опознают человека"
+    )
+
+
+def test_the_absence_of_totals_names_nobody_on_seeded_data(client, web_env):
+    """То же на настоящем расчёте месяца: именно там нашли 27 фамилий из 35."""
+    import psycopg
+
+    from conftest import login_as, period_url, wipe_payruns
+    from core.db_types import register_enum_types
+    from core.management.commands.seed_dev import det_id
+
+    wipe_payruns(web_env)
+    login_as(client, "director")
+    client.post(period_url(client) + "calculate/", follow=True)
+
+    with psycopg.connect(web_env) as conn:
+        register_enum_types(conn)
+        for code in ("accountant", "manager", "director"):
+            with as_app_user(conn, str(det_id("user", code))) as scoped:
+                slips, orphans = orphan_payslips(scoped)
+                assert slips > 0, f"{code}: строк ведомости не видно — проверять нечего"
+                assert orphans in (0, slips), (
+                    f"{code}: строк {slips}, без итога {orphans} — "
+                    "поимённый список тех, у кого есть скрытые регистры"
+                )
