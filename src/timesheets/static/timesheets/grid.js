@@ -5,6 +5,8 @@
  *    доходить до нужной строки невозможно — нужен переход вниз.
  * 2. Видимое состояние ячейки: ушло / сохранено / отказ. Без него человек не
  *    отличает сохранённое от набранного, а на этом экране цена ошибки — часы.
+ *    Объяснение отказа держится у самой ячейки: внизу документа его при 35
+ *    строках просто не видно, а невидимый отказ — это молчаливый отказ.
  * 3. Досылка несохранённого при уходе со страницы. Обычный путь (htmx на
  *    change) срабатывает при потере фокуса, но если вкладку закрывают прямо из
  *    поля, браузер вправе оборвать незавершённый запрос. sendBeacon — запрос,
@@ -67,6 +69,7 @@
     } else if (event.key === "Escape") {
       // Отмена правки: вернуть то, что подтвердил сервер.
       input.value = input.dataset.saved !== undefined ? input.dataset.saved : input.defaultValue;
+      hideRefusal();
       input.blur();
       handled = true;
     }
@@ -80,22 +83,73 @@
     if (state) input.classList.add(state);
   }
 
+  // --- объяснение отказа у самой ячейки --------------------------------------
+  //
+  // Внизу документа его не видно: 35 строк уводят низ страницы за экран, и
+  // отказ, о котором человек не узнал, ничем не лучше молчаливого. Поэтому
+  // подсказка держится у ячейки — фиксированной, чтобы попадать в окно всегда,
+  // а не только при удачной прокрутке.
+
+  let anchor = null;
+
+  function place() {
+    if (!anchor) return;
+    const cell = anchor.getBoundingClientRect();
+    const box = errorBox.getBoundingClientRect();
+    const margin = 8;
+
+    // Снизу, если снизу есть место; иначе сверху — но всегда внутри окна.
+    let top = cell.bottom + 6;
+    if (top + box.height > window.innerHeight - margin) {
+      top = Math.min(cell.top - box.height - 6, window.innerHeight - box.height - margin);
+    }
+    let left = cell.left;
+    if (left + box.width > window.innerWidth - margin) {
+      left = window.innerWidth - box.width - margin;
+    }
+    errorBox.style.top = Math.max(margin, top) + "px";
+    errorBox.style.left = Math.max(margin, left) + "px";
+  }
+
+  function showRefusal(input, text) {
+    errorBox.textContent = text;
+    errorBox.hidden = false;
+    anchor = input;
+    place();
+  }
+
+  function hideRefusal() {
+    errorBox.hidden = true;
+    anchor = null;
+  }
+
+  // Прокрутка бывает и у окна, и у таблицы — слушаем в фазе перехвата.
+  window.addEventListener("scroll", place, true);
+  window.addEventListener("resize", place);
+
+  // Человек начал исправлять — объяснение больше не нужно, а красная пометка
+  // снимается только ответом сервера: пока он не ответил, ячейка не сохранена.
+  table.addEventListener("input", function (event) {
+    if (event.target.classList.contains("cell")) hideRefusal();
+  });
+
   document.body.addEventListener("htmx:beforeRequest", function (event) {
     const input = event.detail.elt;
     if (!input.classList.contains("cell")) return;
     mark(input, "pending");
-    errorBox.hidden = true;
+    input.removeAttribute("aria-invalid");
+    hideRefusal();
   });
 
   document.body.addEventListener("htmx:afterRequest", function (event) {
     const input = event.detail.elt;
     if (!input.classList.contains("cell")) return;
     const xhr = event.detail.xhr;
+    const stored = xhr.getResponseHeader("X-Cell-Value");
+    const canonical = stored === null ? null : Number(stored) === 0 ? "" : stored;
 
     if (xhr.status === 200) {
-      const stored = xhr.getResponseHeader("X-Cell-Value");
-      if (stored !== null) {
-        const canonical = Number(stored) === 0 ? "" : stored;
+      if (canonical !== null) {
         // Поле под курсором не трогаем: человек уже мог начать в нём печатать
         // заново, и подмена стёрла бы набранное.
         if (document.activeElement !== input) input.value = canonical;
@@ -105,13 +159,30 @@
       return;
     }
 
+    // Отказ: в базу ничего не легло, и на экране не должно остаться того, чего
+    // в ней нет. Возвращаем то, что сервер назвал сохранённым, — иначе человек
+    // читал бы отказ и видел рядом своё непринятое число.
+    const previous =
+      canonical !== null
+        ? canonical
+        : input.dataset.saved !== undefined
+          ? input.dataset.saved
+          : input.defaultValue;
+    const rejected = input.value;
+    input.value = previous;
+    input.dataset.saved = previous;
+
     mark(input, "failed");
-    errorBox.textContent =
+    input.setAttribute("aria-invalid", "true");
+    showRefusal(
+      input,
       xhr.status === 422
-        ? xhr.responseText
-        : "Не удалось сохранить: " + (xhr.status || "нет связи с сервером");
-    errorBox.hidden = false;
+        ? xhr.responseText + " Не принято, в ячейке прежнее значение."
+        : "Не удалось сохранить «" + rejected + "»: " +
+          (xhr.status || "нет связи с сервером") + ". В ячейке прежнее значение.",
+    );
     input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
   });
 
   // --- досылка при уходе со страницы ----------------------------------------

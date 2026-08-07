@@ -7,6 +7,9 @@
 
 Итоги считаются по показанным строкам, а не по всем: управляющий видит сумму
 своих точек, из общей выводилась бы чужая (D023).
+Вместе с итогами возвращается база для взносов: правка часов могла сдвинуть её,
+и оставить на экране прежнее число значило бы показывать не то, что в базе.
 {% endcomment %}<td id="row-total-{{ row_id }}" hx-swap-oob="true" class="num strong">{{ row_total|hours }}</td>
 {% for code, total in grid.column_totals.items %}<td id="col-total-{{ code }}" hx-swap-oob="true" class="num">{{ total|hours }}</td>
 {% endfor %}<td id="grand-total" hx-swap-oob="true" class="num strong">{{ grid.total|hours }}</td>
+{% if row %}{% include "timesheets/_insured_cell.html" with row=row oob=True %}{% endif %}

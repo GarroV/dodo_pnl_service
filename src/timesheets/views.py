@@ -12,11 +12,14 @@
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
+from payrun.errors import PayrunRefused
 from web.principal import get_current_principal
 from web.views import find_period, month_title
 
@@ -43,7 +46,17 @@ def _context(request, period):
 def grid(request, period_id):
     period = find_period(period_id)
     who = _context(request, period)
-    table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
+
+    # Колонки сетки — это типы часов страны, то есть те же правила, на которых
+    # стоит расчёт. Нет правил на месяц — сетку строить не из чего, и человек
+    # должен прочитать то же объяснение, что на странице периода, а не «Server
+    # Error»: при выключенной отладке других слов он не увидит.
+    table, refusal = None, None
+    try:
+        table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
+    except PayrunRefused as denied:
+        refusal = denied
+
     return render(
         request,
         "timesheets/grid.html",
@@ -51,9 +64,12 @@ def grid(request, period_id):
             "period": period,
             "title": month_title(period.period),
             "grid": table,
+            "error": refusal.message if refusal else None,
+            "details": refusal.details if refusal else [],
             # Управляющему честно говорим, что он видит срез, а не весь табель.
             "limited_to_units": bool(who.unit_ids),
         },
+        status=refusal.http_status if refusal else 200,
     )
 
 
@@ -78,14 +94,28 @@ def cell(request, period_id):
         hours = parse_hours(request.POST.get("hours", ""))
         set_cell(timesheet=row, hour_type=hour_type, hours=hours)
     except CellRefused as refusal:
-        return HttpResponse(str(refusal), status=REFUSED, content_type="text/plain; charset=utf-8")
+        response = HttpResponse(
+            str(refusal), status=REFUSED, content_type="text/plain; charset=utf-8"
+        )
+        # Что осталось в базе — тем же заголовком, что и при удачной записи.
+        # Иначе в поле оставался бы непринятый ввод, и экран показывал бы
+        # число, которого в базе нет: на этом экране это часы человека.
+        response["X-Cell-Value"] = f"{Decimal(str((row.hours or {}).get(hour_type, 0))):.2f}"
+        return response
 
     table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
     changed = next((item for item in table.rows if item.timesheet_id == row.id), None)
     response = render(
         request,
         "timesheets/_totals.html",
-        {"grid": table, "row_id": str(row.id), "row_total": changed.total if changed else 0},
+        {
+            "grid": table,
+            "row_id": str(row.id),
+            "row_total": changed.total if changed else 0,
+            # Строка целиком нужна ответу ради базы для взносов: правка часов
+            # могла её сдвинуть (см. `_insured_cell.html`).
+            "row": changed,
+        },
     )
     # Значение в том виде, в каком оно легло в базу: «8,5» и «8.50» — одно и то
     # же число, но человек должен увидеть, что именно сохранилось.

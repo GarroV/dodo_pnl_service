@@ -39,7 +39,51 @@ table.grid input.cell:focus {
    чисел ровно так же, как на ведомости (D023). */
 table.grid input.cell.pending { box-shadow: inset 3px 0 0 var(--line); }
 table.grid input.cell.saved   { box-shadow: inset 3px 0 0 #16a34a; }
-table.grid input.cell.failed  { box-shadow: inset 3px 0 0 var(--warn); background: var(--warn-bg); }
+
+/* Отказ — исключение из правила выше: бледная заливка на 210 ячеек не
+   отличается от соседних (проверено сверкой), а не найденная глазом ячейка с
+   отказом — это потерянные часы. Поэтому рамка целиком и жирное начертание:
+   ячейка должна вычитываться из столбика, а не угадываться. */
+table.grid input.cell.failed {
+  border-color: var(--warn);
+  box-shadow: inset 3px 0 0 var(--warn), 0 0 0 2px rgba(197, 90, 17, .18);
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* Объяснение отказа: у ячейки, а не внизу документа. Фиксированное — иначе на
+   35 строках оно уезжает за экран ровно тогда, когда нужно. */
+.cell-error {
+  position: fixed;
+  z-index: 20;
+  max-width: 340px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--warn);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn);
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .16);
+}
+.cell-error[hidden] { display: none; }
+
+/* База для взносов: вход расчёта наравне с часами. Пока она сходится — тихая
+   служебная колонка; разошлась — её видно, потому что на ней остановится
+   расчёт периода. */
+table.grid td.insured { color: var(--muted); }
+table.grid td.insured.insured-mismatch {
+  color: var(--warn);
+  font-weight: 600;
+  background: var(--warn-bg);
+}
+table.grid td.insured .hint {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--warn);
+}
 
 /* Незаполненная ячейка не должна выглядеть как ноль: она пустая. */
 table.grid input.cell::placeholder { color: var(--line); }
