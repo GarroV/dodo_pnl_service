@@ -85,6 +85,16 @@ def test_money_zero_differs_from_empty():
     assert money(None) == "—"
 
 
+def test_hours_format_keeps_two_digits_and_marks_empty():
+    """Часы — не деньги: тысяч в них не бывает, а пустое всё равно не ноль."""
+    from web.format import hours
+
+    assert hours(Decimal("176")) == "176,00"
+    assert hours(Decimal("87.5")) == "87,50"
+    assert hours(Decimal("0")) == "0,00"
+    assert hours(None) == "—"
+
+
 # --- контекст пользователя в базе -------------------------------------------
 
 
@@ -257,6 +267,137 @@ def test_pages_are_marked_as_dev_only(client):
     """Пока на странице входа есть кнопки-ярлыки, об этом написано в шапке."""
     login_as(client, "director")
     assert "dev" in body(client.get("/periods/")).lower()
+
+
+# --- норма часов на странице периода -----------------------------------------
+# Норма часов — свойство производственного календаря страны, а не сотрудника.
+# До 2026-08-07 страница брала её из первой попавшейся строки табеля, и число
+# зависело от роли: у управляющего выборка сужена его точкой, и первой приходила
+# другая строка. Сверка увидела 176,00 у троих и 88,00 у четвёртого.
+
+ROLES_ON_THE_PAGE = ("director", "accountant", "manager", "admin")
+
+# Заведомо не совпадает ни с одной персональной нормой сида (20, 40, 64, 88, 96,
+# 120, 176): если страница покажет это число, она точно взяла его из календаря.
+FOREIGN_NORM = Decimal("168.00")
+
+
+def calendars(dsn):
+    """Календарь страны в базе веб-тестов: чтение и подмена.
+
+    Мимо ORM и мимо политик — здесь проверяется показ, а не доступ. База у
+    веб-тестов общая на прогон, поэтому подменённое значение обязано
+    возвращаться: иначе соседние тесты стали бы зависеть от порядка запуска.
+    """
+    import psycopg
+
+    class Calendars:
+        def norm(self):
+            with psycopg.connect(dsn, autocommit=True) as conn:
+                row = conn.execute(
+                    "select norm_hours from calendars where country_code = 'RS' and period = %s",
+                    (JUNE,),
+                ).fetchone()
+            return row[0] if row else None
+
+        def set_norm(self, value):
+            with psycopg.connect(dsn, autocommit=True) as conn:
+                conn.execute(
+                    """update calendars set norm_hours = %s
+                       where country_code = 'RS' and period = %s""",
+                    (value, JUNE),
+                )
+
+        def drop(self):
+            with psycopg.connect(dsn, autocommit=True) as conn:
+                conn.execute(
+                    "delete from calendars where country_code = 'RS' and period = %s", (JUNE,)
+                )
+
+        def restore(self, row):
+            with psycopg.connect(dsn, autocommit=True) as conn:
+                conn.execute(
+                    """insert into calendars (country_code, period, norm_hours, working_days)
+                       values ('RS', %s, %s, 22)
+                       on conflict (country_code, period)
+                       do update set norm_hours = excluded.norm_hours""",
+                    (JUNE, row),
+                )
+
+    return Calendars()
+
+
+@pytest.fixture
+def country_calendar(web_env):
+    """Календарь страны с восстановлением исходной нормы после теста."""
+    api = calendars(web_env)
+    before = api.norm()
+    try:
+        yield api
+    finally:
+        api.restore(before)
+
+
+def norm_hours_shown(text: str) -> str:
+    """Число из шапки периода — ровно то, что видит человек глазами."""
+    import re
+
+    match = re.search(r"Норма часов.*?<dd>(.*?)</dd>", text, re.S)
+    assert match, f"на странице периода нет строки «Норма часов»:\n{text[:2000]}"
+    return match.group(1).strip()
+
+
+def test_norm_hours_is_the_country_calendar_norm_for_every_role(client, web_env):
+    """Главная проверка: число одно на всех и равно норме месяца по календарю.
+
+    Роли перебираются не для полноты: дефект был именно в расхождении между
+    ними, и проверка одной ролью его не видит.
+    """
+    from web.format import hours
+
+    expected = calendars(web_env).norm()
+    assert expected is not None, "в базе сида нет календаря RS на июнь — проверять нечего"
+
+    seen = {}
+    for user in ROLES_ON_THE_PAGE:
+        login_as(client, user)
+        seen[user] = norm_hours_shown(body(client.get(period_url(client))))
+
+    assert set(seen.values()) == {hours(expected)}, seen
+
+
+def test_norm_hours_does_not_come_from_a_timesheet(client, country_calendar):
+    """Негативный контроль источника: подменяем календарь — меняется страница.
+
+    Число `168` не совпадает ни с одной персональной нормой сида, поэтому
+    выборка по табелю показать его не может ни при каком порядке строк.
+    """
+    from web.format import hours
+
+    country_calendar.set_norm(FOREIGN_NORM)
+    for user in ROLES_ON_THE_PAGE:
+        login_as(client, user)
+        assert norm_hours_shown(body(client.get(period_url(client)))) == hours(FOREIGN_NORM)
+
+
+def test_without_a_calendar_the_page_says_so_instead_of_guessing(client, country_calendar):
+    """Нет календаря — прочерк и объяснение, а не персональная норма из табеля.
+
+    Молча подставить чью-то норму хуже пустоты: неверное число выглядит как
+    верное, и заводить календарь никто не пойдёт.
+    """
+    from web.format import EMPTY, hours
+
+    country_calendar.drop()
+    login_as(client, "director")
+    text = body(client.get(period_url(client)))
+
+    assert norm_hours_shown(text) == EMPTY
+    assert "календар" in text.lower(), "прочерк без объяснения — это молчание, а не ответ"
+    # Ни одна персональная норма табеля не подставилась вместо календарной.
+    for personal in ("176,00", "88,00", "20,00"):
+        assert norm_hours_shown(text) != personal
+    assert hours(FOREIGN_NORM) not in text
 
 
 @pytest.mark.parametrize("user", [None, "director", "accountant", "manager"])

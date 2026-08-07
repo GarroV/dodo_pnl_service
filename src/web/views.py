@@ -16,13 +16,13 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from core.models import Payrun, Period, Timesheet
+from core.models import Calendar, Payrun, Period, Timesheet
 from payrun.calc import calculate_period
 from payrun.errors import PayrunRefused
 from payrun.sheet import build_sheet
 
 from . import auth
-from .format import ledger_title, money
+from .format import hours, ledger_title, money
 from .principal import get_current_principal
 
 MONTHS = (
@@ -69,6 +69,28 @@ def find_period(period_id) -> Period:
     return period
 
 
+def calendar_norm_hours(period: Period):
+    """Норма часов месяца — из производственного календаря страны партнёра.
+
+    Не из табеля. В табеле норма **персональная**: у полставочника она честно
+    другая, и «первая попавшаяся» строка давала каждой роли своё число — у
+    управляющего выборка сужена его точкой, и первой приходила не та строка.
+    Так на одной и той же странице одного и того же месяца трое видели 176, а
+    четвёртый 88 (найдено сверкой со спекой 2026-08-07).
+
+    Календаря на месяц нет — возвращается `None`, и страница честно говорит об
+    этом. Подставлять сюда число самим (хоть константу, хоть чью-то норму)
+    нельзя: неверное значение выглядит на экране ровно как верное.
+    """
+    return (
+        Calendar.objects.filter(
+            country_code=period.tenant.country_code, period=period.period
+        )
+        .values_list("norm_hours", flat=True)
+        .first()
+    )
+
+
 def period_page(request, period, *, error=None, details=(), status=200):
     """Страница периода: сводка, ведомость и запуск расчёта.
 
@@ -79,6 +101,8 @@ def period_page(request, period, *, error=None, details=(), status=200):
     sheet = build_sheet(period.tenant_id, period.period)
     timesheets = Timesheet.objects.filter(tenant=period.tenant, period=period.period)
     payrun = Payrun.objects.filter(tenant=period.tenant, period=period.period).first()
+    norm_hours = calendar_norm_hours(period)
+    country = period.tenant.country_code
 
     return render(
         request,
@@ -113,7 +137,12 @@ def period_page(request, period, *, error=None, details=(), status=200):
             "total": money(sheet.total) if sheet else money(None),
             "calculated_at": payrun.calculated_at if payrun else None,
             "employees": timesheets.count(),
-            "norm_hours": timesheets.values_list("norm_hours", flat=True).first(),
+            "norm_hours": hours(norm_hours),
+            "norm_hours_hint": (
+                f"производственный календарь {country}"
+                if norm_hours is not None
+                else f"календарь {country} на этот месяц не заведён"
+            ),
             "error": error,
             "details": list(details),
             "calculated": request.GET.get("calculated") == "1",
