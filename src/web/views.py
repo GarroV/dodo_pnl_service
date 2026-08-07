@@ -104,6 +104,13 @@ def period_page(request, period, *, error=None, details=(), status=200):
     norm_hours = calendar_norm_hours(period)
     country = period.tenant.country_code
 
+    # Кнопка запуска расчёта показывается только тому, кому расчёт разрешён
+    # (T072). Проверку в `period_calculate` это не заменяет: интерфейс — не
+    # контур доступа, а способ не предлагать человеку того, что ему всё равно
+    # ответят отказом. Адрес расчёта остаётся рабочим, и он остаётся закрытым.
+    who = get_current_principal(request)
+    calculate_denied = permissions.explain(who, permissions.PAYRUN_CALCULATE)
+
     return render(
         request,
         "web/period.html",
@@ -146,6 +153,8 @@ def period_page(request, period, *, error=None, details=(), status=200):
             "error": error,
             "details": list(details),
             "calculated": request.GET.get("calculated") == "1",
+            "can_calculate": not calculate_denied,
+            "calculate_denied": calculate_denied,
         },
         status=status,
     )

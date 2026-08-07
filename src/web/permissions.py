@@ -28,6 +28,21 @@ TITLES = {
 }
 
 
+def message(code: str, role_title: str = "") -> str:
+    """Почему нельзя — одними и теми же словами до действия и после.
+
+    Страница спрашивает это, чтобы объяснить, почему кнопки нет; отказ на само
+    действие — чтобы объяснить 403. Две формулировки одного запрета разъехались
+    бы на первой правке, и человек читал бы про один и тот же запрет разное.
+    """
+    action = TITLES.get(code, code)
+    role = f" «{role_title}»" if role_title else ""
+    return (
+        f"{action} не входит в права вашей роли{role}. "
+        "Попросите того, у кого это право есть."
+    )
+
+
 class PermissionRefused(Exception):
     """Действие не входит в права роли. Сообщение показывается как есть."""
 
@@ -36,12 +51,7 @@ class PermissionRefused(Exception):
     def __init__(self, code: str, role_title: str = ""):
         self.code = code
         self.role_title = role_title
-        action = TITLES.get(code, code)
-        role = f" «{role_title}»" if role_title else ""
-        self.message = (
-            f"{action} не входит в права вашей роли{role}. "
-            "Попросите того, у кого это право есть."
-        )
+        self.message = message(code, role_title)
         super().__init__(self.message)
 
 
@@ -59,3 +69,16 @@ def check(who, code: str) -> None:
 def has(who, code: str) -> bool:
     """То же самое вопросом — для страниц, которые решают, что показывать."""
     return who is not None and code in (who.permissions or [])
+
+
+def explain(who, code: str) -> str:
+    """Пусто, если право есть; иначе текст, объясняющий отсутствие действия.
+
+    Страница обязана и не предлагать невозможного, и не молчать об этом:
+    исчезнувшая без объяснения кнопка читается как поломка продукта, а не как
+    запрет. Поэтому одна функция отвечает сразу на оба вопроса — «показывать
+    ли» и «что написать вместо».
+    """
+    if has(who, code):
+        return ""
+    return message(code, getattr(who, "role_title", ""))

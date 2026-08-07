@@ -314,3 +314,71 @@ def test_manager_still_edits_a_cell(client, web_env):
 
     response = client.post(f"{url}cell/", {"row": row, "kind": kind, "hours": "7"})
     assert response.status_code == 200
+
+
+# =============================================================================
+# Экран не предлагает того, что сам же отвергнет (T072)
+# =============================================================================
+# Оба контура выше работают правильно: база не пускает, представление объясняет.
+# Дефект в другом — узнать о запрете можно было только совершив действие.
+# Администратор видел редактируемую сетку 35×6 и кнопку «Посчитать», управляющий
+# — кнопку «Посчитать»; оба получали 403 уже после нажатия. Это не замена
+# серверным проверкам: они остаются на месте, и тесты выше их и стерегут.
+
+
+@pytest.mark.parametrize("code", ["admin", "manager"])
+def test_a_role_without_the_right_does_not_see_the_calculate_button(client, web_env, code):
+    login_as(client, code)
+    html = body(client.get(period_url(client)))
+
+    assert "Посчитать период" not in html, "кнопка предлагает действие, которое даст 403"
+    assert "calculate/" not in html
+    # Спрятать молча нельзя: пропавшая кнопка читается как поломка. Объяснение —
+    # теми же словами, что и отказ на самом действии.
+    assert "Расчёт периода не входит в права" in html
+
+
+@pytest.mark.parametrize("code", ["director", "accountant"])
+def test_a_role_with_the_right_still_sees_the_calculate_button(client, web_env, code):
+    login_as(client, code)
+    html = body(client.get(period_url(client)))
+
+    assert "Посчитать период" in html
+    assert "Расчёт периода не входит в права" not in html
+
+
+def test_a_role_without_the_right_gets_a_read_only_grid(client, web_env):
+    """Сетка на чтение: полей ввода нет, данные на месте.
+
+    Проверяется именно пара «нет правки — есть данные»: право на правку табеля
+    не отнимает права его видеть, и подменять запрет пустой страницей нельзя.
+    """
+    import re
+
+    login_as(client, "director")
+    editable = body(client.get(grid_url(client)))
+    login_as(client, "admin")
+    readonly = body(client.get(grid_url(client)))
+
+    assert 'class="cell"' in editable and "hx-post" in editable, (
+        "у роли с правом сетка обязана остаться редактируемой — иначе тест ниже "
+        "доказывал бы, что экран просто сломан"
+    )
+    assert 'class="cell"' not in readonly, "поле ввода предлагает правку, которая даст 403"
+    assert "hx-post" not in readonly
+
+    # Тех же людей и те же часы администратор видит по-прежнему.
+    assert readonly.count("<tr") == editable.count("<tr")
+    totals = [re.search(r'id="grand-total">([^<]*)<', page) for page in (editable, readonly)]
+    assert all(totals), "на странице табеля нет общего итога — сравнивать нечего"
+    assert totals[0].group(1) == totals[1].group(1)
+    assert "правка табеля не входит в права" in readonly.lower()
+
+
+def test_a_role_with_the_right_still_gets_an_editable_grid(client, web_env):
+    """Контроль: у управляющего право есть, и сетка у него та же, что была."""
+    login_as(client, "manager")
+    html = body(client.get(grid_url(client)))
+
+    assert 'class="cell"' in html and "hx-post" in html
+    assert "правка табеля не входит в права" not in html.lower()

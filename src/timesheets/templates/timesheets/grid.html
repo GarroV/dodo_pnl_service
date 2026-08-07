@@ -16,9 +16,15 @@
   htmx версией в файле, не с CDN (D017): в npm уже лежит 4.0.0-beta, и
   подмена мажорной версии сломала бы экран молча. defer — чтобы разбор
   разметки не ждал библиотеку.
+
+  Обе библиотеки нужны только редактируемой сетке: на сетке для чтения нечего
+  ни отправлять, ни досылать, и грузить их туда значило бы возить 50 КБ ради
+  кода, которому не с чем работать (T072).
   {% endcomment %}
+  {% if can_edit %}
   <script src="{% static 'timesheets/htmx-2.0.10.min.js' %}" defer></script>
   <script src="{% static 'timesheets/grid.js' %}" defer></script>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -39,8 +45,18 @@
 <p class="sub">
   {{ grid.rows|length }} чел.
   {% if limited_to_units %}· только ваши точки{% endif %}
-  · часы за месяц; сохраняются сразу, кнопки «сохранить» нет
+  {% if can_edit %}· часы за месяц; сохраняются сразу, кнопки «сохранить» нет
+  {% else %}· часы за месяц, только на просмотр{% endif %}
 </p>
+
+{% comment %}
+Роль без права правки видит те же данные, но не поля ввода (T072). Объяснение
+обязательно: сетка, в которой вдруг нельзя набрать число, без него читается как
+сломанный экран, а не как запрет.
+{% endcomment %}
+{% if not can_edit %}
+<p class="note">{{ edit_denied }}</p>
+{% endif %}
 
 {% if not grid.rows %}
   <p class="empty">За этот период табелей нет.</p>
@@ -51,8 +67,8 @@
   наследует их всеми ячейками внутри, и 210 полей не тащат по копии токена.
   {% endcomment %}
   <table class="sheet grid" id="timesheet-grid"
-         data-url="{% url 'timesheet-cell' period.id %}"
-         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+         {% if can_edit %}data-url="{% url 'timesheet-cell' period.id %}"
+         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'{% endif %}>
     <thead>
       <tr>
         <th>Сотрудник</th>
@@ -89,6 +105,7 @@
             не подменяет в этой ячейке, иначе сервер вырывал бы поле из-под
             курсора. Итоги приходят подменой вне цели (см. _totals.html).
             {% endcomment %}
+            {% if can_edit %}
             <td class="cellbox">
               <input class="cell" type="text" inputmode="decimal" name="hours"
                      value="{{ row.cells|get:column.code|cell_value }}"
@@ -99,6 +116,14 @@
                      hx-vals='{"row": "{{ row.timesheet_id }}", "kind": "{{ column.code }}"}'
                      aria-label="{{ row.employee }} — {{ column.title }}">
             </td>
+            {% else %}
+            {% comment %}
+            Не `readonly`-поле, а число: поле ввода, которое не принимает ввод,
+            всё равно приглашает в себя щёлкнуть и печатать. Часы показаны тем же
+            форматом, что и остальные числа сетки.
+            {% endcomment %}
+            <td class="num">{{ row.cells|get:column.code|hours }}</td>
+            {% endif %}
           {% endfor %}
           <td class="num strong" id="row-total-{{ row.timesheet_id }}">{{ row.total|hours }}</td>
           {% include "timesheets/_insured_cell.html" with row=row oob=False %}
@@ -119,6 +144,7 @@
   </table>
 </div>
 
+{% if can_edit %}
 <p class="note">
   Стрелки — переход между ячейками, Enter — вниз, Tab — вправо. Каждая ячейка
   уходит на сервер сразу, как только вы её покинули.
@@ -131,6 +157,7 @@
 {% endcomment %}
 <div id="cell-error" class="cell-error" role="alert" aria-live="assertive" hidden></div>
 {% csrf_token %}
+{% endif %}
 {% endif %}
 {% endif %}
 {% endblock %}
