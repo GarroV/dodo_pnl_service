@@ -313,10 +313,13 @@ def wipe_payruns(dsn: str) -> None:
     """
     import psycopg
 
+    # Порядок явный: `on delete` Django во внешние ключи не пишет (он исполняет
+    # каскад в Python), поэтому в чистом SQL каскада нет — см. журнал блока db.
     with psycopg.connect(dsn, autocommit=True) as conn:
-        conn.execute(
-            "delete from payruns where tenant_id in (select id from tenants where code = 'rs-dev')"
-        )
+        tenants = "(select id from tenants where code = 'rs-dev')"
+        conn.execute(f"delete from pay_components where tenant_id in {tenants}")
+        conn.execute(f"delete from payslips where tenant_id in {tenants}")
+        conn.execute(f"delete from payruns where tenant_id in {tenants}")
 
 
 @contextmanager
