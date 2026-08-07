@@ -18,6 +18,10 @@
 любой ячейки раскладываются все типы часов строки, а не только правленый. Иначе
 строка осталась бы наполовину подневной, и утверждение «итог равен сумме дней»
 перестало бы быть проверяемым.
+
+Вместе с часами здесь держится и база для взносов (`insured_hours`) — вход
+движка наравне с ними. Правило узкое: связь, которая была, сохраняется. Подробно
+объяснено в `set_cell`.
 """
 from __future__ import annotations
 
@@ -30,14 +34,14 @@ from django.db.models import Sum
 
 from core.models import Tenant, Timesheet, TimesheetDay
 from payroll import Timesheet as EngineTimesheet
-from payroll import d
+from payroll import d, insured_base
 from payrun.rules import select_rules
 
 from .spread import calendar_working_days, spread
 
 __all__ = [
-    "CellRefused", "daily_totals", "hour_types", "materialize", "parse_hours",
-    "set_cell", "timesheet_for",
+    "CellRefused", "daily_totals", "hour_types", "insured_base", "materialize",
+    "parse_hours", "set_cell", "timesheet_for",
 ]
 
 # Часы с двумя знаками — как в колонке. Больше не принимаем не из вредности:
@@ -169,6 +173,12 @@ def set_cell(*, timesheet: Timesheet, hour_type: str, hours: Decimal,
         )
     check_cell(hour_type, hours, known)
 
+    # База для взносов шла за часами? Проверяется ДО записи: после неё сумма
+    # часов уже другая, и связь было бы не отличить от совпадения.
+    base_tracked_hours = (
+        d(timesheet.insured_hours) == insured_base(timesheet.hours or {}, known)
+    )
+
     materialize(timesheet)
     _write_days(timesheet, hour_type, hours, _working_days(timesheet), source="manual")
 
@@ -182,8 +192,23 @@ def set_cell(*, timesheet: Timesheet, hour_type: str, hours: Decimal,
         kind: str(value.quantize(CENT))
         for kind, value in totals.items()
     }
+    changes: dict = {"hours": kept}
+
+    # База для взносов — вход движка наравне с часами: по ней считаются взносы
+    # и бруто. Оставить её от прежних часов значило бы получить правдоподобно
+    # неверный расчёт молча — ровно то, чего конституция не разрешает.
+    #
+    # Но и пересчитывать её всегда нельзя: у бухгалтера это отдельная колонка,
+    # и она может быть задана независимо от отработанного (Q005). Поэтому
+    # правило узкое: связь, которая была, сохраняется; связи не было —
+    # ничего не выдумываем, а расхождение показывает сетка и на нём
+    # отказывается считать `payrun.calc.check_insured_base`.
+    if base_tracked_hours:
+        changes["insured_hours"] = insured_base(kept, known)
+        timesheet.insured_hours = changes["insured_hours"]
+
     timesheet.hours = kept
-    Timesheet.objects.filter(pk=timesheet.pk).update(hours=kept)
+    Timesheet.objects.filter(pk=timesheet.pk).update(**changes)
     return hours
 
 

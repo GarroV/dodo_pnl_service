@@ -1,0 +1,13 @@
+{% load timesheet_extras %}{% comment %}
+Колонка «База взносов» одной строки.
+
+Общая для сетки и для ответа на запись ячейки: после правки часов база могла
+поехать, и человек обязан увидеть новое число сразу, а не после перезагрузки.
+Два места с одной разметкой разъехались бы на первой же правке, поэтому она
+здесь одна, а ответ подставляет `oob`.
+
+База — вход движка наравне с часами: по ней считаются взносы и бруто. Когда она
+не сходится с часами, которые в неё входят, строка помечается, а расчёт периода
+на этом отказывает (`payrun.calc.check_insured_base`). Молча посчитать по
+устаревшей базе нельзя: получилось бы правдоподобное неверное число.
+{% endcomment %}<td id="insured-{{ row.timesheet_id }}"{% if oob %} hx-swap-oob="true"{% endif %} class="num insured{% if not row.insured_matches %} insured-mismatch{% endif %}"{% if not row.insured_matches %} title="По часам табеля в базу для взносов входит {{ row.insured_declared|hours|default:"0,00" }} ч, а записано {{ row.insured_hours|hours|default:"0,00" }} ч. Пока числа не сойдутся, период не считается."{% endif %}>{% if row.insured_matches %}{{ row.insured_hours|hours }}{% else %}{{ row.insured_hours|hours|default:"0,00" }}<span class="hint warn">по часам {{ row.insured_declared|hours|default:"0,00" }}</span>{% endif %}</td>

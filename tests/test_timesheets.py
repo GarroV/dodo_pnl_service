@@ -100,10 +100,14 @@ def one_row(web_env):
     )
     TimesheetDay.objects.filter(timesheet=row).delete()
     before = dict(row.hours)
+    insured = row.insured_hours
     yield row
     # Возвращаем строку к исходному виду: в этой же базе живут тесты сумм.
+    # База для взносов возвращается вместе с часами — иначе оставленное здесь
+    # расхождение остановит расчёт в следующем тесте, и он будет красным не
+    # по своей причине.
     TimesheetDay.objects.filter(timesheet=row).delete()
-    Timesheet.objects.filter(pk=row.pk).update(hours=before)
+    Timesheet.objects.filter(pk=row.pk).update(hours=before, insured_hours=insured)
 
 
 def test_first_edit_materializes_whole_row(one_row):
@@ -186,6 +190,166 @@ def test_timesheet_for_reads_days(one_row):
     assert sheet.hours["regular"] == Decimal("176.00")
     assert sheet.insured_hours == one_row.insured_hours
     assert sheet.norm_hours == one_row.norm_hours
+
+
+# =============================================================================
+# 2а. База для взносов (T061)
+#
+# Она вход движка наравне с часами: по ней считаются взносы и бруто. Значит
+# после правки часов она обязана либо пойти за ними, либо громко разойтись —
+# устаревшая база даёт правдоподобно неверный расчёт без единого падения.
+# =============================================================================
+
+
+def test_insured_base_follows_hours_when_it_tracked_them(one_row):
+    """База шла за часами — идёт и дальше. Ровно случай сверки: +8,5 часа."""
+    from timesheets import store
+
+    known = store.hour_types(one_row.tenant_id, JUNE, store.country_of(one_row.tenant_id))
+    before = store.insured_base(one_row.hours or {}, known)
+    from core.models import Timesheet as Row
+
+    Row.objects.filter(pk=one_row.pk).update(insured_hours=before)
+    one_row.insured_hours = before
+
+    store.set_cell(timesheet=one_row, hour_type="holiday", hours=Decimal("8.50"))
+
+    one_row.refresh_from_db()
+    assert store.insured_base(one_row.hours, known) == before + Decimal("8.50")
+    assert one_row.insured_hours == before + Decimal("8.50")
+
+
+def test_insured_base_set_apart_is_never_guessed(one_row):
+    """База, заданная отдельно от часов, — число бухгалтера, а не наше.
+
+    Пересчитать её от часов значило бы придумать правило за него (Q005).
+    Поэтому строка остаётся как есть, а расхождение показывается и мешает
+    считать — см. `test_calculation_refuses_on_stale_insured_base`.
+    """
+    from core.models import Timesheet as Row
+    from timesheets import store
+
+    Row.objects.filter(pk=one_row.pk).update(insured_hours=Decimal("40.00"))
+    one_row.insured_hours = Decimal("40.00")
+
+    store.set_cell(timesheet=one_row, hour_type="holiday", hours=Decimal("8.50"))
+
+    one_row.refresh_from_db()
+    assert one_row.insured_hours == Decimal("40.00")
+
+
+def test_insured_base_counts_only_insured_hour_types():
+    """Какие типы часов входят в базу, объявляет пресет, а не код интерфейса."""
+    from timesheets.store import insured_base
+
+    known = {
+        "regular": {"insured": True},
+        "sick": {"insured": False},
+        "vacation": {},  # без флага — считаем входящим, занижать базу опаснее
+    }
+    hours = {"regular": "100", "sick": "20", "vacation": "8", "unknown": "999"}
+    assert insured_base(hours, known) == Decimal("108")
+
+
+def test_grid_marks_row_where_base_diverges_from_hours(client):
+    from core.models import Timesheet as Row
+
+    login_as(client, "director")
+    url = grid_url(client)
+    row = Row.objects.filter(period=JUNE).order_by("employee__external_id").first()
+    Row.objects.filter(pk=row.pk).update(insured_hours=Decimal("3.00"))
+    try:
+        html = body(client.get(url))
+        assert "insured-mismatch" in html
+    finally:
+        # Расхождение останавливает расчёт периода — оставленное здесь, оно
+        # красит следующие тесты в красный не по их вине.
+        Row.objects.filter(pk=row.pk).update(insured_hours=row.insured_hours)
+
+
+def test_cell_answer_refreshes_base_on_screen(client):
+    """После правки часов новая база приезжает на экран, а не остаётся старой."""
+    from core.models import Timesheet as Row
+
+    login_as(client, "director")
+    url = grid_url(client)
+    html = body(client.get(url))
+    row_id, kind = _first_cell(html)
+    row = Row.objects.get(pk=row_id)
+
+    response = client.post(f"{url}cell/", {"row": row_id, "kind": kind, "hours": "9.00"})
+    assert response.status_code == 200
+    answer = body(response)
+    assert f'id="insured-{row_id}"' in answer
+    row.refresh_from_db()
+    assert f"{row.insured_hours:.2f}".replace(".", ",") in answer
+
+
+def _row_with_scheme(scheme: str):
+    """Строка табеля сотрудника, которого считают по этой схеме.
+
+    Схема берётся так же, как её берёт расчёт: у условий найма, а если там
+    пусто — у группы.
+    """
+    from core.models import EmploymentTerm
+    from core.models import Timesheet as Row
+
+    for row in Row.objects.filter(period=JUNE).select_related("employee"):
+        term = (
+            EmploymentTerm.objects.filter(employee_id=row.employee_id)
+            .select_related("group")
+            .order_by("-valid_from")
+            .first()
+        )
+        if term and (term.scheme or term.group.scheme) == scheme:
+            return row
+    raise AssertionError(f"в сиде нет никого со схемой {scheme} — тест бессмысленен")
+
+
+def test_calculation_refuses_on_stale_insured_base(web_env):
+    """Расхождение базы и часов не даёт посчитать период молча."""
+    from core.models import Timesheet as Row
+    from payrun.calc import calculate_period
+    from payrun.errors import PayrunRefused
+
+    all_ledgers = ["official", "supplementary", "internal"]
+    victim = _row_with_scheme("standard")
+    before = victim.insured_hours
+    Row.objects.filter(pk=victim.pk).update(insured_hours=before + Decimal("7"))
+    try:
+        with pytest.raises(PayrunRefused) as refusal:
+            calculate_period(
+                tenant_id=victim.tenant_id, period=JUNE, visible_ledgers=all_ledgers
+            )
+        assert "база" in str(refusal.value).lower()
+        assert victim.employee.external_id in refusal.value.details
+    finally:
+        Row.objects.filter(pk=victim.pk).update(insured_hours=before)
+
+
+def test_calculation_ignores_base_where_scheme_does_not_use_it(web_env):
+    """У схем без базы взносов (курьеры, временные) расхождение ничего не портит.
+
+    Требовать от них сходимости значило бы блокировать расчёт из-за числа,
+    которое ни в одну формулу не входит.
+    """
+    from conftest import wipe_payruns
+    from core.models import Timesheet as Row
+    from payrun.calc import calculate_period
+
+    all_ledgers = ["official", "supplementary", "internal"]
+    victim = _row_with_scheme("direct")
+    before = victim.insured_hours
+    Row.objects.filter(pk=victim.pk).update(insured_hours=before + Decimal("7"))
+    try:
+        wipe_payruns(web_env)
+        outcome = calculate_period(
+            tenant_id=victim.tenant_id, period=JUNE, visible_ledgers=all_ledgers
+        )
+        assert outcome.components > 0
+    finally:
+        Row.objects.filter(pk=victim.pk).update(insured_hours=before)
+        wipe_payruns(web_env)
 
 
 # =============================================================================
@@ -319,6 +483,44 @@ def test_cell_refuses_text(client):
 
     response = client.post(f"{url}cell/", {"row": row_id, "kind": kind, "hours": "восемь"})
     assert response.status_code == 422
+
+
+def test_grid_explains_missing_rules_instead_of_500(client):
+    """Правил на период в базе нет — табель объясняет это, а не падает (T062).
+
+    Страница периода этот случай уже объясняла; табель отдавал 500, и при
+    выключенной отладке человек видел бы голое «Server Error».
+    """
+    from core.models import RulePreset
+
+    login_as(client, "director")
+    url = grid_url(client)
+    RulePreset.objects.update(valid_from=date(2030, 1, 1))
+    try:
+        response = client.get(url)
+        assert response.status_code == 409
+        html = body(response)
+        assert "нет правил расчёта" in html
+        assert "load_presets" in html
+    finally:
+        RulePreset.objects.update(valid_from=date(2026, 1, 1))
+
+
+def test_refused_cell_answers_with_value_from_base(client):
+    """Отказ возвращает то, что осталось в базе: экран не показывает непринятое.
+
+    Без этого в поле оставался введённый мусор, и человек видел на экране
+    число, которого в базе нет (T066).
+    """
+    login_as(client, "director")
+    url = grid_url(client)
+    html = body(client.get(url))
+    row_id, kind = _first_cell(html)
+    client.post(f"{url}cell/", {"row": row_id, "kind": kind, "hours": "12.00"})
+
+    response = client.post(f"{url}cell/", {"row": row_id, "kind": kind, "hours": "восемь"})
+    assert response.status_code == 422
+    assert response["X-Cell-Value"] == "12.00"
 
 
 def test_manager_sees_only_own_units(client):

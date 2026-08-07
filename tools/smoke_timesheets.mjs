@@ -5,8 +5,9 @@
  * ячейками стрелками, сохранение без перезагрузки и — главное — что число
  * остаётся на месте после ухода со страницы и возврата.
  *
- * Без внешних зависимостей: WebSocket встроен в Node, протокол отладки Chrome
- * говорит на нём напрямую.
+ * Управление браузером — в tools/cdp.mjs: смоуков табеля стало два, и копия
+ * харнесса в каждом означала бы чинить один и не замечать другой. Внешних
+ * зависимостей нет: WebSocket встроен в Node.
  *
  * Как запустить (нужен поднятый продукт с сидом и headless-браузер):
  *
@@ -19,100 +20,16 @@
  * Скрипт пишет в базу — гонять только на тестовом стенде. Порт отладки задаётся
  * переменной CDP_PORT, адрес продукта — APP.
  */
-const CDP = `http://127.0.0.1:${process.env.CDP_PORT || 9339}`;
+import { attach, loginWith } from "./cdp.mjs";
+
 // Умолчание — APP_PORT из .env.example. На своём стенде задайте APP.
 const APP = process.env.APP || "http://127.0.0.1:8000";
 
-const res = await fetch(`${CDP}/json/new?about:blank`, { method: "PUT" });
-const target = await res.json();
-const ws = new WebSocket(target.webSocketDebuggerUrl);
-await new Promise((ok) => ws.addEventListener("open", ok));
-
-let seq = 0;
-const waiting = new Map();
-const logs = [];
-ws.addEventListener("message", (event) => {
-  const msg = JSON.parse(event.data);
-  if (msg.id && waiting.has(msg.id)) {
-    const { ok, fail } = waiting.get(msg.id);
-    waiting.delete(msg.id);
-    msg.error ? fail(new Error(JSON.stringify(msg.error))) : ok(msg.result);
-  }
-  if (msg.method === "Runtime.consoleAPICalled") {
-    logs.push(msg.params.args.map((a) => a.value ?? a.description).join(" "));
-  }
-  if (msg.method === "Runtime.exceptionThrown") {
-    logs.push("EXCEPTION " + JSON.stringify(msg.params.exceptionDetails.text));
-  }
-});
-
-const send = (method, params = {}) =>
-  new Promise((ok, fail) => {
-    const id = ++seq;
-    waiting.set(id, { ok, fail });
-    ws.send(JSON.stringify({ id, method, params }));
-  });
-
-const evalIn = async (expr) => {
-  const r = await send("Runtime.evaluate", {
-    expression: expr,
-    returnByValue: true,
-    awaitPromise: true,
-  });
-  if (r.exceptionDetails) throw new Error(r.exceptionDetails.text + " :: " + expr);
-  return r.result.value;
-};
-
-const goto = async (url) => {
-  await send("Page.navigate", { url });
-  // Ждём готовности разметки и подъёма htmx.
-  for (let i = 0; i < 60; i++) {
-    await new Promise((r) => setTimeout(r, 150));
-    const ready = await evalIn("document.readyState === 'complete'").catch(() => false);
-    if (ready) return;
-  }
-  throw new Error("страница не загрузилась: " + url);
-};
-
-const key = async (text, code, keyCode) => {
-  const base = { key: text, code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode };
-  await send("Input.dispatchKeyEvent", { type: "keyDown", ...base });
-  await send("Input.dispatchKeyEvent", { type: "keyUp", ...base });
-};
-
-const type = async (text) => {
-  for (const ch of text) {
-    await send("Input.dispatchKeyEvent", { type: "keyDown", text: ch, key: ch });
-    await send("Input.dispatchKeyEvent", { type: "keyUp", key: ch });
-  }
-};
-
-const checks = [];
-const check = (name, ok, detail = "") => {
-  checks.push({ name, ok, detail });
-  console.log(`${ok ? "OK  " : "FAIL"}  ${name}${detail ? " — " + detail : ""}`);
-};
-
-await send("Page.enable");
-await send("Runtime.enable");
-await send("Network.enable");
-
-// --- вход и переход на табель ------------------------------------------------
+const { send, evalIn, goto, key, type, check, report, logs } = await attach();
 
 // Вход настоящим логином и паролем, а не кнопкой-ярлыком: проверяем тот путь,
 // которым пойдёт человек.
-const loginAs = async (who) => {
-  await goto(`${APP}/login/`);
-  await evalIn(`
-    (() => {
-      const form = document.querySelector('form[action="/login/"]');
-      form.querySelector('[name=username]').value = ${JSON.stringify(who)};
-      form.querySelector('[name=password]').value = "dodo-dev";
-      form.submit();
-    })()
-  `);
-  await new Promise((r) => setTimeout(r, 1500));
-};
+const loginAs = loginWith(APP, evalIn, goto);
 
 await loginAs("director");
 check("вошли директором", (await evalIn("location.pathname")) === "/periods/",
@@ -306,11 +223,4 @@ check("единственный след в консоли — ожидаемы�
       afterRefusal.every((line) => line.includes("422")),
       afterRefusal.join(" | ").slice(0, 300) || "пусто");
 
-console.log("\n" + "=".repeat(60));
-const failed = checks.filter((c) => !c.ok);
-console.log(`${checks.length - failed.length} из ${checks.length} проверок прошли`);
-if (failed.length) {
-  console.log("ПРОВАЛЕНО: " + failed.map((c) => c.name).join("; "));
-  process.exitCode = 1;
-}
-ws.close();
+report();

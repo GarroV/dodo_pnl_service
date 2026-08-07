@@ -33,7 +33,7 @@ from django.utils import timezone
 
 from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, PayslipTotals, Tenant
 from core.models import Timesheet as TimesheetRow
-from payroll import Employee, PayrollEngine, Timesheet, d
+from payroll import Employee, PayrollEngine, Timesheet, d, insured_base, uses_insured_hours
 
 from .errors import LedgerAccessDenied, PayrunRefused
 from .rules import select_rules
@@ -173,6 +173,41 @@ def check_schemes(cases: list[Case], preset: dict) -> None:
         )
 
 
+def check_insured_base(cases: list[Case], rules) -> None:
+    """База для взносов, разошедшаяся с часами, — отказ, а не тихий расчёт.
+
+    По базе считаются взносы и бруто. Если она отстала от табеля, расчёт всё
+    равно проходит и выдаёт правдоподобное неверное число — падения нет, и
+    заметить нечем. Это ровно тот случай, ради которого в этом продукте
+    отказались от молчаливых умолчаний (конституция, принцип 1).
+
+    Проверяются только схемы, которые базу читают: у курьеров и временных
+    работ её нет ни в одной формуле, и блокировать их из-за неё было бы
+    отказом на пустом месте.
+
+    Ввод часов держит связь сам (`timesheets.store.set_cell`), поэтому отсюда
+    отказ приходит только на данные, пришедшие мимо экрана: импорт, сид,
+    правку в базе.
+    """
+    stale: list[str] = []
+    for case in cases:
+        preset = rules.preset(group_id=case.group_id, employee_id=case.employee_id)
+        scheme = (preset.get("schemes") or {}).get(case.employee.scheme) or {}
+        if not uses_insured_hours(scheme):
+            continue
+        declared = insured_base(case.timesheet.hours, preset.get("hour_types") or {})
+        if case.timesheet.insured_hours != declared:
+            stale.append(case.external_id)
+
+    if stale:
+        raise PayrunRefused(
+            f"база для взносов не сходится с часами табеля: {len(stale)} чел. "
+            "По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе "
+            "выглядел бы верным. Проверьте колонку «База взносов» в табеле.",
+            details=sorted(stale),
+        )
+
+
 def check_ledgers(slips: list, visible_ledgers) -> list[str]:
     """Записывать можно только то, что роль видит. Иначе — отказ до записи."""
     used = sorted({component.ledger for _, slip in slips for component in slip.components})
@@ -215,6 +250,7 @@ def calculate_period(*, tenant_id: UUID, period: date, visible_ledgers) -> CalcO
         rules = select_rules(tenant_id, tenant.country_code, period)
         cases = collect_cases(tenant_id, period)
         check_schemes(cases, rules.base)
+        check_insured_base(cases, rules)
 
         slips = _calculate_all(rules, cases)
         ledgers = check_ledgers(slips, visible_ledgers)

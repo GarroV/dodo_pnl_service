@@ -17,6 +17,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from core.models import Timesheet
+from payroll import insured_base
 
 from .store import country_of, hour_types
 
@@ -42,11 +43,24 @@ class Row:
     unit: str
     norm_hours: Decimal
     insured_hours: Decimal
+    # Сколько часов строки входит в базу для взносов по правилам страны.
+    # Показывается не всегда, а когда расходится с самой базой: два числа в
+    # одной колонке без причины только мешают читать столбик.
+    insured_declared: Decimal = Decimal("0")
     cells: dict[str, Decimal] = field(default_factory=dict)
 
     @property
     def total(self) -> Decimal:
         return sum(self.cells.values(), Decimal("0"))
+
+    @property
+    def insured_matches(self) -> bool:
+        """База для взносов сходится с часами, которые в неё входят.
+
+        Не косметика: по базе движок считает взносы и бруто, и расхождение
+        означает расчёт по числу, которого в табеле нет.
+        """
+        return self.insured_hours == self.insured_declared
 
 
 @dataclass
@@ -69,8 +83,7 @@ class Grid:
         return sum((row.total for row in self.rows), Decimal("0"))
 
 
-def build_columns(tenant_id: UUID, period: date) -> list[Column]:
-    known = hour_types(tenant_id, period, country_of(tenant_id))
+def build_columns(known: dict[str, dict]) -> list[Column]:
     return [
         Column(
             code=code,
@@ -106,7 +119,8 @@ def visible_rows(tenant_id: UUID, period: date, unit_ids=None):
 
 
 def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
-    columns = build_columns(tenant_id, period)
+    known = hour_types(tenant_id, period, country_of(tenant_id))
+    columns = build_columns(known)
     codes = [column.code for column in columns]
 
     rows = []
@@ -120,6 +134,7 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                 unit=sheet.unit.code if sheet.unit else "",
                 norm_hours=sheet.norm_hours,
                 insured_hours=sheet.insured_hours,
+                insured_declared=insured_base(stored, known),
                 # Типы, которых нет в правилах страны, на экран не попадают:
                 # править то, чего движок не посчитает, нельзя. Если такие
                 # часы в базе есть, их покажет отчёт импорта (T021).
