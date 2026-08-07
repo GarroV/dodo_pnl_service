@@ -63,7 +63,11 @@ comment on column timesheet_days.source is
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0010_users'),
+        # Переименована из 0011 диспетчером при слиянии: блоки timesheets и web
+        # завели одинаковый номер в параллельных копиях. Зависимость от
+        # 0011_unit_visibility — не смысловая, а порядковая: два листа в графе
+        # миграций Django не допускаются.
+        ('core', '0011_unit_visibility'),
     ]
 
     operations = [
