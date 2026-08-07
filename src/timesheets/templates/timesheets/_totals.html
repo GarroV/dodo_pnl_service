@@ -1,0 +1,12 @@
+{% load timesheet_extras %}{% comment %}
+Ответ на запись ячейки: только пересчитанные итоги.
+
+Подменяются вне цели запроса (`hx-swap-oob`) — то есть ячейка, в которой стоит
+курсор, не трогается. Подменять поле ввода на ответе сервера значило бы отнимать
+у человека то, что он печатает.
+
+Итоги считаются по показанным строкам, а не по всем: управляющий видит сумму
+своих точек, из общей выводилась бы чужая (D023).
+{% endcomment %}<td id="row-total-{{ row_id }}" hx-swap-oob="true" class="num strong">{{ row_total|hours }}</td>
+{% for code, total in grid.column_totals.items %}<td id="col-total-{{ code }}" hx-swap-oob="true" class="num">{{ total|hours }}</td>
+{% endfor %}<td id="grand-total" hx-swap-oob="true" class="num strong">{{ grid.total|hours }}</td>

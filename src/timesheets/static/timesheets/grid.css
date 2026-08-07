@@ -1,0 +1,69 @@
+/*
+ * Сетка табеля. Токены (--ink, --line, --accent) берутся из базового шаблона:
+ * второй палитры на продукт быть не должно.
+ *
+ * Главное требование к оформлению здесь одно — читаемость столбика чисел на
+ * 35 строк. Поэтому ячейка без рамки: 210 рамок превращают таблицу в решётку,
+ * в которой числа перестают складываться глазом в столбец. Границу рисует
+ * фокус — то есть ровно та ячейка, в которой человек находится.
+ */
+
+table.grid td.cellbox { padding: 0; }
+
+table.grid input.cell {
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  text-align: right;
+  width: 100%;
+  min-width: 84px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+table.grid input.cell:hover { background: #f6f8ff; }
+
+/* Фокус видно всегда и издалека: на экране в 35 строк потерять курсор — обычное
+   дело, а вводить вслепую нельзя. */
+table.grid input.cell:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(31, 79, 216, .16);
+}
+
+/* Состояние записи. Полоска слева, а не заливка: заливка спорит с чтением
+   чисел ровно так же, как на ведомости (D023). */
+table.grid input.cell.pending { box-shadow: inset 3px 0 0 var(--line); }
+table.grid input.cell.saved   { box-shadow: inset 3px 0 0 #16a34a; }
+table.grid input.cell.failed  { box-shadow: inset 3px 0 0 var(--warn); background: var(--warn-bg); }
+
+/* Незаполненная ячейка не должна выглядеть как ноль: она пустая. */
+table.grid input.cell::placeholder { color: var(--line); }
+
+table.grid td.who { white-space: nowrap; }
+table.grid .muted { color: var(--muted); }
+table.grid th.muted { color: var(--muted); }
+
+/* Подпись к колонке: процент ставки и пометка неподтверждённого правила. */
+table.grid th .hint {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+table.grid th .hint.warn { color: var(--warn); }
+
+/* Имя и точка не уезжают при горизонтальной прокрутке: без них строка чисел
+   ничья. Второй столбец сдвинут на ширину первого. */
+table.grid th:first-child, table.grid td:first-child {
+  position: sticky; left: 0; background: #fff; z-index: 1;
+}
+table.grid tbody tr:hover td:first-child { background: #f6f8ff; }
+
+#cell-error { margin-top: 16px; }

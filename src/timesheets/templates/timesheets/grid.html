@@ -1,0 +1,114 @@
+{% extends "web/base.html" %}{% load static timesheet_extras %}{% comment %}
+Сетка ввода часов: строки — сотрудники периода, колонки — типы часов страны.
+
+Единственный интерактивный экран продукта (D017). Грид сюда не подключён
+намеренно: ячейка — обычное поле ввода, поэтому Tab-порядок, фокус, выделение
+и доступность даёт браузер, а не 400 КБ библиотеки, которая сначала их отнимает.
+Своего JS ровно два куска: стрелки между ячейками и досылка несохранённого при
+уходе со страницы (см. grid.js).
+{% endcomment %}
+
+{% block title %}Табель · {{ title }}{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="{% static 'timesheets/grid.css' %}">
+  {% comment %}
+  htmx версией в файле, не с CDN (D017): в npm уже лежит 4.0.0-beta, и
+  подмена мажорной версии сломала бы экран молча. defer — чтобы разбор
+  разметки не ждал библиотеку.
+  {% endcomment %}
+  <script src="{% static 'timesheets/htmx-2.0.10.min.js' %}" defer></script>
+  <script src="{% static 'timesheets/grid.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<h1>Табель · {{ title }}</h1>
+<p class="sub">
+  {{ grid.rows|length }} чел.
+  {% if limited_to_units %}· только ваши точки{% endif %}
+  · часы за месяц; сохраняются сразу, кнопки «сохранить» нет
+</p>
+
+{% if not grid.rows %}
+  <p class="empty">За этот период табелей нет.</p>
+{% else %}
+<div class="scroll">
+  {% comment %}
+  Адрес и защита от подделки запроса объявлены один раз на таблице: htmx
+  наследует их всеми ячейками внутри, и 210 полей не тащат по копии токена.
+  {% endcomment %}
+  <table class="sheet grid" id="timesheet-grid"
+         data-url="{% url 'timesheet-cell' period.id %}"
+         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <thead>
+      <tr>
+        <th>Сотрудник</th>
+        <th>Точка</th>
+        {% for column in grid.columns %}
+          <th class="num">
+            {{ column.title }}
+            {% if column.pay_percent %}<span class="hint">{{ column.pay_percent|percent }}</span>{% endif %}
+            {% if column.unverified %}<span class="hint warn" title="Правило не подтверждено бухгалтером">?</span>{% endif %}
+          </th>
+        {% endfor %}
+        <th class="num">Итого</th>
+        {% comment %}
+        База для взносов — только на просмотр: она не равна сумме часов (у схем
+        с половиной ставки своя), а по какому признаку сотрудник попадает в
+        такую схему — открытый вопрос Q005. Считать её от введённых часов
+        значило бы придумать правило за бухгалтера.
+        {% endcomment %}
+        <th class="num muted" title="Считается при импорте, вручную не правится">База взносов</th>
+        <th class="num muted">Норма</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in grid.rows %}
+        <tr>
+          <td class="who" title="{{ row.external_id }}">{{ row.employee }}</td>
+          <td>{{ row.unit }}</td>
+          {% for column in grid.columns %}
+            {% comment %}
+            hx-trigger="change" — ячейка уходит на сервер при потере фокуса,
+            то есть при любом переходе к следующей. hx-swap="none": ответ ничего
+            не подменяет в этой ячейке, иначе сервер вырывал бы поле из-под
+            курсора. Итоги приходят подменой вне цели (см. _totals.html).
+            {% endcomment %}
+            <td class="cellbox">
+              <input class="cell" type="text" inputmode="decimal" name="hours"
+                     value="{{ row.cells|get:column.code|cell_value }}"
+                     data-row="{{ row.timesheet_id }}" data-kind="{{ column.code }}"
+                     hx-post="{% url 'timesheet-cell' period.id %}"
+                     hx-trigger="change"
+                     hx-swap="none"
+                     hx-vals='{"row": "{{ row.timesheet_id }}", "kind": "{{ column.code }}"}'
+                     aria-label="{{ row.employee }} — {{ column.title }}">
+            </td>
+          {% endfor %}
+          <td class="num strong" id="row-total-{{ row.timesheet_id }}">{{ row.total|hours }}</td>
+          <td class="num muted">{{ row.insured_hours|hours }}</td>
+          <td class="num muted">{{ row.norm_hours|hours }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="grand">
+        <td colspan="2">Итого</td>
+        {% for column in grid.columns %}
+          <td class="num" id="col-total-{{ column.code }}">{{ grid.column_totals|get:column.code|hours }}</td>
+        {% endfor %}
+        <td class="num strong" id="grand-total">{{ grid.total|hours }}</td>
+        <td></td><td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<p class="note">
+  Стрелки — переход между ячейками, Enter — вниз, Tab — вправо. Каждая ячейка
+  уходит на сервер сразу, как только вы её покинули.
+</p>
+<p id="cell-error" class="alert" hidden></p>
+{% csrf_token %}
+{% endif %}
+{% endblock %}
