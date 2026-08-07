@@ -8,6 +8,9 @@
 """
 from __future__ import annotations
 
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
 from django.http import Http404, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -18,9 +21,9 @@ from payrun.calc import calculate_period
 from payrun.errors import PayrunRefused
 from payrun.sheet import build_sheet
 
-from . import devauth
+from . import auth
 from .format import ledger_title, money
-from .principal import current_principal
+from .principal import get_current_principal
 
 MONTHS = (
     "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
@@ -43,6 +46,7 @@ def index(request):
     return redirect("periods")
 
 
+@login_required
 def periods(request):
     rows = [
         {
@@ -118,10 +122,12 @@ def period_page(request, period, *, error=None, details=(), status=200):
     )
 
 
+@login_required
 def period_detail(request, period_id):
     return period_page(request, find_period(period_id))
 
 
+@login_required
 @require_POST
 def period_calculate(request, period_id):
     """«Посчитать»: движок на данных периода, результат — в базу.
@@ -130,8 +136,9 @@ def period_calculate(request, period_id):
     странице плашкой и своим кодом ответа — молча ничего не происходит.
     """
     period = find_period(period_id)
-    who = current_principal(request)
-    if who is None:
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        # Вошёл, но ни к какому партнёру не приписан: считать ему нечего.
         raise Http404("период не найден")
 
     try:
@@ -152,25 +159,93 @@ def period_calculate(request, period_id):
     return redirect(reverse("period", args=[period.id]) + "?calculated=1")
 
 
-# --- вход на время стройки ---------------------------------------------------
+# --- вход --------------------------------------------------------------------
+
+
+def safe_next(request) -> str:
+    """Куда вернуться после входа. Только внутрь продукта, без чужих адресов."""
+    target = request.POST.get("next") or request.GET.get("next") or ""
+    if target.startswith("/") and not target.startswith("//"):
+        return target
+    return reverse("periods")
+
+
+def login_page(request):
+    """Вход по логину и паролю — единственный способ доказать личность."""
+    if request.method == "POST":
+        username = (request.POST.get("username") or "").strip()
+        password = request.POST.get("password") or ""
+        if auth.login_with_password(request, username, password) is not None:
+            return redirect(safe_next(request))
+        # Что именно не подошло — не уточняем: иначе форма отвечала бы на
+        # вопрос «а есть ли такой пользователь».
+        return render(
+            request,
+            "web/login.html",
+            {
+                "error": "Логин или пароль не подходят",
+                "username": username,
+                "next": safe_next(request),
+                "dev_users": auth.DEV_USERS.values() if auth.dev_login_is_enabled() else [],
+            },
+            status=200,
+        )
+
+    return render(
+        request,
+        "web/login.html",
+        {
+            "next": safe_next(request),
+            "dev_users": auth.DEV_USERS.values() if auth.dev_login_is_enabled() else [],
+        },
+    )
+
+
+@require_POST
+def logout_page(request):
+    auth.logout(request)
+    return redirect("login")
+
+
+@login_required
+def password_change(request):
+    """Смена своего пароля. Хранение и проверка — штатные, своей криптографии нет."""
+    if request.method == "POST":
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Иначе смена пароля выкинула бы человека из его же сессии.
+            update_session_auth_hash(request, user)
+            return redirect(reverse("password-change") + "?changed=1")
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(
+        request,
+        "web/password_change.html",
+        {"form": form, "changed": request.GET.get("changed") == "1"},
+    )
+
+
+# --- вход-ярлык на время стройки ---------------------------------------------
+# Не второй способ проверки личности: кнопка подставляет пароль учётки сида и
+# идёт тем же путём, что человек с клавиатурой. Выключается настройкой.
 
 
 def dev_login(request):
-    """Страница выбора пользователя. Выключается настройкой DEV_LOGIN_ENABLED."""
-    if not devauth.is_enabled():
+    if not auth.dev_login_is_enabled():
         return HttpResponseNotFound("dev-вход выключен")
 
     if request.method == "POST":
         code = request.POST.get("user", "")
-        if code not in devauth.DEV_USERS:
+        if code not in auth.DEV_USERS:
             return HttpResponseBadRequest("неизвестная учётка")
-        devauth.login(request, code)
+        if auth.dev_login(request, code) is None:
+            # Учётки сида в базе нет или у неё другой пароль — это отказ, а не
+            # тихий вход неизвестно кем.
+            return HttpResponseBadRequest("учётка сида не подошла")
         return redirect("periods")
 
-    return render(request, "web/dev_login.html", {"users": devauth.DEV_USERS.values()})
-
-
-@require_POST
-def dev_logout(request):
-    devauth.logout(request)
-    return redirect("periods")
+    # Отдельной страницы у ярлыка нет: кнопки живут на той же странице входа,
+    # чтобы вход был один и на вид тоже.
+    return redirect("login")

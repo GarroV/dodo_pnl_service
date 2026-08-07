@@ -1,0 +1,49 @@
+{% extends "web/base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<h1>Вход</h1>
+<p class="sub">Логин и пароль выдаёт администратор сети.</p>
+
+{% if error %}<div class="alert">{{ error }}</div>{% endif %}
+
+<form method="post" action="{% url 'login' %}" class="card">{% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <p>
+    <label for="id_username">Логин</label><br>
+    <input id="id_username" name="username" value="{{ username|default:'' }}" autocomplete="username" autofocus required>
+  </p>
+  <p>
+    <label for="id_password">Пароль</label><br>
+    <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+  </p>
+  <p><button class="primary" type="submit">Войти</button></p>
+</form>
+
+{% if dev_users %}
+<h2>Быстрый вход на время стройки</h2>
+<p class="sub">
+  Кнопка подставляет пароль учётки тестового сида и идёт тем же путём, что ввод
+  руками — отдельного способа войти у неё нет. Выключается переменной окружения
+  <code>DEV_LOGIN=0</code>; выданные ею сессии при этом перестают действовать.
+</p>
+<table>
+  <thead><tr><th>Пользователь</th><th>Логин</th><th>Видит регистры</th><th>Точки</th><th></th></tr></thead>
+  <tbody>
+    {% for user in dev_users %}
+    <tr>
+      <td>{{ user.title }}</td>
+      <td><code>{{ user.username }}</code></td>
+      <td>{{ user.ledgers|join:", " }}</td>
+      <td>{% if user.unit %}{{ user.unit }}{% else %}все{% endif %}</td>
+      <td class="num">
+        <form class="inline" method="post" action="{% url 'dev-login' %}">{% csrf_token %}
+          <input type="hidden" name="user" value="{{ user.code }}">
+          <button type="submit">войти</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

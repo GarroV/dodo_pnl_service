@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from typing import NamedTuple
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -51,12 +52,46 @@ PNL_ITEMS = [
     ("total", "Результат", "subtotal", 90),
 ]
 
-# Роли спеки. Видимость регистров — то, ради чего вообще нужна роль.
+class SeedRole(NamedTuple):
+    """Роль сида: что человек видит, где и что ему позволено делать."""
+
+    code: str
+    title: str
+    ledgers: list[str]
+    unit: str | None  # None — все точки тенанта
+    permissions: list[str]
+
+
+# Четыре роли спеки. Видимость регистров — то, ради чего вообще нужна роль:
+# она разворачивается в ключи контекста, а применяют их политики базы.
+# Права (`permissions`) — намерения ролей; сегодня на видимое влияет только
+# набор регистров, остальное подключится вместе с циклом периода.
 ROLES = [
-    ("director", "Оперативный директор", ["official", "supplementary", "internal"], None),
-    ("accountant", "Бухгалтер", ["official"], None),
-    ("manager", "Управляющий точки", ["official", "supplementary"], "NS1"),
+    SeedRole(
+        "director", "Оперативный директор",
+        ["official", "supplementary", "internal"], None,
+        ["timesheet.edit", "payrun.calculate", "period.approve", "period.reopen"],
+    ),
+    SeedRole(
+        "accountant", "Бухгалтер",
+        ["official"], None,
+        ["timesheet.edit", "payrun.calculate", "period.approve"],
+    ),
+    SeedRole(
+        "manager", "Управляющий точки",
+        ["official", "supplementary"], "NS1",
+        ["timesheet.edit", "unit.close"],
+    ),
+    SeedRole(
+        "admin", "Администратор сети",
+        ["official"], None,
+        ["directory.manage", "rules.manage", "roles.manage"],
+    ),
 ]
+
+# Пароль учёток сида: данные для разработки, не секрет — той же природы, что
+# пароль базы в `.env.example`. Меняется переменной SEED_USER_PASSWORD.
+SEED_PASSWORD = settings.DEV_LOGIN_PASSWORD
 
 
 @dataclass(frozen=True)
@@ -156,11 +191,12 @@ class Command(BaseCommand):
                 f"{employees} сотрудников, период {PERIOD:%Y-%m}"
             )
         )
-        self.stdout.write("Пользователи для разработки (id для app.user_id):")
-        for code, title, ledgers, unit in ROLES:
+        self.stdout.write(f"Учётки для разработки (пароль у всех: {SEED_PASSWORD}):")
+        for role_def in ROLES:
             self.stdout.write(
-                f"  {det_id('user', code)}  {title}: регистры {','.join(ledgers)}"
-                + (f", точка {unit}" if unit else ", все точки")
+                f"  {role_def.code:<11} {role_def.title}: "
+                f"регистры {','.join(role_def.ledgers)}"
+                + (f", точка {role_def.unit}" if role_def.unit else ", все точки")
             )
 
     # --- шаги -----------------------------------------------------------
@@ -183,6 +219,11 @@ class Command(BaseCommand):
             model.objects.filter(tenant__in=tenants).delete()
         models.PnlItem.objects.filter(tenant__in=tenants).delete()
         tenants.delete()
+        # Учётки живут вне тенанта, поэтому сносятся отдельно и только свои:
+        # чужие в этой базе не наши, и трогать их сид не вправе.
+        models.User.objects.filter(
+            pk__in=[det_id("user", role.code) for role in ROLES]
+        ).delete()
 
     def _org(self) -> models.Tenant:
         tenant = models.Tenant.objects.create(
@@ -233,16 +274,31 @@ class Command(BaseCommand):
         return groups
 
     def _roles_and_users(self, tenant) -> None:
+        """Роли, учётки и членства.
+
+        Учётка и членство — разные вещи: `users` хранит, чем человек доказывает
+        личность, `memberships` — у какого партнёра и с какой ролью он работает.
+        Ключ у них общий (`det_id("user", code)`), потому что этот же uuid
+        уходит в контекст базы: вторая таблица соответствий здесь была бы
+        лишним местом, где однажды окажется не та строка.
+        """
         units = {u.code: u for u in models.Unit.objects.filter(tenant=tenant)}
-        for code, title, ledgers, unit_code in ROLES:
+        for role_def in ROLES:
             role = models.Role.objects.create(
-                id=det_id("role", code), tenant=tenant, code=code, title=title,
-                visible_ledgers=ledgers,
+                id=det_id("role", role_def.code), tenant=tenant, code=role_def.code,
+                title=role_def.title, visible_ledgers=role_def.ledgers,
+                permissions=role_def.permissions,
+            )
+            user = models.User.objects.create_user(
+                username=role_def.code,
+                password=SEED_PASSWORD,
+                id=det_id("user", role_def.code),
+                full_name=role_def.title,
             )
             models.Membership.objects.create(
-                id=det_id("membership", code), tenant=tenant,
-                user_id=det_id("user", code), role=role,
-                unit_ids=[units[unit_code].id] if unit_code else None,
+                id=det_id("membership", role_def.code), tenant=tenant,
+                user_id=user.pk, role=role,
+                unit_ids=[units[role_def.unit].id] if role_def.unit else None,
             )
 
     def _calendar(self, preset: dict) -> None:

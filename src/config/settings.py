@@ -11,6 +11,10 @@ from pathlib import Path
 
 from psycopg.conninfo import conninfo_to_dict
 
+# Модуль без единого импорта Django: настройки читаются раньше, чем поднимаются
+# приложения, поэтому тащить сюда код входа нельзя.
+from web.flags import dev_login_enabled, dev_password
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "insecure-dev-key-change-me")
@@ -39,14 +43,33 @@ MIDDLEWARE = [
 
 # Сессии — в подписанной cookie, без таблицы в базе. Причина не в удобстве:
 # запрос идёт ролью app_user внутри транзакции с контекстом, и запись сессии
-# в базу тянула бы за собой права и политики на служебную таблицу. Настоящий
-# вход (блок auth) выберет хранилище сам.
+# в базу тянула бы за собой права и политики на служебную таблицу.
+# Цена решения, которую нужно понимать: серверного списка сессий нет, поэтому
+# «разлогинить всех» — это смена SECRET_KEY, а одного человека — смена его
+# пароля (Django кладёт в сессию хэш пароля и сверяет его на каждом запросе).
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
-# Вход «на время стройки»: переключатель пользователей сида вместо настоящей
-# аутентификации. На площадке выключается DEV_LOGIN=0 — тогда страниц входа
-# нет и контекст пользователя не выставляется вовсе.
-DEV_LOGIN_ENABLED = os.environ.get("DEV_LOGIN", "1") == "1"
+# Учётка своя (D013): один uuid на человека — он же уходит в контекст базы и
+# лежит в memberships.user_id.
+AUTH_USER_MODEL = "core.User"
+AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "/periods/"
+
+# Требования к паролю — штатные проверки Django, своих нет.
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+# Вход-ярлык на время стройки: кнопка на странице входа подставляет пароль
+# учётки тестового сида и идёт тем же путём, что человек с клавиатурой —
+# отдельного способа проверить личность у него нет. По умолчанию живёт только
+# при DJANGO_DEBUG=1: на площадке о нём нужно попросить явно (DEV_LOGIN=1).
+DEV_LOGIN_ENABLED = dev_login_enabled(os.environ, DEBUG)
+DEV_LOGIN_PASSWORD = dev_password(os.environ)
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"

@@ -317,9 +317,10 @@ def test_calculation_without_login_writes_nothing(client, clean_payruns):
 
     login_as(client, "director")
     url = period_url(client)
-    client.post("/dev/logout/")
+    client.post("/logout/")
 
-    assert client.post(url + "calculate/").status_code == 404
+    # Не вошёл — расчёт не запускается: запрос уводит на страницу входа.
+    assert client.post(url + "calculate/").status_code == 302
     with psycopg.connect(clean_payruns) as conn:
         assert conn.execute("select count(*) from payruns").fetchone()[0] == 0
 
