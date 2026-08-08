@@ -156,6 +156,16 @@
      расхождении нельзя — иначе экран выдаёт сегодняшний счёт за вчерашний. */
   table.steps tr.drifted { background: var(--warn-bg); }
   table.steps tr.drifted .badge { margin-left: 6px; }
+  /* Отчёт расхождений (T030). Отклонение — главное число строки, поэтому оно
+     набрано жирнее прочих, а рост и падение различаются цветом: направление
+     читается быстрее знака. Порог набран мелко: он объясняет, почему строка
+     здесь, но сам по себе не новость. */
+  table.variance td.delta { font-weight: 600; }
+  table.variance tr.grew td.delta { color: var(--warn); }
+  table.variance tr.fell td.delta { color: #14532d; }
+  table.variance .hint { color: var(--muted); font-size: 11px; }
+  table.variance td.threshold { white-space: nowrap; }
+  table.variance td:nth-child(2) .hint { display: block; }
   /* Ход фонового расчёта (T024). Полоса — не украшение: без неё страница на
      время расчёта выглядит замершей, и человек жмёт кнопку второй раз. */
   section.progress { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 16px 20px; margin: 0 0 24px; }

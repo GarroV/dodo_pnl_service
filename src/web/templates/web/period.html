@@ -140,6 +140,11 @@
 <form method="post" action="{% url 'period-calculate' period.id %}">{% csrf_token %}
   <button type="submit" class="primary">Посчитать период</button>
   <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
+  {% comment %}
+  Отчёт расхождений (T030) стоит рядом с табелем и по той же причине: он про
+  этот период, и в общей навигации не знал бы, о каком месяце речь.
+  {% endcomment %}
+  <a class="btn" href="{% url 'period-variance' period.id %}">Расхождения</a>
   <span class="note">
     {% if background_calculation %}
     Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама.
@@ -152,6 +157,7 @@
 {% else %}
 <p>
   <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
+  <a class="btn" href="{% url 'period-variance' period.id %}">Расхождения</a>
   <span class="note">{{ calculate_denied }}</span>
 </p>
 {% endif %}
