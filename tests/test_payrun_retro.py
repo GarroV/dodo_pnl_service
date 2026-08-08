@@ -629,6 +629,20 @@ def test_the_year_rolls_over(web_env, june_approved):
 # =============================================================================
 
 
+def alert_of(html: str) -> str:
+    """Только плашка отказа, а не вся страница.
+
+    Проверка «где-то в HTML есть нужные слова» здесь бесполезна: страница и так
+    объясняет человеку каждый недоступный ему запрет (T072), поэтому текст про
+    отсутствие права стоит на ней всегда — и с выброшенной проверкой тоже.
+    Подтверждено порчей: до этого сужения тест был зелёным по чужой причине.
+    """
+    import re
+
+    found = re.search(r'<div class="alert">(.*?)</div>', html, re.S)
+    return found.group(1) if found else ""
+
+
 def page_of(client, month: date, tenant) -> str:
     """Адрес страницы нужного месяца.
 
@@ -689,7 +703,9 @@ def test_the_transfer_needs_the_right_on_the_page(client, web_env, june_approved
 
     answer = client.post(url + "retro/")
     assert answer.status_code == 403
-    assert "не входит в права вашей роли" in body(answer)
+    # Отказ ищется внутри плашки: та же фраза стоит на странице всегда, потому
+    # что страница объясняет каждый недоступный запрет (T072).
+    assert "Перенос разницы за закрытый месяц не входит в права" in alert_of(body(answer))
 
 
 def test_the_sheet_says_the_row_is_a_delta(client, web_env, june_approved):

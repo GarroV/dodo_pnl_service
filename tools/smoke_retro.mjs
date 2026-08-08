@@ -162,11 +162,18 @@ const inDb = sql(
   "select count(*), coalesce(sum(amount), 0) from retro_adjustments where cancelled_at is null"
 );
 check("перенос лёг в базу", Number(inDb.split("|")[0]) > 0, inDb);
+// Не список регистров наизусть, а равенство двум множествам: набор регистров
+// переноса обязан совпасть с набором регистров самого закрытого месяца. Список
+// в смоуке разошёлся бы с сидом молча и проверял бы память автора.
+const movedLedgers = sql("select distinct ledger from retro_adjustments order by 1");
+const sourceLedgers = sql(
+  "select distinct c.ledger from pay_components c join payslips s on s.id = c.payslip_id " +
+  "join payruns p on p.id = s.payrun_id where p.period = date '2026-06-01' order by 1"
+);
 check(
-  "регистры переноса — те же, что у исходных строк",
-  sql("select distinct ledger from retro_adjustments order by 1").split("\n").join(",")
-    === "official,supplementary",
-  sql("select distinct ledger from retro_adjustments order by 1").split("\n").join(","),
+  "регистры переноса — те же, что у закрытого месяца",
+  movedLedgers === sourceLedgers,
+  movedLedgers + " против " + sourceLedgers,
 );
 
 // --- 4. Получатель: плашка, пересчёт, объясняющая себя строка -----------------
