@@ -214,7 +214,16 @@ for (const [who, rows, total] of [
   const text = await evalIn(`document.body.innerText`);
   check(`${who}: ${rows} строк ведомости`, seen === rows, String(seen));
   check(`${who}: итог ${total}`, text.includes(total));
+  // Норма общая для всех ролей: разное число у разных людей уже было дефектом.
+  check(`${who}: норма часов 176,00`, /Норма часов[\s\S]{0,40}176,00/.test(text));
 }
+
+// Директор смотрит ту же страницу последним — иначе его норму пришлось бы
+// проверять до расчёта, когда числа ещё нет.
+await login("director");
+await goto(APP + periodHref);
+check("директор: норма часов 176,00",
+  /Норма часов[\s\S]{0,40}176,00/.test(await evalIn(`document.body.innerText`)));
 
 check("консоль браузера чиста", logs.length === 0, logs.join(" | ").slice(0, 200));
 report();
