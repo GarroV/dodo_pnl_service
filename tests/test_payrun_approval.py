@@ -129,9 +129,16 @@ def test_the_reason_does_not_leak_to_the_next_transition(db):
 
 
 def test_approval_requires_the_right_to_approve(db):
-    """У управляющего права утверждать нет — база отказывает, а не интерфейс."""
-    with as_app_user(db, USER_MANAGER) as conn:
+    """У управляющего права утверждать нет — база отказывает, а не интерфейс.
+
+    Расчёт доводит до нужного статуса директор: у управляющего нет и права
+    считать, поэтому подготовка его руками падала бы на `insert`, не дойдя до
+    проверяемого запрета — тест был бы зелёным не по той причине.
+    """
+    with as_app_user(db, USER_DIRECTOR) as conn:
         payrun_id = payrun_in(conn, "calculated")
+
+    with as_app_user(db, USER_MANAGER) as conn:
         error = rejected(
             conn, "update payruns set status = 'approved' where id = %s", (payrun_id,)
         )
