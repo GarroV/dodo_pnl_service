@@ -348,10 +348,19 @@ def wipe_payruns(dsn: str) -> None:
         # не политика. Уборка поэтому сначала открывает период заново: иначе
         # фикстура падала бы на расчёте, утверждённом соседним тестом, вместо
         # того чтобы убрать за ним.
-        conn.execute(
-            f"update payruns set status = 'reopened' "
-            f"where tenant_id in {tenants} and status = 'approved'"
-        )
+        # Откат без причины база не пропускает (T025) — и это правило тоже
+        # держит триггер, то есть действует на суперпользователя. Причина
+        # выставляется в той же транзакции: при autocommit каждый оператор был
+        # бы своей, и настройка не дожила бы до `update`.
+        with conn.transaction():
+            conn.execute(
+                "select set_config('app.transition_reason', %s, true)",
+                ("уборка тестовых данных",),
+            )
+            conn.execute(
+                f"update payruns set status = 'reopened' "
+                f"where tenant_id in {tenants} and status = 'approved'"
+            )
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
         conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")

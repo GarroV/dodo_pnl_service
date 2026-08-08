@@ -71,8 +71,35 @@ def new_payrun(conn, *, tenant: str = T1, period: str = JUNE) -> str:
     ).fetchone()[0]
 
 
+# Чем объясняются откаты, сделанные тестом просто чтобы добраться до статуса.
+# Сама проверка причины живёт в `test_payrun_approval.py` (T025).
+DEFAULT_REASON = "перевод в тесте"
+
+
+def reason_required(conn, status: str) -> bool:
+    """Требует ли база причину на этот переход. Спрашиваем у неё, а не помним."""
+    return conn.execute(
+        "select payrun_reason_required(%s::payrun_status)", (status,)
+    ).fetchone()[0]
+
+
+def current_reason(conn) -> str:
+    return conn.execute(
+        "select coalesce(current_setting('app.transition_reason', true), '')"
+    ).fetchone()[0]
+
+
 def set_status(conn, payrun_id: str, *statuses: str) -> None:
+    """Перевести расчёт по статусам, подставляя причину там, где база её требует.
+
+    Причину, выставленную самим тестом, не затирает: тест, который проверяет
+    журнал, ставит её сам, и подмена превратила бы его в проверку этой строки.
+    """
     for status in statuses:
+        if reason_required(conn, status) and not current_reason(conn).strip():
+            conn.execute(
+                "select set_config('app.transition_reason', %s, true)", (DEFAULT_REASON,)
+            )
         conn.execute(
             "update payruns set status = %s where id = %s", (status, payrun_id)
         )
@@ -423,11 +450,21 @@ def payrun_status(dsn: str) -> str:
 
 
 def force_status(dsn: str, status: str) -> None:
-    """Перевести расчёт суперпользователем — экрана утверждения ещё нет (T025)."""
+    """Перевести расчёт суперпользователем, минуя экраны.
+
+    Причина подставляется там, где её требует база (откат): требование стоит
+    триггером, поэтому действует и на суперпользователя тоже — см. T025.
+    """
     import psycopg
 
     with psycopg.connect(dsn, autocommit=True) as conn:
-        conn.execute("update payruns set status = %s", (status,))
+        with conn.transaction():
+            conn.execute(
+                "select set_config('app.transition_reason', case when "
+                "payrun_reason_required(%s::payrun_status) then %s else '' end, true)",
+                (status, DEFAULT_REASON),
+            )
+            conn.execute("update payruns set status = %s", (status,))
 
 
 def test_calculation_leaves_the_payrun_calculated(client, clean_payruns):
