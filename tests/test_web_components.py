@@ -199,7 +199,8 @@ def test_cuts_show_only_what_the_role_can_see(django_templates):
 
 
 def test_cuts_disappear_entirely_when_there_is_nothing_to_switch(django_templates):
-    assert render('{% include "web/components/cuts.html" with cuts=empty %}', empty=[]).strip() == ""
+    out = render('{% include "web/components/cuts.html" with cuts=empty %}', empty=[])
+    assert out.strip() == ""
 
 
 # --- на живой странице -------------------------------------------------------
