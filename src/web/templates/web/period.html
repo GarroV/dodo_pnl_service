@@ -327,12 +327,12 @@
             <span class="hint">{{ row.freeze_reason }}</span>
             {% if can_freeze %}
             {% url 'payslip-release' row.payslip_id as release_url %}
-            {% include "web/components/action.html" with allowed=True url=release_url label="Снять заморозку" primary=False inline=True note="" denied="" reason_name="" hidden_name="" %}
+            {% include "web/components/action.html" with allowed=True url=release_url label="Снять заморозку" primary=False note="" denied="" reason_name="" hidden_name="" %}
             {% endif %}
           {% endif %}
         {% elif row.show_action and can_freeze %}
           {% url 'payslip-freeze' row.payslip_id as freeze_url %}
-          {% include "web/components/action.html" with allowed=True url=freeze_url label="Заморозить" reason_name="reason" reason_id="" reason_label="" reason_placeholder="из-за чего спор" primary=False note="" inline=True denied="" %}
+          {% include "web/components/action.html" with allowed=True url=freeze_url label="Заморозить" reason_name="reason" reason_id="" reason_label="" reason_placeholder="из-за чего спор" primary=False note="" denied="" %}
         {% endif %}
       </td>
       {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
