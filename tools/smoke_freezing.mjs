@@ -64,12 +64,14 @@ const snapshot = () => evalIn(`
   (() => {
     const rows = [...document.querySelectorAll("table.sheet tbody tr")].map(tr => {
       const cells = [...tr.children];
+      const form = tr.querySelector('form[action*="/freeze/"]');
       return {
         employee: cells[0].textContent.trim(),
+        unit: cells[1].textContent.trim(),
         ledger: cells[2].textContent.trim(),
-        total: cells[cells.length - 2].textContent.trim(),
+        total: cells[cells.length - 1].textContent.trim(),
         frozen: !!tr.querySelector(".frozen"),
-        freezeForm: !!tr.querySelector('form[action*="/freeze/"]'),
+        freezeAction: form ? form.action : "",
         releaseForm: !!tr.querySelector('form[action*="/release/"]'),
       };
     });
@@ -151,6 +153,9 @@ check("ведомость не потеряла строк", page.count === 60, 
 
 const before = totalsByEmployee(page);
 const beforeTotal = page.total.trim();
+// Адрес заморозки запоминается заранее: в утверждённом периоде форм на экране
+// нет вовсе, а проверить надо именно ответ сервера.
+const disputedAction = disputed.freezeAction;
 
 // --- пересчёт: замороженная строка обязана остаться прежней -------------------
 sql("update employment_terms set base_rate = base_rate * 2");
@@ -178,7 +183,7 @@ page = await snapshot();
 check("месяц утверждён вместе со спорной строкой", page.payrunStatus === "Утверждён", page.payrunStatus);
 check("утверждённый период заморозки не предлагает", page.freezeForms === 0, String(page.freezeForms));
 
-const inApproved = await post(page.freezeAction || "/payslips/none/freeze/", { reason: REASON });
+const inApproved = await post(disputedAction, { reason: REASON });
 check("заморозка в утверждённом периоде отвергнута (409)", inApproved.status === 409,
   String(inApproved.status));
 check(
@@ -216,11 +221,15 @@ check(`итог снова ${REFERENCE_TOTAL}`, page.total.trim() === REFERENCE_
 check("норма часов 176,00", page.text.includes("176,00"));
 
 // --- отказы: пустая причина и роль без права ----------------------------------
-const blank = await post(page.freezeAction, { reason: "   " });
+const blank = await post(page.rows.find((r) => r.freezeAction).freezeAction, { reason: "   " });
 check("заморозка без причины отвергнута (400)", blank.status === 400, String(blank.status));
 check("отказ объяснён словами", blank.text.includes("требует причины"));
 
-const directorAction = page.freezeAction;
+// Управляющему предлагается строка **его** точки: чужой строки он не видит
+// вовсе, и 404 там означал бы невидимость, а не отсутствие права.
+const ownRow = page.rows.find((r) => r.unit === "NS1" && r.freezeAction);
+check("нашлась строка точки управляющего", !!ownRow, ownRow ? ownRow.employee : "нет");
+const managerRowAction = ownRow ? ownRow.freezeAction : "";
 
 await login("manager");
 await goto(APP + periodHref);
@@ -230,7 +239,7 @@ check(
   "управляющему объяснено, почему кнопки нет",
   page.text.includes("Заморозка строки ведомости не входит в права вашей роли"),
 );
-const denied = await post(directorAction, { reason: REASON });
+const denied = await post(managerRowAction, { reason: REASON });
 check("заморозка без права отвергнута (403)", denied.status === 403, String(denied.status));
 check("отказ назван словами", denied.text.includes("Заморозка строки ведомости"));
 

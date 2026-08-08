@@ -140,10 +140,9 @@
 <table class="sheet">
   <thead>
     <tr>
-      <th>Сотрудник</th><th>Точка</th><th>Регистр</th>
+      <th>Сотрудник</th><th>Точка</th><th>Регистр</th><th>Спор</th>
       {% for column in sheet.columns %}<th class="num">{{ column }}</th>{% endfor %}
       <th class="num">Итого</th>
-      <th>Спор</th>
     </tr>
   </thead>
   <tbody>
@@ -152,8 +151,6 @@
       <td>{{ row.employee }}</td>
       <td>{{ row.unit }}</td>
       <td><span class="ledger">{{ row.ledger }}</span></td>
-      {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
-      <td class="num strong">{{ row.total }}</td>
       {% comment %}
       Заморозка спорной строки (T027). Метка стоит у каждой строки человека —
       их бывает две, по одной на регистр, и живая половина ведомости вводила бы
@@ -178,15 +175,16 @@
           </form>
         {% endif %}
       </td>
+      {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
+      <td class="num strong">{{ row.total }}</td>
     </tr>
     {% endfor %}
   </tbody>
   <tfoot>
     <tr class="grand">
-      <td colspan="3">Итого · {{ sheet.employees }} чел.</td>
+      <td colspan="4">Итого · {{ sheet.employees }} чел.</td>
       {% for cell in sheet.column_totals %}<td class="num">{{ cell }}</td>{% endfor %}
       <td class="num">{{ total }}</td>
-      <td></td>
     </tr>
   </tfoot>
 </table>
