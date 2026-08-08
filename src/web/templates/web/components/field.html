@@ -1,0 +1,29 @@
+{% comment %}
+Поле формы: подпись и ввод одной парой.
+
+Подпись обязательна везде, где ввод не подписан соседним текстом: без `label`
+поле недоступно с клавиатуры для экранного диктора, а щелчок по подписи не
+ставит курсор. `id` поэтому тоже обязателен — он и связывает пару.
+
+Параметры:
+  id, name              обязательные;
+  label                 подпись; пусто — подписи нет (поле причины в ведомости:
+                        колонка узкая, а смысл поля виден из соседней кнопки);
+  type                  text (по умолчанию), password, file;
+  value, placeholder    начальные значение и подсказка;
+  required              обязательность на стороне браузера — не вместо
+                        серверной проверки, а до неё;
+  stacked               подпись отдельной строкой (формы-карточки входа);
+  accept, autocomplete, autofocus, help.
+
+Подписи приходят строками из шаблона, а не собираются в Python: локализация
+(T017) переводит строки шаблонов.
+{% endcomment %}{% if label %}<label for="{{ id }}">{{ label }}</label>{% if stacked %}<br>{% endif %}
+{% endif %}<input type="{{ type|default:'text' }}"{% if id %} id="{{ id }}"{% endif %} name="{{ name }}"
+       {% if value %}value="{{ value }}"{% endif %}
+       {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+       {% if accept %}accept="{{ accept }}"{% endif %}
+       {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+       {% if inputmode %}inputmode="{{ inputmode }}"{% endif %}
+       {% if autofocus %}autofocus{% endif %}{% if required %} required{% endif %}>
+{% if help %}<span class="note">{{ help }}</span>{% endif %}

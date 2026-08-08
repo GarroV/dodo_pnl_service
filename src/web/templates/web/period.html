@@ -1,22 +1,17 @@
-{% extends "web/base.html" %}
+{% extends "web/base.html" %}{% load ui %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
 <h1>{{ title }}</h1>
 <p class="sub">{{ period.tenant.title }}</p>
 
 {% if error %}
-<div class="alert">
-  <strong>{{ error_title }}</strong> {{ error }}
+{% notice "alert" title=error_title %}{{ error }}
   {% if details %}<div class="details">{{ details|join:", " }}</div>{% endif %}
-</div>
+{% endnotice %}
 {% endif %}
 
-{% if calculated %}
-<div class="ok">Расчёт выполнен. Ниже — то, что видно вашей роли.</div>
-{% endif %}
-{% if queued %}
-<div class="ok">Расчёт принят и считается в фоне. Страницу можно не держать открытой.</div>
-{% endif %}
+{% if calculated %}{% notice "ok" %}Расчёт выполнен. Ниже — то, что видно вашей роли.{% endnotice %}{% endif %}
+{% if queued %}{% notice "ok" %}Расчёт принят и считается в фоне. Страницу можно не держать открытой.{% endnotice %}{% endif %}
 
 {% comment %}
 Ход фонового расчёта (T024). Блок живёт, только пока живо задание: у
@@ -92,18 +87,10 @@
   })();
 </script>
 {% endif %}
-{% if approved %}
-<div class="ok">Период утверждён. Расчёт и его данные заморожены.</div>
-{% endif %}
-{% if reopened %}
-<div class="ok">Период открыт заново. Причина и ваше имя записаны в историю.</div>
-{% endif %}
-{% if froze %}
-<div class="ok">Строка заморожена. Пересчёт её обходит, остальные считаются как прежде.</div>
-{% endif %}
-{% if released %}
-<div class="ok">Заморозка снята. Человек вернулся в общий расчёт.</div>
-{% endif %}
+{% if approved %}{% notice "ok" %}Период утверждён. Расчёт и его данные заморожены.{% endnotice %}{% endif %}
+{% if reopened %}{% notice "ok" %}Период открыт заново. Причина и ваше имя записаны в историю.{% endnotice %}{% endif %}
+{% if froze %}{% notice "ok" %}Строка заморожена. Пересчёт её обходит, остальные считаются как прежде.{% endnotice %}{% endif %}
+{% if released %}{% notice "ok" %}Заморозка снята. Человек вернулся в общий расчёт.{% endnotice %}{% endif %}
 
 <dl class="facts">
   <dt>Состояние</dt><dd>{{ status }}</dd>
@@ -136,15 +123,17 @@
 Стоит она рядом с кнопкой, а не в общей навигации, — там она не знала бы, о
 каком периоде речь.
 {% endcomment %}
-{% if can_calculate %}
-<form method="post" action="{% url 'period-calculate' period.id %}">{% csrf_token %}
-  <button type="submit" class="primary">Посчитать период</button>
-  <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
+{% url 'period-calculate' period.id as calculate_url %}
+<div class="actions">
+  {% include "web/components/action.html" with allowed=can_calculate denied=calculate_denied url=calculate_url label="Посчитать период" primary=True inline=True %}
   {% comment %}
-  Отчёт расхождений (T030) стоит рядом с табелем и по той же причине: он про
-  этот период, и в общей навигации не знал бы, о каком месяце речь.
+  Табель и расхождения — про этот период, поэтому ссылки стоят рядом с кнопкой,
+  а не в общей навигации: там они не знали бы, о каком месяце речь. Смотреть
+  часы правом на расчёт не ограничено, поэтому ссылки видны и без права.
   {% endcomment %}
+  <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
   <a class="btn" href="{% url 'period-variance' period.id %}">Расхождения</a>
+  {% if can_calculate %}
   <span class="note">
     {% if background_calculation %}
     Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама.
@@ -153,14 +142,8 @@
     {% endif %}
     Повторный запуск пересобирает ведомость заново.
   </span>
-</form>
-{% else %}
-<p>
-  <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
-  <a class="btn" href="{% url 'period-variance' period.id %}">Расхождения</a>
-  <span class="note">{{ calculate_denied }}</span>
-</p>
-{% endif %}
+  {% endif %}
+</div>
 
 {% comment %}
 Утверждение и откат (T025). Действие предлагается, только когда цикл его
@@ -178,13 +161,10 @@
 Месяц-получатель назван словами: молча выбранный получатель — это сумма,
 появившаяся неизвестно где.
 {% endcomment %}
-{% if retro_posted %}
-<div class="ok">Разница перенесена. Закрытый период при этом не изменился.</div>
-{% endif %}
+{% if retro_posted %}{% notice "ok" %}Разница перенесена. Закрытый период при этом не изменился.{% endnotice %}{% endif %}
 
 {% if retro_pending %}
-<div class="alert retro-pending">
-  <strong>Разница за закрытый месяц ещё не в ведомости.</strong>
+{% notice "alert" extra="retro-pending" title="Разница за закрытый месяц ещё не в ведомости." %}
   <ul>
     {% for item in retro_pending %}
     <li>
@@ -199,14 +179,11 @@
     </li>
     {% endfor %}
   </ul>
-</div>
+{% endnotice %}
 {% endif %}
 
 {% if retro_error %}
-<div class="alert">
-  <strong>Сверить закрытый месяц с сегодняшними данными не удалось.</strong>
-  {{ retro_error }}
-</div>
+{% notice "alert" title="Сверить закрытый месяц с сегодняшними данными не удалось." %}{{ retro_error }}{% endnotice %}
 {% endif %}
 
 {% if retro_drift %}
@@ -226,22 +203,21 @@
       <tr>
         <td>{{ line.employee }}</td>
         <td>{{ line.title }}</td>
-        <td><span class="ledger">{{ line.ledger }}</span></td>
+        <td>{% ledger line.ledger %}</td>
         <td class="num">{{ line.amount }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  {% if can_post_retro or retro_denied %}
+  {% url 'period-retro' period.id as retro_url %}
+  {% include "web/components/action.html" with allowed=can_post_retro denied=retro_denied url=retro_url label="Перенести разницу в "|add:retro_target primary=True inline=True %}
   {% if can_post_retro %}
-  <form method="post" action="{% url 'period-retro' period.id %}">{% csrf_token %}
-    <button type="submit" class="primary">Перенести разницу в {{ retro_target }}</button>
-    <span class="note">
-      Закрытый период не изменится: разница ляжет помеченной строкой в
-      {{ retro_target }}, в тот же регистр учёта.
-    </span>
-  </form>
-  {% elif retro_denied %}
-  <p class="note">{{ retro_denied }}</p>
+  <span class="note">
+    Закрытый период не изменится: разница ляжет помеченной строкой в
+    {{ retro_target }}, в тот же регистр учёта.
+  </span>
+  {% endif %}
   {% else %}
   <p class="note">
     У этого партнёра правки задним числом ведутся пересчётом: откройте период
@@ -252,27 +228,17 @@
 {% endif %}
 
 {% if can_approve or approve_denied or can_reopen or reopen_denied %}
+{% url 'period-approve' period.id as approve_url %}
+{% url 'period-reopen' period.id as reopen_url %}
 <div class="lifecycle">
-  {% if can_approve %}
-  <form method="post" action="{% url 'period-approve' period.id %}">{% csrf_token %}
-    <button type="submit" class="primary">Утвердить период</button>
-    <span class="note">После утверждения расчёт и его данные меняться не будут.</span>
-  </form>
-  {% elif approve_denied %}
-  <p class="note">{{ approve_denied }}</p>
-  {% endif %}
-
-  {% if can_reopen %}
-  <form method="post" action="{% url 'period-reopen' period.id %}">{% csrf_token %}
-    <label for="reason">Зачем открываете период</label>
-    <input type="text" id="reason" name="reason" value="{{ reason_value }}"
-           placeholder="например: ошиблись в часах за третью неделю" required>
-    <button type="submit">Открыть заново</button>
-    <span class="note">Причина попадёт в историю рядом с вашим именем.</span>
-  </form>
-  {% elif reopen_denied %}
-  <p class="note">{{ reopen_denied }}</p>
-  {% endif %}
+  {% include "web/components/action.html" with allowed=can_approve denied=approve_denied url=approve_url label="Утвердить период" primary=True note="После утверждения расчёт и его данные меняться не будут." %}
+  {% comment %}
+  Откат — то самое действие с обязательной причиной, которое в этом продукте
+  заменяет диалог подтверждения: подтверждать нажатием нечего, если через
+  полгода никто не вспомнит, зачем период открывали (D021, конституция об
+  обратимости). Поле причины идёт тем же компонентом, что и остальные поля.
+  {% endcomment %}
+  {% include "web/components/action.html" with allowed=can_reopen denied=reopen_denied url=reopen_url label="Открыть заново" note="Причина попадёт в историю рядом с вашим именем." reason_id="reason" reason_name="reason" reason_label="Зачем открываете период" reason_placeholder="например: ошиблись в часах за третью неделю" reason_value=reason_value %}
 </div>
 {% endif %}
 
@@ -312,17 +278,7 @@
 существует, а D023 требует «ни строк, ни следа». Разрез — обычная ссылка, а не
 кнопка со скриптом: он живёт в адресе, и им можно поделиться.
 {% endcomment %}
-{% if cuts %}
-<nav class="cuts" aria-label="Разрез ведомости по регистрам">
-  {% for cut in cuts %}
-  {% if cut.selected %}
-  <span class="cut current" aria-current="true">{{ cut.title }}</span>
-  {% else %}
-  <a class="cut" href="{{ cut.url }}">{{ cut.title }}</a>
-  {% endif %}
-  {% endfor %}
-</nav>
-{% endif %}
+{% include "web/components/cuts.html" with cuts=cuts label="Разрез ведомости по регистрам" %}
 {% comment %}
 Выгрузки и сверка (T031, T032).
 
@@ -344,7 +300,7 @@
   {% endif %}
   <a class="cut" href="{% url 'period-reconcile' period.id %}">Сверка с таблицей</a>
 </nav>
-<div class="scroll">
+{% scroll %}
 <table class="sheet">
   <thead>
     <tr>
@@ -364,7 +320,7 @@
       <td>{{ row.employee }}{% if row.is_retro %}
         <span class="badge-retro">Перерасчёт за {{ row.retro_title }}</span>{% endif %}</td>
       <td>{{ row.unit }}</td>
-      <td><span class="ledger">{{ row.ledger }}</span></td>
+      <td>{% ledger row.ledger %}</td>
       {% comment %}
       Заморозка спорной строки (T027). Метка стоит у каждой строки человека —
       их бывает две, по одной на регистр, и живая половина ведомости вводила бы
@@ -377,16 +333,13 @@
           {% if row.show_action %}
             <span class="hint">{{ row.freeze_reason }}</span>
             {% if can_freeze %}
-            <form method="post" action="{% url 'payslip-release' row.payslip_id %}">{% csrf_token %}
-              <button type="submit">Снять заморозку</button>
-            </form>
+            {% url 'payslip-release' row.payslip_id as release_url %}
+            {% include "web/components/action.html" with allowed=True url=release_url label="Снять заморозку" primary=False inline=True note="" denied="" reason_name="" hidden_name="" %}
             {% endif %}
           {% endif %}
         {% elif row.show_action and can_freeze %}
-          <form method="post" action="{% url 'payslip-freeze' row.payslip_id %}">{% csrf_token %}
-            <input type="text" name="reason" placeholder="из-за чего спор" required>
-            <button type="submit">Заморозить</button>
-          </form>
+          {% url 'payslip-freeze' row.payslip_id as freeze_url %}
+          {% include "web/components/action.html" with allowed=True url=freeze_url label="Заморозить" reason_name="reason" reason_id="" reason_label="" reason_placeholder="из-за чего спор" primary=False note="" inline=True denied="" %}
         {% endif %}
       </td>
       {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
@@ -409,7 +362,7 @@
     </tr>
   </tfoot>
 </table>
-</div>
+{% endscroll %}
 
 {% comment %}
 Разбивка по регистрам показывается, только когда регистров больше одного: в
@@ -444,6 +397,6 @@
 <p class="note">{{ freeze_denied }}</p>
 {% endif %}
 {% else %}
-<p class="empty">Расчёта за этот период ещё не было.</p>
+{% notice "empty" %}Расчёта за этот период ещё не было.{% endnotice %}
 {% endif %}
 {% endblock %}

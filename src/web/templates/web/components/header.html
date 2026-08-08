@@ -1,0 +1,39 @@
+{% comment %}
+Шапка: куда идти и кем вошли.
+
+Отдельным файлом, а не куском базового шаблона: сюда придут переключатель языка
+(T017) и ссылка на админку справочников (T018), и обе правки будут в одном
+месте, а не в файле, который правят все.
+
+Что шапка обязана говорить и почему именно так.
+
+**Роль и партнёр — всегда.** Один и тот же экран показывает разным людям разные
+числа, и человек должен видеть, чьими глазами он смотрит, не нажимая ничего.
+
+**Регистры — перечислением того, что видно.** Не «регистры: все», а именно
+названия: «все» у бухгалтера и у директора означают разное.
+
+**Точка — только когда человек ею ограничен.** Объяснять надо срезанные данные,
+а не полные: пусто здесь значит «все точки партнёра». Иначе управляющий видел бы
+суммы меньше директорских и не знал почему.
+{% endcomment %}<header>
+  <a class="brand" href="{% url 'periods' %}">Dodo P&amp;L</a>
+  <nav aria-label="Основная навигация"><a href="{% url 'periods' %}">Периоды</a></nav>
+  <div class="who">
+    {% if dev_login %}
+      <span class="badge" title="На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)">dev-вход</span>
+    {% endif %}
+    {% if principal %}
+      {# У учёток сида имя человека совпадает с названием роли — не повторяем его дважды. #}
+      <span><strong>{{ principal.display_name }}</strong>{% if principal.role_title and principal.role_title != principal.display_name %} · {{ principal.role_title }}{% endif %}{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
+      {% if visible_ledgers_title %}<span>регистры: {{ visible_ledgers_title }}</span>{% endif %}
+      {% if principal.units_title %}<span title="Данные и итоги на всех страницах — только по этой точке">точка: {{ principal.units_title }}</span>{% endif %}
+      <a class="btn" href="{% url 'password-change' %}">пароль</a>
+      <form class="inline" method="post" action="{% url 'logout' %}">{% csrf_token %}
+        <button type="submit">выйти</button>
+      </form>
+    {% else %}
+      <a class="btn" href="{% url 'login' %}">войти</a>
+    {% endif %}
+  </div>
+</header>

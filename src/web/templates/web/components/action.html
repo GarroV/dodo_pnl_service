@@ -1,0 +1,37 @@
+{% comment %}
+Действие — или объяснение, почему его нет (T072).
+
+Главное правило блока, ради которого компонент и существует: кнопка не смеет
+пропасть молча. Исчезнувшая без объяснения кнопка читается как поломка
+продукта, человек идёт искать, что сломалось, вместо того чтобы попросить того,
+у кого право есть. Поэтому «показать» и «объяснить отказ» — это одна развилка в
+одном файле, а не два независимых `{% if %}` на каждом экране, которые однажды
+разъедутся.
+
+Интерфейс серверные проверки не заменяет: адрес действия остаётся рабочим и
+по-прежнему отвечает 403 роли без права. Прятать адрес значило бы завести третий
+контур доступа — в разметке, где его никто не проверит.
+
+Параметры:
+  allowed        право есть;
+  denied         текст отказа — тот же, которым ответит сам отказ
+                 (`permissions.explain`), а не переписанный своими словами;
+  url, label     куда и что нажимать;
+  primary        главное действие экрана;
+  note           пояснение рядом с кнопкой;
+  inline         действие стоит в строке с соседями (ссылками, другими
+                 кнопками): и сама форма, и объяснение отказа на её месте
+                 остаются строчными. Иначе блок сдвинул бы ряд вниз;
+  hidden_name / hidden_value          скрытое поле (например, точка);
+  reason_*       поле обязательной причины. Причина здесь — не «уточнение по
+                 желанию», а условие действия: обратимость важнее строгости
+                 (конституция, D021), и откат без записанной причины через
+                 полгода не объяснить.
+{% endcomment %}{% if allowed %}
+<form class="action{% if inline %} inline{% endif %}" method="post" action="{{ url }}">{% csrf_token %}
+  {% if hidden_name %}<input type="hidden" name="{{ hidden_name }}" value="{{ hidden_value }}">{% endif %}
+  {% if reason_name %}{% include "web/components/field.html" with id=reason_id name=reason_name label=reason_label placeholder=reason_placeholder value=reason_value required=True stacked=False %}{% endif %}
+  <button type="submit"{% if primary %} class="primary"{% elif button_class %} class="{{ button_class }}"{% endif %}>{{ label }}</button>
+  {% if note %}<span class="note">{{ note }}</span>{% endif %}
+</form>
+{% elif denied %}{% if inline %}<span class="note">{{ denied }}</span>{% else %}<p class="note">{{ denied }}</p>{% endif %}{% endif %}
