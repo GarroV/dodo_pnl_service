@@ -99,6 +99,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Один образ на все три службы, а не три одинаковых. Иначе частичная
+    # пересборка (`docker compose build app`) оставляет схему и продукт на
+    # разных сборках кода — молча: контейнеры поднимутся, а миграции будут
+    # накатываться старым образом. Поймано фактически при проверке T058.
+    # Имя тега включает имя проекта: параллельные рабочие копии не должны
+    # перетирать образы друг другу (issue #51).
+    image: ${COMPOSE_PROJECT_NAME:-dodo-pnl}-app
     depends_on:
       db:
         # Именно service_healthy, а не service_started: контейнер базы отвечает
@@ -118,6 +125,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Тот же образ, что у службы migrate, — см. комментарий там.
+    image: ${COMPOSE_PROJECT_NAME:-dodo-pnl}-app
     depends_on:
       migrate:
         # Не «база жива», а «схема накатана»: без этого приложение поднялось бы
@@ -153,6 +162,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Тот же образ, что у службы migrate, — см. комментарий там.
+    image: ${COMPOSE_PROJECT_NAME:-dodo-pnl}-app
     depends_on:
       # Схему накатывает служба `migrate`, а не веб (T058). Рабочий процесс,
       # запущенный раньше неё, падал бы на отсутствующих таблицах очереди и
