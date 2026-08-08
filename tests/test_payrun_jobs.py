@@ -104,7 +104,6 @@ def test_without_a_context_nothing_is_visible(clean_payruns):
     без контекста было видно всё, забытый `db_context` не проявился бы никак.
     """
     from core.models import Tenant, Timesheet
-
     from web.dbcontext import db_context
 
     with db_context(None):
@@ -354,11 +353,14 @@ def progress_block(html: str) -> str:
 
 def test_the_button_queues_a_job_and_the_page_shows_progress(client, clean_payruns):
     """Нажатие возвращает страницу сразу, а не держит человека до конца расчёта."""
+    from django.test import override_settings
+
     dsn = clean_payruns
     login_as(client, "director")
     url = period_url(client)
 
-    response = client.post(url + "calculate/", follow=True)
+    with override_settings(PAYRUN_BACKGROUND=True):
+        response = client.post(url + "calculate/", follow=True)
     assert response.status_code == 200
 
     jobs_in_db = raw(dsn, "select status::text, background from payrun_jobs")
@@ -370,12 +372,15 @@ def test_the_button_queues_a_job_and_the_page_shows_progress(client, clean_payru
 
 def test_a_second_click_does_not_queue_a_second_job(client, clean_payruns):
     """Ключевое требование задачи: повторный запуск не плодит ведомости."""
+    from django.test import override_settings
+
     dsn = clean_payruns
     login_as(client, "director")
     url = period_url(client)
 
-    client.post(url + "calculate/", follow=True)
-    again = client.post(url + "calculate/")
+    with override_settings(PAYRUN_BACKGROUND=True):
+        client.post(url + "calculate/", follow=True)
+        again = client.post(url + "calculate/")
 
     assert again.status_code == 409
     assert raw(dsn, "select count(*) from payrun_jobs")[0][0] == 1

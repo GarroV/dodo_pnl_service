@@ -102,6 +102,18 @@
   .alert { color: var(--warn); background: var(--warn-bg); border: 1px solid #f3d3bf; }
   .alert .details { color: var(--ink); font-size: 13px; margin-top: 6px; }
   .ok { color: #14532d; background: #f0fdf4; border: 1px solid #bbf7d0; }
+  /* Ход фонового расчёта (T024). Полоса — не украшение: без неё страница на
+     время расчёта выглядит замершей, и человек жмёт кнопку второй раз. */
+  section.progress { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 16px 20px; margin: 0 0 24px; }
+  section.progress h2 { font-size: 15px; margin: 0 0 8px; }
+  section.progress .stage { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+  section.progress .counter { margin: 8px 0 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  section.progress .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  /* Ширина — единственное, что меняется: число приходит с сервера, поэтому
+     переход мягкий, а не рывками между опросами. */
+  section.progress .fill { height: 100%; background: var(--accent); transition: width .3s ease; }
+  section.progress .alert { margin: 16px 0 0; }
+  section.progress .alert form { margin-top: 10px; }
 </style>
 {% comment %}
 Своя статика страницы. Пусто на всех экранах, кроме табеля: он единственный

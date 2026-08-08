@@ -14,6 +14,84 @@
 {% if calculated %}
 <div class="ok">Расчёт выполнен. Ниже — то, что видно вашей роли.</div>
 {% endif %}
+{% if queued %}
+<div class="ok">Расчёт принят и считается в фоне. Страницу можно не держать открытой.</div>
+{% endif %}
+
+{% comment %}
+Ход фонового расчёта (T024). Блок живёт, только пока живо задание: у
+завершённого расчёта на экране есть ведомость, и вечная полоса рядом с ней
+читалась бы как незаконченная работа.
+
+Про застрявшую задачу говорится прямо, а не заминается: если очередь её не
+взяла, человек узнаёт об этом словами и добивает расчёт кнопкой. Молчаливой
+подмены фонового расчёта синхронным нет — она случается только по нажатию.
+{% endcomment %}
+{% if job_running %}
+<section class="progress" data-status-url="{% url 'period-calculate-status' period.id %}">
+  <h2>Идёт расчёт периода</h2>
+  <p class="stage">{% if job.stage %}{{ job.stage }}{% else %}В очереди{% endif %}</p>
+  <div class="bar"><div class="fill" style="width: {{ job.percent }}%"></div></div>
+  <p class="counter">
+    {% if job.total %}{{ job.done }} из {{ job.total }} сотрудников{% else %}&nbsp;{% endif %}
+  </p>
+  {% if job.hint %}
+  <div class="alert stuck">
+    {{ job.hint }}
+    <form method="post" action="{% url 'period-calculate' period.id %}">{% csrf_token %}
+      <input type="hidden" name="inline" value="1">
+      <button type="submit" class="primary">Посчитать прямо сейчас</button>
+    </form>
+  </div>
+  {% endif %}
+  <noscript>
+    <p class="note">Обновите страницу, чтобы увидеть, чем закончился расчёт.</p>
+  </noscript>
+</section>
+<script>
+  // Полоса спрашивает состояние у того же места, что рисует страницу, и
+  // перестаёт спрашивать, как только расчёт кончился: бесконечный опрос
+  // завершённой задачи — это нагрузка на базу без единого нового факта.
+  (function () {
+    var block = document.querySelector('section.progress');
+    if (!block) { return; }
+    var url = block.dataset.statusUrl;
+    var stage = block.querySelector('.stage');
+    var fill = block.querySelector('.fill');
+    var counter = block.querySelector('.counter');
+    var tick = function () {
+      fetch(url, { headers: { 'Accept': 'application/json' } })
+        .then(function (r) { return r.json(); })
+        .then(function (state) {
+          if (state.finished) {
+            // Перезагрузка, а не дорисовка: после расчёта меняется вся
+            // страница — ведомость, итоги, кнопки цикла периода.
+            window.location.reload();
+            return;
+          }
+          stage.textContent = state.stage || 'В очереди';
+          fill.style.width = state.percent + '%';
+          counter.textContent = state.total
+            ? state.done + ' из ' + state.total + ' сотрудников' : ' ';
+          // Задача застряла — перерисовываем страницу целиком: вместе с
+          // объяснением там появляется кнопка, а её рисует сервер.
+          if (state.hint && !block.querySelector('.stuck')) {
+            window.location.reload();
+            return;
+          }
+          window.setTimeout(tick, 700);
+        })
+        .catch(function () {
+          // Сеть моргнула — не молчим и не бросаем опрос: следующая попытка
+          // через большую паузу, а человек видит, что связь потерялась.
+          stage.textContent = 'Состояние расчёта не отвечает — пробуем ещё раз';
+          window.setTimeout(tick, 3000);
+        });
+    };
+    window.setTimeout(tick, 700);
+  })();
+</script>
+{% endif %}
 {% if approved %}
 <div class="ok">Период утверждён. Расчёт и его данные заморожены.</div>
 {% endif %}

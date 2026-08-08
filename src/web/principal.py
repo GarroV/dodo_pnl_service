@@ -50,11 +50,33 @@ def get_current_principal(request) -> Principal | None:
     return who
 
 
+def principal_for_user(user_id) -> Principal | None:
+    """Кто это, без HTTP-запроса — для кода, у которого запроса нет.
+
+    Нужно фоновой задаче: права и видимые регистры — свойство человека, и
+    перечитывать их надо **в момент исполнения**, а не брать из очереди. Между
+    нажатием кнопки и работой задачи роль могли поменять, и расчёт обязан идти
+    по правам, действующим сейчас.
+
+    Читается под уже выставленным контекстом того же человека: свою учётку он
+    видит, чужую — нет, и подставить сюда чужой uuid бесполезно.
+    """
+    from core.models import User
+
+    user = User.objects.filter(pk=user_id).first()
+    if user is None:
+        return None
+    return _from_membership(user)
+
+
 def _load(request) -> Principal | None:
     user = getattr(request, "user", None)
     if user is None or not user.is_authenticated:
         return None
+    return _from_membership(user)
 
+
+def _from_membership(user) -> Principal:
     display_name = user.full_name or user.username
     membership = (
         Membership.objects.select_related("role", "tenant")

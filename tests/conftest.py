@@ -291,6 +291,14 @@ def web_env():
         os.environ["DATABASE_URL"] = dsn
         os.environ.setdefault("SECRET_KEY", "test-only-not-a-secret")
         os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
+        # Рабочего процесса очереди в прогоне тестов нет, поэтому стенд настроен
+        # как стенд без очереди: расчёт считается прямо в запросе (T024). Это не
+        # обход фонового пути, а его выключатель — тот самый, которым продукт
+        # переводится в синхронный режим на площадке без рабочего процесса.
+        # Сам фоновый путь проверяется в `test_payrun_jobs.py`: там задача
+        # запускается напрямую, а постановка в очередь — под
+        # `override_settings(PAYRUN_BACKGROUND=True)`.
+        os.environ["PAYRUN_BACKGROUND"] = "0"
 
         import django
         from django.test.utils import setup_test_environment, teardown_test_environment

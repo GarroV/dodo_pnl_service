@@ -8,6 +8,13 @@ urlpatterns = [
     path("periods/", views.periods, name="periods"),
     path("periods/<uuid:period_id>/", views.period_detail, name="period"),
     path("periods/<uuid:period_id>/calculate/", views.period_calculate, name="period-calculate"),
+    # Ход расчёта отдельным ответом: его спрашивает полоса прогресса на странице
+    # периода, пока задача считает (T024). Только чтение, поэтому GET.
+    path(
+        "periods/<uuid:period_id>/calculate/status/",
+        views.period_calculate_status,
+        name="period-calculate-status",
+    ),
     # Цикл периода: утверждение и откат. Оба только POST — это запись, а не
     # просмотр, и по ссылке из письма или из истории браузера случиться не должны.
     path("periods/<uuid:period_id>/approve/", views.period_approve, name="period-approve"),

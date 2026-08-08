@@ -29,9 +29,10 @@
 задания нет и быть не должно: в нём нет сумм, только этап и счётчик людей.
 Отказ, попавший в `error`, — тот же текст, что человек увидел бы синхронно.
 """
-import core.fields
 import django.db.models.deletion
 from django.db import migrations, models
+
+import core.fields
 
 TYPE = """
 create type payrun_job_status as enum ('queued', 'running', 'done', 'failed');
