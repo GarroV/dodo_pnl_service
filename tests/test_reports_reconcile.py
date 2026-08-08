@@ -272,10 +272,15 @@ def test_lines_are_sorted_worst_first():
 
 
 def test_totals_are_summed_only_over_compared_rows():
-    """Итог сверки — по сопоставленным строкам. Несопоставленное в него не течёт."""
+    """Итог сверки — по сравнимым строкам. Несравнимое в него не течёт.
+
+    Две разные причины несравнимости, и обе обязаны выпасть из итога: строки
+    вовсе нет в расчёте (B) и нето не прочитано из файла (C). Иначе итог
+    складывает одну сторону там, где второй нет, и расходится сам с собой.
+    """
     result = compare(
-        [file_row("A", net="1000"), file_row("B", net="7000")],
-        {"A": run_line("A", net="1200")},
+        [file_row("A", net="1000"), file_row("B", net="7000"), file_row("C", net=None)],
+        {"A": run_line("A", net="1200"), "C": run_line("C", net="5000")},
     )
     assert result.total_expected == D("1000")
     assert result.total_actual == D("1200")
