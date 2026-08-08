@@ -181,7 +181,7 @@ R_OTHER = "e1111111-0000-0000-0000-00000000000f"
 # выданы все, чтобы отказ нельзя было списать на видимость.
 P_DIRECTOR = (
     '["timesheet.edit", "payrun.calculate", "period.approve", "period.reopen",'
-    ' "payslip.freeze"]'
+    ' "payslip.freeze", "retro.post"]'
 )
 P_ACCOUNTANT = (
     '["timesheet.edit", "payrun.calculate", "period.approve", "payslip.freeze"]'
@@ -366,14 +366,23 @@ def wipe_payruns(dsn: str) -> None:
         # выставляется в той же транзакции: при autocommit каждый оператор был
         # бы своей, и настройка не дожила бы до `update`.
         with conn.transaction():
-            conn.execute(
-                "select set_config('app.transition_reason', %s, true)",
-                ("уборка тестовых данных",),
-            )
-            conn.execute(
-                f"update payruns set status = 'reopened' "
-                f"where tenant_id in {tenants} and status = 'approved'"
-            )
+            # По одному и **от позднего месяца к раннему**: разница, уехавшая
+            # задним числом (T026), не даёт открыть месяц-источник, пока лежит
+            # в утверждённом получателе. Одним оператором порядок строк не
+            # задан, и уборка падала бы через раз (та же ловушка, что у сида).
+            # Причина ставится на каждый откат заново: триггер журнала гасит её
+            # после записи, чтобы пересчёт не наследовал чужое объяснение.
+            for (payrun_id,) in conn.execute(
+                f"select id from payruns where tenant_id in {tenants} "
+                f"and status = 'approved' order by period desc"
+            ).fetchall():
+                conn.execute(
+                    "select set_config('app.transition_reason', %s, true)",
+                    ("уборка тестовых данных",),
+                )
+                conn.execute(
+                    "update payruns set status = 'reopened' where id = %s", (payrun_id,)
+                )
         # Замороженную строку ведомости база не даёт ни менять, ни удалять
         # (T027) — держит триггер, то есть и на суперпользователя тоже. Уборка
         # снимает заморозки, а не стирает их: снятие разрешено в любом

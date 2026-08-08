@@ -195,6 +195,27 @@ def test_posting_requires_the_right(db):
     assert "row-level security" in str(error)
 
 
+def test_the_right_actually_lets_the_transfer_through(db):
+    """Парная проверка к запрету: с правом перенос проходит.
+
+    Без неё тест на отказ был бы зелёным и у политики, запрещающей всем: «нельзя
+    никому» и «нельзя без права» с одной стороны неотличимы.
+    """
+    june, (employee, _) = approved_with(db, ["retro-allowed"])
+    employ(db, employee, U_NS1)
+
+    with as_app_user(db, USER_DIRECTOR):
+        row = db.execute(
+            """insert into retro_adjustments
+                   (tenant_id, source_period, target_period, employee_id,
+                    code, title, amount, ledger)
+               values (%s, %s, %s, %s, 'hours.regular', 'Часы', 100, 'official')
+               returning id""",
+            (T1, JUNE, JULY, employee),
+        ).fetchone()[0]
+    assert row
+
+
 def test_the_cancellation_cannot_be_written_by_hand(db):
     """Отмена переноса ставится только триггером — руками её не проставить.
 
@@ -710,3 +731,57 @@ def test_the_transfer_from_the_page_leaves_the_closed_month_alone(client, web_en
     assert answer.status_code == 302
 
     assert snapshot(web_env, "2026-06-01") == before
+
+
+# =============================================================================
+# 4. Обслуживание: база с перенесённой разницей должна перезаливаться
+# =============================================================================
+
+
+def test_the_seed_runs_over_a_transferred_and_approved_delta():
+    """Сид обязан убрать за собой базу, где разница уже перенесена и утверждена.
+
+    Найдено уборкой за смоуком, а не чтением кода: `seed_dev` падал с
+    «разница за этот месяц уже перенесена в утверждённый период». Уборка
+    открывает утверждённые расчёты **одним оператором**, а порядок строк в нём
+    не задан: если июнь попадался раньше июля, сторож честно отказывал.
+
+    Это третий случай одного и того же класса в этом блоке (issue #60 и #62):
+    новый сторож правильных чисел ломает обслуживание, потому что обслуживание
+    ходит теми же путями записи, что и человек. Сторожа не ослабляются — уборка
+    идёт от позднего месяца к раннему.
+    """
+    psycopg = pytest.importorskip("psycopg")
+
+    from conftest import run_manage, temp_database
+
+    with temp_database("payrun_retro_seed") as dsn:
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn, autocommit=True) as conn:
+            tenant = conn.execute("select id from tenants limit 1").fetchone()[0]
+            employee = conn.execute("select id from employees limit 1").fetchone()[0]
+            for period in (JUNE, JULY):
+                payrun = conn.execute(
+                    "insert into payruns (tenant_id, period) values (%s, %s) returning id",
+                    (tenant, period),
+                ).fetchone()[0]
+                set_status(conn, payrun, "calculated", "approved")
+            conn.execute(
+                """insert into retro_adjustments
+                       (tenant_id, source_period, target_period, employee_id,
+                        code, title, amount, ledger)
+                   values (%s, %s, %s, %s, 'hours.regular', 'Часы', 100, 'official')""",
+                (tenant, JUNE, JULY, employee),
+            )
+            assert conn.execute(
+                "select retro_is_locked(%s, %s)", (tenant, JUNE)
+            ).fetchone()[0] is True, "подготовка не воспроизвела случай"
+
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn) as conn:
+            assert conn.execute("select count(*) from payruns").fetchone()[0] == 0
+            assert conn.execute(
+                "select count(*) from retro_adjustments"
+            ).fetchone()[0] == 0
