@@ -140,6 +140,11 @@
 <form method="post" action="{% url 'period-calculate' period.id %}">{% csrf_token %}
   <button type="submit" class="primary">Посчитать период</button>
   <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
+  {% comment %}
+  Отчёт расхождений (T030) стоит рядом с табелем и по той же причине: он про
+  этот период, и в общей навигации не знал бы, о каком месяце речь.
+  {% endcomment %}
+  <a class="btn" href="{% url 'period-variance' period.id %}">Расхождения</a>
   <span class="note">
     {% if background_calculation %}
     Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама.
@@ -152,6 +157,7 @@
 {% else %}
 <p>
   <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
+  <a class="btn" href="{% url 'period-variance' period.id %}">Расхождения</a>
   <span class="note">{{ calculate_denied }}</span>
 </p>
 {% endif %}
@@ -363,7 +369,14 @@
         {% endif %}
       </td>
       {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
-      <td class="num strong">{{ row.total }}</td>
+      {% comment %}
+      Итог строки — ссылка на след расчёта (T029): «откуда это число» спрашивают
+      именно про него. Отдельной колонкой ссылку не ставим — ведомость едва
+      уместилась в 1440 (см. журнал блока), и ещё одна колонка вернула бы тот
+      самый перелив, который там лечили.
+      {% endcomment %}
+      <td class="num strong">{% if row.trace_url %}<a class="trace" href="{{ row.trace_url }}"
+        title="Как получилась эта сумма">{{ row.total }}</a>{% else %}{{ row.total }}{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>

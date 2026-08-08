@@ -1,0 +1,164 @@
+{% extends "web/base.html" %}
+{% block title %}След расчёта{% endblock %}
+{% block content %}
+{% comment %}
+Экран следа расчёта (T029, D025). Читается сверху вниз как объяснение суммы:
+сначала чья строка и сходится ли объяснение с сохранённым, потом сами шаги с
+их входами, потом производные величины и перенос из прошлого месяца.
+
+Ключевое: колонка «Сумма» и итог под ней складываются глазами. Проверка
+задачи — «по следу можно повторить сумму руками», и она держится на этом.
+{% endcomment %}
+
+<h1>Как получилась эта сумма</h1>
+<p class="sub">
+  {{ employee }}{% if unit %} · {{ unit }}{% endif %}{% if title %} · {{ title }}{% endif %}
+  {% if cut_title %} · разрез: {{ cut_title }}{% endif %}
+  · <a href="{{ back_url }}">вернуться в ведомость</a>
+</p>
+
+{% comment %}
+Честность экрана. След в продукте не хранится (issue #48, T056): он
+пересобирается по сегодняшним правилам. Поэтому сказано и то, что он
+пересобран, и то, сошёлся ли он с сохранённой суммой — оговорку без проверки
+перестают замечать на второй день.
+{% endcomment %}
+{% if error %}
+<p class="alert">
+  <strong>Объяснить эту сумму нечем.</strong> {{ error }}
+  Сохранённые числа ниже показаны как есть.
+</p>
+{% elif agrees %}
+<p class="ok">
+  След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока
+  не хранится. Сверено с сохранённой суммой строки: <strong>сходится</strong>
+  до копейки ({{ stored_total }}), значит правила с момента расчёта не менялись.
+</p>
+{% else %}
+<p class="alert">
+  След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока
+  не хранится, — и с сохранённой суммой <strong>не сходится</strong>:
+  сохранено {{ stored_total }}, сегодняшние правила дают {{ traced_total }}.
+  Строки, где разошлось, помечены ниже. Ведомость показывает сохранённое —
+  менять его этот экран не может и не должен.
+</p>
+{% endif %}
+
+{% if approved %}
+<p class="note">
+  Период утверждён. Его числа неизменны, а объяснение — нет: оно пересобирается
+  каждый раз заново, поэтому сверка выше и нужна.
+</p>
+{% endif %}
+
+{% if steps %}
+<div class="scroll">
+<table class="steps">
+  <thead>
+    <tr>
+      <th>Шаг</th><th>Из чего собрано</th><th>Правило</th>
+      <th class="num">Сумма</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for step in steps %}
+    <tr{% if step.differs %} class="drifted"{% endif %}>
+      <td>
+        {{ step.title }}
+        {% if step.ledger %}<span class="ledger">{{ step.ledger }}</span>{% endif %}
+        <span class="hint">{{ step.code }}</span>
+      </td>
+      <td class="inputs">
+        {% for pair in step.inputs %}<span class="pair">{{ pair.title }}
+          <b>{{ pair.value }}</b></span>{% empty %}<span class="hint">—</span>{% endfor %}
+      </td>
+      <td>
+        {{ step.level }}
+        {% if step.differs %}
+          <span class="badge">
+            {% if step.appeared %}шага не было в расчёте{% else %}было {{ step.stored }}{% endif %}
+          </span>
+        {% endif %}
+      </td>
+      <td class="num strong">{{ step.amount }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="grand">
+      <td colspan="3">Итого по следу</td>
+      <td class="num">{{ traced_total }}</td>
+    </tr>
+  </tfoot>
+</table>
+</div>
+{% else %}
+<p class="empty">
+  {% if error %}
+    Шагов расчёта нет: посчитать заново нечем.
+  {% else %}
+    По этой строке нет ни одного шага, доступного вашей роли.
+  {% endif %}
+</p>
+{% endif %}
+
+{% if carried %}
+{% comment %}
+Разница за закрытый месяц (T026). Правилами этого месяца она не объясняется, и
+делать вид, что объясняется, нельзя: её след живёт в месяце-источнике.
+{% endcomment %}
+<h2>Перенос из закрытого месяца</h2>
+<table>
+  <thead>
+    <tr><th>Компонент</th><th>Регистр</th><th>За какой месяц</th><th class="num">Сумма</th></tr>
+  </thead>
+  <tbody>
+    {% for line in carried %}
+    <tr>
+      <td>{{ line.title }}</td>
+      <td><span class="ledger">{{ line.ledger }}</span></td>
+      <td>{{ line.source }}</td>
+      <td class="num">{{ line.amount }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr><td colspan="3">Итого строки ведомости</td><td class="num">{{ row_total }}</td></tr>
+  </tfoot>
+</table>
+<p class="note">
+  Разница посчитана правилами того месяца, из которого приехала. Её след — на
+  странице периода-источника, а не здесь: показать её шагами этого месяца
+  значило бы объяснить сумму не тем расчётом.
+</p>
+{% endif %}
+
+{% if derived %}
+{% comment %}
+Производные величины показываются, только когда роль видит строку целиком:
+они посчитаны по всем регистрам сразу — ровно поэтому `payslip_totals` закрыты
+своей политикой (T050).
+{% endcomment %}
+<h2>Производные величины</h2>
+<table>
+  <thead>
+    <tr><th>Величина</th><th>Из чего собрано</th><th class="num">Сумма</th></tr>
+  </thead>
+  <tbody>
+    {% for step in derived %}
+    <tr>
+      <td>{{ step.title }}</td>
+      <td class="inputs">
+        {% for pair in step.inputs %}<span class="pair">{{ pair.title }}
+          <b>{{ pair.value }}</b></span>{% empty %}<span class="hint">—</span>{% endfor %}
+      </td>
+      <td class="num">{{ step.amount }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="note">
+  Это не слагаемые строки, а следствия: складывать их с начислениями нельзя.
+</p>
+{% endif %}
+{% endblock %}

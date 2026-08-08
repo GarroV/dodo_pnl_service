@@ -291,8 +291,13 @@ def amount(text: str) -> Decimal:
     return Decimal(text.replace(" ", "").replace(",", "."))
 
 
+# Итог строки ведомости завёрнут в ссылку на след расчёта (T029): число от
+# этого не изменилось, а разбор обязан читать его и со ссылкой, и без неё.
+ROW_TOTAL = r'<td class="num strong">(?:\s*<a[^>]*>)?\s*([^<]+?)\s*(?:</a>)?\s*</td>'
+
+
 def row_totals(html: str) -> list[Decimal]:
-    return [amount(cell) for cell in re.findall(r'<td class="num strong">([^<]+)</td>', html)]
+    return [amount(cell) for cell in re.findall(ROW_TOTAL, html)]
 
 
 def ledger_totals(html: str) -> dict[str, Decimal]:

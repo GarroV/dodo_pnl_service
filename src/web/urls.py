@@ -15,6 +15,9 @@ urlpatterns = [
         views.period_calculate_status,
         name="period-calculate-status",
     ),
+    # Отчёт расхождений с прошлым месяцем (T030). Только чтение, поэтому GET;
+    # разрез по регистру приезжает тем же `?ledger=`, что у ведомости.
+    path("periods/<uuid:period_id>/variance/", views.period_variance, name="period-variance"),
     # Цикл периода: утверждение и откат. Оба только POST — это запись, а не
     # просмотр, и по ссылке из письма или из истории браузера случиться не должны.
     path("periods/<uuid:period_id>/approve/", views.period_approve, name="period-approve"),
@@ -27,6 +30,11 @@ urlpatterns = [
     # строка однозначно определяет период сама.
     path("payslips/<uuid:payslip_id>/freeze/", views.payslip_freeze, name="payslip-freeze"),
     path("payslips/<uuid:payslip_id>/release/", views.payslip_release, name="payslip-release"),
+    # След расчёта строки (T029, D025). Адрес по строке, как в контракте блока:
+    # объясняется сумма конкретной строки ведомости, а не «период вообще».
+    # Разрез приезжает тем же `?ledger=`, что у ведомости, — человек приходит
+    # сюда из разреза и обязан остаться в нём.
+    path("payslips/<uuid:payslip_id>/trace/", views.payslip_trace, name="payslip-trace"),
     # Вход: логин с паролем, выход, смена своего пароля.
     path("login/", views.login_page, name="login"),
     path("logout/", views.logout_page, name="logout"),
