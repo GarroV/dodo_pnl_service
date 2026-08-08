@@ -71,8 +71,35 @@ def new_payrun(conn, *, tenant: str = T1, period: str = JUNE) -> str:
     ).fetchone()[0]
 
 
+# Чем объясняются откаты, сделанные тестом просто чтобы добраться до статуса.
+# Сама проверка причины живёт в `test_payrun_approval.py` (T025).
+DEFAULT_REASON = "перевод в тесте"
+
+
+def reason_required(conn, status: str) -> bool:
+    """Требует ли база причину на этот переход. Спрашиваем у неё, а не помним."""
+    return conn.execute(
+        "select payrun_reason_required(%s::payrun_status)", (status,)
+    ).fetchone()[0]
+
+
+def current_reason(conn) -> str:
+    return conn.execute(
+        "select coalesce(current_setting('app.transition_reason', true), '')"
+    ).fetchone()[0]
+
+
 def set_status(conn, payrun_id: str, *statuses: str) -> None:
+    """Перевести расчёт по статусам, подставляя причину там, где база её требует.
+
+    Причину, выставленную самим тестом, не затирает: тест, который проверяет
+    журнал, ставит её сам, и подмена превратила бы его в проверку этой строки.
+    """
     for status in statuses:
+        if reason_required(conn, status) and not current_reason(conn).strip():
+            conn.execute(
+                "select set_config('app.transition_reason', %s, true)", (DEFAULT_REASON,)
+            )
         conn.execute(
             "update payruns set status = %s where id = %s", (status, payrun_id)
         )
@@ -403,6 +430,62 @@ def test_journal_of_another_tenant_is_invisible(db):
         assert journal(conn, payrun_id) == []
 
 
+def test_the_journal_goes_away_with_its_payrun(db):
+    """Истории без расчёта не бывает: журнал исчезает вместе с ним.
+
+    Каскад — настоящий, внешним ключом в схеме, а не удалением из приложения:
+    «только пополняется» и «исчезает вместе с расчётом» уживаются лишь тогда,
+    когда второе делает база сама, внутри удаления самого расчёта.
+    """
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        payrun_id = payrun_in(conn, "calculated")
+        assert len(journal(conn, payrun_id)) == 2
+
+        conn.execute("delete from payruns where id = %s", (payrun_id,))
+        assert journal(conn, payrun_id) == []
+
+
+def test_the_seed_runs_over_a_period_that_was_approved():
+    """Сид обязан проходить и после того, как период утверждали и открывали.
+
+    Падало: `seed_dev` сносит расчёты через ORM, а Django исполняет каскад **в
+    Python** — то есть отдельным `delete` по журналу. Для триггера это прямое
+    удаление истории, а не каскад, и он отказывал. После первого же утверждения
+    базу разработки и демо нельзя было пересидировать.
+
+    Тест гоняет настоящую команду в подпроцессе на своей базе: воспроизводится
+    ровно то, что делает человек руками.
+    """
+    psycopg = pytest.importorskip("psycopg")
+
+    from conftest import run_manage, temp_database
+
+    with temp_database("payrun_seed") as dsn:
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn, autocommit=True) as conn:
+            payrun_id = conn.execute(
+                "insert into payruns (tenant_id, period) "
+                "select id, '2026-06-01' from tenants limit 1 returning id"
+            ).fetchone()[0]
+            set_status(conn, payrun_id, "calculated", "approved")
+            with conn.transaction():
+                conn.execute(
+                    "select set_config('app.transition_reason', %s, true)", (DEFAULT_REASON,)
+                )
+                conn.execute(
+                    "update payruns set status = 'reopened' where id = %s", (payrun_id,)
+                )
+            assert conn.execute("select count(*) from payrun_transitions").fetchone()[0] == 4
+
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn) as conn:
+            # Расчёт снесён — значит, и история его не пережила.
+            assert conn.execute("select count(*) from payruns").fetchone()[0] == 0
+            assert conn.execute("select count(*) from payrun_transitions").fetchone()[0] == 0
+
+
 # --- расчёт и статус ---------------------------------------------------------
 # Дальше — живой Django на базе с сидом: расчёт со страницы периода обязан
 # оставлять статус, а не молча держать черновик.
@@ -423,11 +506,21 @@ def payrun_status(dsn: str) -> str:
 
 
 def force_status(dsn: str, status: str) -> None:
-    """Перевести расчёт суперпользователем — экрана утверждения ещё нет (T025)."""
+    """Перевести расчёт суперпользователем, минуя экраны.
+
+    Причина подставляется там, где её требует база (откат): требование стоит
+    триггером, поэтому действует и на суперпользователя тоже — см. T025.
+    """
     import psycopg
 
     with psycopg.connect(dsn, autocommit=True) as conn:
-        conn.execute("update payruns set status = %s", (status,))
+        with conn.transaction():
+            conn.execute(
+                "select set_config('app.transition_reason', case when "
+                "payrun_reason_required(%s::payrun_status) then %s else '' end, true)",
+                (status, DEFAULT_REASON),
+            )
+            conn.execute("update payruns set status = %s", (status,))
 
 
 def test_calculation_leaves_the_payrun_calculated(client, clean_payruns):

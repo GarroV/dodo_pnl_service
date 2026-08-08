@@ -6,7 +6,7 @@
 
 {% if error %}
 <div class="alert">
-  <strong>Расчёт не выполнен.</strong> {{ error }}
+  <strong>{{ error_title }}</strong> {{ error }}
   {% if details %}<div class="details">{{ details|join:", " }}</div>{% endif %}
 </div>
 {% endif %}
@@ -14,9 +14,21 @@
 {% if calculated %}
 <div class="ok">Расчёт выполнен. Ниже — то, что видно вашей роли.</div>
 {% endif %}
+{% if approved %}
+<div class="ok">Период утверждён. Расчёт и его данные заморожены.</div>
+{% endif %}
+{% if reopened %}
+<div class="ok">Период открыт заново. Причина и ваше имя записаны в историю.</div>
+{% endif %}
 
 <dl class="facts">
   <dt>Состояние</dt><dd>{{ status }}</dd>
+  {% comment %}
+  Состояние учётного месяца и состояние расчёта зарплаты — разные вещи и стоят
+  разными строками намеренно: утверждение зарплаты не закрывает месяц целиком,
+  в нём ещё будут платежи поставщикам и выручка (решено в T023).
+  {% endcomment %}
+  {% if payrun_status %}<dt>Расчёт зарплаты</dt><dd>{{ payrun_status }}</dd>{% endif %}
   <dt>Сотрудников в табеле</dt><dd>{{ employees }}</dd>
   {% comment %}
   Норма часов показывается всегда, даже когда её нет. Пропасть строке нельзя:
@@ -51,6 +63,64 @@
   <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
   <span class="note">{{ calculate_denied }}</span>
 </p>
+{% endif %}
+
+{% comment %}
+Утверждение и откат (T025). Действие предлагается, только когда цикл его
+допускает **и** право есть; цикл спрашивается у базы, а не выводится из статуса
+в шаблоне. Право есть не у всех, поэтому вместо исчезнувшей кнопки — тот же
+текст, которым ответил бы сам отказ (T072): молча пропавшая кнопка читается как
+поломка продукта, а не как запрет.
+
+Форму отката видно сразу с полем причины: причина не «уточнение по желанию», а
+условие действия — база откажет без неё и суперпользователю.
+{% endcomment %}
+{% if can_approve or approve_denied or can_reopen or reopen_denied %}
+<div class="lifecycle">
+  {% if can_approve %}
+  <form method="post" action="{% url 'period-approve' period.id %}">{% csrf_token %}
+    <button type="submit" class="primary">Утвердить период</button>
+    <span class="note">После утверждения расчёт и его данные меняться не будут.</span>
+  </form>
+  {% elif approve_denied %}
+  <p class="note">{{ approve_denied }}</p>
+  {% endif %}
+
+  {% if can_reopen %}
+  <form method="post" action="{% url 'period-reopen' period.id %}">{% csrf_token %}
+    <label for="reason">Зачем открываете период</label>
+    <input type="text" id="reason" name="reason" value="{{ reason_value }}"
+           placeholder="например: ошиблись в часах за третью неделю" required>
+    <button type="submit">Открыть заново</button>
+    <span class="note">Причина попадёт в историю рядом с вашим именем.</span>
+  </form>
+  {% elif reopen_denied %}
+  <p class="note">{{ reopen_denied }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if history %}
+<h2>История периода</h2>
+{% comment %}
+Журнал ведёт база триггером (T023) — здесь только показ. Второго журнала рядом
+не заводится: перехода без записи не бывает ни на одном пути записи.
+{% endcomment %}
+<table class="history">
+  <thead>
+    <tr><th>Когда</th><th>Что стало</th><th>Кто</th><th>Причина</th></tr>
+  </thead>
+  <tbody>
+    {% for row in history %}
+    <tr>
+      <td>{{ row.at }}</td>
+      <td>{% if row.from_title %}{{ row.from_title }} → {% endif %}<strong>{{ row.to_title }}</strong></td>
+      <td>{% if row.actor %}{{ row.actor }}{% else %}<span class="hint">мимо приложения</span>{% endif %}</td>
+      <td>{% if row.reason %}{{ row.reason }}{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% endif %}
 
 <h2>Ведомость</h2>
