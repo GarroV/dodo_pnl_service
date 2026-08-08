@@ -149,6 +149,39 @@ def test_a_stranger_context_does_not_reach_the_job(clean_payruns):
 # --- идемпотентность ---------------------------------------------------------
 
 
+def test_the_calculation_runs_as_the_app_role_not_the_owner(clean_payruns):
+    """Тот самый риск из `plan.md`, проверенный там, где он живёт.
+
+    «Задача выставила контекст» и «расчёт идёт под контекстом» — разные
+    утверждения. Убрать `db_context` из `run_calculation` можно было, не сломав
+    ни одного теста: расчёт продолжал считаться — но уже владельцем таблиц,
+    которого RLS не ограничивает вовсе, и заметить это по числам нельзя.
+    Поэтому соединение расспрашивается изнутри самого расчёта.
+    """
+    from django.db import connection
+
+    from payrun import jobs
+
+    dsn = clean_payruns
+    tenant_id, users = tenant_and_users(dsn)
+    job_id = make_job(dsn, tenant_id=tenant_id, actor_id=users["director"])
+
+    seen: list[tuple[str, str]] = []
+
+    class ContextSpy:
+        def say(self, stage, done=0, total=0):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "select current_user, coalesce(current_setting('app.user_id', true), '')"
+                )
+                seen.append(cursor.fetchone())
+
+    jobs.run_calculation(job_id, users["director"], reporter=ContextSpy())
+
+    assert seen, "расчёт не отчитался ни разу — спрашивать было не у кого"
+    assert set(seen) == {("app_user", users["director"])}, seen
+
+
 def test_a_second_active_job_cannot_be_created(clean_payruns):
     """Незавершённое задание на период ровно одно — и это правило базы."""
     import psycopg
@@ -176,6 +209,30 @@ def test_the_job_is_taken_by_one_runner_only(clean_payruns):
     # рабочий процесс потерялся. Считать заново она не должна.
     jobs.run_job(job_id, users["director"])
     assert payslip_count(dsn) == first
+
+
+def test_only_one_runner_wins_the_claim(clean_payruns):
+    """Второй контур идемпотентности — сам по себе, а не через `run_job`.
+
+    В `run_job` перед захватом стоит быстрая проверка статуса, и она одна
+    закрывала оба теста выше: захват можно было сделать безусловным, ничего не
+    покраснело бы. Но проверка статуса отдельным запросом — это гонка (между ней
+    и записью успевает вклиниться второй исполнитель), и настоящая гарантия —
+    условный `update`. Здесь оба исполнителя видят `queued` одновременно, как в
+    настоящей гонке, и выиграть обязан ровно один.
+    """
+    from payrun import jobs
+
+    dsn = clean_payruns
+    tenant_id, users = tenant_and_users(dsn)
+    job_id = make_job(dsn, tenant_id=tenant_id, actor_id=users["director"])
+
+    first = jobs.Reporter(job_id, users["director"], background=True)
+    second = jobs.Reporter(job_id, users["director"], background=True)
+
+    assert first.claim() is True
+    assert second.claim() is False
+    assert job_row(dsn, job_id)["status"] == "running"
 
 
 def test_two_runs_in_a_row_do_not_double_the_sheet(clean_payruns):
@@ -266,7 +323,12 @@ def test_the_task_rechecks_the_right_to_calculate(clean_payruns):
 
     row = job_row(dsn, job_id)
     assert row["status"] == "failed"
-    assert "прав" in row["error"].lower() or "роли" in row["error"].lower()
+    # Именно отказ по праву, дословно. Раньше здесь искалось «прав» или «роли» —
+    # и тест оставался зелёным с выброшенной проверкой прав: расчёт доходил до
+    # регистров, а их отказ тоже говорит «недоступные вашей роли». Зелёный не по
+    # той причине, по которой считался зелёным.
+    assert "Расчёт периода не входит в права" in row["error"]
+    assert "регистр" not in row["error"].lower()
     assert payslip_count(dsn) == 0
 
 
