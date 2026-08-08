@@ -608,6 +608,29 @@ def test_with_the_queue_switched_off_the_page_calculates_as_before(client, clean
     assert not progress_block(body(response))
 
 
+def test_the_button_promises_what_will_actually_happen(client, clean_payruns):
+    """Обещание под кнопкой совпадает с режимом расчёта, а не отстаёт от него.
+
+    «Считается сразу» при включённой очереди — неправда в тот самый момент,
+    когда человек решает, ждать ему на странице или уйти. Текст жил в шаблоне
+    строкой и пережил появление очереди незамеченным.
+    """
+    from django.test import override_settings
+
+    login_as(client, "director")
+    url = period_url(client)
+
+    with override_settings(PAYRUN_BACKGROUND=True):
+        html = body(client.get(url))
+    assert "уйдёт в очередь" in html
+    assert "Считается сразу" not in html
+
+    with override_settings(PAYRUN_BACKGROUND=False):
+        html = body(client.get(url))
+    assert "Считается сразу" in html
+    assert "уйдёт в очередь" not in html
+
+
 def test_the_finished_job_stops_the_page_from_polling(client, clean_payruns):
     """Расчёт кончился — страница показывает ведомость, а не вечную полосу."""
     from payrun import jobs

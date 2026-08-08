@@ -134,7 +134,14 @@
 <form method="post" action="{% url 'period-calculate' period.id %}">{% csrf_token %}
   <button type="submit" class="primary">Посчитать период</button>
   <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
-  <span class="note">Считается сразу, повторный запуск пересобирает ведомость заново.</span>
+  <span class="note">
+    {% if background_calculation %}
+    Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама.
+    {% else %}
+    Считается сразу.
+    {% endif %}
+    Повторный запуск пересобирает ведомость заново.
+  </span>
 </form>
 {% else %}
 <p>
