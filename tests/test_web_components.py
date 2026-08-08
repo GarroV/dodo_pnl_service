@@ -40,7 +40,8 @@ HAND_WRITTEN = {
     '<div class="alert"': '{% notice "alert" %}',
     '<p class="alert"': '{% notice "alert" %}',
     '<p class="empty"': '{% notice "empty" %}',
-    '<nav class="cuts"': "components/cuts.html или components/exports.html",
+    '<nav class="cuts"': "components/cuts.html",
+    '<nav class="exports"': "components/exports.html",
     "htmx-2.": "components/htmx.html — версия названа один раз",
 }
 

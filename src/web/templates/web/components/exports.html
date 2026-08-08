@@ -13,7 +13,11 @@
 
 Параметры: `payout_url`, `pnl_url`, `partner_url`, `reconcile_url`,
 `ledger_query` — `?ledger=<код>` или пусто.
-{% endcomment %}<nav class="cuts" aria-label="Выгрузки и сверка">
+Ряд свой (`nav.exports`), а не «ещё один переключатель разреза»: выглядят они
+одинаково, но это разные вещи, и в разметке они не должны быть одним и тем же.
+Смешанные в один класс, они попадали под общий отбор — и проверка «в
+переключателе ровно регистры роли» перечисляла заодно выгрузки.
+{% endcomment %}<nav class="exports" aria-label="Выгрузки и сверка">
   <a class="cut" href="{{ payout_url }}{{ ledger_query }}">Ведомость к выплате</a>
   <a class="cut" href="{{ pnl_url }}{{ ledger_query }}">Строки для P&amp;L</a>
   <a class="cut" href="{{ partner_url }}{{ ledger_query }}">Вид бухгалтера</a>

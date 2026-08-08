@@ -14,6 +14,10 @@
 import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8047";
+// Имя контейнера базы стенда — переменной, как в остальных смоуках: зашитое
+// имя привязывает сценарий к тому стенду, на котором его однажды написали, и
+// на любом другом он падает не проверкой, а запуском.
+const DB = process.env.DB_CONTAINER || "dodo-pnl-ui-db-1";
 
 // Кому что положено — из сида (`seed_dev.ROLES`), а не из головы.
 const ROLES = [
@@ -159,7 +163,7 @@ async function rulesShiftedTo(year) {
   const { execFileSync } = await import("node:child_process");
   execFileSync(
     "docker",
-    ["exec", "dodo-pnl-ui-db-1", "psql", "-U", "app", "-d", "dodo_pnl",
+    ["exec", DB, "psql", "-U", "app", "-d", "dodo_pnl",
      "-c", `update rule_presets set valid_from = '${year}-01-01'`],
     { stdio: "pipe" },
   );
