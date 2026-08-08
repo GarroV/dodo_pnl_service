@@ -1,0 +1,87 @@
+{% extends "web/base.html" %}
+{% block title %}Расхождения{% endblock %}
+{% block content %}
+{% comment %}
+Отчёт расхождений «период против прошлого» (T030). Строка — пара «сотрудник ×
+компонент»: отклонение живёт там, а в итоге компонента по тридцати людям
+прибавка одному гасится убавкой другому и не находится вовсе.
+
+Порог показан в каждой строке рядом с отклонением: без него читатель не знает,
+почему строка здесь, а соседняя — нет.
+{% endcomment %}
+
+<h1>Расхождения с прошлым месяцем</h1>
+<p class="sub">
+  {{ title }}{% if previous_title %} против {{ previous_title }}{% endif %}
+  {% if cut_title %} · разрез: {{ cut_title }}{% endif %}
+  · <a href="{{ back_url }}">вернуться в ведомость</a>
+</p>
+
+{% if error %}
+<p class="alert">{{ error }}</p>
+{% elif nothing_to_compare %}
+<p class="empty">
+  Сравнивать не с чем: за {{ previous_title }} в базе нет ни одной суммы,
+  доступной вашей роли. Отчёт сравнивает месяц с предыдущим, поэтому у первого
+  посчитанного месяца расхождений не бывает по построению.
+</p>
+{% else %}
+
+{% if cuts %}
+<nav class="cuts">
+  {% for cut in cuts %}
+    {% if cut.selected %}<span class="cut current">{{ cut.title }}</span>
+    {% else %}<a class="cut" href="{{ cut.url }}">{{ cut.title }}</a>{% endif %}
+  {% endfor %}
+</nav>
+{% endif %}
+
+{% if lines %}
+<div class="scroll">
+<table class="variance">
+  <thead>
+    <tr>
+      <th>Сотрудник</th><th>Компонент</th><th>Точка</th><th>Регистр</th>
+      <th class="num">Было</th><th class="num">Стало</th>
+      <th class="num">Отклонение</th><th class="num">%</th>
+      <th>Порог</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in lines %}
+    <tr class="line{% if line.grew %} grew{% else %} fell{% endif %}">
+      <td>{{ line.employee }}</td>
+      <td>{{ line.title }}<span class="hint">{{ line.code }}</span></td>
+      <td>{{ line.unit }}</td>
+      <td><span class="ledger">{{ line.ledger }}</span></td>
+      <td class="num">{{ line.previous }}</td>
+      <td class="num">{{ line.current }}</td>
+      <td class="num delta">{{ line.delta }}</td>
+      <td class="num">{{ line.percent }}</td>
+      <td class="hint threshold">{{ line.threshold }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="grand">
+      <td colspan="6">Итого отклонений · {{ employees }} чел.</td>
+      <td class="num total">{{ total_delta }}</td>
+      <td colspan="2"></td>
+    </tr>
+  </tfoot>
+</table>
+</div>
+<p class="note">
+  Сравнено пар «сотрудник × компонент»: {{ compared }}. Показаны только те, где
+  превышены оба порога сразу — процент и сумма. Пороги задаются правилами
+  страны и переопределяются партнёром; в коде их нет.
+</p>
+{% else %}
+<p class="empty">
+  Отклонений выше порогов нет. Сравнено пар «сотрудник × компонент»:
+  {{ compared }} — то есть сравнение состоялось, а не было пропущено.
+</p>
+{% endif %}
+
+{% endif %}
+{% endblock %}

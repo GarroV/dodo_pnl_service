@@ -29,6 +29,7 @@ from payrun import freezing, jobs, lifecycle, retro
 from payrun.errors import PayrunRefused
 from reports.sheet import build_slice
 from reports.trace import TraceNotFound, build_trace
+from reports.variance import ThresholdsMissing, build_variance
 
 from . import auth, permissions
 from .format import cut_title, hours, ledger_title, money
@@ -803,6 +804,106 @@ def payslip_trace(request, payslip_id):
             "approved": view.approved,
         },
     )
+
+
+# --- расхождения с прошлым месяцем (T030) ------------------------------------
+
+
+def percent(value) -> str:
+    """«+12,4 %» либо прочерк, если росло с нуля: процента у этого нет."""
+    if value is None:
+        return EMPTY_PERCENT
+    quantized = Decimal(value).quantize(Decimal("0.1"))
+    sign = "+" if quantized > 0 else ""
+    return f"{sign}{quantized}".replace(".", ",") + " %"
+
+
+EMPTY_PERCENT = "—"
+
+
+def signed(value: Decimal) -> str:
+    """Отклонение со знаком: «сколько прибавилось» читается только со знаком."""
+    shown = money(value)
+    return f"+{shown}" if value > 0 else shown
+
+
+def variance_line(line) -> dict:
+    """Строка отчёта. Порог показан рядом: по нему видно, почему строка здесь."""
+    return {
+        "employee": line.employee,
+        "unit": line.unit,
+        "ledger": ledger_title(line.ledger),
+        "code": line.code,
+        "title": line.title,
+        "previous": money(line.previous),
+        "current": money(line.current),
+        "delta": signed(line.delta),
+        "percent": percent(line.percent),
+        "grew": line.delta > 0,
+        "threshold": (
+            f"{line.threshold.percent:g} % и {money(line.threshold.absolute)}"
+        ),
+    }
+
+
+@login_required
+def period_variance(request, period_id):
+    """«Что изменилось против прошлого месяца» с порогами на каждый компонент.
+
+    Обе стороны сравнения собираются тем же способом, что ведомость
+    (`reports.sheet` → `payrun.sheet.collect_cells`), поэтому в отчёт физически
+    не может попасть сумма из регистра, которого роли не видно (D023).
+    """
+    period = find_period(period_id)
+    try:
+        report = build_variance(
+            period.tenant_id, period.period, request.GET.get("ledger", "")
+        )
+    except ThresholdsMissing as refusal:
+        # Порогов нет — отчёт отказывается словами. Показать «отклонений нет»
+        # значило бы соврать: их не искали.
+        return render(
+            request, "web/variance.html",
+            {
+                "title": month_title(period.period),
+                "back_url": reverse("period", args=[period.id]),
+                "error": str(refusal),
+                "lines": [],
+            },
+            status=409,
+        )
+
+    return render(
+        request,
+        "web/variance.html",
+        {
+            "title": month_title(period.period),
+            "previous_title": month_title(report.previous_period),
+            "back_url": cut_url(period, report.cut),
+            "cuts": [
+                {
+                    "code": code,
+                    "title": cut_title(code),
+                    "selected": code == report.cut,
+                    "url": variance_cut_url(period, code),
+                }
+                for code in ([""] + report.cuts if report.cuts else [])
+            ],
+            "cut_title": cut_title(report.cut) if report.cut else "",
+            "lines": [variance_line(line) for line in report.lines],
+            "total_delta": signed(report.total_delta),
+            "employees": report.employees,
+            "compared": report.compared,
+            "nothing_to_compare": report.nothing_to_compare,
+            "error": "",
+        },
+    )
+
+
+def variance_cut_url(period: Period, code: str) -> str:
+    """Адрес разреза отчёта. «Все видимые» — адрес без параметра вовсе (T028)."""
+    base = reverse("period-variance", args=[period.id])
+    return base if not code else f"{base}?ledger={code}"
 
 
 # --- вход --------------------------------------------------------------------

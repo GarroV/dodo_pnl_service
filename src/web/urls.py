@@ -15,6 +15,9 @@ urlpatterns = [
         views.period_calculate_status,
         name="period-calculate-status",
     ),
+    # Отчёт расхождений с прошлым месяцем (T030). Только чтение, поэтому GET;
+    # разрез по регистру приезжает тем же `?ledger=`, что у ведомости.
+    path("periods/<uuid:period_id>/variance/", views.period_variance, name="period-variance"),
     # Цикл периода: утверждение и откат. Оба только POST — это запись, а не
     # просмотр, и по ссылке из письма или из истории браузера случиться не должны.
     path("periods/<uuid:period_id>/approve/", views.period_approve, name="period-approve"),

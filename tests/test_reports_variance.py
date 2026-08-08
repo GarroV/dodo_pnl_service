@@ -313,7 +313,8 @@ def variance_url(client) -> str:
 def report_rows(html: str) -> list[tuple[str, str, Decimal]]:
     """Строки отчёта глазами человека: сотрудник, компонент, отклонение."""
     found = re.findall(
-        r'<tr class="line"[^>]*>\s*<td>([^<]+)</td>\s*<td>([^<]*)<',
+        r'<tr class="line[^"]*">\s*<td>([^<]+)</td>\s*<td>[^<]*'
+        r'<span class="hint">([^<]+)</span>',
         html,
     )
     deltas = re.findall(r'<td class="num delta">([^<]+)</td>', html)
