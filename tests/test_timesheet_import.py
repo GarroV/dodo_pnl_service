@@ -342,6 +342,45 @@ def test_unknown_employee_lands_in_unmatched_rows(period_restored):
         )
 
 
+def test_rows_of_a_closed_unit_are_reported_not_written(period_restored):
+    """Закрытая точка (T022) не загружается — и говорит об этом словами.
+
+    Без этой ветки загрузка упиралась бы в политику базы и падала целиком:
+    транзакция у импорта одна на файл, поэтому одна закрытая точка уносила бы и
+    все остальные строки. Человек при этом прочитал бы «файл не удалось
+    прочитать как книгу Excel» — неправду о причине.
+    """
+    from core.models import Timesheet, TimesheetClosure, Unit
+
+    unit = Unit.objects.get(tenant__code="rs-dev", code="NS1")
+    before = {
+        row.employee.external_id: dict(row.hours or {})
+        for row in Timesheet.objects.select_related("employee").filter(
+            period=JUNE, unit=unit
+        )
+    }
+    assert before, "в сиде нет строк точки NS1 — тест бессмысленен"
+
+    closure = TimesheetClosure.objects.create(
+        tenant_id=_tenant_id(), unit=unit, period=JUNE
+    )
+    try:
+        result = _import()
+        refused = [row.why for row in result.unmatched_rows]
+        assert refused, "закрытая точка загрузилась молча"
+        assert all("закрыт" in why for why in refused), refused
+    finally:
+        closure.delete()
+
+    after = {
+        row.employee.external_id: dict(row.hours or {})
+        for row in Timesheet.objects.select_related("employee").filter(
+            period=JUNE, unit=unit
+        )
+    }
+    assert after == before
+
+
 # =============================================================================
 # 3. Проверки данных: подсказки о подозрительном (T021)
 # =============================================================================
