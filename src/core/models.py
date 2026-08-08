@@ -27,6 +27,8 @@ PAYOUT_CHANNEL = "payout_channel"
 ALLOCATION_METHOD = "allocation_method"
 PERIOD_STATUS = "period_status"
 PAYRUN_STATUS = "payrun_status"
+# Состояние фоновой задачи расчёта. Тип создаёт миграция 0044_payrun_jobs.
+PAYRUN_JOB_STATUS = "payrun_job_status"
 RULE_SCOPE = "rule_scope"
 
 
@@ -724,6 +726,58 @@ class PayrunTransition(models.Model):
         db_table = "payrun_transitions"
         indexes = [
             models.Index("tenant", "payrun", name="payrun_transitions_payrun_idx"),
+        ]
+
+
+class PayrunJob(models.Model):
+    """Задание на расчёт периода: кто запустил, чем занято сейчас, чем кончилось.
+
+    Отдельная строка, а не поля в `payruns`, по двум причинам. Первая: задание
+    существует и тогда, когда расчёта ещё нет (нажали кнопку на пустом периоде),
+    и тогда, когда расчёт отказался считаться. Вторая, решающая: отметки о ходе
+    работы пишутся по **отдельному соединению** — расчёт идёт одной транзакцией,
+    и всё, что записано внутри неё, снаружи не видно до конца. Значит, таблица
+    прогресса не должна попадать в эту транзакцию вовсе, иначе канал прогресса
+    встанет на её же блокировке (см. алиас `progress` в настройках).
+
+    Незавершённое задание на период ровно одно — этим держится идемпотентность
+    запуска: частичный уникальный индекс `payrun_jobs_active_uniq` не даёт
+    завести второе, поэтому второе нажатие кнопки не порождает второй расчёт.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    period = models.DateField()
+    status = EnumField(db_type_name=PAYRUN_JOB_STATUS, db_default="queued")
+    # Кто нажал кнопку. Он же — тот, чьим контекстом задача ходит в базу: у
+    # фоновой задачи нет запроса, и «от имени системы» она работать не должна.
+    requested_by = models.UUIDField(null=True, blank=True)
+    # `background` — задача ушла в очередь; `inline` — посчитано прямо в запросе
+    # (очередь выключена или её не оказалось). Различие видно человеку на
+    # экране: подменять одно другим молча нельзя.
+    background = models.BooleanField(db_default=True)
+    # Идентификатор задачи в очереди — чтобы задание можно было найти в
+    # django_q, когда что-то пошло не так.
+    task_id = models.TextField(null=True, blank=True)
+    # Чем задача занята сейчас, словами для человека, плюс счётчик, если этап
+    # считается штуками (сотрудники).
+    stage = models.TextField(db_default="")
+    done = models.IntegerField(db_default=0)
+    total = models.IntegerField(db_default=0)
+    # Отказ или поломка: тот же текст, что человек увидел бы синхронно.
+    error = models.TextField(db_default="")
+    details = models.JSONField(db_default=[])
+    created_at = models.DateTimeField(db_default=now_default())
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "payrun_jobs"
+        indexes = [
+            models.Index(
+                "tenant", "period", models.F("created_at").desc(),
+                name="payrun_jobs_period_idx",
+            ),
         ]
 
 
