@@ -5,15 +5,19 @@
 
 Три решения, на которых всё держится.
 
-**Наша сторона берётся из `payslip_totals`.** Эта таблица по построению видна
-роли, только если ей видны все регистры строки (T050): нето, бруто и взносы
-посчитаны по всем регистрам сразу и в разрезе одного регистра не существуют.
-Значит, строку, итогов которой база не отдала, сверять не с чем — и она уходит
-в «нет в расчёте» **без единого нашего числа**. Показать по ней сумму видимых
-компонентов и разницу с файлом значило бы выдать скрытый регистр вычитанием:
-ровно так устроены две уже закрытые в этом продукте утечки (T050, T071).
-Приложение при этом ничего не маскирует и ничего не досчитывает — границу
-целиком держит база, как и требует D014.
+**Итоги берутся из `payslip_totals` — и только оттуда.** Нето, бруто, взносы и
+полная стоимость посчитаны по строке ведомости целиком, поэтому база отдаёт их
+лишь роли, которой видны все регистры вообще (T071). Строку, итогов которой она
+не отдала, сравнивать по деньгам не с чем — и **ни одного нашего числа** по ней
+не показывается. Подставить туда сумму видимых компонентов значило бы выдать
+скрытый регистр вычитанием: разница с итогом файла и есть скрытая часть. Ровно
+так устроены две уже закрытые в этом продукте утечки (T050, T071).
+
+**Но входы сверяются всегда.** Часы, ставка и коэффициент к регистрам учёта
+отношения не имеют, и роль видит их по обычным политикам. Поэтому строка без
+доступных итогов не выбрасывается: по ней сверяются входы, а деньги честно
+остаются пустыми. Это и есть польза сверки для роли с ограниченным доступом —
+расхождение чаще всего сидит именно во входах.
 
 **Совпадение — до копейки.** Допуска в сравнении нет: зашитый допуск однажды
 спрячет настоящее расхождение ровно того же размера. Расхождение меньше динара
@@ -106,14 +110,24 @@ class Line:
     causes: list[Cause] = field(default_factory=list)
 
     @property
+    def compared(self) -> bool:
+        """Сравнивались ли деньги вообще.
+
+        Строка без единого сравнимого числа — это не «сошлось»: сравнивать было
+        нечего. Пустое `all()` даёт истину, и без этого различения сверка
+        отрапортовала бы совпадение там, где не сверила ничего.
+        """
+        return any(a.comparable for a in self.amounts)
+
+    @property
     def matched(self) -> bool:
         """Сошлось всё, что можно было сравнить."""
-        return all(a.matches for a in self.amounts if a.comparable)
+        return self.compared and all(a.matches for a in self.amounts if a.comparable)
 
     @property
     def rounding_only(self) -> bool:
         """Разошлось только на копейки — известное расхождение округления."""
-        return not self.matched and all(
+        return self.compared and not self.matched and all(
             a.matches or a.rounding for a in self.amounts if a.comparable
         )
 
@@ -155,15 +169,25 @@ class Reconciliation:
     @property
     def mismatched(self) -> int:
         return sum(
-            1 for line in self.lines if not line.matched and not line.rounding_only
+            1 for line in self.lines
+            if line.compared and not line.matched and not line.rounding_only
         )
 
     @property
+    def inputs_only(self) -> int:
+        """Строки, у которых сверены только входы: денег роли не выдано."""
+        return sum(1 for line in self.lines if not line.compared)
+
+    @property
     def clean(self) -> bool:
-        """Сошлось всё и целиком: ни расхождений, ни потерянных строк, ни находок."""
+        """Сошлось всё и целиком: ни расхождений, ни потерянных строк, ни находок.
+
+        Строка, у которой сверены только входы, чистой сверку не делает: деньги
+        по ней не сравнивались, и объявлять это совпадением нельзя.
+        """
         return not (
-            self.mismatched or self.rounding or self.only_in_file
-            or self.only_in_run or self.findings
+            self.mismatched or self.rounding or self.inputs_only
+            or self.only_in_file or self.only_in_run or self.findings
         )
 
     def _sum(self, side: str) -> Decimal:
@@ -276,7 +300,9 @@ def compare(
         )
         # Причины — объяснение расхождения. У сошедшейся строки объяснять
         # нечего, и перечислять там разошедшиеся входы значило бы звать
-        # человека разбираться там, где всё в порядке.
+        # человека разбираться там, где всё в порядке. А вот у строки, деньги
+        # которой не сравнивались, входы — единственное, что сверка вообще
+        # может сказать, и они показываются всегда.
         if not line.matched:
             line = Line(
                 key=line.key, name=line.name, sheet=line.sheet,
@@ -302,65 +328,78 @@ def compare(
 
 
 def collect_run(tenant_id: UUID, period: date) -> dict[str, RunLine]:
-    """Строки расчёта, которые база отдала **этой роли**, по ключу сотрудника.
+    """Что база отдала **этой роли** по периоду, по ключу сотрудника.
 
-    Выборка идёт от `payslip_totals`, а не от `payslips`: строка ведомости
-    видна и тому, кому доступна лишь часть её регистров, а итоги — только тому,
-    кому видна вся строка (T050). Именно эта граница и нужна сверке.
+    Две разные выборки с разной видимостью, и их нельзя смешивать:
+
+    * **входы** — табель и условия найма — видны по обычным политикам; регистр
+      учёта к ним отношения не имеет;
+    * **итоги** — `payslip_totals` — видны только роли, которой доступны все
+      регистры вообще (T071), потому что посчитаны по строке ведомости целиком.
+
+    Поэтому строка появляется всегда, когда виден её вход, а деньги в ней
+    заполняются, только если база их отдала. Досчитывать итог из видимых
+    компонентов нельзя: разница с файлом и была бы скрытой частью.
     """
     # Модели импортируются здесь: всё выше — чистые функции, и настройки Django
     # ради них подниматься не должны.
-    from core.models import EmploymentTerm, PayComponent, PayslipTotals, Timesheet
+    from core.models import Employee, EmploymentTerm, PayComponent, PayslipTotals, Timesheet
 
+    sheets = {
+        row.employee_id: row
+        for row in Timesheet.objects.filter(tenant_id=tenant_id, period=period)
+    }
     totals = {
-        row.payslip_id: row
+        row.payslip.employee_id: row
         for row in PayslipTotals.objects.filter(
             tenant_id=tenant_id, payslip__payrun__period=period
-        ).select_related("payslip__employee")
+        ).select_related("payslip")
     }
-    if not totals:
+
+    known = set(sheets) | set(totals)
+    if not known:
         return {}
 
-    # Надбавка — из компонентов той же строки. Отдельной выборкой её брать
-    # нельзя: у строки, итогов которой роли не видно, компоненты частично
-    # видны, и надбавка «появилась бы» у человека, которого в сверке нет.
+    # Надбавка сверяется только там, где отданы итоги: у строки без них
+    # видимая часть компонентов неполна, и «наша» надбавка означала бы не то,
+    # что в таблице бухгалтера.
     meals: dict[UUID, Decimal] = {}
     for component in PayComponent.objects.filter(
-        tenant_id=tenant_id, payslip_id__in=list(totals), code=MEAL_CODE
+        tenant_id=tenant_id,
+        payslip_id__in=[row.payslip_id for row in totals.values()],
+        code=MEAL_CODE,
     ):
         meals[component.payslip_id] = (
             meals.get(component.payslip_id, Decimal(0)) + component.amount
         )
 
-    employees = {row.payslip.employee_id: row.payslip_id for row in totals.values()}
-    sheets = {
-        row.employee_id: row
-        for row in Timesheet.objects.filter(
-            tenant_id=tenant_id, period=period, employee_id__in=list(employees)
-        )
-    }
     terms = {
         term.employee_id: term
         for term in EmploymentTerm.objects.filter(
-            tenant_id=tenant_id, employee_id__in=list(employees),
-            valid_from__lte=period,
+            tenant_id=tenant_id, employee_id__in=list(known), valid_from__lte=period,
         ).order_by("valid_from")
+    }
+    people = {
+        person.id: person
+        for person in Employee.objects.filter(tenant_id=tenant_id, id__in=list(known))
     }
 
     out: dict[str, RunLine] = {}
-    for payslip_id, row in totals.items():
-        person = row.payslip.employee
-        sheet = sheets.get(person.id)
-        term = terms.get(person.id)
+    for employee_id in known:
+        person = people.get(employee_id)
+        if person is None:
+            # Человек не виден роли — значит и строки о нём быть не должно.
+            continue
+        sheet, row, term = sheets.get(employee_id), totals.get(employee_id), terms.get(employee_id)
         out[person.external_id] = RunLine(
             key=person.external_id,
             name=f"{person.last_name} {person.first_name}".strip(),
-            totals={code: getattr(row, code) for code in FIELDS},
+            totals={code: getattr(row, code) for code in FIELDS} if row else {},
             hours={k: _num(v) for k, v in (sheet.hours if sheet else {}).items()},
             insured_hours=sheet.insured_hours if sheet else None,
             base_rate=term.base_rate if term else None,
             coefficient=term.coefficient if term else None,
-            meal=meals.get(payslip_id),
+            meal=meals.get(row.payslip_id) if row else None,
         )
     return out
 
