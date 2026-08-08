@@ -24,7 +24,6 @@ from django.views.decorators.http import require_POST
 
 from core.models import Calendar, Payrun, Payslip, Period, Timesheet
 from payrun import freezing, jobs, lifecycle
-from payrun.calc import calculate_period
 from payrun.errors import PayrunRefused
 from payrun.sheet import build_sheet
 
