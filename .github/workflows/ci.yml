@@ -111,8 +111,8 @@ jobs:
       # ломается чаще всего, — что он вообще собирается.
       - run: docker build -t dodo-pnl-app:ci .
       # Заодно — что compose-файл разбирается с примером окружения. Дешевле
-      # поймать опечатку здесь, чем при раскатке на площадку.
+      # поймать опечатку здесь, чем при раскатке на площадку. Читаем сам
+      # .env.example, а не копию: проверять надо тот файл, который человек
+      # копирует у себя, — иначе он может протухнуть незамеченным.
       - name: docker compose config
-        run: |
-          cp .env.example .env
-          docker compose config --quiet
+        run: docker compose --env-file .env.example config --quiet
