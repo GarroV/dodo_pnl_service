@@ -73,16 +73,20 @@ ROLES = [
         "director", "Оперативный директор",
         ["official", "supplementary", "internal"], None,
         # `payslip.freeze` — заморозка спорной строки ведомости (T027): её
-        # ставит тот, кто ведёт месяц, а не управляющий точки.
+        # ставит тот, кто ведёт месяц, а не управляющий точки. `retro.post` —
+        # перенос разницы за закрытый месяц (T026), по тому же доводу.
         [
             "timesheet.edit", "payrun.calculate", "period.approve",
-            "period.reopen", "payslip.freeze",
+            "period.reopen", "payslip.freeze", "retro.post",
         ],
     ),
     SeedRole(
         "accountant", "Бухгалтер",
         ["official"], None,
-        ["timesheet.edit", "payrun.calculate", "period.approve", "payslip.freeze"],
+        [
+            "timesheet.edit", "payrun.calculate", "period.approve",
+            "payslip.freeze", "retro.post",
+        ],
     ),
     SeedRole(
         "manager", "Управляющий точки",

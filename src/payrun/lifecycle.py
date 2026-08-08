@@ -16,6 +16,7 @@ from django.db.models import F, Func, TextField
 
 from core.models import Payrun, PayrunTransition
 
+from . import retro
 from .errors import PayrunRefused, ReasonRequired
 
 DRAFT = "draft"
@@ -178,6 +179,12 @@ def reopen(payrun: Payrun | None, *, reason: str) -> str:
     он же ловит любой путь записи мимо этой формы.
     """
     refuse_if_cycle_forbids(payrun, REOPENED)
+    # Раньше причины: если разница за этот месяц уже выплачена у получателя,
+    # никакое объяснение отката не поможет — пересчёт означал бы заплатить
+    # дважды (T026). Заставлять человека сначала написать причину, чтобы потом
+    # отказать по другому поводу, — трата его времени.
+    retro.refuse_if_locked(payrun.tenant_id, payrun.period)
+
     reason = (reason or "").strip()
     if reason_required(REOPENED) and not reason:
         raise ReasonRequired(REASON_REFUSAL)

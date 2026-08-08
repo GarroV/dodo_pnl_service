@@ -387,6 +387,11 @@ def wipe_payruns(dsn: str) -> None:
         # оставшееся от соседнего теста, не даёт завести новое — этого требует
         # частичный уникальный индекс `payrun_jobs_active_uniq`.
         conn.execute(f"delete from payrun_jobs where tenant_id in {tenants}")
+        # Переносы разницы задним числом (T026) на `payruns` не ссылаются —
+        # они вход, а не результат, — поэтому вместе с расчётами не уходят.
+        # Удалять их можно: период-получатель выше уже открыт заново, а запрет
+        # стоит только на утверждённой разнице.
+        conn.execute(f"delete from retro_adjustments where tenant_id in {tenants}")
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
         conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")

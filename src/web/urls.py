@@ -19,6 +19,9 @@ urlpatterns = [
     # просмотр, и по ссылке из письма или из истории браузера случиться не должны.
     path("periods/<uuid:period_id>/approve/", views.period_approve, name="period-approve"),
     path("periods/<uuid:period_id>/reopen/", views.period_reopen, name="period-reopen"),
+    # Перенос разницы за закрытый месяц в текущий (T026). Только POST: это
+    # запись денег, и по ссылке из истории браузера случиться не должна.
+    path("periods/<uuid:period_id>/retro/", views.period_retro_post, name="period-retro"),
     # Заморозка спорной строки ведомости (T027). Адрес по строке, а не по
     # периоду: в контракте блока он записан как POST /payslips/{id}/freeze, и
     # строка однозначно определяет период сама.

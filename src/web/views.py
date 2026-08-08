@@ -23,7 +23,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from core.models import Calendar, Payrun, Payslip, Period, Timesheet
-from payrun import freezing, jobs, lifecycle
+from payrun import freezing, jobs, lifecycle, retro
 from payrun.errors import PayrunRefused
 from payrun.sheet import build_sheet
 
@@ -178,6 +178,20 @@ def period_page(
     freeze_denied = permissions.explain(who, permissions.PAYSLIP_FREEZE) if not frozen else ""
     can_freeze = not freeze_denied and not frozen
 
+    # Правки задним числом (T026). Расхождение ищется только у утверждённого
+    # месяца: у открытого правка входных данных — это обычная работа, её
+    # пересчитывают, а не переносят. Считать теневой расчёт на каждой странице
+    # подряд было бы и дорого, и бессмысленно.
+    retro_mode = retro.mode(period.tenant_id)
+    found = retro.drift(period.tenant_id, period.period) if frozen else retro.Drift()
+    retro_denied = permissions.explain(who, permissions.RETRO_POST) if found else ""
+    # Разница за этот месяц уже лежит в утверждённом периоде — откат отсюда
+    # означал бы заплатить дважды, и база его отвергнет (T026). Кнопки поэтому
+    # нет, а на её месте — тот же текст, которым ответит отказ.
+    retro_locked = retro.locked_out(period.tenant_id, period.period)
+    if retro_locked and lifecycle.REOPENED in allowed:
+        reopen_denied = reopen_denied or retro.LOCKED_REFUSAL
+
     return render(
         request,
         "web/period.html",
@@ -261,6 +275,50 @@ def period_page(
             "freeze_denied": freeze_denied,
             "froze": request.GET.get("froze") == "1",
             "released": request.GET.get("released") == "1",
+            # --- правки задним числом (T026) ---
+            # Что партнёр делает при расхождении, сказано словами: настройка,
+            # молча меняющая поведение денег, — худший вид настройки.
+            "retro_mode": retro_mode,
+            "retro_mode_title": retro.MODE_TITLES.get(retro_mode, retro_mode),
+            "retro_drift": found,
+            "retro_error": found.error,
+            "retro_total": money(found.total) if found else "",
+            "retro_target": (
+                retro.month_title(retro.next_open_period(period.tenant_id, period.period))
+                if found and retro_mode == retro.DELTA else ""
+            ),
+            "retro_lines": [
+                {
+                    "employee": line.employee,
+                    "title": line.title,
+                    "ledger": ledger_title(line.ledger),
+                    "amount": money(line.amount),
+                }
+                for line in found.lines
+            ],
+            # Кнопки нет по двум разным причинам, и они не смешиваются: партнёр
+            # ведёт учёт пересчётом (тогда о праве говорить нечего) или права
+            # нет (тогда на месте кнопки тот же текст, которым ответит отказ).
+            "can_post_retro": bool(found) and retro_mode == retro.DELTA and not retro_denied,
+            "retro_denied": retro_denied if retro_mode == retro.DELTA else "",
+            # Разница уже перенесена в утверждённый период: откат отсюда
+            # означал бы заплатить дважды, и кнопки отката не будет.
+            "retro_locked": retro_locked,
+            # Перенос сюда есть, а в ведомости его ещё (или уже) нет.
+            "retro_pending": [
+                {
+                    "title": item.title,
+                    "live": money(item.live),
+                    "shown": money(item.shown),
+                    "cancelled": item.cancelled,
+                }
+                for item in retro.pending(period.tenant_id, period.period)
+            ],
+            "retro_carried": [
+                retro.month_title(source)
+                for source in retro.carried_in(period.tenant_id, period.period)
+            ],
+            "retro_posted": request.GET.get("retro") == "1",
         },
         status=status,
     )
@@ -407,6 +465,55 @@ def period_reopen(request, period_id):
         done_flag="reopened",
         error_title="Период не открыт.",
     )
+
+
+@login_required
+@require_POST
+def period_retro_post(request, period_id):
+    """«Перенести разницу»: закрытый месяц остаётся прежним, разница едет вперёд.
+
+    Порядок проверок тот же, что у расчёта и у цикла (T064): право → всё
+    остальное. Человек без права не должен сначала узнавать, есть ли вообще
+    расхождение, — до него ему нет дела.
+
+    В сам закрытый период не пишется ничего, и это видно по коду: перенос —
+    вставка в свою таблицу. Гарантией это, однако, не является — её держит
+    сторож `payrun_frozen_guard` (T023), отвергающий любую запись в утверждённый
+    расчёт на любом пути.
+    """
+    period = find_period(period_id)
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        # Вошёл, но ни к какому партнёру не приписан: периода для него нет.
+        raise Http404("период не найден")
+
+    try:
+        permissions.check(who, permissions.RETRO_POST)
+        target, moved = retro.post(
+            tenant_id=period.tenant_id,
+            source=period.period,
+            actor_id=who.user_id,
+            visible_ledgers=who.visible_ledgers,
+        )
+    except permissions.PermissionRefused as refusal:
+        return period_page(
+            request, period, error=refusal.message,
+            error_title="Разница не перенесена.", status=refusal.http_status,
+        )
+    except PayrunRefused as refusal:
+        # Регистры отказ называет кодами; человеку показываем их названия.
+        details = refusal.details or [ledger_title(name) for name in refusal.ledgers]
+        return period_page(
+            request, period, error=refusal.message, details=details,
+            error_title="Разница не перенесена.", status=refusal.http_status,
+        )
+
+    # Перенаправление после записи: обновление страницы не переносит второй раз.
+    # Второй перенос и так не нашёл бы расхождения (оно уже вычтено), но
+    # надеяться на это вместо перенаправления значило бы обещать, что арифметика
+    # заменяет защиту от повторной отправки формы.
+    del target, moved
+    return redirect(reverse("period", args=[period.id]) + "?retro=1")
 
 
 def find_payslip(request, payslip_id) -> tuple[Payslip, Period]:

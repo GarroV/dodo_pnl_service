@@ -9,6 +9,12 @@
 всем регистрам сразу и живут в отдельной таблице `payslip_totals`, закрытой
 своей политикой (T050): роль видит их, только если видит все регистры строки.
 
+**Разница за закрытый месяц — отдельная строка** (T026). Ключ строки включает
+месяц-источник, иначе перенос по `hours.regular` слился бы с обычной колонкой
+того же кода и стал бы невидимым: бухгалтер увидел бы поехавшую сумму без следа
+причины. Суммы при этом стоят в своих обычных колонках — видно не только «есть
+разница», но и какой компонент изменился.
+
 **Замороженная строка помечена** (T027): по человеку идёт спор, его числа
 пересчёт не трогает. Метка едет вместе со строкой, а не спрашивается отдельно
 экраном, — иначе ведомость и пометка разъезжались бы при любой фильтрации.
@@ -47,6 +53,9 @@ class Cell:
     payslip_id: UUID | None = None
     frozen: bool = False
     freeze_reason: str = ""
+    # Пусто — обычная сумма этого месяца. Заполнено — разница за указанный
+    # закрытый месяц, перенесённая сюда (T026).
+    retro_source: date | None = None
 
     @property
     def employee_key(self) -> str:
@@ -69,6 +78,11 @@ class Row:
     payslip_id: UUID | None = None
     frozen: bool = False
     freeze_reason: str = ""
+    retro_source: date | None = None
+
+    @property
+    def is_retro(self) -> bool:
+        return self.retro_source is not None
 
 
 @dataclass(frozen=True)
@@ -108,11 +122,11 @@ def assemble(cells: list[Cell]) -> Sheet:
     for cell in cells:
         titles.setdefault(cell.code, cell.title)
         row = grouped.setdefault(
-            (cell.employee_key, cell.ledger),
+            (cell.employee_key, cell.ledger, cell.retro_source),
             {
                 "employee": cell.employee, "unit": cell.unit, "amounts": {},
                 "payslip_id": cell.payslip_id, "frozen": cell.frozen,
-                "freeze_reason": cell.freeze_reason,
+                "freeze_reason": cell.freeze_reason, "retro_source": cell.retro_source,
             },
         )
         amounts = row["amounts"]
@@ -125,10 +139,18 @@ def assemble(cells: list[Cell]) -> Sheet:
             employee=body["employee"], unit=body["unit"], ledger=ledger,
             amounts=body["amounts"], total=sum(body["amounts"].values(), Decimal(0)),
             payslip_id=body["payslip_id"], frozen=body["frozen"],
-            freeze_reason=body["freeze_reason"],
+            freeze_reason=body["freeze_reason"], retro_source=body["retro_source"],
         )
-        for (_, ledger), body in sorted(
-            grouped.items(), key=lambda item: (item[1]["employee"], _ledger_key(item[0][1]))
+        # Перенос идёт сразу после своей обычной строки, а не в конце ведомости:
+        # разницу читают рядом с тем, к чему она относится. Пустой источник
+        # сортируется первым — обычная строка впереди своей дельты.
+        for (_, ledger, _source), body in sorted(
+            grouped.items(),
+            key=lambda item: (
+                item[1]["employee"],
+                _ledger_key(item[0][1]),
+                item[0][2] or date.min,
+            ),
         )
     ]
 
@@ -179,6 +201,7 @@ def build_sheet(tenant_id: UUID, period: date) -> Sheet:
                 freezes[component.payslip_id].reason
                 if component.payslip_id in freezes else ""
             ),
+            retro_source=component.retro_source_period,
         )
         for component in PayComponent.objects.filter(
             tenant_id=tenant_id, payslip__payrun__period=period
