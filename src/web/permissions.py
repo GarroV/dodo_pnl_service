@@ -25,6 +25,7 @@ PAYRUN_CALCULATE = "payrun.calculate"
 # вместе с первым.
 PERIOD_APPROVE = "period.approve"
 PERIOD_REOPEN = "period.reopen"
+UNIT_CLOSE = "unit.close"
 
 # Что показать человеку. Отказ называет само действие, а не код права: «нет
 # payrun.calculate» — сообщение для разработчика, а не для бухгалтера.
@@ -33,6 +34,7 @@ TITLES = {
     PAYRUN_CALCULATE: "Расчёт периода",
     PERIOD_APPROVE: "Утверждение периода",
     PERIOD_REOPEN: "Откат периода",
+    UNIT_CLOSE: "Закрытие часов по точке",
 }
 
 

@@ -25,11 +25,12 @@ from uuid import UUID
 
 from django.db import transaction
 
-from core.models import Employee, EmploymentTerm, Timesheet
+from core.models import Employee, EmploymentTerm, Timesheet, Unit
 from payroll import d
 from payroll.importers import Finding, read_plata_file
 from payrun.calc import month_end
 
+from .closing import open_closures
 from .store import RowInput, country_of, hour_types, store_row
 
 __all__ = ["ImportResult", "Note", "UnmatchedRow", "import_partner_table"]
@@ -166,6 +167,10 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
         for person in Employee.objects.filter(tenant_id=tenant_id)
     }
     terms = _terms_at(tenant_id, period)
+    closures = open_closures(tenant_id, period)
+    unit_codes = dict(
+        Unit.objects.filter(pk__in=list(closures)).values_list("id", "code")
+    )
     rows = {
         row.employee_id: row
         for row in Timesheet.objects.filter(tenant_id=tenant_id, period=period)
@@ -188,6 +193,19 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
                 result.unmatched_rows.append(UnmatchedRow(
                     source.sheet, source.name,
                     "нет условий найма на этот месяц — неизвестно, на какой точке",
+                ))
+                continue
+
+            # Часы закрытой точки не пишутся (T022). Проверка здесь, а не
+            # только в базе: транзакция у загрузки одна на весь файл, и отказ
+            # политики уносил бы вместе с закрытой точкой все остальные строки,
+            # а человек прочитал бы неправду о причине — «файл не удалось
+            # прочитать». Строка называется поимённо и не теряется.
+            if term.unit_id is not None and term.unit_id in closures:
+                result.unmatched_rows.append(UnmatchedRow(
+                    source.sheet, source.name,
+                    f"часы точки {unit_codes.get(term.unit_id, '')} за этот месяц "
+                    f"закрыты — строка не загружена",
                 ))
                 continue
 

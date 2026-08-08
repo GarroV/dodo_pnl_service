@@ -19,6 +19,7 @@ from uuid import UUID
 from core.models import Timesheet
 from payroll import insured_base
 
+from .closing import open_closures
 from .store import country_of, hour_types
 
 __all__ = ["Column", "Grid", "Row", "build_grid"]
@@ -48,6 +49,11 @@ class Row:
     # одной колонке без причины только мешают читать столбик.
     insured_declared: Decimal = Decimal("0")
     cells: dict[str, Decimal] = field(default_factory=dict)
+    # Закрыты ли часы этой строки (T022). Свойство строки, а не сетки: закрытие
+    # идёт по точкам, и на одном экране соседствуют закрытая точка и открытая —
+    # в этом весь смысл «спорная точка не держит остальные».
+    unit_id: UUID | None = None
+    closed: bool = False
 
     @property
     def total(self) -> Decimal:
@@ -123,6 +129,10 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
     columns = build_columns(known)
     codes = [column.code for column in columns]
 
+    # Закрытия читаются один раз на сетку, а не по строке на человека: 35 строк
+    # дали бы 35 одинаковых запросов ради одного и того же ответа.
+    closed = set(open_closures(tenant_id, period))
+
     rows = []
     for sheet in visible_rows(tenant_id, period, unit_ids):
         stored = sheet.hours or {}
@@ -139,6 +149,8 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                 # править то, чего движок не посчитает, нельзя. Если такие
                 # часы в базе есть, их покажет отчёт импорта (T021).
                 cells={code: Decimal(str(stored.get(code, 0))) for code in codes},
+                unit_id=sheet.unit_id,
+                closed=sheet.unit_id in closed,
             )
         )
     return Grid(columns=columns, rows=rows)

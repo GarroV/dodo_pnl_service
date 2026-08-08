@@ -16,7 +16,7 @@ from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse, HttpResponseNotFound
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from payrun.errors import PayrunRefused
@@ -24,11 +24,18 @@ from web import permissions
 from web.principal import get_current_principal
 from web.views import find_period, month_title
 
+from .closing import (
+    ClosureRefused,
+    close_unit,
+    refuse_if_closed,
+    reopen_unit,
+    unit_states,
+)
 from .grid import build_grid, visible_rows
 from .importer import import_partner_table
 from .store import CellRefused, parse_hours, set_cell
 
-__all__ = ["cell", "grid", "import_table"]
+__all__ = ["cell", "close", "grid", "import_table", "reopen"]
 
 # Больше этого файл зарплатной таблицы не бывает: восемь листов на несколько
 # сотен человек — это сотни килобайт. Ограничение не про безопасность, а про
@@ -69,7 +76,16 @@ def _refused(status: int, text: str, row, hour_type: str) -> HttpResponse:
 def grid(request, period_id):
     period = find_period(period_id)
     who = _context(request, period)
+    return _grid_page(request, period, who)
 
+
+def _grid_page(request, period, who, *, notice: str = "", status: int = 200):
+    """Страница табеля. Одна на все случаи: и обычный показ, и отказ на действии.
+
+    Отказ показывается на самом табеле, а не отдельной страницей: человек нажал
+    кнопку здесь и должен увидеть ответ здесь же, рядом с точками, о которых
+    идёт речь.
+    """
     # Колонки сетки — это типы часов страны, то есть те же правила, на которых
     # стоит расчёт. Нет правил на месяц — сетку строить не из чего, и человек
     # должен прочитать то же объяснение, что на странице периода, а не «Server
@@ -85,6 +101,10 @@ def grid(request, period_id):
     # о запрете, лишь покинув ячейку: значение уходило на сервер и возвращалось
     # отказом. Проверку в `cell` это не отменяет — она ниже и остаётся.
     denied = permissions.explain(who, permissions.TIMESHEET_EDIT)
+    # То же самое для закрытия часов: кнопки нет — сказано, почему её нет.
+    # Экран, который молча теряет действие, читается как поломка, а не как
+    # запрет (T064).
+    close_denied = permissions.explain(who, permissions.UNIT_CLOSE)
 
     return render(
         request,
@@ -95,12 +115,19 @@ def grid(request, period_id):
             "grid": table,
             "error": refusal.message if refusal else None,
             "details": refusal.details if refusal else [],
+            "notice": notice,
             # Управляющему честно говорим, что он видит срез, а не весь табель.
             "limited_to_units": bool(who.unit_ids),
             "can_edit": not denied,
             "edit_denied": denied,
+            "can_close": not close_denied,
+            "close_denied": close_denied,
+            "units": (
+                unit_states(period.tenant_id, period.period, table.rows)
+                if table else []
+            ),
         },
-        status=refusal.http_status if refusal else 200,
+        status=refusal.http_status if refusal else status,
     )
 
 
@@ -135,10 +162,20 @@ def cell(request, period_id):
     hour_type = request.POST.get("kind") or ""
     try:
         hours = parse_hours(request.POST.get("hours", ""))
+        # Часы закрытой точки не пишутся. Запись всё равно не прошла бы — её
+        # режет политика базы (T022), — но человек получил бы ошибку сервера
+        # вместо объяснения. Проверка стоит именно здесь, а не только при
+        # построении страницы: точку могли закрыть после того, как страница
+        # открылась, и ячейка уходит на сервер уже в закрытый табель.
+        refuse_if_closed(row)
         set_cell(timesheet=row, hour_type=hour_type, hours=hours)
         table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
     except CellRefused as refusal:
         return _refused(REFUSED, str(refusal), row, hour_type)
+    except ClosureRefused as refusal:
+        # Тем же способом, что и остальные отказы на записи ячейки: код,
+        # текст для человека и значение, оставшееся в базе (T066, T073).
+        return _refused(refusal.http_status, refusal.message, row, hour_type)
     except PayrunRefused as refusal:
         # Колонки сетки — типы часов страны, то есть те же правила, на которых
         # стоит расчёт. Страница могла открыться, когда они ещё действовали, а
@@ -164,6 +201,59 @@ def cell(request, period_id):
     # же число, но человек должен увидеть, что именно сохранилось.
     response["X-Cell-Value"] = f"{hours:.2f}"
     return response
+
+
+@login_required
+@require_POST
+def close(request, period_id):
+    """Закрыть часы точки за месяц (T022)."""
+    return _switch_closing(request, period_id, closing=True)
+
+
+@login_required
+@require_POST
+def reopen(request, period_id):
+    """Открыть часы точки заново.
+
+    Отдельный маршрут, а не поле `action` в одной форме: два разных действия с
+    разными последствиями не должны отличаться значением скрытого поля — так
+    ошибка в разметке превращает закрытие в открытие незаметно.
+    """
+    return _switch_closing(request, period_id, closing=False)
+
+
+def _switch_closing(request, period_id, *, closing: bool):
+    period = find_period(period_id)
+    who = _context(request, period)
+
+    # Право проверяется до всего остального: отказ по праву не должен зависеть
+    # от того, существует ли точка, которую человек назвал.
+    try:
+        permissions.check(who, permissions.UNIT_CLOSE)
+    except permissions.PermissionRefused as refusal:
+        return _grid_page(request, period, who, notice=refusal.message,
+                          status=refusal.http_status)
+
+    wanted = request.POST.get("unit") or ""
+    table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
+    states = {
+        str(state.unit_id): state
+        for state in unit_states(period.tenant_id, period.period, table.rows)
+    }
+    state = states.get(wanted)
+    if state is None:
+        # Чужая точка и несуществующая выглядят одинаково: по ответу нельзя
+        # понять, что такая точка вообще есть. Так же отвечает запись ячейки.
+        return HttpResponseNotFound("точка не найдена")
+
+    action = close_unit if closing else reopen_unit
+    action(
+        tenant_id=period.tenant_id, unit_id=state.unit_id,
+        period=period.period, actor_id=who.user_id,
+    )
+    # Редирект, а не отрисовка на месте: после POST обновление страницы не
+    # должно повторять действие.
+    return redirect("timesheets", period_id=period.id)
 
 
 @login_required
