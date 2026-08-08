@@ -120,8 +120,9 @@ def test_both_thresholds_must_be_exceeded_at_once():
     """Процент без абсолютного пола шумит, абсолютный без процента слеп.
 
     Компонент на 20 динаров, выросший вдвое, — это +20 динаров: показывать его
-    рядом с окладом значит утопить настоящее отклонение в мелочи. Компонент на
-    сто тысяч, выросший на 600, — это 0,6%: тоже не новость.
+    рядом с окладом значит утопить настоящее отклонение в мелочи. Оклад в сто
+    тысяч, выросший на 1500, перешагнул пол в деньгах — но это 1,5%, то есть
+    обычное колебание месяца, а не новость.
     """
     from reports.variance import compare
 
@@ -133,11 +134,11 @@ def test_both_thresholds_must_be_exceeded_at_once():
     assert loud_percent.lines == [], "+100%, но всего +20 динаров"
 
     loud_absolute = compare(
-        cells(("Иванов", "official", "hours.regular", "100600")),
+        cells(("Иванов", "official", "hours.regular", "101500")),
         cells(("Иванов", "official", "hours.regular", "100000")),
         thresholds=THRESHOLDS,
     )
-    assert loud_absolute.lines == [], "+600 динаров, но всего 0,6%"
+    assert loud_absolute.lines == [], "+1500 динаров — выше пола, но всего 1,5%"
 
 
 def test_a_component_that_appeared_or_vanished_is_a_deviation_too():
