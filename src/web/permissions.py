@@ -19,12 +19,20 @@ from __future__ import annotations
 # бы, что интерфейс обещает не то, что позволяет база.
 TIMESHEET_EDIT = "timesheet.edit"
 PAYRUN_CALCULATE = "payrun.calculate"
+# Утверждение и откат — два разных права, а не одно «управление периодом»
+# (T025). Бухгалтер в сиде утверждает, но не открывает: открытие закрытого
+# месяца — решение другого веса, и объединять их значило бы выдать второе
+# вместе с первым.
+PERIOD_APPROVE = "period.approve"
+PERIOD_REOPEN = "period.reopen"
 
 # Что показать человеку. Отказ называет само действие, а не код права: «нет
 # payrun.calculate» — сообщение для разработчика, а не для бухгалтера.
 TITLES = {
     TIMESHEET_EDIT: "Правка табеля",
     PAYRUN_CALCULATE: "Расчёт периода",
+    PERIOD_APPROVE: "Утверждение периода",
+    PERIOD_REOPEN: "Откат периода",
 }
 
 

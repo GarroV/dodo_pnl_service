@@ -17,6 +17,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from core.models import Calendar, Payrun, Period, Timesheet
+from payrun import lifecycle
 from payrun.calc import calculate_period
 from payrun.errors import PayrunRefused
 from payrun.sheet import build_sheet
@@ -91,7 +92,16 @@ def calendar_norm_hours(period: Period):
     )
 
 
-def period_page(request, period, *, error=None, details=(), status=200):
+def period_page(
+    request,
+    period,
+    *,
+    error=None,
+    error_title="Расчёт не выполнен.",
+    details=(),
+    status=200,
+    reason_value="",
+):
     """Страница периода: сводка, ведомость и запуск расчёта.
 
     Ведомость собирается **только из компонентов выплаты** — суммарные поля
@@ -110,6 +120,27 @@ def period_page(request, period, *, error=None, details=(), status=200):
     # ответят отказом. Адрес расчёта остаётся рабочим, и он остаётся закрытым.
     who = get_current_principal(request)
     calculate_denied = permissions.explain(who, permissions.PAYRUN_CALCULATE)
+
+    # Что цикл позволяет сделать с расчётом дальше — спрашивается у базы, а не
+    # выводится из статуса здесь (T025): единственный источник истины о цикле
+    # объявлен в схеме, и «что предложить человеку» — тот же вопрос о цикле.
+    payrun_status = payrun.status if payrun else None
+    allowed = lifecycle.next_statuses(payrun_status)
+    frozen = payrun_status == lifecycle.APPROVED
+
+    # Кнопки нет по двум разным причинам, и они не смешиваются: цикл сюда не
+    # пускает (тогда о праве говорить нечего) или права нет (тогда на месте
+    # кнопки стоит тот же текст, которым ответит отказ).
+    approve_denied = (
+        permissions.explain(who, permissions.PERIOD_APPROVE)
+        if lifecycle.APPROVED in allowed
+        else ""
+    )
+    reopen_denied = (
+        permissions.explain(who, permissions.PERIOD_REOPEN)
+        if lifecycle.REOPENED in allowed
+        else ""
+    )
 
     return render(
         request,
@@ -151,10 +182,24 @@ def period_page(request, period, *, error=None, details=(), status=200):
                 else f"календарь {country} на этот месяц не заведён"
             ),
             "error": error,
+            "error_title": error_title,
             "details": list(details),
             "calculated": request.GET.get("calculated") == "1",
-            "can_calculate": not calculate_denied,
-            "calculate_denied": calculate_denied,
+            # Утверждённый период пересчитать нельзя — это отвергает база, и
+            # предлагать кнопку значило бы обещать невозможное. Адрес расчёта
+            # остаётся рабочим и по-прежнему отвечает отказом со словами.
+            "can_calculate": not calculate_denied and not frozen,
+            "calculate_denied": calculate_denied or (lifecycle.APPROVED_REFUSAL if frozen else ""),
+            # --- цикл периода (T025) ---
+            "payrun_status": lifecycle.status_title(payrun_status) if payrun else "",
+            "can_approve": lifecycle.APPROVED in allowed and not approve_denied,
+            "approve_denied": approve_denied,
+            "can_reopen": lifecycle.REOPENED in allowed and not reopen_denied,
+            "reopen_denied": reopen_denied,
+            "reason_value": reason_value,
+            "history": lifecycle.history(payrun),
+            "approved": request.GET.get("approved") == "1",
+            "reopened": request.GET.get("reopened") == "1",
         },
         status=status,
     )
@@ -205,6 +250,78 @@ def period_calculate(request, period_id):
 
     # Перенаправление после записи: обновление страницы не повторяет расчёт.
     return redirect(reverse("period", args=[period.id]) + "?calculated=1")
+
+
+def current_payrun(period: Period):
+    return Payrun.objects.filter(tenant=period.tenant, period=period.period).first()
+
+
+def period_transition(request, period_id, *, code, run, done_flag, error_title):
+    """Общая обвязка утверждения и отката: право, переход, отказ словами.
+
+    Обе кнопки устроены одинаково, и разница между ними ровно в трёх вещах —
+    какое право, что сделать и как назвать отказ. Разводить их двумя копиями
+    значило бы получить два разных порядка проверок на одной странице.
+    """
+    period = find_period(period_id)
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        # Вошёл, но ни к какому партнёру не приписан: периода для него нет.
+        raise Http404("период не найден")
+
+    # Право проверяется первым — как в расчёте (T064). Иначе человек без права
+    # узнавал бы сначала о состоянии периода, до которого ему нет дела.
+    try:
+        permissions.check(who, code)
+    except permissions.PermissionRefused as refusal:
+        return period_page(
+            request, period,
+            error=refusal.message, error_title=error_title,
+            status=refusal.http_status,
+        )
+
+    try:
+        run(current_payrun(period), who)
+    except PayrunRefused as refusal:
+        return period_page(
+            request, period,
+            error=refusal.message, error_title=error_title,
+            status=refusal.http_status,
+            # Написанное человеком не пропадает вместе с отказом: иначе длинную
+            # причину пришлось бы набирать заново из-за опечатки.
+            reason_value=(request.POST.get("reason") or ""),
+        )
+
+    # Перенаправление после записи: обновление страницы не повторяет переход.
+    return redirect(reverse("period", args=[period.id]) + f"?{done_flag}=1")
+
+
+@login_required
+@require_POST
+def period_approve(request, period_id):
+    """«Утвердить период»: расчёт замораживается, автор попадает в историю."""
+    return period_transition(
+        request, period_id,
+        code=permissions.PERIOD_APPROVE,
+        run=lambda payrun, who: lifecycle.approve(payrun, actor_id=who.user_id),
+        done_flag="approved",
+        error_title="Период не утверждён.",
+    )
+
+
+@login_required
+@require_POST
+def period_reopen(request, period_id):
+    """«Открыть заново»: только с причиной, и она видна в истории с автором."""
+    return period_transition(
+        request, period_id,
+        code=permissions.PERIOD_REOPEN,
+        run=lambda payrun, who: lifecycle.reopen(
+            payrun, reason=request.POST.get("reason", "")
+        ),
+        done_flag="reopened",
+        error_title="Период не открыт.",
+    )
 
 
 # --- вход --------------------------------------------------------------------
