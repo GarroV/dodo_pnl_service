@@ -287,6 +287,10 @@ def period_page(
                 for cut in view.cuts
             ],
             "cut_title": cut_title(view.cut) if view.cut else "",
+            # Код выбранного разреза отдельно от списка кнопок: его берут
+            # адреса выгрузок. Второго места, где хранился бы выбранный разрез,
+            # быть не должно — иначе экран и файл разъедутся молча.
+            "cut_code": view.cut or "",
             "ledgers": [
                 {"title": ledger_title(name), "total": money(amount)}
                 for name, amount in sheet.ledger_totals

@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}{% comment %}
+{% extends "web/base.html" %}{% load ui %}{% comment %}
 Отчёт загрузки таблицы партнёра (T021).
 
 Порядок разделов не случаен и читается сверху вниз как ответ на три вопроса,
@@ -30,10 +30,9 @@
 <h1>Загрузка таблицы · {{ title }}</h1>
 
 {% if error %}
-<div class="alert">
-  <strong>Таблица не загружена.</strong> {{ error }}
+{% notice "alert" title="Таблица не загружена." %}{{ error }}
   {% if details %}<div class="details">{{ details|join:", " }}</div>{% endif %}
-</div>
+{% endnotice %}
 {% else %}
 
 {% comment %}
