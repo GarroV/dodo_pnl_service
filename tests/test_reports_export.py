@@ -43,7 +43,8 @@ MATERIAL = [
     cell("Иванов Иван", "official", "hours.regular", "Отработанные", "60000.00"),
     cell("Иванов Иван", "official", "meal_and_vacation_bonus", "Топли оброк", "1500.00"),
     cell("Петров Пётр", "supplementary", "hours.regular", "Отработанные", "40000.00", unit="BG1"),
-    cell("Петров Пётр", "official", "meal_and_vacation_bonus", "Топли оброк", "1500.00", unit="BG1"),
+    cell("Петров Пётр", "official", "meal_and_vacation_bonus", "Топли оброк",
+         "1500.00", unit="BG1"),
     cell("Сидоров Сидор", "internal", "hours.regular", "Отработанные", "25000.00"),
 ]
 

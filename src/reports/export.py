@@ -138,7 +138,8 @@ def payout(view: SheetSlice, *, tenant_id=None, period=None, title="",
             # это непонятная сумма в чужом месяце (T026).
             notes.append(f"разница за {row.retro_source:%m.%Y}")
         if row.frozen:
-            notes.append(f"строка заморожена{': ' + row.freeze_reason if row.freeze_reason else ''}")
+            why = f": {row.freeze_reason}" if row.freeze_reason else ""
+            notes.append(f"строка заморожена{why}")
         ws.append(
             [number, row.employee, row.unit, ledger_title(row.ledger)]
             + [row.amounts.get(column.code) for column in columns]
