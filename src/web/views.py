@@ -8,16 +8,22 @@
 """
 from __future__ import annotations
 
+from django.conf import settings
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
-from django.http import Http404, HttpResponseBadRequest, HttpResponseNotFound
+from django.http import (
+    Http404,
+    HttpResponseBadRequest,
+    HttpResponseNotFound,
+    JsonResponse,
+)
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from core.models import Calendar, Payrun, Payslip, Period, Timesheet
-from payrun import freezing, lifecycle
+from payrun import freezing, jobs, lifecycle
 from payrun.calc import calculate_period
 from payrun.errors import PayrunRefused
 from payrun.sheet import build_sheet
@@ -141,6 +147,16 @@ def period_page(
     allowed = lifecycle.next_statuses(payrun_status)
     frozen = payrun_status == lifecycle.APPROVED
 
+    # Полоса живёт, только пока живо задание: у завершённого расчёта на экране
+    # есть ведомость, и вечная полоса рядом с ней читалась бы как незаконченная
+    # работа. А вот отказ последнего задания показать обязаны — иначе фоновый
+    # расчёт молча не делал бы ничего, и это выглядело бы как поломка.
+    last = jobs.last_job(period.tenant_id, period.period)
+    job = last if last is not None and last.status in (jobs.QUEUED, jobs.RUNNING) else None
+    if error is None and last is not None and last.status == jobs.FAILED and last.error:
+        error = last.error
+        details = details or last.details or []
+
     # Кнопки нет по двум разным причинам, и они не смешиваются: цикл сюда не
     # пускает (тогда о праве говорить нечего) или права нет (тогда на месте
     # кнопки стоит тот же текст, которым ответит отказ).
@@ -215,10 +231,21 @@ def period_page(
             "error_title": error_title,
             "details": list(details),
             "calculated": request.GET.get("calculated") == "1",
+            # --- ход фонового расчёта (T024) ---
+            "job": jobs.state_of(job),
+            "job_running": job is not None,
+            # Что обещано под кнопкой. «Считается сразу» при включённой очереди —
+            # неправда ровно в тот момент, когда человек решает, ждать ему на
+            # странице или уйти.
+            "background_calculation": settings.PAYRUN_BACKGROUND,
+            "queued": request.GET.get("queued") == "1",
             # Утверждённый период пересчитать нельзя — это отвергает база, и
             # предлагать кнопку значило бы обещать невозможное. Адрес расчёта
             # остаётся рабочим и по-прежнему отвечает отказом со словами.
-            "can_calculate": not calculate_denied and not frozen,
+            # Пока задание живо, кнопки расчёта нет: второе нажатие всё равно
+            # получит отказ «уже считается», а предлагать заведомый отказ — то же
+            # самое, что обещать невозможное.
+            "can_calculate": not calculate_denied and not frozen and job is None,
             "calculate_denied": calculate_denied or (lifecycle.APPROVED_REFUSAL if frozen else ""),
             # --- цикл периода (T025) ---
             "payrun_status": lifecycle.status_title(payrun_status) if payrun else "",
@@ -250,8 +277,16 @@ def period_detail(request, period_id):
 def period_calculate(request, period_id):
     """«Посчитать»: движок на данных периода, результат — в базу.
 
-    Синхронно: 32 человека считаются мгновенно. Отказ показывается на той же
-    странице плашкой и своим кодом ответа — молча ничего не происходит.
+    Два пути, и человек всегда знает, какой из них выбран (T024):
+
+    - **фоном** — задача уходит в очередь, страница возвращается сразу и
+      показывает ход работы;
+    - **прямо сейчас** — расчёт идёт в этом же запросе, страница ждёт его конца.
+      Так работает продукт с выключенной очередью и так же человек добивает
+      задачу, которую очередь не взяла.
+
+    Молчаливой подмены одного другим нет: синхронный расчёт вместо фонового
+    случается только по явному нажатию «Посчитать прямо сейчас».
     """
     period = find_period(period_id)
     who = get_current_principal(request)
@@ -269,11 +304,13 @@ def period_calculate(request, period_id):
             request, period, error=refusal.message, status=refusal.http_status,
         )
 
+    background = settings.PAYRUN_BACKGROUND and request.POST.get("inline") != "1"
     try:
-        calculate_period(
+        jobs.start(
             tenant_id=period.tenant_id,
             period=period.period,
-            visible_ledgers=who.visible_ledgers,
+            actor_id=who.user_id,
+            background=background,
         )
     except PayrunRefused as refusal:
         # Регистры расчёт называет кодами; человеку показываем их названия.
@@ -284,7 +321,21 @@ def period_calculate(request, period_id):
         )
 
     # Перенаправление после записи: обновление страницы не повторяет расчёт.
-    return redirect(reverse("period", args=[period.id]) + "?calculated=1")
+    flag = "queued" if background else "calculated"
+    return redirect(reverse("period", args=[period.id]) + f"?{flag}=1")
+
+
+@login_required
+def period_calculate_status(request, period_id):
+    """Состояние расчёта отдельным ответом — его спрашивает полоса прогресса.
+
+    Тот же `state_of`, что рисует страницу: два разных ответа об одном и том же
+    расчёте означали бы полосу, которая говорит не то, что написано рядом с ней.
+    Своей проверки доступа здесь нет и не нужно — задание чужого партнёра не
+    видно политикам базы, и ответ честно скажет «расчёта нет».
+    """
+    period = find_period(period_id)
+    return JsonResponse(jobs.state_of(jobs.last_job(period.tenant_id, period.period)))
 
 
 def current_payrun(period: Period):

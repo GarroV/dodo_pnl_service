@@ -57,11 +57,26 @@ def test_app_user_does_not_own_tables(db):
 
 # Таблицы каркаса Django. Данных продукта в них нет, политик на них не заводим —
 # всё остальное в схеме обязано быть закрыто.
+#
+# Таблицы очереди (`django_q_*`, T024) — тот же случай, но по другой причине, и
+# её нужно понимать. Колонки тенанта в них нет и быть не может: очередь общая, а
+# полезная нагрузка — подписанный `SECRET_KEY` пакет с именем функции и
+# идентификаторами. Политике там нечего фильтровать. Поэтому они закрыты не
+# политикой, а привилегиями: миграция `0047_queue_privileges` забирает у
+# `app_user` всё, кроме права поставить задачу. Что закрытие настоящее,
+# проверяет `test_queue_tables_are_closed_by_privileges` — без него это
+# исключение молча стало бы дырой в проверке, которая ищет ровно такие дыры.
+QUEUE_TABLES = {"django_q_ormq", "django_q_task", "django_q_schedule"}
+
+
+class _Rollback(Exception):
+    """Выйти из вложенной транзакции, не оставив за собой строки."""
+
 FRAMEWORK_TABLES = {
     "django_migrations", "django_content_type", "django_session",
     "auth_permission", "auth_group", "auth_group_permissions",
     "auth_user", "auth_user_groups", "auth_user_user_permissions",
-}
+} | QUEUE_TABLES
 
 
 def domain_tables(conn) -> list[str]:
@@ -108,6 +123,44 @@ def test_schema_wide_checks_catch_an_unprotected_table(db):
         test_force_rls_on_every_domain_table(db)
     with pytest.raises(AssertionError):
         test_no_domain_table_returns_rows_without_context(db)
+
+
+def test_queue_tables_are_closed_by_privileges(db):
+    """Исключение для очереди держится на привилегиях — проверяем, что на деле.
+
+    Таблицы `django_q_*` выведены из проверки политик выше, потому что тенанта в
+    них нет и политике нечего фильтровать. Значит, закрывать их обязано что-то
+    другое, и это «другое» должно проверяться, иначе исключение — просто дыра.
+    """
+    import psycopg
+
+    # Запрос на таблицу очереди свой: у `django_q_ormq` роли оставлено право на
+    # колонку `id` (иначе не работает `insert ... returning`), поэтому `count(*)`
+    # там проходит законно, а закрыта именно полезная нагрузка. Проверять
+    # «count(*) падает» было бы проверкой не того, что закрыто.
+    forbidden = {
+        "django_q_ormq": "select payload from django_q_ormq",
+        "django_q_task": "select count(*) from django_q_task",
+        "django_q_schedule": "select count(*) from django_q_schedule",
+    }
+    assert set(forbidden) == QUEUE_TABLES, "список таблиц очереди разъехался"
+
+    for query in forbidden.values():
+        with as_app_user(db, USER_DIRECTOR) as conn:
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                with conn.transaction():
+                    conn.execute(query).fetchall()
+
+    # А поставить задачу роль обязана уметь: иначе фоновый расчёт не запустился бы.
+    with as_app_user(db, USER_DIRECTOR) as conn, pytest.raises(_Rollback):
+        with conn.transaction():
+            assert conn.execute(
+                "insert into django_q_ormq (key, payload, lock) "
+                "values ('t', 'x', now()) returning id"
+            ).fetchone()[0]
+            # Строку за собой не оставляем: исключение откатывает вложенную
+            # транзакцию, а сам тест на этом заканчивается успехом.
+            raise _Rollback()
 
 
 def test_no_domain_table_returns_rows_without_context(db):

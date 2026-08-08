@@ -19,12 +19,21 @@
 Утверждённый период не считается: отказ приходит словами до записи, а база
 держит тот же запрет триггером — см. `lifecycle`.
 
+<<<<<<< HEAD
 Замороженные строки (T027) пересчёт обходит стороной: спорный сотрудник не
 держит остальных и не переписывается сам.
 
 Чего здесь нет и не должно быть: утверждения, отката, ретро-дельты,
 следа расчёта (D025) — это T024–T026. Расчёт синхронный: 32 человека считаются
 мгновенно, очередь пришлось бы объяснять пользователю зря.
+=======
+Чего здесь нет и не должно быть: утверждения, отката, блокировок, ретро-дельты,
+следа расчёта (D025) — это T025–T027.
+
+Расчёт умеет рассказывать о ходе работы (`reporter`), но сам о нём ничего не
+знает: кому и куда рассказывать — дело `payrun.jobs`. Умолчание молчаливое,
+поэтому синхронный вызов ведёт себя ровно так же, как до появления очереди.
+>>>>>>> feat/payrun3
 """
 from __future__ import annotations
 
@@ -232,7 +241,25 @@ def check_ledgers(slips: list, visible_ledgers) -> list[str]:
     return used
 
 
-def _calculate_all(rules, cases: list[Case]) -> list:
+class Silent:
+    """Никому не рассказываем о ходе работы — поведение синхронного расчёта.
+
+    Умолчание намеренно молчаливое: человек, нажавший кнопку и ждущий ответа,
+    и так смотрит на результат. Рассказывать есть смысл только фоновой задаче,
+    и она приносит своего рассказчика (`payrun.jobs.Reporter`).
+    """
+
+    def say(self, stage: str, done: int = 0, total: int = 0) -> None:
+        pass
+
+
+# Как часто отмечаться на длинном этапе. Каждый человек — это отдельная
+# транзакция по второму соединению; на тридцати сотрудниках это ничего не
+# стоит, но на тысяче отметка на каждого была бы дороже самого расчёта.
+REPORT_EVERY = 5
+
+
+def _calculate_all(rules, cases: list[Case], reporter) -> list:
     """Посчитать всех, каждого по его правилам.
 
     Пресет собирается на пару «группа + человек»: переопределения этих двух
@@ -242,15 +269,28 @@ def _calculate_all(rules, cases: list[Case]) -> list:
     """
     shared = PayrollEngine(rules.base)
     result = []
-    for case in cases:
+    total = len(cases)
+    for number, case in enumerate(cases, start=1):
         preset = rules.preset(group_id=case.group_id, employee_id=case.employee_id)
         engine = shared if preset is rules.base else PayrollEngine(preset)
         result.append((case, engine.calculate(case.employee, case.timesheet)))
+        # Последний отмечается всегда: полоса, замершая на 28 из 30, выглядит
+        # как незаконченный расчёт, хотя он давно закончен.
+        if number % REPORT_EVERY == 0 or number == total:
+            reporter.say("Считаем сотрудников", done=number, total=total)
     return result
 
 
-def calculate_period(*, tenant_id: UUID, period: date, visible_ledgers) -> CalcOutcome:
-    """Посчитать месяц и сохранить результат. Повторный запуск даёт то же самое."""
+def calculate_period(
+    *, tenant_id: UUID, period: date, visible_ledgers, reporter=None
+) -> CalcOutcome:
+    """Посчитать месяц и сохранить результат. Повторный запуск даёт то же самое.
+
+    `reporter` рассказывает о ходе работы фоновой задаче. Он обязан писать по
+    **другому** соединению: всё, что записано внутри этой транзакции, снаружи не
+    видно до её конца, а прогресс нужен именно во время неё.
+    """
+    reporter = reporter or Silent()
     with transaction.atomic():
         tenant = Tenant.objects.filter(pk=tenant_id).first()
         if tenant is None:
@@ -261,14 +301,16 @@ def calculate_period(*, tenant_id: UUID, period: date, visible_ledgers) -> CalcO
         # же, сколько бы ни было других поводов, и человеку нужна именно она.
         refuse_if_approved(tenant_id, period)
 
+        reporter.say("Собираем табели и условия найма")
         rules = select_rules(tenant_id, tenant.country_code, period)
         cases = collect_cases(tenant_id, period)
         check_schemes(cases, rules.base)
         check_insured_base(cases, rules)
 
-        slips = _calculate_all(rules, cases)
+        slips = _calculate_all(rules, cases, reporter)
         ledgers = check_ledgers(slips, visible_ledgers)
 
+        reporter.say("Записываем ведомость", done=len(slips), total=len(slips))
         return _store(tenant_id, period, rules.code, slips, ledgers)
 
 

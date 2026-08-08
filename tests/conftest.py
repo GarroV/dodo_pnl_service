@@ -296,6 +296,14 @@ def web_env():
         os.environ["DATABASE_URL"] = dsn
         os.environ.setdefault("SECRET_KEY", "test-only-not-a-secret")
         os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
+        # Рабочего процесса очереди в прогоне тестов нет, поэтому стенд настроен
+        # как стенд без очереди: расчёт считается прямо в запросе (T024). Это не
+        # обход фонового пути, а его выключатель — тот самый, которым продукт
+        # переводится в синхронный режим на площадке без рабочего процесса.
+        # Сам фоновый путь проверяется в `test_payrun_jobs.py`: там задача
+        # запускается напрямую, а постановка в очередь — под
+        # `override_settings(PAYRUN_BACKGROUND=True)`.
+        os.environ["PAYRUN_BACKGROUND"] = "0"
 
         import django
         from django.test.utils import setup_test_environment, teardown_test_environment
@@ -374,6 +382,11 @@ def wipe_payruns(dsn: str) -> None:
             f"update payslip_freezes set released_at = now() "
             f"where tenant_id in {tenants} and released_at is null"
         )
+        # Задания фонового расчёта (T024) стоят рядом с расчётами и на `payruns`
+        # не ссылаются, поэтому вместе с ними не уходят. Незавершённое задание,
+        # оставшееся от соседнего теста, не даёт завести новое — этого требует
+        # частичный уникальный индекс `payrun_jobs_active_uniq`.
+        conn.execute(f"delete from payrun_jobs where tenant_id in {tenants}")
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
         conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")

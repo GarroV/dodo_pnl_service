@@ -15,14 +15,16 @@ from __future__ import annotations
 
 from psycopg.types import TypeInfo
 
-# Типы, созданные миграцией 0001_types. Массивы нужны не всем, но регистрация
-# дешевле, чем разбираться, почему поле стало строкой.
+# Типы, созданные миграцией 0001_types (и `payrun_job_status` — 0046_payrun_jobs).
+# Массивы нужны не всем, но регистрация дешевле, чем разбираться, почему поле
+# стало строкой.
 ENUM_TYPES = (
     "ledger",
     "payout_channel",
     "allocation_method",
     "period_status",
     "payrun_status",
+    "payrun_job_status",
     "rule_scope",
 )
 
