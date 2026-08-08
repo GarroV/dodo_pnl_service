@@ -292,7 +292,13 @@ const PLANTED = 9000;
      "-v", "ON_ERROR_STOP=1"],
     {
       cwd: new URL("..", import.meta.url).pathname,
-      env: { ...process.env, COMPOSE_PROJECT_NAME: "dodo-pnl-rep2" },
+      // Имя стенда — из окружения: зашитое привязывает сценарий к той машине,
+      // на которой его однажды написали, и на любой другой он падает не
+      // проверкой, а запуском.
+      env: {
+        ...process.env,
+        COMPOSE_PROJECT_NAME: process.env.COMPOSE_PROJECT_NAME || "dodo-pnl-rep2",
+      },
       input: sql, encoding: "utf8",
     },
   );
