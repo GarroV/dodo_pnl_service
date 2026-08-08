@@ -30,6 +30,8 @@ PAYRUN_STATUS = "payrun_status"
 # Состояние фоновой задачи расчёта. Тип создаёт миграция 0046_payrun_jobs.
 PAYRUN_JOB_STATUS = "payrun_job_status"
 RULE_SCOPE = "rule_scope"
+# Как партнёр ведёт правки задним числом. Тип создаёт миграция 0060.
+RETRO_MODE = "retro_mode"
 
 
 def now_default() -> models.Func:
@@ -96,6 +98,13 @@ class Tenant(models.Model):
     country_code = models.TextField()  # ISO 3166-1 alpha-2
     base_currency = models.TextField()  # валюта учёта, напр. RSD
     report_currency = models.TextField(db_default="EUR")
+    # Как партнёр ведёт правки задним числом (T026, D020). Настройка тенанта, а
+    # не переменная окружения: партнёры ведут учёт по-разному, а партнёрская и
+    # страновая специфика в этом продукте живёт в конфигурации, не в коде.
+    # `delta` — разница переносится в текущий период, `recalculate` — период
+    # открывается заново и пересчитывается. Права откатить период настройка не
+    # отбирает ни в одном значении: обратимость гарантирована отдельно (D021).
+    retro_mode = EnumField(db_type_name=RETRO_MODE, db_default="delta")
     created_at = models.DateTimeField(db_default=now_default())
 
     class Meta:
@@ -962,10 +971,80 @@ class PayComponent(models.Model):
     ledger = ledger_field()
     channel = EnumField(db_type_name=PAYOUT_CHANNEL, db_default="bank")
     taxable = models.BooleanField(db_default=True)
+    # Пусто — обычная сумма этого месяца. Заполнено — это разница за указанный
+    # закрытый месяц, перенесённая сюда (T026). Пометка живёт колонкой, а не
+    # знанием одного экрана: ведомость и строки P&L собираются из компонентов,
+    # и без неё любой следующий потребитель принял бы июньскую разницу за
+    # июльскую выплату.
+    retro_source_period = models.DateField(null=True, blank=True)
 
     class Meta:
         db_table = "pay_components"
         indexes = [
             models.Index("tenant", "payslip", name="pay_components_payslip_idx"),
             models.Index("tenant", "code", name="pay_components_code_idx"),
+        ]
+
+
+class RetroAdjustment(models.Model):
+    """Перенос разницы из закрытого месяца в текущий (T026).
+
+    **Это вход периода-получателя, а не строка его ведомости.** Пересчёт
+    пересобирает ведомость целиком (`calc._store` сносит строки и пишет заново),
+    поэтому дельта, приписанная к готовой ведомости, не пережила бы первого же
+    пересчёта. Хранится вход — материализуется в `pay_components` при расчёте
+    получателя, ровно так же, как часы табеля.
+
+    **Строка — на компонент, а не на человека.** Регистр учёта это свойство
+    компонента, и «разница ложится в тот же регистр» (D020) получается по
+    построению: правка, задевшая надбавку в официальном и часы в дополнительном,
+    даёт две строки в двух регистрах, и они не складываются ни на каком шаге.
+
+    **Отменяется, но не удаляется.** Пересчёт месяца-источника отменяет его
+    переносы триггером `payruns_retro_cancel` — иначе разница посчиталась бы
+    дважды. Отмена пометкой, а не удалением: история, которую можно стереть,
+    историей не является. Руками отмену не поставить — политика
+    `only_from_trigger` пропускает запись только изнутри триггера.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    # Закрытый месяц, за который посчитана разница, и месяц, куда она едет.
+    # Оба датами, а не ссылками на `payruns`: перенос переживает и пересчёт
+    # получателя, и отсутствие у него расчёта вовсе.
+    source_period = models.DateField()
+    target_period = models.DateField()
+    # db_constraint=False + DO_NOTHING по образцу `PayslipFreeze`: внешний ключ
+    # ставится руками с `on delete cascade`, чтобы перенос исчезал вместе с
+    # сотрудником средствами базы. Django каскад исполняет в Python, а сторож
+    # переноса прямое удаление отвергает — каскад он пропускает по глубине.
+    employee = models.ForeignKey(
+        Employee, on_delete=models.DO_NOTHING, db_column="employee_id", db_constraint=False
+    )
+    # Точка исходной строки: по ней управляющий видит перенос по своему человеку
+    # и не видит чужого.
+    unit = models.ForeignKey(
+        Unit, on_delete=models.SET_NULL, null=True, blank=True, db_column="unit_id",
+    )
+    code = models.TextField()
+    title = models.TextField()
+    # Разница, а не сумма: бывает отрицательной, если сегодняшние данные дают
+    # меньше, чем записано в закрытом месяце.
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    ledger = ledger_field()
+    channel = EnumField(db_type_name=PAYOUT_CHANNEL, db_default="bank")
+    taxable = models.BooleanField(db_default=True)
+    created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
+    # Пусто — перенос действует. Заполнено — источник пересчитали, и разница
+    # вошла в сам закрытый месяц; материализовать её ещё раз значило бы
+    # заплатить дважды.
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancelled_reason = models.TextField(db_default="", blank=True)
+
+    class Meta:
+        db_table = "retro_adjustments"
+        indexes = [
+            models.Index("tenant", "target_period", name="retro_target_idx"),
+            models.Index("tenant", "source_period", name="retro_source_idx"),
         ]
