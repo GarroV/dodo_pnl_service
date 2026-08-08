@@ -23,7 +23,6 @@ from __future__ import annotations
 import pytest
 
 from conftest import (
-    JUNE,
     USER_ACCOUNTANT,
     USER_DIRECTOR,
     USER_MANAGER,
