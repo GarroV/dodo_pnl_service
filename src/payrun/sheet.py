@@ -151,8 +151,15 @@ def assemble(cells: list[Cell]) -> Sheet:
     )
 
 
-def build_sheet(tenant_id: UUID, period: date) -> Sheet:
-    """Ведомость периода из базы. Фильтра по регистру нет — его ставит база."""
+def collect_cells(tenant_id: UUID, period: date) -> list[Cell]:
+    """Видимые суммы периода из базы. Фильтра по регистру нет — его ставит база.
+
+    Отделено от `build_sheet` затем, что ведомость показывается не только
+    целиком: разрез по регистру и выгрузка (блок `reports`) обязаны собираться
+    **из тех же самых сумм**, а не второй выборкой рядом. Две выборки одного и
+    того же расходятся молча — и тогда выгрузка отдаёт не то, что человек видел
+    на экране.
+    """
     # Модели импортируются здесь: всё выше — чистые функции, и настройки Django
     # ради них подниматься не должны.
     from core.models import PayComponent
@@ -163,7 +170,7 @@ def build_sheet(tenant_id: UUID, period: date) -> Sheet:
     # приложение выборку не сужает (D014).
     freezes = active_freezes(tenant_id, period)
 
-    cells = [
+    return [
         Cell(
             employee=f"{component.payslip.employee.last_name} "
                      f"{component.payslip.employee.first_name}".strip(),
@@ -184,4 +191,8 @@ def build_sheet(tenant_id: UUID, period: date) -> Sheet:
             tenant_id=tenant_id, payslip__payrun__period=period
         ).select_related("payslip__employee", "payslip__unit")
     ]
-    return assemble(cells)
+
+
+def build_sheet(tenant_id: UUID, period: date) -> Sheet:
+    """Ведомость периода целиком — всё, что видно этой роли."""
+    return assemble(collect_cells(tenant_id, period))

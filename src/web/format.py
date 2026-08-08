@@ -27,6 +27,16 @@ def ledger_title(value: str) -> str:
     return LEDGER_TITLES.get(value, value)
 
 
+# Разрез ведомости «все видимые регистры» (`reports.sheet.ALL`). Название
+# честное: «все» здесь — это все, что видно роли, а не все, что есть в базе.
+ALL_LEDGERS_TITLE = "Все регистры"
+
+
+def cut_title(value: str) -> str:
+    """Подпись кнопки переключателя разреза."""
+    return ALL_LEDGERS_TITLE if not value else ledger_title(value)
+
+
 def hours(value: Decimal | int | float | None) -> str:
     """Часы с двумя знаками: `176,00`. Пустое значение — прочерк, не ноль.
 
