@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import io
+import re
 from decimal import Decimal
 
 import openpyxl
@@ -91,6 +92,56 @@ def column(ws, header: str) -> list:
     return out
 
 
+SUMMARY_ROW = re.compile(r"<td>([^<]+)</td>\s*<td class=\"num[^\"]*\">(\d+)</td>")
+
+
+def summary(html: str) -> dict[str, int]:
+    """Сводка сверки числами, а не наличием подписи.
+
+    Подписи в сводке стоят всегда, включая нулевые строки: это её смысл —
+    человек должен видеть, что потерянных строк ноль, а не догадываться об
+    этом по отсутствию раздела. Значит проверка «подпись есть на странице»
+    не проверяет ничего и зеленеет при любом содержимом. Здесь читаются числа.
+    """
+    start = html.index("<th>Итог сверки</th>")
+    table = html[start:html.index("</table>", start)]
+    found = {label.strip(): int(count) for label, count in SUMMARY_ROW.findall(table)}
+    assert len(found) == 6, f"сводка сверки прочитана не целиком: {found}"
+    return found
+
+
+def withheld_totals(dsn: str) -> set[str]:
+    """Итоги расчёта так, как их напечатала бы страница, — глазами директора.
+
+    Ровно эти строки не имеет права встретиться на сверке роли, которой база
+    итогов не отдала: совпадение означало бы, что скрытая часть уехала на
+    экран. Снимаются ролью `app_user` под директором, а не владельцем схемы:
+    владельца политики не касаются, и набор был бы тот же при снятых.
+    """
+    import psycopg
+
+    from conftest import as_app_user
+    from core.db_types import register_enum_types
+    from core.management.commands.seed_dev import det_id
+    from web.format import money
+
+    with psycopg.connect(dsn) as conn:
+        register_enum_types(conn)
+        with as_app_user(conn, str(det_id("user", "director"))) as scoped:
+            rows = scoped.execute(
+                """select t.net, t.gross, t.contributions, t.total_cost
+                     from payslip_totals t
+                     join payslips p on p.id = t.payslip_id
+                     join payruns r on r.id = p.payrun_id
+                    where r.period = %s""",
+                (JUNE,),
+            ).fetchall()
+
+    # Ноль отбрасывается намеренно: он встречается в разметке сам по себе и
+    # объявил бы утечкой любую страницу.
+    return {money(value) for row in rows for value in row if value}
+
+
 def visible_total(dsn: str, user: str) -> Decimal:
     """Сколько база отдаёт этой роли — её же ролью, а не владельцем схемы."""
     import psycopg
@@ -124,32 +175,85 @@ def test_the_reconciliation_of_the_reference_table_matches(client, calculated_ju
     сошлось.
     """
     html = reconcile_page(client, "director")
+    counts = summary(html)
 
     assert "Сверка с таблицей бухгалтера" in html
-    assert "Есть в таблице, нет в расчёте" not in html, (
+    assert "Не разобрано в файле" not in html, "обезличенный файл разбирается целиком"
+    assert counts["Сошлось до копейки"] == 32, (
+        f"не все 32 строки эталонной таблицы сошлись с расчётом: {counts}"
+    )
+    assert counts["Разошлось"] == 0
+    assert counts["Разошлось на копейки (округление)"] == 0
+    assert counts["Есть в таблице, нет в расчёте"] == 0, (
         "директору видны все строки — терять их сверке негде"
     )
-    assert "Не разобрано в файле" not in html, "обезличенный файл разбирается целиком"
-    assert "Сошлось до копейки · 32" in html, (
-        "не все 32 строки эталонной таблицы сошлись с расчётом"
+    assert counts["Сверены только входы — деньги не сравнивались"] == 0, (
+        "директору отданы все итоги: сверять по одним входам ему нечего"
+    )
+    # Курьеры и строка исправления есть в сиде и не могут быть в таблице
+    # бухгалтера: она за другой месяц другой сети. Это не потеря, а разница
+    # наборов, и она названа числом, чтобы молчаливый рост был виден.
+    assert counts["Есть в расчёте, нет в таблице"] == 3, (
+        f"в расчёте сида ровно три человека сверх таблицы: {counts}"
+    )
+
+
+def test_the_reconciliation_never_reports_a_match_it_did_not_make(
+    client, calculated_june
+):
+    """Главная проверка T031 под ролью со скрытыми итогами.
+
+    Нето, бруто и взносы посчитаны по строке ведомости целиком, поэтому база
+    отдаёт их только роли, которой видны все регистры (T071). У бухгалтера их
+    нет — и сверка обязана сказать это прямо, а не отрапортовать совпадение.
+
+    Ловушка, ради которой тест написан: пустое `all()` даёт истину. Строка, в
+    которой нечего было сравнивать, без различения «сравнивали» и «сошлось»
+    попадала бы в сошедшиеся, и бухгалтер прочитал бы «сошлось до копейки» по
+    расчёту, которого он не видел.
+    """
+    html = reconcile_page(client, "accountant")
+    counts = summary(html)
+
+    assert counts["Сверены только входы — деньги не сравнивались"] == 32, (
+        f"итоги бухгалтеру не отданы — сверять по деньгам нечего: {counts}"
+    )
+    assert counts["Сошлось до копейки"] == 0, (
+        f"сверка объявила совпадением строки, деньги которых не сравнивала: {counts}"
+    )
+    assert counts["Разошлось"] == 0, (
+        f"несравнённое — не расхождение: сравнивать было нечего: {counts}"
+    )
+    assert "Всё сошлось до копейки" not in html, (
+        "сверка назвала себя чистой, не сверив ни одной суммы"
+    )
+    assert "Деньги не сравнивались ни по одной строке" in html, (
+        "подвал обязан сказать, что суммы не сверялись, а не показать ноль"
     )
 
 
 def test_the_reconciliation_never_shows_our_numbers_for_a_row_it_cannot_see(
-    client, calculated_june
+    client, web_env, calculated_june
 ):
-    """Главная проверка D023 на сверке: по невидимой строке мы молчим.
+    """Главная проверка D023 на сверке: скрытый регистр не выдаётся вычитанием.
 
-    Бухгалтеру видны только полностью официальные строки. По остальным сверка
-    обязана сказать «нет в расчёте» и не показать ни суммы, ни разницы: разница
-    между итогом файла и суммой видимых компонентов — это и есть скрытый
-    регистр, выданный вычитанием.
+    Итог файла минус сумма видимых компонентов — это ровно скрытая часть.
+    Поэтому по строке без отданных итогов не показывается **ни одного нашего
+    числа**: ни суммы, ни разницы. Проверяется самими числами расчёта, а не
+    наличием раздела на странице.
     """
     html = reconcile_page(client, "accountant")
 
-    assert "Есть в таблице, нет в расчёте" in html
     for word in HIDDEN_FROM_ACCOUNTANT:
         assert word not in html, f"на странице сверки бухгалтера есть «{word}»"
+
+    hidden = withheld_totals(web_env)
+    assert len(hidden) >= 30, f"нечего проверять: итогов в расчёте {len(hidden)}"
+    for shown in hidden:
+        assert shown not in html, (
+            f"на сверке бухгалтера стоит наш итог {shown} по строке, "
+            f"итоги которой база ему не отдала"
+        )
 
 
 def test_the_reconciliation_refuses_a_file_that_is_not_a_workbook(client, calculated_june):

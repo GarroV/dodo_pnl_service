@@ -61,17 +61,27 @@
         <td class="num {% if result.rounding %}strong{% else %}muted{% endif %}">{{ result.rounding }}</td></tr>
     <tr><td>Разошлось</td>
         <td class="num {% if result.mismatched %}strong{% else %}muted{% endif %}">{{ result.mismatched }}</td></tr>
+    <tr><td>Сверены только входы — деньги не сравнивались</td>
+        <td class="num {% if result.inputs_only %}strong{% else %}muted{% endif %}">{{ result.inputs_only }}</td></tr>
     <tr><td>Есть в таблице, нет в расчёте</td>
         <td class="num {% if result.only_in_file %}strong{% else %}muted{% endif %}">{{ result.only_in_file|length }}</td></tr>
     <tr><td>Есть в расчёте, нет в таблице</td>
         <td class="num {% if result.only_in_run %}strong{% else %}muted{% endif %}">{{ result.only_in_run|length }}</td></tr>
   </tbody>
   <tfoot>
+    {% if totals.any %}
     <tr>
       <td>К выплате по сверенным строкам: в таблице {{ totals.expected }},
           в расчёте {{ totals.actual }}</td>
       <td class="num {% if totals.off %}off{% endif %}">{{ totals.diff }}</td>
     </tr>
+    {% else %}
+    <tr>
+      <td colspan="2">Деньги не сравнивались ни по одной строке: итоги расчёта
+          вам не отданы. Ноль в такой сумме означал бы совпадение, поэтому
+          её здесь нет.</td>
+    </tr>
+    {% endif %}
   </tfoot>
 </table>
 
@@ -137,6 +147,36 @@
       <td class="num">{{ amount.diff }}</td>
     </tr>
     {% endfor %}{% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if inputs_lines %}
+<h2>Сверены только входы · {{ inputs_lines|length }}</h2>
+<p class="sub">
+  Итоги расчёта по этим строкам вам не отданы: нето, бруто и взносы посчитаны
+  по строке ведомости целиком, и база показывает их только роли, которой видны
+  все регистры учёта. Поэтому <strong>деньги здесь не сравнивались</strong> — ни
+  одного нашего числа по ним не показано, и совпадением это не считается.
+  Сверено то, что от регистра не зависит: часы, ставка, коэффициент. Расхождение
+  чаще всего сидит именно там.
+</p>
+<table class="sheet">
+  <thead><tr><th>Лист</th><th>Кто</th><th>Что со входами</th></tr></thead>
+  <tbody>
+    {% for line in inputs_lines %}
+    <tr {% if line.causes %}class="off"{% endif %}>
+      <td>{{ line.sheet }}</td>
+      <td>{{ line.name }}</td>
+      <td>
+        {% if line.causes %}
+        <ul class="why">{% for cause in line.causes %}<li>{{ cause }}</li>{% endfor %}</ul>
+        {% else %}
+        <span class="why">Входы сошлись с таблицей.</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
   </tbody>
 </table>
 {% endif %}

@@ -117,6 +117,12 @@ def _line_view(line, hour_titles) -> dict:
     return {
         "name": line.name,
         "sheet": line.sheet,
+        # `compared` — не то же, что `matched`, и разделять их обязательно.
+        # Строка, деньги которой роли не отданы (T071), не сошлась и не
+        # разошлась: сравнивать было нечего. Без этого различения она попадала
+        # бы в «Разошлось», где у неё не показывается ни одного числа — то есть
+        # без имени и с подписью про расхождение правила расчёта.
+        "compared": line.compared,
         "matched": line.matched,
         "rounding_only": line.rounding_only,
         "amounts": amounts,
@@ -139,19 +145,25 @@ def _report(request, period, *, result=None, error=None, status=200):
             "title": month_title(period.period),
             "error": error,
             "result": result,
-            # Разделено на три списка здесь, а не условиями в разметке: у
-            # разошедшегося, копеечного и сошедшегося разный вес, и читают их
-            # в разном порядке. Смешанная таблица заставляла бы искать глазами
-            # то единственное, ради чего сверку и открыли.
-            "off_lines": [line for line in lines if not line["matched"]
-                          and not line["rounding_only"]],
+            # Разделено на четыре списка здесь, а не условиями в разметке: у
+            # разошедшегося, копеечного, несравнённого и сошедшегося разный
+            # вес, и читают их в разном порядке. Смешанная таблица заставляла
+            # бы искать глазами то единственное, ради чего сверку и открыли.
+            "off_lines": [line for line in lines if line["compared"]
+                          and not line["matched"] and not line["rounding_only"]],
             "rounding_lines": [line for line in lines if line["rounding_only"]],
+            "inputs_lines": [line for line in lines if not line["compared"]],
             "matched_lines": [line for line in lines if line["matched"]],
             "totals": {
                 "expected": money(result.total_expected) if result else "",
                 "actual": money(result.total_actual) if result else "",
                 "diff": money(result.total_diff) if result else "",
                 "off": bool(result and result.total_diff != 0),
+                # Итог по нулю сверенных строк — это не «сошлось в ноль».
+                # Подвал «в таблице 0.00, в расчёте 0.00, разница 0.00»
+                # читается как совпадение, хотя не сравнивалось ничего, и
+                # именно так сверка соврала бы роли со скрытыми итогами.
+                "any": bool(result and any(line.compared for line in result.lines)),
             },
         },
         status=status,
