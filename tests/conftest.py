@@ -361,6 +361,11 @@ def wipe_payruns(dsn: str) -> None:
                 f"update payruns set status = 'reopened' "
                 f"where tenant_id in {tenants} and status = 'approved'"
             )
+        # Задания фонового расчёта (T024) стоят рядом с расчётами и на `payruns`
+        # не ссылаются, поэтому вместе с ними не уходят. Незавершённое задание,
+        # оставшееся от соседнего теста, не даёт завести новое — этого требует
+        # частичный уникальный индекс `payrun_jobs_active_uniq`.
+        conn.execute(f"delete from payrun_jobs where tenant_id in {tenants}")
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
         conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")
