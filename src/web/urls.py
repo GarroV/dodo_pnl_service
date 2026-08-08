@@ -27,6 +27,11 @@ urlpatterns = [
     # строка однозначно определяет период сама.
     path("payslips/<uuid:payslip_id>/freeze/", views.payslip_freeze, name="payslip-freeze"),
     path("payslips/<uuid:payslip_id>/release/", views.payslip_release, name="payslip-release"),
+    # След расчёта строки (T029, D025). Адрес по строке, как в контракте блока:
+    # объясняется сумма конкретной строки ведомости, а не «период вообще».
+    # Разрез приезжает тем же `?ledger=`, что у ведомости, — человек приходит
+    # сюда из разреза и обязан остаться в нём.
+    path("payslips/<uuid:payslip_id>/trace/", views.payslip_trace, name="payslip-trace"),
     # Вход: логин с паролем, выход, смена своего пароля.
     path("login/", views.login_page, name="login"),
     path("logout/", views.logout_page, name="logout"),

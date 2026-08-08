@@ -441,8 +441,7 @@ def sheet_rows(client, user: str) -> list[tuple[str, str, Decimal]]:
     login_as(client, user)
     html = body(client.get(period_url(client)))
     found = re.findall(
-        r'href="(/payslips/[0-9a-f-]+/trace/[^"]*)"[^>]*>[^<]*</a>\s*</td>'
-        r'.*?<td class="num strong">([^<]+)</td>',
+        r'<td class="num strong"><a class="trace" href="([^"]+)"[^>]*>([^<]+)</a>',
         html, re.S,
     )
     assert found, "в ведомости нет ни одной ссылки на след расчёта"
@@ -498,3 +497,19 @@ def test_the_page_says_the_trace_is_rebuilt_and_whether_it_still_agrees(
     html = body(client.get(url))
     assert "пересобран" in html, "экран молчит о том, что след не хранится"
     assert "сходится" in html, "экран не говорит, сошёлся ли след с сохранённой суммой"
+
+
+def test_the_rounding_is_the_same_one_that_wrote_the_row(web_env):
+    """`reports.trace.to_cents` обязан совпадать с `payrun.calc.money`.
+
+    Округлений в продукте два — второе завелось затем, чтобы `reports` остался
+    чистым Python без Django. Разойдись они, след «не сходился» бы на копейку
+    у всех подряд, и объяснить это было бы нечем. Поэтому равенство проверено,
+    а не обещано комментарием.
+    """
+    from payrun.calc import money
+    from reports.trace import to_cents
+
+    for value in ("0.005", "1.005", "-1.005", "2.344", "2.345", "1022.727272727272727",
+                  "65296", "0.014999999"):
+        assert to_cents(Decimal(value)) == money(Decimal(value)), value

@@ -8,6 +8,8 @@
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -26,6 +28,7 @@ from core.models import Calendar, Payrun, Payslip, Period, Timesheet
 from payrun import freezing, jobs, lifecycle, retro
 from payrun.errors import PayrunRefused
 from reports.sheet import build_slice
+from reports.trace import TraceNotFound, build_trace
 
 from . import auth, permissions
 from .format import cut_title, hours, ledger_title, money
@@ -107,6 +110,17 @@ def first_of_payslip(payslip_id, seen: set) -> bool:
         return False
     seen.add(payslip_id)
     return True
+
+
+def trace_url(row) -> str:
+    """Адрес следа строки ведомости (T029). Пусто — объяснять нечего.
+
+    Строки без `payslip_id` в ведомости быть не должно, но ссылка на «след
+    ничего» выглядела бы как обещание, поэтому её просто нет.
+    """
+    if row.payslip_id is None:
+        return ""
+    return f"{reverse('payslip-trace', args=[row.payslip_id])}?ledger={row.ledger}"
 
 
 def cut_url(period: Period, code: str) -> str:
@@ -240,6 +254,11 @@ def period_page(
                         "frozen": row.frozen,
                         "freeze_reason": row.freeze_reason,
                         "show_action": first_of_payslip(row.payslip_id, seen_payslips),
+                        # След расчёта строки (T029). Разрез в ссылке — регистр
+                        # самой строки: строка ведомости это пара «сотрудник ×
+                        # регистр», и объяснять её итог надо тем же срезом,
+                        # иначе след не сойдётся с числом, по которому кликнули.
+                        "trace_url": trace_url(row),
                         # Строка разницы обязана объяснить себя словами: без
                         # месяца-источника это непонятная сумма в чужом месяце.
                         "is_retro": row.is_retro,
@@ -636,6 +655,153 @@ def payslip_release(request, payslip_id):
         run=lambda payslip, who: freezing.release(payslip, actor_id=who.user_id),
         done_flag="released",
         error_title="Заморозка не снята.",
+    )
+
+
+# --- след расчёта строки (T029) ----------------------------------------------
+
+
+# Подписи производных величин. Здесь, а не в `reports`: там данные, тут слова —
+# та же граница, что у названий регистров и формата чисел (T028).
+DERIVED_TITLES = {
+    "gross": "Бруто",
+    "tax": "Налог",
+    "contributions": "Взносы",
+    "total_cost": "Полная стоимость",
+}
+
+# Как назвать вход шага по-человечески. Ключи движка английские и стабильные —
+# перевод их дело интерфейса, а не следа (см. `payroll.trace.TraceStep`).
+INPUT_TITLES = {
+    "hours": "часов",
+    "rate": "ставка за час",
+    "pay_percent": "процент оплаты",
+    "floor": "минимум за час",
+    "hour_types": "типы часов",
+    "prorate_by": "пропорция",
+    "amount_per_norm": "за полную норму",
+    "worked_days": "отработано дней",
+    "norm_days": "рабочих дней в месяце",
+    "worked_hours": "отработано часов",
+    "norm_hours": "норма часов",
+    "day_hours": "часов в рабочем дне",
+    "method": "способ",
+    "base": "база",
+    "insured_hours": "база взносов, часов",
+}
+
+# Откуда приехало правило: чьё это решение — страны, партнёра, группы или
+# человека. «input» — не правило вовсе, а число, введённое руками.
+LEVEL_TITLES = {
+    "country": "правило страны",
+    "tenant": "переопределение партнёра",
+    "group": "переопределение группы",
+    "employee": "переопределение по сотруднику",
+    "input": "введено руками",
+}
+
+# Порядок входов на экране — как в формуле, слева направо: часы × ставка ×
+# процент. Прочие идут следом по алфавиту, чтобы не прыгали от шага к шагу.
+INPUT_ORDER = ["hours", "rate", "pay_percent", "floor", "amount_per_norm"]
+
+
+def input_pairs(values: dict) -> list[dict]:
+    """Входы шага в том порядке, в котором по ним повторяют сумму на калькуляторе."""
+    def key(name: str):
+        return (INPUT_ORDER.index(name) if name in INPUT_ORDER else len(INPUT_ORDER), name)
+
+    pairs = []
+    for name in sorted(values, key=key):
+        value = values[name]
+        if isinstance(value, list):
+            shown = ", ".join(str(item) for item in value)
+        elif isinstance(value, Decimal):
+            shown = hours(value) if name.endswith(("hours", "days")) else money(value)
+        else:
+            shown = str(value)
+        pairs.append({"title": INPUT_TITLES.get(name, name), "value": shown})
+    return pairs
+
+
+def trace_step(step) -> dict:
+    """Шаг для показа. Расхождение с сохранённым не прячется, а называется."""
+    return {
+        "code": step.code,
+        "title": step.title or step.code,
+        "amount": money(step.amount),
+        "ledger": ledger_title(step.ledger) if step.ledger else "",
+        "inputs": input_pairs(step.inputs),
+        "level": LEVEL_TITLES.get(step.level, step.level),
+        "differs": step.differs,
+        # Сохранённое показывается, только когда оно отличается: одинаковое
+        # число во второй колонке — шум, из-за которого перестают замечать
+        # разное.
+        "stored": money(step.stored) if step.differs and step.stored is not None else "",
+        "appeared": step.stored is None,
+    }
+
+
+def period_url_for(period, tenant_id, cut: str) -> str:
+    """Ссылка назад — на ту же ведомость и в тот же разрез, из которого пришли."""
+    row = Period.objects.filter(tenant_id=tenant_id, period=period).first() if period else None
+    if row is None:
+        return reverse("periods")
+    base = reverse("period", args=[row.id])
+    return base if not cut else f"{base}?ledger={cut}"
+
+
+@login_required
+def payslip_trace(request, payslip_id):
+    """«Как получилась эта сумма»: шаги расчёта одной строки ведомости.
+
+    Экран **пересобирает** след по сегодняшним правилам — хранения следа в
+    продукте пока нет (issue #48, T056). Поэтому он не только показывает шаги,
+    но и говорит, сошлись ли они с сохранённой суммой: показать пересчёт молча
+    значило бы выдать сегодняшние правила за те, которыми считали.
+    """
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        raise Http404("строка ведомости не найдена")
+
+    try:
+        view = build_trace(
+            who.tenant_id, payslip_id, who.visible_ledgers, request.GET.get("ledger", "")
+        )
+    except TraceNotFound as missing:
+        # Чужая строка и несуществующая отвечают одинаково: иначе перебором
+        # адресов узнаётся, что строка есть и просто не видна.
+        raise Http404("строка ведомости не найдена") from missing
+
+    return render(
+        request,
+        "web/trace.html",
+        {
+            "employee": view.employee,
+            "unit": view.unit,
+            "title": month_title(view.period) if view.period else "",
+            "back_url": period_url_for(view.period, who.tenant_id, view.cut),
+            "cut_title": cut_title(view.cut) if view.cut else "",
+            "steps": [trace_step(step) for step in view.steps],
+            "derived": [
+                {**trace_step(step), "title": DERIVED_TITLES.get(step.kind, step.title)}
+                for step in view.derived
+            ],
+            "carried": [
+                {
+                    "title": line.title,
+                    "amount": money(line.amount),
+                    "ledger": ledger_title(line.ledger),
+                    "source": retro.month_title(line.source_period),
+                }
+                for line in view.carried
+            ],
+            "traced_total": money(view.traced_total),
+            "stored_total": money(view.stored_total),
+            "row_total": money(view.row_total),
+            "agrees": view.agrees,
+            "error": view.error,
+            "approved": view.approved,
+        },
     )
 
 

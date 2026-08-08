@@ -363,7 +363,14 @@
         {% endif %}
       </td>
       {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
-      <td class="num strong">{{ row.total }}</td>
+      {% comment %}
+      Итог строки — ссылка на след расчёта (T029): «откуда это число» спрашивают
+      именно про него. Отдельной колонкой ссылку не ставим — ведомость едва
+      уместилась в 1440 (см. журнал блока), и ещё одна колонка вернула бы тот
+      самый перелив, который там лечили.
+      {% endcomment %}
+      <td class="num strong">{% if row.trace_url %}<a class="trace" href="{{ row.trace_url }}"
+        title="Как получилась эта сумма">{{ row.total }}</a>{% else %}{{ row.total }}{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>

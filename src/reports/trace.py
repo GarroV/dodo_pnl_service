@@ -213,10 +213,14 @@ def trace_row(
         )
 
     # Производные величины — про строку целиком, а не про её половину. Поэтому
-    # их нет ни при неполной видимости, ни в разрезе.
+    # их нет ни при неполной видимости, ни в разрезе, который **что-то сужает**.
+    # Разрез строки, у которой регистр всего один, не сужает ничего: человек
+    # пришёл сюда по ссылке из своей строки, и лишать его бруто из-за формы
+    # ссылки было бы наказанием за путь, а не защитой.
     all_ledgers = {component.ledger for component in slip.components} | {
         ledger for _code, ledger in stored
     }
+    narrowed = chosen != ALL and row_ledgers != {chosen}
     derived = (
         [
             Step(
@@ -227,7 +231,7 @@ def trace_row(
             for step in slip.trace
             if step.contributes_to != NET
         ]
-        if all_ledgers <= visible_ledgers and chosen == ALL
+        if all_ledgers <= visible_ledgers and not narrowed
         else []
     )
 
@@ -296,6 +300,15 @@ def build_trace(
             continue
         key = (component.code, component.ledger)
         stored[key] = stored.get(key, Decimal(0)) + component.amount
+
+    # Ни одной видимой суммы — значит и строки для этой роли нет. Ответ обязан
+    # быть тем же, что у несуществующей строки: страница с именем человека и
+    # словами «шагов, доступных вашей роли, нет» сообщала бы, что у него есть
+    # ведомость в чужом регистре. Это тот самый «след» из D023, и найдено это
+    # было ровно так — тестом, который сравнил два ответа.
+    seen = {ledger for _code, ledger in stored} | {line.ledger for line in carried}
+    if not seen & set(visible_ledgers or []):
+        raise TraceNotFound("строка ведомости не найдена")
 
     name = f"{row.employee.last_name} {row.employee.first_name}".strip()
     unit = row.unit.code if row.unit_id else ""
