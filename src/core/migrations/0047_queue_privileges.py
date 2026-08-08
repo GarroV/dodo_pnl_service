@@ -55,7 +55,7 @@ grant select, insert, update, delete on {", ".join(TABLES)} to app_user;
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("core", "0044_payrun_jobs"),
+        ("core", "0046_payrun_jobs"),
         # Таблицы очереди должны уже существовать: иначе revoke не на что выдавать.
         ("django_q", "0019_alter_task_options_alter_ormq_key_alter_ormq_lock_and_more"),
     ]

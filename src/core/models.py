@@ -27,7 +27,7 @@ PAYOUT_CHANNEL = "payout_channel"
 ALLOCATION_METHOD = "allocation_method"
 PERIOD_STATUS = "period_status"
 PAYRUN_STATUS = "payrun_status"
-# Состояние фоновой задачи расчёта. Тип создаёт миграция 0044_payrun_jobs.
+# Состояние фоновой задачи расчёта. Тип создаёт миграция 0046_payrun_jobs.
 PAYRUN_JOB_STATUS = "payrun_job_status"
 RULE_SCOPE = "rule_scope"
 

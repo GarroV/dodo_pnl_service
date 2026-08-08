@@ -87,7 +87,11 @@ drop index if exists payrun_jobs_active_uniq;
 
 
 class Migration(migrations.Migration):
-    dependencies = [("core", "0043_payrun_journal_cascade")]
+    dependencies = [
+        # Лист миграций на момент вливания master: без этой зависимости граф
+        # разошёлся бы на два листа, и схема не накатилась бы вовсе.
+        ("core", "0044_merge_20260808_1149"),
+    ]
 
     operations = [
         # Тип раньше таблицы: колонка status на нём и стоит.
