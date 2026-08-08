@@ -58,6 +58,51 @@
 <p class="note">{{ edit_denied }}</p>
 {% endif %}
 
+{% if notice %}
+<div class="alert">{{ notice }}</div>
+{% endif %}
+
+{% comment %}
+Закрытие часов по точке (T022). Точка закрывается отдельно от соседних: смысл
+действия в том, чтобы управляющий не ждал всю сеть, а спорная точка не держала
+остальные. Панель строится из точек, показанных на самой сетке: кнопка, которой
+нечего закрывать, читалась бы как поломка.
+{% endcomment %}
+{% if units %}
+<section class="units">
+  {% for unit in units %}
+    <div class="unit {% if unit.closed %}is-closed{% endif %}">
+      <span class="unit-code">{{ unit.code }}</span>
+      <span class="hint">{{ unit.rows }} чел.</span>
+      {% if unit.closed %}
+        <span class="unit-state closed">часы закрыты {{ unit.closed_at|date:"d.m.Y H:i" }}</span>
+        {% if can_close %}
+        <form method="post" action="{% url 'timesheet-reopen' period.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="unit" value="{{ unit.unit_id }}">
+          <button type="submit" class="secondary">Открыть заново</button>
+        </form>
+        {% endif %}
+      {% else %}
+        <span class="unit-state">часы открыты</span>
+        {% if can_close %}
+        <form method="post" action="{% url 'timesheet-close' period.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="unit" value="{{ unit.unit_id }}">
+          <button type="submit">Закрыть часы точки</button>
+        </form>
+        {% endif %}
+      {% endif %}
+    </div>
+  {% endfor %}
+  {% comment %}
+  Права нет — кнопки нет, но молчать об этом нельзя: исчезнувшее без объяснения
+  действие читается как поломка продукта, а не как запрет (T064).
+  {% endcomment %}
+  {% if not can_close %}<p class="note">{{ close_denied }}</p>{% endif %}
+</section>
+{% endif %}
+
 {% if can_edit %}
 {% comment %}
 Загрузка привычной таблицы — второй равноправный путь ввода часов рядом с
@@ -122,7 +167,13 @@
             не подменяет в этой ячейке, иначе сервер вырывал бы поле из-под
             курсора. Итоги приходят подменой вне цели (см. _totals.html).
             {% endcomment %}
-            {% if can_edit %}
+            {% comment %}
+            Часы закрытой точки показываются числами, а не полями (T022): поле,
+            которое всё равно не примет ввод, приглашает в себя щёлкнуть и
+            печатать, а отказ приходит уже после набора. Проверку в `cell` это
+            не отменяет — точку могли закрыть после того, как страница открыта.
+            {% endcomment %}
+            {% if can_edit and not row.closed %}
             <td class="cellbox">
               <input class="cell" type="text" inputmode="decimal" name="hours"
                      value="{{ row.cells|get:column.code|cell_value }}"

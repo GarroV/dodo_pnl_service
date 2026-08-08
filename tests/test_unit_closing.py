@@ -26,8 +26,8 @@ import psycopg
 import pytest
 
 from conftest import (
-    JUNE,
     JULY,
+    JUNE,
     T1,
     T2,
     U_BG1,
@@ -77,7 +77,7 @@ def close_unit(conn, unit_id: str, period: str = JUNE, tenant: str = T1) -> str:
 def write_hours(conn, timesheet_id: str, hours: str = "12.00") -> None:
     conn.execute(
         "update timesheets set hours = %s::jsonb where id = %s",
-        ('{"regular": "%s"}' % hours, timesheet_id),
+        (f'{{"regular": "{hours}"}}', timesheet_id),
     )
 
 

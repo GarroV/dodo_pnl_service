@@ -19,12 +19,14 @@ from __future__ import annotations
 # бы, что интерфейс обещает не то, что позволяет база.
 TIMESHEET_EDIT = "timesheet.edit"
 PAYRUN_CALCULATE = "payrun.calculate"
+UNIT_CLOSE = "unit.close"
 
 # Что показать человеку. Отказ называет само действие, а не код права: «нет
 # payrun.calculate» — сообщение для разработчика, а не для бухгалтера.
 TITLES = {
     TIMESHEET_EDIT: "Правка табеля",
     PAYRUN_CALCULATE: "Расчёт периода",
+    UNIT_CLOSE: "Закрытие часов по точке",
 }
 
 
