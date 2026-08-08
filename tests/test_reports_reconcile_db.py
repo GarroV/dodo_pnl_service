@@ -110,6 +110,28 @@ def summary(html: str) -> dict[str, int]:
     return found
 
 
+CELL = re.compile(r"<td[^>]*>(.*?)</td>", re.S)
+TAG = re.compile(r"<[^>]+>")
+
+
+def section_rows(html: str, heading: str) -> list[list[str]]:
+    """Строки таблицы под заголовком — то, что человек действительно видит.
+
+    Сводку считает ядро сверки, а разделы раскладывает шаблон, и разойтись они
+    могут молча: сводка скажет «разошлось 0», а на экране будут висеть те же
+    строки в разделе «Разошлось» — без единого числа, а значит и без имени,
+    потому что имя стоит в первой ячейке первого числа. Проверено порчей:
+    проверка одной сводки такую перестановку не ловит.
+    """
+    start = html.index(f"<h2>{heading}")
+    table = html[start:html.index("</table>", start)]
+    body_at = table.index("<tbody>")
+    return [
+        [TAG.sub(" ", cell).strip() for cell in CELL.findall(row)]
+        for row in table[body_at:].split("<tr")[1:]
+    ]
+
+
 def withheld_totals(dsn: str) -> set[str]:
     """Итоги расчёта так, как их напечатала бы страница, — глазами директора.
 
@@ -230,6 +252,19 @@ def test_the_reconciliation_never_reports_a_match_it_did_not_make(
     assert "Деньги не сравнивались ни по одной строке" in html, (
         "подвал обязан сказать, что суммы не сверялись, а не показать ноль"
     )
+
+    # Сводка и разделы считаются в разных местах и расходятся молча. Раздел
+    # «Разошлось» с этими строками — не косметика: имя в нём стоит в ячейке
+    # первого показанного числа, а чисел по такой строке нет ни одного, и
+    # бухгалтер получил бы 32 безымянные строки с подписью про правило расчёта.
+    assert "<h2>Разошлось</h2>" not in html, (
+        "несравнённые строки показаны как расхождение"
+    )
+    rows = section_rows(html, "Сверены только входы")
+    assert len(rows) == 32, f"в разделе {len(rows)} строк вместо 32"
+    for sheet, name, what in rows:
+        assert name, f"строка раздела без имени: {sheet!r} {what!r}"
+        assert what, f"строка {name!r} ничего не говорит про входы"
 
 
 def test_the_reconciliation_never_shows_our_numbers_for_a_row_it_cannot_see(
