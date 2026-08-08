@@ -17,7 +17,11 @@ x-app-env: &app-env
   # Внутри сети compose база — это хост db на своём обычном порту.
   # DATABASE_URL из .env описывает путь с хоста (localhost:POSTGRES_HOST_PORT)
   # и нужен для pytest и manage.py из venv, а не контейнеру.
-  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  #
+  # Роль здесь — роль ПРОДУКТА. Схему ею не накатывают: миграции идут отдельной
+  # службой `migrate` ролью владельца схемы (T058). Локально обе роли совпадают,
+  # на площадке — нет, и в этом весь смысл разделения.
+  DATABASE_URL: postgresql://${APP_DB_USER:-${POSTGRES_USER}}:${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DB}
   SECRET_KEY: ${SECRET_KEY:?задайте SECRET_KEY в .env}
   DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
   DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
@@ -76,24 +80,67 @@ services:
       retries: 20
     restart: unless-stopped
 
-  app:
+  # Схема. Отдельная одноразовая служба, а не команда приложения на старте (T058).
+  #
+  # Почему так, а не `migrate && runserver` в контейнере приложения, как было
+  # раньше. Роль продукта (`app_user` и логин-роль, которой она выдана) намеренно
+  # не имеет права на DDL: на этом стоит разграничение доступа, ослаблять её
+  # нельзя. Пока приложение ходило в базу владельцем схемы, `migrate` на старте
+  # проходил и разницы не было видно; на площадке, где роли разведены, первая же
+  # новая миграция уронила бы контейнер приложения, и выглядело бы это как
+  # «продукт не стартует» (issue #50, найдено блоком db при T052).
+  #
+  # Теперь схему накатывает роль, которая на это уполномочена: MIGRATION_DB_USER
+  # (владелец схемы). Приложение и рабочий процесс стартуют только после того,
+  # как эта служба завершилась успешно — `service_completed_successfully`.
+  # Ею же выполняются разовые работы обслуживания, которым нужны права владельца:
+  #     docker compose run --rm migrate python manage.py seed_dev
+  migrate:
     build:
       context: .
       dockerfile: Dockerfile
+    # Один образ на все три службы, а не три одинаковых. Иначе частичная
+    # пересборка (`docker compose build app`) оставляет схему и продукт на
+    # разных сборках кода — молча: контейнеры поднимутся, а миграции будут
+    # накатываться старым образом. Поймано фактически при проверке T058.
+    # Имя тега включает имя проекта: параллельные рабочие копии не должны
+    # перетирать образы друг другу (issue #51).
+    image: ${COMPOSE_PROJECT_NAME:-dodo-pnl}-app
     depends_on:
       db:
         # Именно service_healthy, а не service_started: контейнер базы отвечает
         # раньше, чем сам Postgres готов, и миграции падали бы на старте.
         condition: service_healthy
+    environment:
+      <<: *app-env
+      # Единственное отличие от окружения продукта — роль подключения. Остальное
+      # берётся из общего куска, чтобы списки переменных не разъезжались.
+      DATABASE_URL: postgresql://${MIGRATION_DB_USER:-${POSTGRES_USER}}:${MIGRATION_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DB}
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    # Одноразовая работа: перезапускать её нельзя, иначе `docker compose up`
+    # никогда не дождётся её завершения.
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Тот же образ, что у службы migrate, — см. комментарий там.
+    image: ${COMPOSE_PROJECT_NAME:-dodo-pnl}-app
+    depends_on:
+      migrate:
+        # Не «база жива», а «схема накатана»: без этого приложение поднялось бы
+        # на старой схеме и падало бы на отсутствующих колонках.
+        condition: service_completed_successfully
     environment: *app-env
     ports:
       # Слева порт на хосте (APP_PORT), справа — всегда 8000 внутри контейнера.
       - "${APP_PORT:?задайте APP_PORT в .env}:8000"
-    # Миграции накатываются на старте: они идемпотентны, а альтернатива —
-    # отдельный шаг, который однажды забудут и получат продукт на старой схеме.
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py runserver 0.0.0.0:8000"
+    # Только сервер. Миграции отсюда убраны сознательно — см. службу `migrate`
+    # выше: роль продукта права на DDL не имеет и иметь не должна. Забыть о
+    # схеме при этом невозможно: приложение не стартует, пока `migrate` не
+    # завершится успешно.
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
     healthcheck:
       # Проверка ходит и в веб, и в базу — см. docker/healthcheck.py, там
       # объяснено, почему проверки только порта недостаточно.
@@ -115,12 +162,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Тот же образ, что у службы migrate, — см. комментарий там.
+    image: ${COMPOSE_PROJECT_NAME:-dodo-pnl}-app
     depends_on:
-      app:
-        # Не просто «база готова», а «приложение живо»: схему накатывает веб, и
-        # рабочий процесс, запущенный раньше, падал бы на отсутствующих таблицах
-        # очереди и перезапускался, пока не повезёт.
-        condition: service_healthy
+      # Схему накатывает служба `migrate`, а не веб (T058). Рабочий процесс,
+      # запущенный раньше неё, падал бы на отсутствующих таблицах очереди и
+      # перезапускался, пока не повезёт, — поэтому ждём именно её завершения,
+      # а не живости приложения.
+      migrate:
+        condition: service_completed_successfully
     environment: *app-env
     command: ["python", "manage.py", "qcluster"]
     healthcheck:
