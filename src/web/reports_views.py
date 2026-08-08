@@ -113,18 +113,24 @@ def _amount_view(amount) -> dict:
 
 
 def _line_view(line, hour_titles) -> dict:
+    amounts = [_amount_view(a) for a in line.amounts]
     return {
         "name": line.name,
         "sheet": line.sheet,
         "matched": line.matched,
         "rounding_only": line.rounding_only,
-        "amounts": [_amount_view(a) for a in line.amounts],
+        "amounts": amounts,
+        # У разошедшейся строки показываются только разошедшиеся числа: три
+        # сошедшихся поля рядом с одним разошедшимся прячут именно то, что
+        # человек ищет.
+        "off": [a for a in amounts if a["state"] in ("off", "rounding")],
         "causes": [_cause_text(cause, hour_titles) for cause in line.causes],
     }
 
 
 def _report(request, period, *, result=None, error=None, status=200):
     hour_titles = _hour_titles(period) if result is not None else {}
+    lines = [_line_view(line, hour_titles) for line in result.lines] if result else []
     return render(
         request,
         "web/reconcile.html",
@@ -133,11 +139,14 @@ def _report(request, period, *, result=None, error=None, status=200):
             "title": month_title(period.period),
             "error": error,
             "result": result,
-            "lines": (
-                [_line_view(line, hour_titles) for line in result.lines]
-                if result else []
-            ),
-            "fields": list(FIELD_TITLES.values()),
+            # Разделено на три списка здесь, а не условиями в разметке: у
+            # разошедшегося, копеечного и сошедшегося разный вес, и читают их
+            # в разном порядке. Смешанная таблица заставляла бы искать глазами
+            # то единственное, ради чего сверку и открыли.
+            "off_lines": [line for line in lines if not line["matched"]
+                          and not line["rounding_only"]],
+            "rounding_lines": [line for line in lines if line["rounding_only"]],
+            "matched_lines": [line for line in lines if line["matched"]],
             "totals": {
                 "expected": money(result.total_expected) if result else "",
                 "actual": money(result.total_actual) if result else "",

@@ -317,6 +317,27 @@
   {% endfor %}
 </nav>
 {% endif %}
+{% comment %}
+Выгрузки и сверка (T031, T032).
+
+Разрез уезжает в адрес выгрузки прямо отсюда, из того же переключателя, что
+нарисован выше: файл обязан содержать ровно то, что человек сейчас видит на
+экране. Второго места, где хранился бы выбранный регистр, быть не должно —
+иначе экран и файл разъедутся молча.
+{% endcomment %}
+<nav class="cuts" aria-label="Выгрузки и сверка">
+  {% for cut in cuts %}{% if cut.selected and cut.code %}
+  <a class="cut" href="{% url 'period-export' period.id 'payout' %}?ledger={{ cut.code }}">Ведомость к выплате</a>
+  <a class="cut" href="{% url 'period-export' period.id 'pnl' %}?ledger={{ cut.code }}">Строки для P&amp;L</a>
+  <a class="cut" href="{% url 'period-export' period.id 'partner' %}?ledger={{ cut.code }}">Вид бухгалтера</a>
+  {% endif %}{% endfor %}
+  {% if not cut_title %}
+  <a class="cut" href="{% url 'period-export' period.id 'payout' %}">Ведомость к выплате</a>
+  <a class="cut" href="{% url 'period-export' period.id 'pnl' %}">Строки для P&amp;L</a>
+  <a class="cut" href="{% url 'period-export' period.id 'partner' %}">Вид бухгалтера</a>
+  {% endif %}
+  <a class="cut" href="{% url 'period-reconcile' period.id %}">Сверка с таблицей</a>
+</nav>
 <div class="scroll">
 <table class="sheet">
   <thead>
