@@ -58,6 +58,23 @@
 <p class="note">{{ edit_denied }}</p>
 {% endif %}
 
+{% if can_edit %}
+{% comment %}
+Загрузка привычной таблицы — второй равноправный путь ввода часов рядом с
+сеткой (контракт блока), поэтому форма стоит здесь, а не на отдельном экране,
+куда надо догадаться зайти. Обычная форма без htmx: отчёт бывает длинным, его
+место — целая страница, а не уголок поверх 35 строк.
+{% endcomment %}
+<form class="import" method="post" enctype="multipart/form-data"
+      action="{% url 'timesheet-import' period.id %}">
+  {% csrf_token %}
+  <label for="table">Загрузить таблицу партнёра (.xlsx)</label>
+  <input type="file" id="table" name="table" accept=".xlsx">
+  <button type="submit">Загрузить</button>
+  <span class="hint">Повторная загрузка того же файла ничего не изменит.</span>
+</form>
+{% endif %}
+
 {% if not grid.rows %}
   <p class="empty">За этот период табелей нет.</p>
 {% else %}

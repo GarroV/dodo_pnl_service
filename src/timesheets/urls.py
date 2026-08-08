@@ -11,4 +11,5 @@ from . import views
 urlpatterns = [
     path("<uuid:period_id>/", views.grid, name="timesheets"),
     path("<uuid:period_id>/cell/", views.cell, name="timesheet-cell"),
+    path("<uuid:period_id>/import/", views.import_table, name="timesheet-import"),
 ]

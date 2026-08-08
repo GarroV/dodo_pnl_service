@@ -307,13 +307,34 @@ def test_admin_cannot_edit_a_cell_from_the_screen(client, web_env):
 
 
 def test_manager_still_edits_a_cell(client, web_env):
-    """Контроль: у управляющего право есть, ячейка пишется."""
+    """Контроль: у управляющего право есть, ячейка пишется.
+
+    Строка возвращается к исходному виду. База `web_env` живёт весь прогон, и
+    оставленные здесь 7 часов сдвигали расчёт периода на 2597,00 — тест,
+    знающий эталонную сумму, падал не по своей вине. Найдено при T020.
+    """
+    import psycopg
+    from psycopg.types.json import Jsonb
+
     login_as(client, "manager")
     url = grid_url(client)
     row, kind = first_cell(body(client.get(url)))
 
-    response = client.post(f"{url}cell/", {"row": row, "kind": kind, "hours": "7"})
-    assert response.status_code == 200
+    with psycopg.connect(web_env) as conn:
+        before = conn.execute(
+            "select hours, insured_hours from timesheets where id = %s", (row,)
+        ).fetchone()
+
+    try:
+        response = client.post(f"{url}cell/", {"row": row, "kind": kind, "hours": "7"})
+        assert response.status_code == 200
+    finally:
+        with psycopg.connect(web_env, autocommit=True) as conn:
+            conn.execute("delete from timesheet_days where timesheet_id = %s", (row,))
+            conn.execute(
+                "update timesheets set hours = %s, insured_hours = %s where id = %s",
+                (Jsonb(before[0]), before[1], row),
+            )
 
 
 # =============================================================================
