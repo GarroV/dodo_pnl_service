@@ -1,7 +1,7 @@
 """Маршруты интерфейса."""
 from django.urls import path
 
-from . import views
+from . import reports_views, views
 
 urlpatterns = [
     path("", views.index, name="index"),
@@ -43,4 +43,19 @@ urlpatterns = [
     # подставляет пароль учётки сида и идёт тем же путём (см. web/auth.py).
     path("dev/login/", views.dev_login, name="dev-login"),
     path("dev/logout/", views.logout_page, name="dev-logout"),
+    # Сверка с таблицей бухгалтера (T031). GET — форма, POST — результат:
+    # файл нигде не сохраняется, поэтому показывать по GET нечего (D028).
+    path(
+        "periods/<uuid:period_id>/reconcile/",
+        reports_views.period_reconcile,
+        name="period-reconcile",
+    ),
+    # Выгрузки (T032). Один маршрут на три вида, а не три почти одинаковых:
+    # адреса из контракта блока (`/export/payout`, `/export/pnl`,
+    # `/export/partner`) получаются те же, а неизвестный вид отвечает 404.
+    path(
+        "periods/<uuid:period_id>/export/<slug:kind>/",
+        reports_views.period_export,
+        name="period-export",
+    ),
 ]

@@ -1,0 +1,241 @@
+{% extends "web/base.html" %}{% comment %}
+Сверка с таблицей бухгалтера (T031).
+
+Порядок разделов — это порядок вопросов, которые задаёт бухгалтер: сошлось ли
+в целом, что именно разошлось, почему, и чего сверка не увидела вовсе.
+Сошедшееся идёт последним и списком имён: его смотрят, только чтобы убедиться,
+что человек не потерялся.
+
+Разделы «разошлось» и «разошлось на копейки» разведены намеренно. Копейки —
+известное расхождение округления на стороне бухгалтерии; смешанные с
+существенными, они заставляли бы каждый раз перебирать их глазами.
+{% endcomment %}
+
+{% block title %}Сверка · {{ title }}{% endblock %}
+
+{% block head %}
+{% comment %}
+Стили этой страницы — здесь, а не в общем шаблоне: общий принадлежит блоку web.
+Состояние показано словом и начертанием, а не только цветом: строки,
+отличающиеся одним оттенком, не читаются ни на проекторе, ни при дальтонизме.
+{% endcomment %}
+<style>
+  .reconcile .muted { color: var(--muted); }
+  .reconcile .strong { font-weight: 600; }
+  .reconcile tr.off td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
+  .reconcile td.off { color: var(--warn); font-weight: 600; }
+  .reconcile .why { color: var(--muted); font-size: 12px; }
+  .reconcile .why li { list-style: none; margin: 0; padding: 0; }
+  .reconcile form.upload { margin: 12px 0 20px; }
+  .reconcile .names { line-height: 1.7; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reconcile">
+<h1>Сверка с таблицей бухгалтера · {{ title }}</h1>
+
+<p class="sub">
+  Файл сравнивается с расчётом этого периода построчно. Он нигде не
+  сохраняется — ни на диск, ни в базу: ответ живёт только на этой странице.
+</p>
+
+<form class="upload" method="post" enctype="multipart/form-data"
+      action="{% url 'period-reconcile' period.id %}">{% csrf_token %}
+  <label for="table">Таблица бухгалтера (.xlsx)</label>
+  <input type="file" id="table" name="table" accept=".xlsx">
+  <button type="submit" class="primary">Сверить</button>
+</form>
+
+{% if error %}
+<div class="alert"><strong>Сверка не выполнена.</strong> {{ error }}</div>
+{% endif %}
+
+{% if result %}
+<h2>Что получилось</h2>
+<table class="sheet">
+  <thead><tr><th>Итог сверки</th><th class="num">Строк</th></tr></thead>
+  <tbody>
+    <tr><td>Сошлось до копейки</td><td class="num strong">{{ result.matched }}</td></tr>
+    <tr><td>Разошлось на копейки (округление)</td>
+        <td class="num {% if result.rounding %}strong{% else %}muted{% endif %}">{{ result.rounding }}</td></tr>
+    <tr><td>Разошлось</td>
+        <td class="num {% if result.mismatched %}strong{% else %}muted{% endif %}">{{ result.mismatched }}</td></tr>
+    <tr><td>Сверены только входы — деньги не сравнивались</td>
+        <td class="num {% if result.inputs_only %}strong{% else %}muted{% endif %}">{{ result.inputs_only }}</td></tr>
+    <tr><td>Есть в таблице, нет в расчёте</td>
+        <td class="num {% if result.only_in_file %}strong{% else %}muted{% endif %}">{{ result.only_in_file|length }}</td></tr>
+    <tr><td>Есть в расчёте, нет в таблице</td>
+        <td class="num {% if result.only_in_run %}strong{% else %}muted{% endif %}">{{ result.only_in_run|length }}</td></tr>
+  </tbody>
+  <tfoot>
+    {% if totals.any %}
+    <tr>
+      <td>К выплате по сверенным строкам: в таблице {{ totals.expected }},
+          в расчёте {{ totals.actual }}</td>
+      <td class="num {% if totals.off %}off{% endif %}">{{ totals.diff }}</td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="2">Деньги не сравнивались ни по одной строке: итоги расчёта
+          вам не отданы. Ноль в такой сумме означал бы совпадение, поэтому
+          её здесь нет.</td>
+    </tr>
+    {% endif %}
+  </tfoot>
+</table>
+
+{% if result.clean %}
+<p class="note">Всё сошлось до копейки, и файл прочитан целиком.</p>
+{% endif %}
+
+{% if off_lines %}
+<h2>Разошлось</h2>
+<p class="sub">
+  Сверху то, что разошлось сильнее. Под каждой строкой — что разошлось на
+  входе: если входы сошлись, а итог нет, значит разошлось правило расчёта.
+</p>
+<table class="sheet">
+  <thead>
+    <tr><th>Сотрудник</th><th>Что</th><th class="num">В таблице</th>
+        <th class="num">В расчёте</th><th class="num">Разница</th></tr>
+  </thead>
+  <tbody>
+    {% for line in off_lines %}
+      {% for amount in line.off %}
+      <tr class="off">
+        <td>{% if forloop.first %}{{ line.name }}<div class="why">{{ line.sheet }}</div>{% endif %}</td>
+        <td>{{ amount.title }}</td>
+        <td class="num">{{ amount.expected }}</td>
+        <td class="num">{{ amount.actual }}</td>
+        <td class="num off">{{ amount.diff }}</td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td></td>
+        <td colspan="4">
+          {% if line.causes %}
+          <ul class="why">{% for cause in line.causes %}<li>{{ cause }}</li>{% endfor %}</ul>
+          {% else %}
+          <span class="why">Входы сошлись — расхождение даёт правило расчёта.</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if rounding_lines %}
+<h2>Разошлось на копейки</h2>
+<p class="sub">
+  Меньше динара — округление на стороне бухгалтерии. Это не совпадение, но и
+  не повод искать ошибку в правиле.
+</p>
+<table class="sheet">
+  <thead>
+    <tr><th>Сотрудник</th><th>Что</th><th class="num">В таблице</th>
+        <th class="num">В расчёте</th><th class="num">Разница</th></tr>
+  </thead>
+  <tbody>
+    {% for line in rounding_lines %}{% for amount in line.off %}
+    <tr>
+      <td>{% if forloop.first %}{{ line.name }}{% endif %}</td>
+      <td>{{ amount.title }}</td>
+      <td class="num">{{ amount.expected }}</td>
+      <td class="num">{{ amount.actual }}</td>
+      <td class="num">{{ amount.diff }}</td>
+    </tr>
+    {% endfor %}{% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if inputs_lines %}
+<h2>Сверены только входы · {{ inputs_lines|length }}</h2>
+<p class="sub">
+  Итоги расчёта по этим строкам вам не отданы: нето, бруто и взносы посчитаны
+  по строке ведомости целиком, и база показывает их только роли, которой видны
+  все регистры учёта. Поэтому <strong>деньги здесь не сравнивались</strong> — ни
+  одного нашего числа по ним не показано, и совпадением это не считается.
+  Сверено то, что от регистра не зависит: часы, ставка, коэффициент. Расхождение
+  чаще всего сидит именно там.
+</p>
+<table class="sheet">
+  <thead><tr><th>Лист</th><th>Кто</th><th>Что со входами</th></tr></thead>
+  <tbody>
+    {% for line in inputs_lines %}
+    <tr {% if line.causes %}class="off"{% endif %}>
+      <td>{{ line.sheet }}</td>
+      <td>{{ line.name }}</td>
+      <td>
+        {% if line.causes %}
+        <ul class="why">{% for cause in line.causes %}<li>{{ cause }}</li>{% endfor %}</ul>
+        {% else %}
+        <span class="why">Входы сошлись с таблицей.</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if result.only_in_file %}
+<h2>Есть в таблице, нет в расчёте</h2>
+<p class="sub">
+  По этим строкам сверять нечего: расчёта за этот период по ним нет. Ни одного
+  числа с нашей стороны здесь не показано — сравнивать не с чем.
+</p>
+<table class="sheet">
+  <thead><tr><th>Лист</th><th>Кто</th><th>Почему</th></tr></thead>
+  <tbody>
+    {% for row in result.only_in_file %}
+    <tr><td>{{ row.sheet }}</td><td>{{ row.name }}</td><td>{{ row.why }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if result.only_in_run %}
+<h2>Есть в расчёте, нет в таблице</h2>
+<table class="sheet">
+  <thead><tr><th>Кто</th><th>Почему</th></tr></thead>
+  <tbody>
+    {% for row in result.only_in_run %}
+    <tr><td>{{ row.name }}</td><td>{{ row.why }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if result.findings %}
+<h2>Не разобрано в файле</h2>
+<p class="sub">
+  Это не предупреждения: перечисленное в сверку <strong>не попало</strong>,
+  поэтому сошедшееся выше сошлось не по всему файлу.
+</p>
+<table class="sheet">
+  <thead><tr><th>Где</th><th>Что</th></tr></thead>
+  <tbody>
+    {% for finding in result.findings %}
+    <tr class="off"><td>{{ finding.where }}</td><td>{{ finding.text }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if matched_lines %}
+<h2>Сошлось до копейки · {{ matched_lines|length }}</h2>
+<p class="sub names">
+  {% for line in matched_lines %}{{ line.name }}{% if not forloop.last %} · {% endif %}{% endfor %}
+</p>
+{% endif %}
+
+{% endif %}
+
+<p class="note">
+  <a href="{% url 'period' period.id %}">К периоду</a>
+</p>
+</div>
+{% endblock %}
