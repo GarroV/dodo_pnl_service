@@ -1,10 +1,20 @@
 {% comment %}
-Базовый шаблон: шапка с навигацией и указанием, кем вошли.
-Оформление пока живёт здесь же: своей статики в первой очереди нет, htmx и
-грид появятся вместе с табелем — тогда же заведётся static/.
+Базовый шаблон: каркас, на котором собираются все экраны (T016).
+
+Что здесь есть и чего здесь нет:
+
+- шапка вынесена в `components/header.html` — туда придут переключатель языка
+  (T017) и админка справочников (T018);
+- оформление живёт здесь же одним листом. Своего файла статики у него нет
+  намеренно: под `runserver` с `DJANGO_DEBUG=0` Django статику не отдаёт вовсе,
+  и вынос стилей наружу оставил бы площадку без оформления **всех** страниц
+  (сегодня так теряется только табель — issue у блока `deploy`);
+- набор компонентов, из которых собираются экраны, описан в
+  `templates/web/components/README.md`. Разметку, у которой уже есть компонент,
+  руками не пишут: в ней живут инварианты, купленные дефектами.
 
 Комментарий именно {% comment %}: однострочный {# … #} многострочным не бывает
-и вывалился бы на страницу текстом (проверено в браузере 2026-08-07).
+и вывалился бы на страницу текстом (проверено в браузере дважды).
 {% endcomment %}<!doctype html>
 <html lang="ru">
 <head>
@@ -99,12 +109,12 @@
   /* Переключатель разреза ведомости (T028). Ссылки, а не кнопки: разрез живёт
      в адресе, и его можно отправить коллеге. Выбранный — не ссылка вовсе:
      ссылка на текущую страницу обманывает и мышь, и клавиатуру. */
-  nav.cuts { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
-  nav.cuts .cut {
+  nav.cuts, nav.exports { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+  nav.cuts .cut, nav.exports .cut {
     font-size: 13px; text-decoration: none; color: var(--muted);
     border: 1px solid var(--line); border-radius: 4px; padding: 4px 12px; background: #fff;
   }
-  nav.cuts a.cut:hover { color: var(--accent); border-color: var(--accent); }
+  nav.cuts a.cut:hover, nav.exports a.cut:hover { color: var(--accent); border-color: var(--accent); }
   nav.cuts .cut.current { color: #fff; background: var(--ink); border-color: var(--ink); }
   /* Метка регистра, а не заливка строки: заливка мешает читать числа (D023).
      Начертание обычное: «ДОПОЛНИТЕЛЬНЫЙ» вразрядку — самое широкое слово в
@@ -196,31 +206,7 @@
 {% block head %}{% endblock %}
 </head>
 <body>
-<header>
-  <a class="brand" href="{% url 'periods' %}">Dodo P&amp;L</a>
-  <nav><a href="{% url 'periods' %}">Периоды</a></nav>
-  <div class="who">
-    {% if dev_login %}
-      <span class="badge" title="На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)">dev-вход</span>
-    {% endif %}
-    {% if principal %}
-      {# У учёток сида имя человека совпадает с названием роли — не повторяем его дважды. #}
-      <span><strong>{{ principal.display_name }}</strong>{% if principal.role_title and principal.role_title != principal.display_name %} · {{ principal.role_title }}{% endif %}{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
-      {% if visible_ledgers_title %}<span>регистры: {{ visible_ledgers_title }}</span>{% endif %}
-      {% comment %}
-      Точка пишется, только когда человек ею ограничен: объяснять надо срезанные
-      данные, а не полные. Пусто = все точки партнёра.
-      {% endcomment %}
-      {% if principal.units_title %}<span title="Данные и итоги на всех страницах — только по этой точке">точка: {{ principal.units_title }}</span>{% endif %}
-      <a class="btn" href="{% url 'password-change' %}">пароль</a>
-      <form class="inline" method="post" action="{% url 'logout' %}">{% csrf_token %}
-        <button type="submit">выйти</button>
-      </form>
-    {% else %}
-      <a class="btn" href="{% url 'login' %}">войти</a>
-    {% endif %}
-  </div>
-</header>
+{% include "web/components/header.html" %}
 <main>{% block content %}{% endblock %}</main>
 </body>
 </html>

@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}{% load static timesheet_extras %}{% comment %}
+{% extends "web/base.html" %}{% load static timesheet_extras ui %}{% comment %}
 Сетка ввода часов: строки — сотрудники периода, колонки — типы часов страны.
 
 Единственный интерактивный экран продукта (D017). Грид сюда не подключён
@@ -13,16 +13,13 @@
 {% block head %}
   <link rel="stylesheet" href="{% static 'timesheets/grid.css' %}">
   {% comment %}
-  htmx версией в файле, не с CDN (D017): в npm уже лежит 4.0.0-beta, и
-  подмена мажорной версии сломала бы экран молча. defer — чтобы разбор
-  разметки не ждал библиотеку.
-
   Обе библиотеки нужны только редактируемой сетке: на сетке для чтения нечего
   ни отправлять, ни досылать, и грузить их туда значило бы возить 50 КБ ради
-  кода, которому не с чем работать (T072).
+  кода, которому не с чем работать (T072). Версия htmx названа один раз — в
+  самом компоненте.
   {% endcomment %}
   {% if can_edit %}
-  <script src="{% static 'timesheets/htmx-2.0.10.min.js' %}" defer></script>
+  {% include "web/components/htmx.html" %}
   <script src="{% static 'timesheets/grid.js' %}" defer></script>
   {% endif %}
 {% endblock %}
@@ -36,10 +33,9 @@
 без него он увидел бы «Server Error» и не узнал, что делать (T062).
 {% endcomment %}
 {% if error %}
-<div class="alert">
-  <strong>Табель показать нельзя.</strong> {{ error }}
+{% notice "alert" title="Табель показать нельзя." %}{{ error }}
   {% if details %}<div class="details">{{ details|join:", " }}</div>{% endif %}
-</div>
+{% endnotice %}
 <p class="note"><a href="{% url 'period' period.id %}">Вернуться к периоду</a></p>
 {% else %}
 <p class="sub">
@@ -58,9 +54,7 @@
 <p class="note">{{ edit_denied }}</p>
 {% endif %}
 
-{% if notice %}
-<div class="alert">{{ notice }}</div>
-{% endif %}
+{% if notice %}{% notice "alert" %}{{ notice }}{% endnotice %}{% endif %}
 
 {% comment %}
 Закрытие часов по точке (T022). Точка закрывается отдельно от соседних: смысл
@@ -76,22 +70,12 @@
       <span class="hint">{{ unit.rows }} чел.</span>
       {% if unit.closed %}
         <span class="unit-state closed">часы закрыты {{ unit.closed_at|date:"d.m.Y H:i" }}</span>
-        {% if can_close %}
-        <form method="post" action="{% url 'timesheet-reopen' period.id %}">
-          {% csrf_token %}
-          <input type="hidden" name="unit" value="{{ unit.unit_id }}">
-          <button type="submit" class="secondary">Открыть заново</button>
-        </form>
-        {% endif %}
+        {% url 'timesheet-reopen' period.id as reopen_unit_url %}
+        {% include "web/components/action.html" with allowed=can_close url=reopen_unit_url label="Открыть заново" button_class="secondary" hidden_name="unit" hidden_value=unit.unit_id denied="" note="" inline=True reason_name="" primary=False %}
       {% else %}
         <span class="unit-state">часы открыты</span>
-        {% if can_close %}
-        <form method="post" action="{% url 'timesheet-close' period.id %}">
-          {% csrf_token %}
-          <input type="hidden" name="unit" value="{{ unit.unit_id }}">
-          <button type="submit">Закрыть часы точки</button>
-        </form>
-        {% endif %}
+        {% url 'timesheet-close' period.id as close_unit_url %}
+        {% include "web/components/action.html" with allowed=can_close url=close_unit_url label="Закрыть часы точки" hidden_name="unit" hidden_value=unit.unit_id denied="" note="" inline=True reason_name="" primary=False button_class="" %}
       {% endif %}
     </div>
   {% endfor %}
@@ -113,17 +97,16 @@
 <form class="import" method="post" enctype="multipart/form-data"
       action="{% url 'timesheet-import' period.id %}">
   {% csrf_token %}
-  <label for="table">Загрузить таблицу партнёра (.xlsx)</label>
-  <input type="file" id="table" name="table" accept=".xlsx">
+  {% include "web/components/field.html" with id="table" name="table" type="file" label="Загрузить таблицу партнёра (.xlsx)" accept=".xlsx" %}
   <button type="submit">Загрузить</button>
   <span class="hint">Повторная загрузка того же файла ничего не изменит.</span>
 </form>
 {% endif %}
 
 {% if not grid.rows %}
-  <p class="empty">За этот период табелей нет.</p>
+  {% notice "empty" %}За этот период табелей нет.{% endnotice %}
 {% else %}
-<div class="scroll">
+{% scroll %}
   {% comment %}
   Адрес и защита от подделки запроса объявлены один раз на таблице: htmx
   наследует их всеми ячейками внутри, и 210 полей не тащат по копии токена.
@@ -210,7 +193,7 @@
       </tr>
     </tfoot>
   </table>
-</div>
+{% endscroll %}
 
 {% if can_edit %}
 <p class="note">

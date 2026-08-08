@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}
+{% extends "web/base.html" %}{% load ui %}
 {% block title %}След расчёта{% endblock %}
 {% block content %}
 {% comment %}
@@ -24,24 +24,23 @@
 перестают замечать на второй день.
 {% endcomment %}
 {% if error %}
-<p class="alert">
-  <strong>Объяснить эту сумму нечем.</strong> {{ error }}
+{% notice "alert" title="Объяснить эту сумму нечем." %}{{ error }}
   Сохранённые числа ниже показаны как есть.
-</p>
+{% endnotice %}
 {% elif agrees %}
-<p class="ok">
+{% notice "ok" %}
   След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока
   не хранится. Сверено с сохранённой суммой строки: <strong>сходится</strong>
   до копейки ({{ stored_total }}), значит правила с момента расчёта не менялись.
-</p>
+{% endnotice %}
 {% else %}
-<p class="alert">
+{% notice "alert" %}
   След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока
   не хранится, — и с сохранённой суммой <strong>не сходится</strong>:
   сохранено {{ stored_total }}, сегодняшние правила дают {{ traced_total }}.
   Строки, где разошлось, помечены ниже. Ведомость показывает сохранённое —
   менять его этот экран не может и не должен.
-</p>
+{% endnotice %}
 {% endif %}
 
 {% if approved %}
@@ -52,7 +51,7 @@
 {% endif %}
 
 {% if steps %}
-<div class="scroll">
+{% scroll %}
 <table class="steps">
   <thead>
     <tr>
@@ -65,7 +64,7 @@
     <tr{% if step.differs %} class="drifted"{% endif %}>
       <td>
         {{ step.title }}
-        {% if step.ledger %}<span class="ledger">{{ step.ledger }}</span>{% endif %}
+        {% if step.ledger %}{% ledger step.ledger %}{% endif %}
         <span class="hint">{{ step.code }}</span>
       </td>
       <td class="inputs">
@@ -91,15 +90,15 @@
     </tr>
   </tfoot>
 </table>
-</div>
+{% endscroll %}
 {% else %}
-<p class="empty">
+{% notice "empty" %}
   {% if error %}
     Шагов расчёта нет: посчитать заново нечем.
   {% else %}
     По этой строке нет ни одного шага, доступного вашей роли.
   {% endif %}
-</p>
+{% endnotice %}
 {% endif %}
 
 {% if carried %}
@@ -116,7 +115,7 @@
     {% for line in carried %}
     <tr>
       <td>{{ line.title }}</td>
-      <td><span class="ledger">{{ line.ledger }}</span></td>
+      <td>{% ledger line.ledger %}</td>
       <td>{{ line.source }}</td>
       <td class="num">{{ line.amount }}</td>
     </tr>

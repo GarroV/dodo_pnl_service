@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}{% comment %}
+{% extends "web/base.html" %}{% load ui %}{% comment %}
 Сверка с таблицей бухгалтера (T031).
 
 Порядок разделов — это порядок вопросов, которые задаёт бухгалтер: сошлось ли
@@ -42,14 +42,11 @@
 
 <form class="upload" method="post" enctype="multipart/form-data"
       action="{% url 'period-reconcile' period.id %}">{% csrf_token %}
-  <label for="table">Таблица бухгалтера (.xlsx)</label>
-  <input type="file" id="table" name="table" accept=".xlsx">
+  {% include "web/components/field.html" with id="table" name="table" type="file" label="Таблица бухгалтера (.xlsx)" accept=".xlsx" %}
   <button type="submit" class="primary">Сверить</button>
 </form>
 
-{% if error %}
-<div class="alert"><strong>Сверка не выполнена.</strong> {{ error }}</div>
-{% endif %}
+{% if error %}{% notice "alert" title="Сверка не выполнена." %}{{ error }}{% endnotice %}{% endif %}
 
 {% if result %}
 <h2>Что получилось</h2>
@@ -95,35 +92,7 @@
   Сверху то, что разошлось сильнее. Под каждой строкой — что разошлось на
   входе: если входы сошлись, а итог нет, значит разошлось правило расчёта.
 </p>
-<table class="sheet">
-  <thead>
-    <tr><th>Сотрудник</th><th>Что</th><th class="num">В таблице</th>
-        <th class="num">В расчёте</th><th class="num">Разница</th></tr>
-  </thead>
-  <tbody>
-    {% for line in off_lines %}
-      {% for amount in line.off %}
-      <tr class="off">
-        <td>{% if forloop.first %}{{ line.name }}<div class="why">{{ line.sheet }}</div>{% endif %}</td>
-        <td>{{ amount.title }}</td>
-        <td class="num">{{ amount.expected }}</td>
-        <td class="num">{{ amount.actual }}</td>
-        <td class="num off">{{ amount.diff }}</td>
-      </tr>
-      {% endfor %}
-      <tr>
-        <td></td>
-        <td colspan="4">
-          {% if line.causes %}
-          <ul class="why">{% for cause in line.causes %}<li>{{ cause }}</li>{% endfor %}</ul>
-          {% else %}
-          <span class="why">Входы сошлись — расхождение даёт правило расчёта.</span>
-          {% endif %}
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+{% include "web/components/diff_table.html" with lines=off_lines highlight=True with_causes=True %}
 {% endif %}
 
 {% if rounding_lines %}
@@ -132,23 +101,7 @@
   Меньше динара — округление на стороне бухгалтерии. Это не совпадение, но и
   не повод искать ошибку в правиле.
 </p>
-<table class="sheet">
-  <thead>
-    <tr><th>Сотрудник</th><th>Что</th><th class="num">В таблице</th>
-        <th class="num">В расчёте</th><th class="num">Разница</th></tr>
-  </thead>
-  <tbody>
-    {% for line in rounding_lines %}{% for amount in line.off %}
-    <tr>
-      <td>{% if forloop.first %}{{ line.name }}{% endif %}</td>
-      <td>{{ amount.title }}</td>
-      <td class="num">{{ amount.expected }}</td>
-      <td class="num">{{ amount.actual }}</td>
-      <td class="num">{{ amount.diff }}</td>
-    </tr>
-    {% endfor %}{% endfor %}
-  </tbody>
-</table>
+{% include "web/components/diff_table.html" with lines=rounding_lines highlight=False with_causes=False %}
 {% endif %}
 
 {% if inputs_lines %}

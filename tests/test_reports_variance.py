@@ -255,6 +255,11 @@ def test_a_hidden_ledger_never_reaches_the_comparison():
 PLANTED = Decimal("9000.00")     # подброшенное отклонение, заведомо выше порога
 NOISE = Decimal("0.50")          # изменение в пределах порога: показываться не должно
 
+# Точка, которой ограничен управляющий в тестовом сиде. Отклонение кладётся
+# именно в неё и именно в официальный регистр — это единственный срез, видный
+# сразу всем трём ролям проверки ниже.
+MANAGER_UNIT = "NS1"
+
 
 @pytest.fixture
 def june_and_planted_may(client, web_env):
@@ -283,14 +288,37 @@ def june_and_planted_may(client, web_env):
 
     june = Payrun.objects.get(tenant=tenant, period=JUNE)
     loud = quiet = None
-    for slip in Payslip.objects.filter(payrun=june).select_related("employee"):
+    # Порядок выборки задан явно. Без него строки приходили в порядке кучи
+    # Postgres, а он меняется от прогона к прогону, и подброшенное отклонение
+    # попадало то на официальный регистр точки NS1, то на внутренний регистр
+    # чужой точки. Во втором случае бухгалтер (видит один регистр) или
+    # управляющий (видит одну точку) не видели в отчёте ни одной строки — и
+    # проверка «итог роли равен сумме её строк» падала на порядке выборки, а не
+    # на дефекте продукта. Плавающий тест хуже отсутствующего: он приучает
+    # перезапускать прогон вместо того, чтобы читать падение.
+    slips = (
+        Payslip.objects.filter(payrun=june)
+        .select_related("employee", "unit")
+        .order_by("employee__last_name", "employee__first_name", "id")
+    )
+    for slip in slips:
         twin = Payslip.objects.create(
             tenant=tenant, payrun=may_run, employee_id=slip.employee_id,
             unit_id=slip.unit_id,
         )
         for component in PayComponent.objects.filter(payslip=slip).order_by("code"):
             amount = component.amount
-            if loud is None and component.code == "hours.regular":
+            if (
+                loud is None
+                and component.code == "hours.regular"
+                # Официальный регистр точки NS1 виден всем трём ролям сразу:
+                # директору, бухгалтеру (только официальный) и управляющему
+                # (только своя точка). Отклонение, видное одной роли, проверяло
+                # бы отчёт одной роли.
+                and component.ledger == "official"
+                and slip.unit is not None
+                and slip.unit.code == MANAGER_UNIT
+            ):
                 # Июнь минус май = +9000 по этому человеку.
                 loud = (slip.employee, component.code, component.ledger)
                 amount -= PLANTED
