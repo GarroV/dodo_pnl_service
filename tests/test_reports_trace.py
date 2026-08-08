@@ -35,7 +35,7 @@ MIN_RATE = Decimal("371")
 # --- материал для проверок без базы ------------------------------------------
 
 
-def employee(scheme="standard", group="kitchen", rate=MIN_RATE, coef=1, ledger=None):
+def employee(scheme="standard", group="office", rate=MIN_RATE, coef=1, ledger=None):
     from payroll import Employee, d
 
     return Employee(
@@ -57,12 +57,12 @@ def timesheet(**hours):
 def stored_from(e, ts, preset) -> dict:
     """Что лежало бы в базе, посчитай мы этими же правилами: (код, регистр) → сумма."""
     from payroll import PayrollEngine
-    from payrun.calc import money
+    from reports.trace import to_cents
 
     rows: dict = {}
     for component in PayrollEngine(preset).calculate(e, ts).components:
         key = (component.code, component.ledger)
-        rows[key] = rows.get(key, Decimal(0)) + money(component.amount)
+        rows[key] = rows.get(key, Decimal(0)) + to_cents(component.amount)
     return rows
 
 
@@ -110,7 +110,7 @@ def test_the_step_names_the_level_the_rule_came_from(serbia_preset):
 def test_the_screen_shows_the_engine_trace_and_not_a_second_one(serbia_preset):
     """Второго следа рядом с движковым нет — это и есть главное решение задачи."""
     from payroll.trace import explain
-    from reports.trace import trace_row
+    from reports.trace import to_cents, trace_row
 
     e, ts = employee(), timesheet(regular=120, sick=16)
     view = trace_row(e, ts, serbia_preset, stored=stored_from(e, ts, serbia_preset),
@@ -118,7 +118,11 @@ def test_the_screen_shows_the_engine_trace_and_not_a_second_one(serbia_preset):
 
     engine_steps = [s for s in explain(e, ts, serbia_preset) if s.contributes_to == "net"]
     assert [step.code for step in view.steps] == [s.rule_code for s in engine_steps]
-    assert [step.amount for step in view.steps] == [s.applied_value for s in engine_steps]
+    # Экран округляет до копейки — тем же способом, каким записана строка
+    # (см. `to_cents`), — но ничего больше с числом движка не делает.
+    assert [step.amount for step in view.steps] == [
+        to_cents(s.applied_value) for s in engine_steps
+    ]
 
 
 # --- ни строк, ни следа: чужие регистры --------------------------------------
@@ -128,34 +132,40 @@ def test_steps_of_an_invisible_ledger_are_not_shown_at_all(serbia_preset):
     """Шаг чужого регистра выдал бы и сумму, и правило, и человека сразу."""
     from reports.trace import trace_row
 
-    e, ts = employee(ledger="supplementary"), timesheet(regular=176)
+    e, ts = employee(ledger="internal"), timesheet(regular=176)
     stored = stored_from(e, ts, serbia_preset)
+    hours = next(key for key in stored if key[0] == "hours.regular")
+    assert hours[1] == "internal", "материал собран не про тот регистр"
+
     view = trace_row(e, ts, serbia_preset, stored=stored, visible_ledgers=["official"])
 
-    assert view.steps == []
-    assert view.traced_total == Decimal(0)
+    assert "hours.regular" not in {step.code for step in view.steps}
+    assert all(step.ledger == "official" for step in view.steps)
+    assert view.traced_total == stored[("meal_and_vacation_bonus", "official")]
 
 
 def test_the_visible_part_still_adds_up_when_part_is_hidden(serbia_preset):
     """Половина строки скрыта — итог следа равен видимой половине, не всей.
 
     Иначе скрытое вычисляется вычитанием: ровно так устроены обе утечки,
-    закрытые в этом продукте (T050, T071).
+    закрытые в этом продукте (T050, T071). Материал настоящий: часы сотрудника
+    кухни идут в дополнительном регистре, а надбавка объявлена пресетом в
+    официальном — то есть строка честно разложена на две половины.
     """
     from reports.trace import trace_row
 
-    e, ts = employee(), timesheet(regular=176)
+    e, ts = employee(group="kitchen", ledger="supplementary"), timesheet(regular=176)
     stored = stored_from(e, ts, serbia_preset)
-    # Надбавка объявлена в официальном регистре пресетом, часы — регистром
-    # сотрудника. Разводим их и смотрим на видимую половину.
-    hidden = {key: value for key, value in stored.items() if key[1] == "official"}
+    assert {ledger for _code, ledger in stored} == {"official", "supplementary"}
+    visible_part = sum(
+        (amount for (_code, ledger), amount in stored.items() if ledger == "official"),
+        Decimal(0),
+    )
 
-    e = employee(ledger="supplementary")
-    stored = stored_from(e, ts, serbia_preset)
     view = trace_row(e, ts, serbia_preset, stored=stored, visible_ledgers=["official"])
 
     assert {step.ledger for step in view.steps} == {"official"}
-    assert view.traced_total == sum(hidden.values(), Decimal(0))
+    assert view.traced_total == visible_part
     assert view.traced_total < sum(stored.values(), Decimal(0))
 
 
@@ -167,7 +177,7 @@ def test_derived_totals_are_hidden_when_the_row_is_not_fully_visible(serbia_pres
     """
     from reports.trace import trace_row
 
-    e, ts = employee(ledger="supplementary"), timesheet(regular=176)
+    e, ts = employee(group="kitchen", ledger="supplementary"), timesheet(regular=176)
     stored = stored_from(e, ts, serbia_preset)
 
     partial = trace_row(e, ts, serbia_preset, stored=stored, visible_ledgers=["official"])
@@ -183,7 +193,7 @@ def test_a_cut_narrows_the_trace_the_same_way_the_sheet_narrows(serbia_preset):
     """Разрез следа — тот же разрез, что у ведомости: один способ на два экрана."""
     from reports.trace import trace_row
 
-    e, ts = employee(ledger="supplementary"), timesheet(regular=176)
+    e, ts = employee(group="kitchen", ledger="supplementary"), timesheet(regular=176)
     stored = stored_from(e, ts, serbia_preset)
     visible = ["official", "supplementary"]
 
@@ -225,17 +235,40 @@ def test_a_rule_changed_after_the_calculation_is_reported_as_disagreement(serbia
     from payroll.presets import apply_overrides
     from reports.trace import trace_row
 
-    e, ts = employee(), timesheet(regular=120, sick=20)
+    e, ts = employee(), timesheet(regular=176)
     stored = stored_from(e, ts, serbia_preset)          # посчитано вчера
-    tweaked = apply_overrides(serbia_preset, {"hour_types.sick.pay_percent": 0.5})
+    tweaked = apply_overrides(
+        serbia_preset, {"allowances.meal_and_vacation_bonus.amount_per_norm": 2000}
+    )
 
     view = trace_row(e, ts, tweaked, stored=stored, visible_ledgers=["official"])
 
     assert not view.agrees, "след разошёлся с сохранённым, а экран этого не заметил"
     assert view.stored_total == sum(stored.values(), Decimal(0))
     assert view.traced_total != view.stored_total
-    changed = next(step for step in view.steps if step.code == "hours.sick")
-    assert changed.differs and changed.stored is not None
+    changed = next(step for step in view.steps if step.code == "meal_and_vacation_bonus")
+    assert changed.differs and changed.stored == Decimal("1500.00")
+
+
+def test_a_change_that_cancels_itself_in_the_total_is_still_caught(serbia_preset):
+    """Сверка идёт покомпонентно, а не по одному итогу — и в этом весь смысл.
+
+    Понижение процента больничного гасится доплатой до минимума: итог остаётся
+    прежним до копейки, а считалось при этом другое. Сверка одних итогов такое
+    пропустила бы молча.
+    """
+    from payroll.presets import apply_overrides
+    from reports.trace import trace_row
+
+    e, ts = employee(), timesheet(regular=120, sick=20)
+    stored = stored_from(e, ts, serbia_preset)
+    tweaked = apply_overrides(serbia_preset, {"hour_types.sick.pay_percent": 0.5})
+
+    view = trace_row(e, ts, tweaked, stored=stored, visible_ledgers=["official"])
+
+    assert view.traced_total == view.stored_total, "материал теста собран не про тот случай"
+    assert not view.agrees, "итог сошёлся, а считали другим — экран этого не заметил"
+    assert next(step for step in view.steps if step.code == "hours.sick").differs
 
 
 def test_a_step_that_appeared_out_of_nowhere_is_marked_too(serbia_preset):
@@ -261,7 +294,7 @@ def test_agreement_is_measured_only_on_the_visible_part(serbia_preset):
     """
     from reports.trace import trace_row
 
-    e, ts = employee(ledger="supplementary"), timesheet(regular=176)
+    e, ts = employee(group="kitchen", ledger="supplementary"), timesheet(regular=176)
     stored = stored_from(e, ts, serbia_preset)
 
     view = trace_row(e, ts, serbia_preset, stored=stored, visible_ledgers=["official"])
