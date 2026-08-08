@@ -111,3 +111,14 @@ table.grid th:first-child, table.grid td:first-child {
 table.grid tbody tr:hover td:first-child { background: #f6f8ff; }
 
 #cell-error { margin-top: 16px; }
+
+/* Форма загрузки таблицы партнёра (T020). Одной строкой: это второстепенный
+   путь ввода рядом с сеткой, и вертикальная карточка отодвинула бы саму сетку
+   вниз экрана — то есть спрятала бы главное ради вспомогательного. */
+form.import {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: #fff; border: 1px solid var(--line); border-radius: 4px;
+  padding: 12px 16px; margin: 0 0 20px;
+}
+form.import label { color: var(--muted); font-size: 13px; }
+form.import .hint { color: var(--muted); font-size: 12px; }

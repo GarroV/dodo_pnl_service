@@ -25,9 +25,15 @@ from web.principal import get_current_principal
 from web.views import find_period, month_title
 
 from .grid import build_grid, visible_rows
+from .importer import import_partner_table
 from .store import CellRefused, parse_hours, set_cell
 
-__all__ = ["cell", "grid"]
+__all__ = ["cell", "grid", "import_table"]
+
+# Больше этого файл зарплатной таблицы не бывает: восемь листов на несколько
+# сотен человек — это сотни килобайт. Ограничение не про безопасность, а про
+# внятный отказ вместо съеденной памяти на случайно выбранном видеофайле.
+MAX_UPLOAD = 20 * 1024 * 1024
 
 # Отказ на запись ячейки: 422, а не 400. Запрос разобран и понят, не принято
 # именно значение — и htmx на странице отличает эти случаи по коду.
@@ -158,3 +164,75 @@ def cell(request, period_id):
     # же число, но человек должен увидеть, что именно сохранилось.
     response["X-Cell-Value"] = f"{hours:.2f}"
     return response
+
+
+@login_required
+@require_POST
+def import_table(request, period_id):
+    """Загрузка таблицы партнёра и отчёт о ней (T020, T021).
+
+    Отдельная страница, а не фрагмент на сетке: отчёт бывает длинным (десятки
+    находок), и показывать его в углу экрана, поверх 35 строк, значило бы
+    предлагать человеку читать самое важное в самом неудобном месте.
+
+    Загрузка — то же право, что правка ячейки: она пишет в тот же табель.
+    Отдельное право завело бы вторую правду об одном действии.
+    """
+    period = find_period(period_id)
+    who = _context(request, period)
+
+    try:
+        permissions.check(who, permissions.TIMESHEET_EDIT)
+    except permissions.PermissionRefused as refusal:
+        return _report(request, period, error=refusal.message,
+                       status=refusal.http_status)
+
+    upload = request.FILES.get("table")
+    if upload is None:
+        return _report(request, period, error="Файл не выбран.", status=400)
+    if upload.size > MAX_UPLOAD:
+        return _report(
+            request, period, status=400,
+            error=f"Файл больше {MAX_UPLOAD // 1024 // 1024} МБ — "
+                  f"это не зарплатная таблица.",
+        )
+
+    try:
+        result = import_partner_table(
+            upload, tenant_id=period.tenant_id, period=period.period,
+            actor_id=who.user_id,
+        )
+    except PayrunRefused as refusal:
+        # Тот же отказ и теми же словами, что на сетке и на странице периода
+        # (T062, T073): типы часов — это правила страны, и без них загружать
+        # часы некуда.
+        return _report(request, period, error=refusal.message,
+                       details=refusal.details, status=refusal.http_status)
+    except CellRefused as refusal:
+        return _report(request, period, error=str(refusal), status=REFUSED)
+    except Exception as broken:  # noqa: BLE001 — намеренно широко, см. ниже
+        # Чужой файл может быть чем угодно: не тем форматом, битым архивом,
+        # защищённой книгой. Разбирать исключения openpyxl по одному значило бы
+        # гадать за библиотеку; а вот молчаливая 500-я здесь недопустима —
+        # человек должен прочитать, что файл не разобран, и каким он был.
+        return _report(
+            request, period, status=REFUSED,
+            error=f"Файл не удалось прочитать как книгу Excel: {broken}",
+        )
+
+    return _report(request, period, result=result)
+
+
+def _report(request, period, *, result=None, error=None, details=(), status=200):
+    return render(
+        request,
+        "timesheets/import_report.html",
+        {
+            "period": period,
+            "title": month_title(period.period),
+            "result": result,
+            "error": error,
+            "details": list(details),
+        },
+        status=status,
+    )

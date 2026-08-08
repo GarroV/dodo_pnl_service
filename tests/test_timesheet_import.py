@@ -401,3 +401,83 @@ def test_clean_reference_import_has_no_data_warnings(period_restored):
     """Иначе предупреждения станут фоном, который перестают читать."""
     result = _import()
     assert result.warnings == [], [note.text for note in result.warnings]
+
+
+# =============================================================================
+# 4. Экран загрузки
+# =============================================================================
+
+
+def _grid_url(client) -> str:
+    import re
+
+    from conftest import period_url
+
+    match = re.search(r"([0-9a-f-]{36})", period_url(client))
+    return f"/timesheets/{match.group(1)}/"
+
+
+def test_grid_offers_the_upload_to_those_who_may_edit(client, web_env):
+    from conftest import body, login_as
+
+    login_as(client, "director")
+    html = body(client.get(_grid_url(client)))
+    assert 'name="table"' in html, "на табеле нет формы загрузки"
+
+
+def test_grid_does_not_offer_the_upload_without_the_right(client, web_env):
+    """Кнопка, которая заведомо даст 403, — обещание, которого экран не держит."""
+    from conftest import body, login_as
+
+    login_as(client, "admin")
+    assert 'name="table"' not in body(client.get(_grid_url(client)))
+
+
+def test_upload_shows_the_report(client, period_restored):
+    from conftest import body, login_as
+
+    login_as(client, "director")
+    with open(PLATA_SAMPLE, "rb") as handle:
+        response = client.post(_grid_url(client) + "import/", {"table": handle})
+
+    assert response.status_code == 200
+    html = body(response)
+    assert "Сопоставлено сотрудникам" in html
+    assert "32" in html
+
+
+def test_upload_of_a_broken_file_says_so_instead_of_500(client, web_env):
+    """Не тот формат — читаемый отказ, а не «Server Error»."""
+    import io
+
+    from conftest import body, login_as
+
+    login_as(client, "director")
+    fake = io.BytesIO("это не книга Excel".encode())
+    fake.name = "notes.xlsx"
+    response = client.post(_grid_url(client) + "import/", {"table": fake})
+
+    assert response.status_code == 422
+    assert "не удалось прочитать" in body(response)
+    assert "Server Error" not in body(response)
+
+
+def test_upload_without_a_file_is_refused(client, web_env):
+    from conftest import body, login_as
+
+    login_as(client, "director")
+    response = client.post(_grid_url(client) + "import/", {})
+    assert response.status_code == 400
+    assert "Файл не выбран" in body(response)
+
+
+def test_upload_is_refused_without_the_right(client, web_env):
+    """Проверка на сервере остаётся, даже когда формы на экране нет."""
+    from conftest import body, login_as
+
+    login_as(client, "admin")
+    with open(PLATA_SAMPLE, "rb") as handle:
+        response = client.post(_grid_url(client) + "import/", {"table": handle})
+
+    assert response.status_code == 403
+    assert "Правка табеля" in body(response)
