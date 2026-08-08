@@ -16,8 +16,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from core.models import Calendar, Payrun, Period, Timesheet
-from payrun import lifecycle
+from core.models import Calendar, Payrun, Payslip, Period, Timesheet
+from payrun import freezing, lifecycle
 from payrun.calc import calculate_period
 from payrun.errors import PayrunRefused
 from payrun.sheet import build_sheet
@@ -92,6 +92,18 @@ def calendar_norm_hours(period: Period):
     )
 
 
+def first_of_payslip(payslip_id, seen: set) -> bool:
+    """Первая ли это строка своей ведомости на экране.
+
+    Нужно затем, что действие относится к строке ведомости, а показанных строк
+    у человека может быть две — по одной на регистр учёта.
+    """
+    if payslip_id is None or payslip_id in seen:
+        return False
+    seen.add(payslip_id)
+    return True
+
+
 def period_page(
     request,
     period,
@@ -109,6 +121,7 @@ def period_page(
     вычитанием. Поэтому и итог здесь равен сумме показанных строк (D023).
     """
     sheet = build_sheet(period.tenant_id, period.period)
+    seen_payslips: set = set()
     timesheets = Timesheet.objects.filter(tenant=period.tenant, period=period.period)
     payrun = Payrun.objects.filter(tenant=period.tenant, period=period.period).first()
     norm_hours = calendar_norm_hours(period)
@@ -142,6 +155,14 @@ def period_page(
         else ""
     )
 
+    # Заморозка спорной строки (T027). В утверждённом периоде её не предлагают:
+    # там заморожен весь расчёт, и база новую заморозку отвергнет — предлагать
+    # кнопку значило бы обещать невозможное. Право проверяется отдельно от
+    # состояния, как и у остальных действий: две разные причины «кнопки нет» не
+    # смешиваются.
+    freeze_denied = permissions.explain(who, permissions.PAYSLIP_FREEZE) if not frozen else ""
+    can_freeze = not freeze_denied and not frozen
+
     return render(
         request,
         "web/period.html",
@@ -160,6 +181,15 @@ def period_page(
                             money(row.amounts.get(column.code)) for column in sheet.columns
                         ],
                         "total": money(row.total),
+                        # Заморозка у человека одна на все его регистры, а строк
+                        # у него может быть две. Метка стоит у каждой (иначе
+                        # половина ведомости выглядела бы живой), а действие —
+                        # один раз: две одинаковые кнопки об одном и том же
+                        # читаются как разные.
+                        "payslip_id": row.payslip_id,
+                        "frozen": row.frozen,
+                        "freeze_reason": row.freeze_reason,
+                        "show_action": first_of_payslip(row.payslip_id, seen_payslips),
                     }
                     for row in sheet.rows
                 ],
@@ -200,6 +230,11 @@ def period_page(
             "history": lifecycle.history(payrun),
             "approved": request.GET.get("approved") == "1",
             "reopened": request.GET.get("reopened") == "1",
+            # --- заморозка строк (T027) ---
+            "can_freeze": can_freeze,
+            "freeze_denied": freeze_denied,
+            "froze": request.GET.get("froze") == "1",
+            "released": request.GET.get("released") == "1",
         },
         status=status,
     )
@@ -321,6 +356,86 @@ def period_reopen(request, period_id):
         ),
         done_flag="reopened",
         error_title="Период не открыт.",
+    )
+
+
+def find_payslip(request, payslip_id) -> tuple[Payslip, Period]:
+    """Строка ведомости и её учётный месяц — или 404.
+
+    Невидимой строки для человека не существует: политики её не отдают, и
+    «нет доступа» здесь неотличимо от «нет такой строки» намеренно — по коду
+    ответа не должно быть видно, что у соседней точки кто-то есть.
+    """
+    payslip = (
+        Payslip.objects.filter(pk=payslip_id).select_related("payrun").first()
+    )
+    if payslip is None:
+        raise Http404("строка ведомости не найдена")
+    period = Period.objects.filter(
+        tenant_id=payslip.tenant_id, period=payslip.payrun.period
+    ).first()
+    if period is None:
+        raise Http404("период не найден")
+    return payslip, period
+
+
+def payslip_action(request, payslip_id, *, run, done_flag, error_title):
+    """Общая обвязка заморозки и снятия: право, действие, отказ словами.
+
+    Порядок тот же, что у расчёта и цикла периода (T064): право → состояние →
+    поля формы. Человек без права не должен сначала узнавать про состояние
+    периода, до которого ему нет дела.
+    """
+    payslip, period = find_payslip(request, payslip_id)
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        raise Http404("строка ведомости не найдена")
+
+    try:
+        permissions.check(who, permissions.PAYSLIP_FREEZE)
+    except permissions.PermissionRefused as refusal:
+        return period_page(
+            request, period,
+            error=refusal.message, error_title=error_title,
+            status=refusal.http_status,
+        )
+
+    try:
+        run(payslip, who)
+    except PayrunRefused as refusal:
+        return period_page(
+            request, period,
+            error=refusal.message, error_title=error_title,
+            status=refusal.http_status,
+        )
+
+    # Перенаправление после записи: обновление страницы не повторяет действие.
+    return redirect(reverse("period", args=[period.id]) + f"?{done_flag}=1")
+
+
+@login_required
+@require_POST
+def payslip_freeze(request, payslip_id):
+    """«Заморозить строку»: спор по одному человеку не держит остальных."""
+    return payslip_action(
+        request, payslip_id,
+        run=lambda payslip, who: freezing.freeze(
+            payslip, actor_id=who.user_id, reason=request.POST.get("reason", "")
+        ),
+        done_flag="froze",
+        error_title="Строка не заморожена.",
+    )
+
+
+@login_required
+@require_POST
+def payslip_release(request, payslip_id):
+    """«Снять заморозку»: человек возвращается в общий расчёт."""
+    return payslip_action(
+        request, payslip_id,
+        run=lambda payslip, who: freezing.release(payslip, actor_id=who.user_id),
+        done_flag="released",
+        error_title="Заморозка не снята.",
     )
 
 

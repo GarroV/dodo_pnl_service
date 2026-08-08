@@ -12,6 +12,11 @@ urlpatterns = [
     # просмотр, и по ссылке из письма или из истории браузера случиться не должны.
     path("periods/<uuid:period_id>/approve/", views.period_approve, name="period-approve"),
     path("periods/<uuid:period_id>/reopen/", views.period_reopen, name="period-reopen"),
+    # Заморозка спорной строки ведомости (T027). Адрес по строке, а не по
+    # периоду: в контракте блока он записан как POST /payslips/{id}/freeze, и
+    # строка однозначно определяет период сама.
+    path("payslips/<uuid:payslip_id>/freeze/", views.payslip_freeze, name="payslip-freeze"),
+    path("payslips/<uuid:payslip_id>/release/", views.payslip_release, name="payslip-release"),
     # Вход: логин с паролем, выход, смена своего пароля.
     path("login/", views.login_page, name="login"),
     path("logout/", views.logout_page, name="logout"),

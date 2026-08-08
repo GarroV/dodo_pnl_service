@@ -832,6 +832,70 @@ class PayslipTotals(models.Model):
         db_table = "payslip_totals"
 
 
+class PayslipFreeze(models.Model):
+    """Строка ведомости заморожена: по этому человеку идёт спор (T027).
+
+    Зачем это отдельно от утверждения периода. Утверждение морозит расчёт
+    целиком, а спор обычно идёт по одному человеку — и он не должен держать
+    остальных: «хочу закрыть месяц, пока разбираемся с одним» (спека). Поэтому
+    заморозка построчная, а утверждение периода её поглощает: внутри
+    утверждённого расчёта морозить нечего, там заморожено всё.
+
+    Действующей заморозкой считается строка с пустым `released_at`. Снятие не
+    удаляет её, а помечает: «почему морозили и кто» — единственная запись о
+    споре, и стирать её нельзя. Замораживать и снимать можно много раз.
+
+    Причина обязательна (`payslip_freezes_reason_not_blank`): заморозка без
+    объяснения через месяц не читается никем. У снятия причины нет — оно
+    ничего не переписывает, а возвращает человека в общий порядок (то же
+    решение, что у открытия точки в T022).
+
+    Сами числа замороженной строки держат **триггеры** (миграция `0050`), а не
+    это объявление: пересчёт ходит в `payslips`, `payslip_totals` и
+    `pay_components` тремя разными путями, и договариваться между собой они не
+    обязаны.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    # db_constraint=False + DO_NOTHING по образцу `PayrunTransition`: внешний
+    # ключ ставится руками с `on delete cascade`, чтобы заморозка исчезала
+    # вместе со своей строкой ведомости **средствами базы**. Если бы каскад
+    # исполнял Django, он сносил бы заморозку раньше строки — и сторож строки
+    # видел бы «не заморожено», то есть заморозка обходилась бы удалением
+    # ведомости через ORM.
+    payslip = models.ForeignKey(
+        Payslip, on_delete=models.DO_NOTHING, db_column="payslip_id", db_constraint=False
+    )
+    reason = models.TextField()
+    frozen_at = models.DateTimeField(db_default=now_default())
+    frozen_by = models.UUIDField(null=True, blank=True)
+    # Пусто — заморозка действует, числа строки не меняются и пересчёт её обходит.
+    released_at = models.DateTimeField(null=True, blank=True)
+    released_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "payslip_freezes"
+        indexes = [
+            models.Index("tenant", "payslip", name="payslip_freezes_payslip_idx"),
+        ]
+        constraints = [
+            # Одна действующая заморозка на строку. Частичный индекс, а не
+            # обычная уникальность: спор может вернуться, и прошлые заморозки
+            # обязаны оставаться в истории.
+            models.UniqueConstraint(
+                fields=["tenant", "payslip"],
+                condition=models.Q(released_at__isnull=True),
+                name="payslip_freezes_active_uniq",
+            ),
+            # Пробелы вместо объяснения — то же самое, что пустота.
+            models.CheckConstraint(
+                condition=~models.Q(reason__regex=r"^\s*$"),
+                name="payslip_freezes_reason_not_blank",
+            ),
+        ]
+
+
 class PayComponent(models.Model):
     """Атом расчёта. Из компонентов собирается и ведомость, и строки P&L."""
 

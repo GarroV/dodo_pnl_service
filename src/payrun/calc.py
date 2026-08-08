@@ -19,8 +19,11 @@
 Утверждённый период не считается: отказ приходит словами до записи, а база
 держит тот же запрет триггером — см. `lifecycle`.
 
-Чего здесь нет и не должно быть: утверждения, отката, блокировок, ретро-дельты,
-следа расчёта (D025) — это T024–T027. Расчёт синхронный: 32 человека считаются
+Замороженные строки (T027) пересчёт обходит стороной: спорный сотрудник не
+держит остальных и не переписывается сам.
+
+Чего здесь нет и не должно быть: утверждения, отката, ретро-дельты,
+следа расчёта (D025) — это T024–T026. Расчёт синхронный: 32 человека считаются
 мгновенно, очередь пришлось бы объяснять пользователю зря.
 """
 from __future__ import annotations
@@ -39,6 +42,7 @@ from core.models import Timesheet as TimesheetRow
 from payroll import Employee, PayrollEngine, Timesheet, d, insured_base, uses_insured_hours
 
 from .errors import LedgerAccessDenied, PayrunRefused
+from .freezing import frozen_payslip_ids
 from .lifecycle import mark_calculated, refuse_if_approved
 from .rules import select_rules
 
@@ -84,6 +88,8 @@ class CalcOutcome:
     components: int
     calculated_at: datetime
     ledgers: list[str] = field(default_factory=list)
+    # Сколько строк пересчёт обошёл стороной: по ним идёт спор (T027).
+    frozen: int = 0
 
 
 def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
@@ -267,21 +273,38 @@ def calculate_period(*, tenant_id: UUID, period: date, visible_ledgers) -> CalcO
 
 
 def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
-    """Сохранить расчёт, заменив прежний за тот же период."""
+    """Сохранить расчёт, заменив прежний за тот же период.
+
+    Замороженные строки (T027) пересчёт обходит стороной: их не сносят и не
+    считают заново — иначе спор по одному человеку либо переписывал бы его
+    числа, либо держал бы весь месяц. Пропуск сделан явно, но гарантией не
+    является: снос упёрся бы в триггер `payslips_row_frozen`, то есть
+    «заморозка не заморозка» не может случиться молча.
+    """
     payrun, _ = Payrun.objects.get_or_create(tenant_id=tenant_id, period=period)
+    frozen = frozen_payslip_ids(payrun.pk)
+    frozen_employees = set(
+        Payslip.objects.filter(pk__in=frozen).values_list("employee_id", flat=True)
+    )
+
     # Ведомости пересобираются целиком: правка входных данных не должна
     # оставлять в базе строки, посчитанные по прежним.
-    Payslip.objects.filter(payrun=payrun).delete()
+    Payslip.objects.filter(payrun=payrun).exclude(pk__in=frozen).delete()
 
+    fresh = [
+        (case, slip) for case, slip in slips
+        if case.employee_id not in frozen_employees
+    ]
     rows = [
         Payslip(
             tenant_id=tenant_id, payrun=payrun,
             employee_id=case.employee_id, unit_id=case.unit_id,
             notes=list(slip.notes),
         )
-        for case, slip in slips
+        for case, slip in fresh
     ]
     Payslip.objects.bulk_create(rows)
+    slips = fresh
 
     # Итоги — отдельной таблицей: они посчитаны по всем регистрам сразу и видны
     # только тому, кому видны все регистры строки (миграция 0009, issue #42).
@@ -311,4 +334,5 @@ def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
     return CalcOutcome(
         payrun_id=payrun.pk, preset_code=preset_code, slips=len(rows),
         components=len(components), calculated_at=calculated_at, ledgers=ledgers,
+        frozen=len(frozen),
     )

@@ -179,8 +179,13 @@ R_OTHER = "e1111111-0000-0000-0000-00000000000f"
 # считать период и править табель проверяется отдельно от набора регистров
 # (T064). У администратора сети их нет намеренно — и регистры ему в фикстуре
 # выданы все, чтобы отказ нельзя было списать на видимость.
-P_DIRECTOR = '["timesheet.edit", "payrun.calculate", "period.approve", "period.reopen"]'
-P_ACCOUNTANT = '["timesheet.edit", "payrun.calculate", "period.approve"]'
+P_DIRECTOR = (
+    '["timesheet.edit", "payrun.calculate", "period.approve", "period.reopen",'
+    ' "payslip.freeze"]'
+)
+P_ACCOUNTANT = (
+    '["timesheet.edit", "payrun.calculate", "period.approve", "payslip.freeze"]'
+)
 P_MANAGER = '["timesheet.edit", "unit.close"]'
 P_ADMIN = '["directory.manage", "rules.manage", "roles.manage"]'
 
@@ -361,6 +366,14 @@ def wipe_payruns(dsn: str) -> None:
                 f"update payruns set status = 'reopened' "
                 f"where tenant_id in {tenants} and status = 'approved'"
             )
+        # Замороженную строку ведомости база не даёт ни менять, ни удалять
+        # (T027) — держит триггер, то есть и на суперпользователя тоже. Уборка
+        # снимает заморозки, а не стирает их: снятие разрешено в любом
+        # состоянии периода как раз ради обслуживания.
+        conn.execute(
+            f"update payslip_freezes set released_at = now() "
+            f"where tenant_id in {tenants} and released_at is null"
+        )
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
         conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")

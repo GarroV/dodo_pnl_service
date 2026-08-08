@@ -9,6 +9,10 @@
 всем регистрам сразу и живут в отдельной таблице `payslip_totals`, закрытой
 своей политикой (T050): роль видит их, только если видит все регистры строки.
 
+**Замороженная строка помечена** (T027): по человеку идёт спор, его числа
+пересчёт не трогает. Метка едет вместе со строкой, а не спрашивается отдельно
+экраном, — иначе ведомость и пометка разъезжались бы при любой фильтрации.
+
 **Строка — пара «сотрудник × регистр».** Регистр — свойство компонента, а не
 человека: у сотрудника кухни часы идут в дополнительном регистре, а надбавка за
 питание — в официальном. Поэтому одна ведомость с меткой регистра (D023), а не
@@ -37,6 +41,12 @@ class Cell:
     title: str
     amount: Decimal
     key: str = ""  # чем различать однофамильцев; по умолчанию — имя
+    # Строка ведомости, к которой относится сумма, и её заморозка (T027).
+    # Заморозка у сотрудника одна на все его регистры: морозится строка
+    # ведомости целиком, а не отдельная её половина.
+    payslip_id: UUID | None = None
+    frozen: bool = False
+    freeze_reason: str = ""
 
     @property
     def employee_key(self) -> str:
@@ -56,6 +66,9 @@ class Row:
     ledger: str
     amounts: dict[str, Decimal]
     total: Decimal
+    payslip_id: UUID | None = None
+    frozen: bool = False
+    freeze_reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -96,7 +109,11 @@ def assemble(cells: list[Cell]) -> Sheet:
         titles.setdefault(cell.code, cell.title)
         row = grouped.setdefault(
             (cell.employee_key, cell.ledger),
-            {"employee": cell.employee, "unit": cell.unit, "amounts": {}},
+            {
+                "employee": cell.employee, "unit": cell.unit, "amounts": {},
+                "payslip_id": cell.payslip_id, "frozen": cell.frozen,
+                "freeze_reason": cell.freeze_reason,
+            },
         )
         amounts = row["amounts"]
         amounts[cell.code] = amounts.get(cell.code, Decimal(0)) + cell.amount
@@ -107,6 +124,8 @@ def assemble(cells: list[Cell]) -> Sheet:
         Row(
             employee=body["employee"], unit=body["unit"], ledger=ledger,
             amounts=body["amounts"], total=sum(body["amounts"].values(), Decimal(0)),
+            payslip_id=body["payslip_id"], frozen=body["frozen"],
+            freeze_reason=body["freeze_reason"],
         )
         for (_, ledger), body in sorted(
             grouped.items(), key=lambda item: (item[1]["employee"], _ledger_key(item[0][1]))
@@ -138,6 +157,12 @@ def build_sheet(tenant_id: UUID, period: date) -> Sheet:
     # ради них подниматься не должны.
     from core.models import PayComponent
 
+    from .freezing import active_freezes
+
+    # Заморозки видны по тем же политикам, что и сами строки ведомости:
+    # приложение выборку не сужает (D014).
+    freezes = active_freezes(tenant_id, period)
+
     cells = [
         Cell(
             employee=f"{component.payslip.employee.last_name} "
@@ -148,6 +173,12 @@ def build_sheet(tenant_id: UUID, period: date) -> Sheet:
             title=component.title,
             amount=component.amount,
             key=component.payslip.employee.external_id,
+            payslip_id=component.payslip_id,
+            frozen=component.payslip_id in freezes,
+            freeze_reason=(
+                freezes[component.payslip_id].reason
+                if component.payslip_id in freezes else ""
+            ),
         )
         for component in PayComponent.objects.filter(
             tenant_id=tenant_id, payslip__payrun__period=period
