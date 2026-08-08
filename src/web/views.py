@@ -25,10 +25,10 @@ from django.views.decorators.http import require_POST
 from core.models import Calendar, Payrun, Payslip, Period, Timesheet
 from payrun import freezing, jobs, lifecycle
 from payrun.errors import PayrunRefused
-from payrun.sheet import build_sheet
+from reports.sheet import build_slice
 
 from . import auth, permissions
-from .format import hours, ledger_title, money
+from .format import cut_title, hours, ledger_title, money
 from .principal import get_current_principal
 
 MONTHS = (
@@ -109,6 +109,16 @@ def first_of_payslip(payslip_id, seen: set) -> bool:
     return True
 
 
+def cut_url(period: Period, code: str) -> str:
+    """Адрес разреза. «Все видимые» — это адрес периода без параметра вовсе.
+
+    Не `?ledger=`, а чистый адрес: пустой параметр в ссылке выглядит как
+    четвёртый, безымянный регистр.
+    """
+    base = reverse("period", args=[period.id])
+    return base if not code else f"{base}?ledger={code}"
+
+
 def period_page(
     request,
     period,
@@ -124,8 +134,19 @@ def period_page(
     Ведомость собирается **только из компонентов выплаты** — суммарные поля
     ведомости не имеют политики видимости регистров и выдали бы скрытое
     вычитанием. Поэтому и итог здесь равен сумме показанных строк (D023).
+
+    Разрез по регистру приезжает из адреса и разбирается блоком `reports`
+    (T028): страница только показывает то, что он отдал. Собирать срез здесь
+    значило бы собирать его второй раз в выгрузке — и разъехаться с экраном.
     """
-    sheet = build_sheet(period.tenant_id, period.period)
+    # Разрез живёт в адресе, а не в сессии: ссылку на «официальный срез июня»
+    # можно отправить коллеге, и он увидит то же самое — в пределах того, что
+    # видно ему. После действия (расчёт, заморозка) страница возвращается к
+    # полной ведомости: адрес перехода собирается заново.
+    view = build_slice(
+        period.tenant_id, period.period, request.GET.get("ledger", "")
+    )
+    sheet = view.sheet
     seen_payslips: set = set()
     timesheets = Timesheet.objects.filter(tenant=period.tenant, period=period.period)
     payrun = Payrun.objects.filter(tenant=period.tenant, period=period.period).first()
@@ -213,10 +234,26 @@ def period_page(
                 ],
                 "employees": sheet.employees,
             },
+            # Переключатель разреза (T028). Кнопок либо нет вовсе, либо их
+            # больше одной: ряд из единственной кнопки намекал бы роли с одним
+            # регистром, что где-то есть и другие.
+            "cuts": [
+                {
+                    "code": cut.code,
+                    "title": cut_title(cut.code),
+                    "selected": cut.selected,
+                    "url": cut_url(period, cut.code),
+                }
+                for cut in view.cuts
+            ],
+            "cut_title": cut_title(view.cut) if view.cut else "",
             "ledgers": [
                 {"title": ledger_title(name), "total": money(amount)}
                 for name, amount in sheet.ledger_totals
             ],
+            # Разбивка по регистрам показывается, только когда регистров больше
+            # одного: иначе она слово в слово повторяет подвал ведомости.
+            "show_ledger_totals": len(sheet.ledger_totals) > 1,
             "total": money(sheet.total) if sheet else money(None),
             "calculated_at": payrun.calculated_at if payrun else None,
             "employees": timesheets.count(),

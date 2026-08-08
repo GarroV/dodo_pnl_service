@@ -83,6 +83,16 @@
   }
   table.sheet tbody tr:hover td:last-child { background: #f6f8ff; }
   table.sheet tfoot .grand td { background: #fff; }
+  /* Переключатель разреза ведомости (T028). Ссылки, а не кнопки: разрез живёт
+     в адресе, и его можно отправить коллеге. Выбранный — не ссылка вовсе:
+     ссылка на текущую страницу обманывает и мышь, и клавиатуру. */
+  nav.cuts { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+  nav.cuts .cut {
+    font-size: 13px; text-decoration: none; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 4px; padding: 4px 12px; background: #fff;
+  }
+  nav.cuts a.cut:hover { color: var(--accent); border-color: var(--accent); }
+  nav.cuts .cut.current { color: #fff; background: var(--ink); border-color: var(--ink); }
   /* Метка регистра, а не заливка строки: заливка мешает читать числа (D023). */
   .ledger {
     font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
