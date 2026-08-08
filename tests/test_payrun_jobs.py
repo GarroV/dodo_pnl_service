@@ -146,6 +146,89 @@ def test_a_stranger_context_does_not_reach_the_job(clean_payruns):
     assert job_row(dsn, job_id)["status"] == "queued"
 
 
+def test_the_jobs_of_another_tenant_are_invisible_to_the_database_itself(clean_payruns):
+    """Изоляцию заданий держит база, а не фильтр в выборке.
+
+    Фильтр по тенанту в `last_job` можно убрать — и ни один тест выше не
+    покраснеет: чужое задание всё равно не покажется, потому что его прячет
+    политика. Два контура прикрывают друг друга, и оттого ни один не проверен.
+    Поэтому спрашивается сама база под ролью приложения: владелец таблиц и
+    суперпользователь политики обходят, и на них проверка была бы фиктивной.
+    """
+    import psycopg
+
+    dsn = clean_payruns
+    tenant_id, users = tenant_and_users(dsn)
+    mine = make_job(dsn, tenant_id=tenant_id, actor_id=users["director"])
+
+    with psycopg.connect(dsn, autocommit=True) as conn:
+        stranger_tenant = conn.execute(
+            """insert into tenants (code, title, country_code, base_currency)
+               values ('zz-rls', 'Сосед', 'ZZ', 'ZZZ') returning id"""
+        ).fetchone()[0]
+        stranger_job = conn.execute(
+            "insert into payrun_jobs (tenant_id, period, status) "
+            "values (%s, %s, 'queued') returning id",
+            (stranger_tenant, JUNE),
+        ).fetchone()[0]
+
+    try:
+        with psycopg.connect(dsn) as conn:
+            conn.execute("set local role app_user")
+            conn.execute(
+                "select set_config('app.user_id', %s, true)", (users["director"],)
+            )
+            seen = {
+                str(row[0])
+                for row in conn.execute("select id from payrun_jobs").fetchall()
+            }
+            assert seen == {mine}, seen
+            # И записать в чужой тенант нельзя: у политики есть `with check`.
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                conn.execute(
+                    "insert into payrun_jobs (tenant_id, period, status) "
+                    "values (%s, %s, 'queued')",
+                    (stranger_tenant, "2026-07-01"),
+                )
+            conn.rollback()
+    finally:
+        with psycopg.connect(dsn, autocommit=True) as conn:
+            conn.execute("delete from payrun_jobs where id = %s", (stranger_job,))
+            conn.execute("delete from tenants where id = %s", (stranger_tenant,))
+
+
+def test_an_internal_failure_reaches_the_queue_and_the_page(clean_payruns):
+    """Поломка не выдаётся за выполненную задачу — ни человеку, ни очереди.
+
+    Получателей два, и правду должны узнать оба. Человек — по заданию: там
+    записан отказ его словами. Очередь — по исключению: `django-q` метит задачу
+    упавшей, только если она бросила. Проглотить исключение и вернуться было
+    можно, не сломав ни одного теста: очередь записала бы «выполнено» поверх
+    поломки, а на странице при этом стояло бы «оборвался».
+    """
+    from payrun import jobs
+
+    dsn = clean_payruns
+    tenant_id, users = tenant_and_users(dsn)
+    job_id = make_job(dsn, tenant_id=tenant_id, actor_id=users["director"])
+
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("сломалось внутри расчёта")
+
+    original = jobs.run_calculation
+    jobs.run_calculation = explode
+    try:
+        with pytest.raises(RuntimeError):
+            jobs.run_job(job_id, users["director"])
+    finally:
+        jobs.run_calculation = original
+
+    row = job_row(dsn, job_id)
+    assert row["status"] == "failed"
+    assert row["error"] == jobs.BROKEN
+    assert payslip_count(dsn) == 0
+
+
 # --- идемпотентность ---------------------------------------------------------
 
 
