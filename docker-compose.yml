@@ -1,4 +1,4 @@
-# Локальный запуск всего продукта: база + приложение.
+# Локальный запуск всего продукта: база, приложение и рабочий процесс очереди.
 #
 # Значения берутся из .env (скопировать с .env.example). Портов в этом файле
 # нет ни одного зашитого: локально 8000/5440, на площадке 8030/5440 — разница
@@ -7,6 +7,46 @@
 # Имя проекта задано явно: на площадке рядом живут чужие стеки, и наши
 # контейнеры не должны склеиться с ними по именам.
 name: dodo-pnl
+
+# Окружение приложения одним куском: веб и рабочий процесс очереди обязаны
+# видеть одно и то же. Это не экономия строк, а защита от расхождения: у них
+# должна быть одна база, один SECRET_KEY (им подписана полезная нагрузка
+# очереди) и одни настройки фонового расчёта. Разъехавшиеся списки переменных
+# в этом файле уже дважды стоили дефекта — см. историю DEV_LOGIN ниже.
+x-app-env: &app-env
+  # Внутри сети compose база — это хост db на своём обычном порту.
+  # DATABASE_URL из .env описывает путь с хоста (localhost:POSTGRES_HOST_PORT)
+  # и нужен для pytest и manage.py из venv, а не контейнеру.
+  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  SECRET_KEY: ${SECRET_KEY:?задайте SECRET_KEY в .env}
+  DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
+  DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+  # Вход-заглушка на время стройки. Переменную обязательно передавать в
+  # контейнер: без этой строки `DEV_LOGIN=0` в .env не доезжал до приложения,
+  # умолчание в настройках включало заглушку обратно, и на площадке любой
+  # открывший страницу входил директором. Найдено сверкой 2026-08-07.
+  DEV_LOGIN: ${DEV_LOGIN:-1}
+  # Пароль учёток сида: его читает и `seed_dev` при создании пользователей, и
+  # страница входа для кнопок быстрого входа. Тот же дефект, что был у
+  # DEV_LOGIN: без этой строки значение из `.env` не доезжало до контейнера,
+  # приложение молча брало умолчание, и сменить пароль на площадке было
+  # нечем. Умолчание здесь намеренно не дублируется — если переменной нет ни
+  # в `.env`, ни в окружении, compose передаст пустую строку, а приложение
+  # возьмёт своё умолчание из `src/web/flags.py`.
+  SEED_USER_PASSWORD: ${SEED_USER_PASSWORD-}
+  # Фоновый расчёт периода (T024). Выключатель обязан доезжать до контейнера:
+  # с PAYRUN_BACKGROUND=0 продукт считает прямо в запросе, и это осознанный
+  # режим для площадки без рабочего процесса очереди, а не поломка.
+  PAYRUN_BACKGROUND: ${PAYRUN_BACKGROUND:-1}
+  PAYRUN_QUEUE_WORKERS: ${PAYRUN_QUEUE_WORKERS:-2}
+  PAYRUN_QUEUE_TIMEOUT: ${PAYRUN_QUEUE_TIMEOUT:-600}
+  PAYRUN_QUEUE_STALE_SECONDS: ${PAYRUN_QUEUE_STALE_SECONDS:-10}
+  # Проверка здоровья читает их из окружения; без передачи молча берёт
+  # умолчания, и перенацелить её на площадке было бы нечем.
+  HEALTHCHECK_PORT: ${HEALTHCHECK_PORT:-8000}
+  HEALTHCHECK_PATH: ${HEALTHCHECK_PATH:-/}
+  HEALTHCHECK_TIMEOUT: ${HEALTHCHECK_TIMEOUT:-5}
 
 services:
   db:
@@ -45,33 +85,7 @@ services:
         # Именно service_healthy, а не service_started: контейнер базы отвечает
         # раньше, чем сам Postgres готов, и миграции падали бы на старте.
         condition: service_healthy
-    environment:
-      # Внутри сети compose база — это хост db на своём обычном порту.
-      # DATABASE_URL из .env описывает путь с хоста (localhost:POSTGRES_HOST_PORT)
-      # и нужен для pytest и manage.py из venv, а не контейнеру.
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      SECRET_KEY: ${SECRET_KEY:?задайте SECRET_KEY в .env}
-      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
-      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
-      # Вход-заглушка на время стройки. Переменную обязательно передавать в
-      # контейнер: без этой строки `DEV_LOGIN=0` в .env не доезжал до приложения,
-      # умолчание в настройках включало заглушку обратно, и на площадке любой
-      # открывший страницу входил директором. Найдено сверкой 2026-08-07.
-      DEV_LOGIN: ${DEV_LOGIN:-1}
-      # Пароль учёток сида: его читает и `seed_dev` при создании пользователей, и
-      # страница входа для кнопок быстрого входа. Тот же дефект, что был у
-      # DEV_LOGIN: без этой строки значение из `.env` не доезжало до контейнера,
-      # приложение молча брало умолчание, и сменить пароль на площадке было
-      # нечем. Умолчание здесь намеренно не дублируется — если переменной нет ни
-      # в `.env`, ни в окружении, compose передаст пустую строку, а приложение
-      # возьмёт своё умолчание из `src/web/flags.py`.
-      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD-}
-      # Проверка здоровья читает их из окружения; без передачи молча берёт
-      # умолчания, и перенацелить её на площадке было бы нечем.
-      HEALTHCHECK_PORT: ${HEALTHCHECK_PORT:-8000}
-      HEALTHCHECK_PATH: ${HEALTHCHECK_PATH:-/}
-      HEALTHCHECK_TIMEOUT: ${HEALTHCHECK_TIMEOUT:-5}
+    environment: *app-env
     ports:
       # Слева порт на хосте (APP_PORT), справа — всегда 8000 внутри контейнера.
       - "${APP_PORT:?задайте APP_PORT в .env}:8000"
@@ -85,6 +99,35 @@ services:
       # объяснено, почему проверки только порта недостаточно.
       test: ["CMD", "python", "docker/healthcheck.py"]
       interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  # Рабочий процесс очереди: он и считает периоды фоном (T024). Отдельный
+  # контейнер, а не поток внутри веба, — иначе расчёт жил и умирал бы вместе с
+  # запросом, ради чего очередь и заводилась.
+  #
+  # Если контейнера нет, продукт **не перестаёт считать**: страница периода
+  # видит, что задачу никто не взял, говорит об этом словами и предлагает
+  # посчитать прямо сейчас. Молчаливой подмены нет ни в одну сторону.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      app:
+        # Не просто «база готова», а «приложение живо»: схему накатывает веб, и
+        # рабочий процесс, запущенный раньше, падал бы на отсутствующих таблицах
+        # очереди и перезапускался, пока не повезёт.
+        condition: service_healthy
+    environment: *app-env
+    command: ["python", "manage.py", "qcluster"]
+    healthcheck:
+      # Живость проверяется по самой очереди, а не по процессу: процесс бывает
+      # жив и при этом не забирает задачи — см. docker/queue_healthcheck.py.
+      test: ["CMD", "python", "docker/queue_healthcheck.py"]
+      interval: 20s
       timeout: 10s
       retries: 3
       start_period: 20s
