@@ -343,6 +343,15 @@ def wipe_payruns(dsn: str) -> None:
     # каскад в Python), поэтому в чистом SQL каскада нет — см. журнал блока db.
     with psycopg.connect(dsn, autocommit=True) as conn:
         tenants = "(select id from tenants where code = 'rs-dev')"
+        # Утверждённый расчёт база не даёт ни менять, ни удалять (T023), и это
+        # правило действует в том числе на суперпользователя — держит триггер, а
+        # не политика. Уборка поэтому сначала открывает период заново: иначе
+        # фикстура падала бы на расчёте, утверждённом соседним тестом, вместо
+        # того чтобы убрать за ним.
+        conn.execute(
+            f"update payruns set status = 'reopened' "
+            f"where tenant_id in {tenants} and status = 'approved'"
+        )
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
         conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")

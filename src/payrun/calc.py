@@ -14,11 +14,14 @@
    объяснение — а база остаётся страховкой, не единственным контуром.
 4. **Записать** одной транзакцией, снеся прежний результат этого же периода:
    повторный запуск обязан давать то же самое, а не второй комплект ведомостей.
+   Расчёт оставляет период в статусе «посчитан» (T023).
 
-Чего здесь нет и не должно быть до третьей очереди: статусов периода и
-переходов, утверждения, отката, блокировок, ретро-дельты, следа расчёта (D025).
-Расчёт синхронный — 32 человека считаются мгновенно, очередь пришлось бы
-объяснять пользователю зря.
+Утверждённый период не считается: отказ приходит словами до записи, а база
+держит тот же запрет триггером — см. `lifecycle`.
+
+Чего здесь нет и не должно быть: утверждения, отката, блокировок, ретро-дельты,
+следа расчёта (D025) — это T024–T027. Расчёт синхронный: 32 человека считаются
+мгновенно, очередь пришлось бы объяснять пользователю зря.
 """
 from __future__ import annotations
 
@@ -36,6 +39,7 @@ from core.models import Timesheet as TimesheetRow
 from payroll import Employee, PayrollEngine, Timesheet, d, insured_base, uses_insured_hours
 
 from .errors import LedgerAccessDenied, PayrunRefused
+from .lifecycle import mark_calculated, refuse_if_approved
 from .rules import select_rules
 
 __all__ = ["CalcOutcome", "LedgerAccessDenied", "PayrunRefused", "calculate_period"]
@@ -247,6 +251,10 @@ def calculate_period(*, tenant_id: UUID, period: date, visible_ledgers) -> CalcO
             # Не «пустой расчёт»: тенанта не видно — значит, и права на него нет.
             raise PayrunRefused("партнёр недоступен")
 
+        # Раньше сбора данных: у утверждённого периода причина отказа одна и та
+        # же, сколько бы ни было других поводов, и человеку нужна именно она.
+        refuse_if_approved(tenant_id, period)
+
         rules = select_rules(tenant_id, tenant.country_code, period)
         cases = collect_cases(tenant_id, period)
         check_schemes(cases, rules.base)
@@ -299,9 +307,7 @@ def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
     PayComponent.objects.bulk_create(components)
 
     calculated_at = timezone.now()
-    Payrun.objects.filter(pk=payrun.pk).update(calculated_at=calculated_at)
-    # Статус остаётся черновиком намеренно: переходы черновик → посчитан →
-    # утверждён и их правила — задача T023, здесь их придумывать нельзя.
+    mark_calculated(payrun.pk, calculated_at=calculated_at)
     return CalcOutcome(
         payrun_id=payrun.pk, preset_code=preset_code, slips=len(rows),
         components=len(components), calculated_at=calculated_at, ledgers=ledgers,

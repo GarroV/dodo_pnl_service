@@ -652,7 +652,16 @@ class TimesheetDay(models.Model):
 
 
 class Payrun(models.Model):
-    """Расчёт за месяц целиком."""
+    """Расчёт за месяц целиком.
+
+    Жизненный цикл: `draft` → `calculated` → `approved`, откат даёт `reopened`
+    (миграция `0041_payrun_lifecycle`). Легальность перехода и неизменность
+    утверждённого расчёта держит база триггерами, а не приложение.
+
+    Статус периода (`Period.status`) — не то же самое: там учётный месяц тенанта
+    целиком, вместе с платежами и выручкой. Утверждение зарплаты не должно
+    замораживать весь месяц, поэтому у зарплаты свой статус.
+    """
 
     id = uuid_pk()
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
@@ -668,6 +677,46 @@ class Payrun(models.Model):
         db_table = "payruns"
         constraints = [
             models.UniqueConstraint(fields=["tenant", "period"], name="payruns_tenant_period_uniq"),
+        ]
+
+
+class PayrunTransition(models.Model):
+    """Журнал жизненного цикла расчёта: откуда, куда, кто и почему.
+
+    Заполняется **триггером базы**, а не приложением (миграция
+    `0041_payrun_lifecycle`). Иначе журнал зависел бы от того, что каждый путь
+    записи не забыл дописать строку, — то есть от дисциплины в коде, ровно от
+    того, от чего уходит D014.
+
+    Ключ последовательный, а не uuid, намеренно: журнал упорядочен, и порядок —
+    часть данных. У всех записей одной транзакции `now()` одинаковый, поэтому по
+    времени порядок переходов не восстанавливается.
+
+    `reason` и `actor_id` есть уже сейчас, хотя обязательными их сделает только
+    откат (T025): место для причины и автора должно быть в модели с самого
+    начала, иначе первый же откат потребовал бы переделки схемы.
+    """
+
+    id = models.BigAutoField(primary_key=True)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    # db_constraint=False: внешний ключ ставится руками в миграции, с
+    # `on delete cascade`. Django действие удаления в схему не пишет (каскад он
+    # исполняет в Python), а журнал обязан исчезать вместе с расчётом даже
+    # тогда, когда расчёт сносят чистым SQL.
+    payrun = models.ForeignKey(
+        Payrun, on_delete=models.CASCADE, db_column="payrun_id", db_constraint=False
+    )
+    # Пусто только у самой первой записи: у создания расчёта предыдущего статуса нет.
+    from_status = EnumField(db_type_name=PAYRUN_STATUS, null=True, blank=True)
+    to_status = EnumField(db_type_name=PAYRUN_STATUS)
+    actor_id = models.UUIDField(null=True, blank=True)
+    reason = models.TextField(null=True, blank=True)
+    at = models.DateTimeField(db_default=now_default())
+
+    class Meta:
+        db_table = "payrun_transitions"
+        indexes = [
+            models.Index("tenant", "payrun", name="payrun_transitions_payrun_idx"),
         ]
 
 
