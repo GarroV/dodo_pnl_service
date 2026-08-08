@@ -401,8 +401,25 @@ def june_approved(web_env):
     )
     payrun = Payrun.objects.get(tenant=tenant, period=date(2026, 6, 1))
     lifecycle.approve(payrun, actor_id=None)
-    yield tenant
-    wipe_payruns(web_env)
+
+    # Ставки запоминаются до правки: тесты этого модуля правят их задним числом,
+    # а база у веб-тестов общая на процесс. Не вернуть их — значит испортить
+    # суммы всем соседним модулям, и упадут они не здесь.
+    from core.models import EmploymentTerm, Period, Timesheet
+
+    rates = dict(EmploymentTerm.objects.values_list("id", "base_rate"))
+    try:
+        yield tenant
+    finally:
+        for term_id, rate in rates.items():
+            EmploymentTerm.objects.filter(pk=term_id).update(base_rate=rate)
+        wipe_payruns(web_env)
+        # Всё, что заведено ради получателя, тоже убирается. Список периодов
+        # отсортирован по убыванию месяца, поэтому оставленный июль становится
+        # «первым периодом» для каждого теста, который берёт первую ссылку, —
+        # и ломает их молча, вдалеке отсюда.
+        Timesheet.objects.filter(period__gt=date(2026, 6, 1)).delete()
+        Period.objects.filter(tenant=tenant, period__gt=date(2026, 6, 1)).delete()
 
 
 def bump_rates(factor: str) -> None:
