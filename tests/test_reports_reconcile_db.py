@@ -335,6 +335,34 @@ def test_the_payout_export_carries_the_same_total_the_role_sees(
         )
 
 
+def test_the_payout_export_repeats_the_screen_row_for_row(client, calculated_june):
+    """Скачанный файл сверяется **с экраном**, а не сам с собой.
+
+    «Итог файла равен сумме его строк» держит файл в согласии с самим собой и
+    молчит, когда выгрузка собрала другую выборку. Здесь книга читается обратно
+    и сравнивается со страницей, с которой человек её скачал: те же строки, в
+    том же порядке, на те же суммы — для каждой роли и в каждом её разрезе.
+
+    Читает страницу тот же разборщик, что и проверки ведомости (T028): вторые
+    «глаза» рядом с первыми разъехались бы с ними молча.
+    """
+    from test_reports_sheet import page, row_totals, shown_total
+
+    for user in CONTROL:
+        for query in ("", "?ledger=official"):
+            screen = page(client, user, query)
+            book = download(client, user, "payout", query)
+            *lines, footer = [Decimal(str(v)) for v in column(book.active, "Итого")]
+
+            assert lines == row_totals(screen), (
+                f"{user}{query}: строки файла не совпадают со строками экрана"
+            )
+            assert footer == shown_total(screen), (
+                f"{user}{query}: подвал файла {footer}, а на экране "
+                f"{shown_total(screen)}"
+            )
+
+
 @pytest.mark.parametrize("kind", ["payout", "pnl", "partner"])
 def test_no_export_of_the_accountant_knows_about_other_ledgers(
     client, calculated_june, kind
