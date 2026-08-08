@@ -52,8 +52,15 @@ const readSheet = () => evalIn(`
       cuts: [...document.querySelectorAll("nav.cuts .cut")].map(x => x.textContent.trim()),
       current: (document.querySelector("nav.cuts .cut.current") || {}).textContent || "",
       text: document.body.innerText,
-      // Едет ли страница по горизонтали. Прокрутка внутри .scroll — это норма,
-      // прокрутка всей страницы — нет.
+      // Горизонтальная прокрутка меряется у самой ведомости, а не у страницы.
+      // Страница не едет никогда: таблица завёрнута в .scroll, и перелив
+      // прячется внутрь него — то есть требование «читается без
+      // горизонтальной прокрутки» проверкой страницы не проверяется вовсе.
+      // Найдено смоуком 2026-08-08: у директора внутри было 191px перелива.
+      sheetScroll: (() => {
+        const box = document.querySelector(".scroll");
+        return box ? box.scrollWidth - box.clientWidth : 0;
+      })(),
       pageScroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     };
   })()
@@ -137,9 +144,9 @@ for (const role of ROLES) {
   }
 
   check(
-    `${role.code}: страница не едет по горизонтали на 1440`,
-    seen.pageScroll <= 0,
-    `перелив ${seen.pageScroll}px`,
+    `${role.code}: ведомость читается без горизонтальной прокрутки на 1440`,
+    seen.sheetScroll <= 0 && seen.pageScroll <= 0,
+    `в ведомости ${seen.sheetScroll}px, на странице ${seen.pageScroll}px`,
   );
 
   // --- переключатель разреза -------------------------------------------------

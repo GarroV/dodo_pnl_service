@@ -71,10 +71,23 @@
   /* Ведомость шире экрана — прокручивается сама, страница по горизонтали не едет. */
   .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; }
   table.sheet { font-size: 13px; }
-  table.sheet th, table.sheet td { padding: 6px 10px; white-space: nowrap; }
+  table.sheet th, table.sheet td { padding: 6px 7px; white-space: nowrap; }
   /* Заголовки колонок переносятся: названия компонентов приходят из пресета,
-     они длинные, и без переноса колонка «Итого» уезжает за край экрана. */
-  table.sheet th { white-space: normal; vertical-align: bottom; }
+     они длинные, и без переноса колонка «Итого» уезжает за край экрана.
+
+     Прописные и разрядка здесь сняты намеренно, в отличие от остальных таблиц:
+     «КОРРЕКТИРОВКА» вразрядку занимает на треть больше места, чем
+     «Корректировка», и на ведомости из двенадцати колонок эта треть — те самые
+     двести пикселей, из-за которых её приходилось прокручивать вбок. Читаемости
+     это не стоит ничего: длинное слово в обычном начертании читается легче.
+
+     Дат и номеров задач в этом файле нет намеренно: стили едут в разметке
+     каждой страницы, включая страницу входа, и всё написанное здесь читает
+     любой, кто её открыл. Подробности — в журнале блока. */
+  table.sheet th {
+    white-space: normal; vertical-align: bottom;
+    text-transform: none; letter-spacing: 0; font-size: 12px;
+  }
   table.sheet .strong { font-weight: 600; }
   /* Колонка «Итого» прилипает к правому краю: главное число строки должно быть
      видно всегда, а компонентов у страны может стать сколько угодно. */
@@ -93,11 +106,27 @@
   }
   nav.cuts a.cut:hover { color: var(--accent); border-color: var(--accent); }
   nav.cuts .cut.current { color: #fff; background: var(--ink); border-color: var(--ink); }
-  /* Метка регистра, а не заливка строки: заливка мешает читать числа (D023). */
+  /* Метка регистра, а не заливка строки: заливка мешает читать числа (D023).
+     Начертание обычное: «ДОПОЛНИТЕЛЬНЫЙ» вразрядку — самое широкое слово в
+     колонке, а метка обязана быть заметной, но не главной на строке. */
   .ledger {
-    font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+    font-size: 11px; letter-spacing: 0;
     color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
   }
+  /* Причина спора набирается редко, а место занимает в каждой строке. Поле
+     узкое по умолчанию и раскрывается, когда в него встали: подсказка нужна
+     тому, кто пишет, а не всем шестидесяти строкам сразу. */
+  table.sheet td.freeze input {
+    font: inherit; width: 92px; padding: 3px 6px;
+    border: 1px solid var(--line); border-radius: 4px; background: var(--bg);
+    transition: width .15s ease;
+  }
+  table.sheet td.freeze input:focus { width: 220px; }
+  /* Кнопка внутри ведомости набрана мельче самих чисел: действие на строке
+     помогает, но спорить с суммами за внимание не должно. Заодно это те
+     последние два десятка пикселей, без которых таблица директора не влезала
+     в 1440. */
+  table.sheet td.freeze button { font-size: 13px; padding: 3px 8px; }
   button.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
   button.primary:hover { background: #1740b4; }
   /* Формы входа и смены пароля: одна колонка, поле шире подписи — читается
