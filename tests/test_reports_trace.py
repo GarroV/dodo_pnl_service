@@ -513,3 +513,31 @@ def test_the_rounding_is_the_same_one_that_wrote_the_row(web_env):
     for value in ("0.005", "1.005", "-1.005", "2.344", "2.345", "1022.727272727272727",
                   "65296", "0.014999999"):
         assert to_cents(Decimal(value)) == money(Decimal(value)), value
+
+
+def test_every_input_the_engine_produces_has_a_human_label(serbia_preset, web_env):
+    """Ключ без подписи читается на экране как отладочный вывод.
+
+    Список снимается с самого движка, а не пишется по памяти: подпись, забытая
+    у нового входа, — это строка вида «hours_divisor 8,00» посреди объяснения
+    денег. Именно так их и нашлось два (смоук 2026-08-08).
+    """
+    from web.views import INPUT_TITLES
+
+    produced: set[str] = set()
+    for scheme in ("standard", "half_time", "half_time_min_base", "direct", "temporary"):
+        for shape in ({"regular": 176}, {"regular": 32, "sick": 20},
+                      {"regular": 88, "vacation": 8, "holiday": 8}):
+            e = employee(scheme=scheme)
+            ts = timesheet(**shape)
+            try:
+                from payroll import PayrollEngine
+
+                slip = PayrollEngine(serbia_preset).calculate(e, ts)
+            except KeyError:
+                continue  # схемы нет в пресете — это проверяет другой тест
+            for step in slip.trace:
+                produced |= set(step.input_values)
+
+    missing = sorted(produced - set(INPUT_TITLES))
+    assert not missing, f"входы движка без подписи на экране: {', '.join(missing)}"
