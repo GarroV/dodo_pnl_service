@@ -103,10 +103,38 @@ def test_trace_without_a_correction_is_allowed(db):
 
 @pytest.fixture
 def clean_payruns(web_env):
-    """Расчёты периода сносятся до и после: тест смотрит на конкретные суммы."""
+    """Расчёты периода сносятся до и после: тест смотрит на конкретные суммы.
+
+    Табель возвращается к исходному виду тем же движением. Без этого тест ниже
+    оставлял в общей базе прогона правку на 1200 и наличные на 5000 навсегда:
+    база `web_env` живёт всю сессию, и следующий тест, знающий эталонную сумму
+    расчёта, получал 1 955 603,13 вместо 1 951 806,13 — падая не по своей вине.
+    Найдено при T020: тест импорта зелёный поодиночке и красный в общем прогоне.
+    """
+    import psycopg
+
+    def snapshot():
+        with psycopg.connect(web_env) as conn:
+            return conn.execute(
+                """select id, manual_correction, correction_reason, corrected_by,
+                          corrected_at, cash_payout
+                     from timesheets where period = %s order by id""",
+                (JUNE,),
+            ).fetchall()
+
+    before = snapshot()
     wipe_payruns(web_env)
     yield web_env
     wipe_payruns(web_env)
+    with psycopg.connect(web_env, autocommit=True) as conn:
+        for row in before:
+            conn.execute(
+                """update timesheets
+                      set manual_correction = %s, correction_reason = %s,
+                          corrected_by = %s, corrected_at = %s, cash_payout = %s
+                    where id = %s""",
+                (*row[1:], row[0]),
+            )
 
 
 def _seeded_employee(dsn: str) -> tuple[str, str]:

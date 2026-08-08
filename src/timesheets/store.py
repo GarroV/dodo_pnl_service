@@ -25,12 +25,14 @@
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
 from django.db import transaction
 from django.db.models import Sum
+from django.utils.timezone import now
 
 from core.models import Tenant, Timesheet, TimesheetDay
 from payroll import Timesheet as EngineTimesheet
@@ -40,8 +42,9 @@ from payrun.rules import select_rules
 from .spread import calendar_working_days, spread
 
 __all__ = [
-    "CellRefused", "daily_totals", "hour_types", "insured_base", "materialize",
-    "parse_hours", "set_cell", "timesheet_for",
+    "CellRefused", "RowInput", "daily_totals", "hour_types", "insured_base",
+    "materialize", "parse_hours", "row_differs", "set_cell", "store_row",
+    "timesheet_for",
 ]
 
 # Часы с двумя знаками — как в колонке. Больше не принимаем не из вредности:
@@ -210,6 +213,123 @@ def set_cell(*, timesheet: Timesheet, hour_type: str, hours: Decimal,
     timesheet.hours = kept
     Timesheet.objects.filter(pk=timesheet.pk).update(**changes)
     return hours
+
+
+@dataclass(frozen=True)
+class RowInput:
+    """Строка табеля так, как её приносит внешний источник (импорт, Dodo IS).
+
+    Отдельный тип, а не словарь: полей много, порядок у них не запоминается, и
+    перепутанные местами «удержание» и «наличные» дали бы правдоподобно неверную
+    зарплату молча.
+    """
+
+    hours: dict[str, Decimal]
+    insured_hours: Decimal
+    norm_hours: Decimal
+    deduction: Decimal = Decimal("0")
+    cash_payout: Decimal = Decimal("0")
+    manual_correction: Decimal | None = None
+
+
+def _same(left, right) -> bool:
+    """Числовое сравнение, а не строковое: «176» и «176.00» — одно число."""
+    return d(left) == d(right)
+
+
+def row_differs(row: Timesheet, want: RowInput) -> bool:
+    """Отличается ли строка в базе от того, что принёс источник.
+
+    Нужна ради идемпотентности загрузки (T020): совпало — **не пишем вовсе**.
+    Просто переписать теми же числами недостаточно: `_write_days` сносит дни и
+    создаёт заново, то есть у них меняются `id` и `created_at`, — и обещание
+    «повторная загрузка ничего не меняет» стало бы неправдой при равных числах.
+    """
+    stored = row.hours or {}
+    for kind in set(stored) | set(want.hours):
+        if not _same(stored.get(kind, 0), want.hours.get(kind, 0)):
+            return True
+    if not _same(row.insured_hours, want.insured_hours):
+        return True
+    if not _same(row.norm_hours, want.norm_hours):
+        return True
+    if not _same(row.deduction, want.deduction):
+        return True
+    if not _same(row.cash_payout, want.cash_payout):
+        return True
+    # Пусто и ноль здесь разные вещи: пусто значит «правки не было», и движок
+    # считает доплату до минимума сам.
+    if (row.manual_correction is None) != (want.manual_correction is None):
+        return True
+    if row.manual_correction is not None and not _same(
+        row.manual_correction, want.manual_correction
+    ):
+        return True
+    return False
+
+
+@transaction.atomic
+def store_row(*, timesheet: Timesheet, want: RowInput,
+              known: dict[str, dict] | None = None,
+              actor_id: UUID | None = None, reason: str = "",
+              source: str = "import") -> bool:
+    """Записать строку табеля целиком. Возвращает True, если что-то изменилось.
+
+    Почему не циклом из `set_cell`. Во-первых, `set_cell` бережёт связь «база
+    для взносов идёт за часами» (решение 9), а у источника база **своя**: в
+    таблице партнёра это отдельная колонка, и подменять её пересчётом значило бы
+    выбросить единственное место, где на Q005 есть ответ. Во-вторых, каждая
+    ячейка отдельно означала бы N перезаписей дней вместо одной.
+
+    Типы часов, которых источник не принёс, **не трогаются**: чужая таблица не
+    знает про ночные и переработку, и обнулять их «за компанию» — значит терять
+    введённое человеком.
+    """
+    if known is None:
+        known = hour_types(
+            timesheet.tenant_id, timesheet.period, country_of(timesheet.tenant_id)
+        )
+    for kind, hours in want.hours.items():
+        check_cell(kind, hours, known)
+
+    if want.manual_correction is not None and (actor_id is None or not reason.strip()):
+        # То же требование, что у ограничения базы (`timesheets_correction_trace_check`,
+        # D025). Проверяется здесь заранее, чтобы человек прочитал причину, а не
+        # текст нарушения ограничения.
+        raise CellRefused(
+            "ручную правку нельзя записать без следа: нужен автор и причина"
+        )
+
+    if not row_differs(timesheet, want):
+        return False
+
+    materialize(timesheet)
+    days = _working_days(timesheet)
+    for kind, hours in want.hours.items():
+        _write_days(timesheet, kind, hours, days, source=source)
+
+    # Итог пересобирается из дней — тем же способом, что в `set_cell`: источник
+    # месячного числа один, иначе инвариант становится утверждением о порядке
+    # вызовов, а не о данных.
+    kept = {kind: str(value.quantize(CENT)) for kind, value in daily_totals(timesheet).items()}
+    changes = {
+        "hours": kept,
+        "insured_hours": want.insured_hours,
+        "norm_hours": want.norm_hours,
+        "deduction": want.deduction,
+        "cash_payout": want.cash_payout,
+        "manual_correction": want.manual_correction,
+        "source": source,
+    }
+    if want.manual_correction is not None:
+        changes["correction_reason"] = reason
+        changes["corrected_by"] = actor_id
+        changes["corrected_at"] = now()
+
+    Timesheet.objects.filter(pk=timesheet.pk).update(**changes)
+    for name, value in changes.items():
+        setattr(timesheet, name, value)
+    return True
 
 
 def timesheet_for(employee_id: UUID, period: date) -> EngineTimesheet:

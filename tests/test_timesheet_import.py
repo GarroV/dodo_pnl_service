@@ -240,6 +240,9 @@ def test_second_import_changes_nothing(period_restored):
 
     Timesheet.objects.filter(period=JUNE).delete()
     _import()
+    assert TimesheetDay.objects.filter(timesheet__period=JUNE).exists(), (
+        "проверять неизменность дней имеет смысл только когда они есть"
+    )
 
     def snapshot():
         sheets = sorted(
@@ -321,14 +324,22 @@ def test_import_does_not_move_the_calculation(web_env, period_restored):
 
 
 def test_unknown_employee_lands_in_unmatched_rows(period_restored):
-    """Человека нет в справочнике — строка не теряется, а называется."""
+    """Человека нет в справочнике — строка не теряется, а называется.
+
+    Сотрудник не удаляется, а переименовывается: удаление унесло бы каскадом и
+    его табель, и условия найма, и тест чинил бы базу вместо проверки.
+    """
     from core.models import Employee
 
-    Employee.objects.filter(external_id="VUK MILOSEVIC").delete()
-
-    result = _import()
-    assert [row.name for row in result.unmatched_rows] == ["VUK MILOSEVIC"]
-    assert result.matched == 31
+    Employee.objects.filter(external_id="VUK MILOSEVIC").update(external_id="ушёл-в-никуда")
+    try:
+        result = _import()
+        assert [row.name for row in result.unmatched_rows] == ["VUK MILOSEVIC"]
+        assert result.matched == 31
+    finally:
+        Employee.objects.filter(external_id="ушёл-в-никуда").update(
+            external_id="VUK MILOSEVIC"
+        )
 
 
 # =============================================================================
@@ -336,8 +347,9 @@ def test_unknown_employee_lands_in_unmatched_rows(period_restored):
 # =============================================================================
 
 
-def _texts(result, kind: str) -> list[str]:
-    return [note.text for note in result.warnings if note.kind == kind]
+def _flagged(result, kind: str) -> list[str]:
+    """Кого именно подсветила загрузка — по ключу сотрудника, не по имени."""
+    return [note.external_id for note in result.warnings if note.kind == kind]
 
 
 def test_hours_above_norm_are_flagged(period_restored, sample_copy):
@@ -353,7 +365,7 @@ def test_hours_above_norm_are_flagged(period_restored, sample_copy):
     wb.save(path)
 
     result = _import(path)
-    assert any("VUK MILOSEVIC" in text for text in _texts(result, "over_norm"))
+    assert "VUK MILOSEVIC" in _flagged(result, "over_norm")
 
 
 def test_employee_without_hours_is_flagged(period_restored, sample_copy):
@@ -369,7 +381,7 @@ def test_employee_without_hours_is_flagged(period_restored, sample_copy):
     wb.save(path)
 
     result = _import(path)
-    assert any("VUK MILOSEVIC" in text for text in _texts(result, "no_hours"))
+    assert "VUK MILOSEVIC" in _flagged(result, "no_hours")
 
 
 def test_hours_of_a_dismissed_employee_are_flagged(period_restored):
@@ -380,7 +392,7 @@ def test_hours_of_a_dismissed_employee_are_flagged(period_restored):
     )
     try:
         result = _import()
-        assert any("VUK MILOSEVIC" in text for text in _texts(result, "dismissed"))
+        assert "VUK MILOSEVIC" in _flagged(result, "dismissed")
     finally:
         Employee.objects.filter(external_id="VUK MILOSEVIC").update(dismissed_at=None)
 
