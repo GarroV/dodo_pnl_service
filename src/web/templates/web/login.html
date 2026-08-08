@@ -1,21 +1,15 @@
-{% extends "web/base.html" %}
+{% extends "web/base.html" %}{% load ui %}
 {% block title %}Вход{% endblock %}
 {% block content %}
 <h1>Вход</h1>
 <p class="sub">Логин и пароль выдаёт администратор сети.</p>
 
-{% if error %}<div class="alert">{{ error }}</div>{% endif %}
+{% if error %}{% notice "alert" %}{{ error }}{% endnotice %}{% endif %}
 
 <form method="post" action="{% url 'login' %}" class="card">{% csrf_token %}
   <input type="hidden" name="next" value="{{ next }}">
-  <p>
-    <label for="id_username">Логин</label><br>
-    <input id="id_username" name="username" value="{{ username|default:'' }}" autocomplete="username" autofocus required>
-  </p>
-  <p>
-    <label for="id_password">Пароль</label><br>
-    <input id="id_password" name="password" type="password" autocomplete="current-password" required>
-  </p>
+  <p>{% include "web/components/field.html" with id="id_username" name="username" label="Логин" value=username autocomplete="username" autofocus=True required=True stacked=True %}</p>
+  <p>{% include "web/components/field.html" with id="id_password" name="password" label="Пароль" type="password" autocomplete="current-password" required=True stacked=True %}</p>
   <p><button class="primary" type="submit">Войти</button></p>
 </form>
 

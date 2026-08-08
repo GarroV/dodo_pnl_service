@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}
+{% extends "web/base.html" %}{% load ui %}
 {% block title %}Расхождения{% endblock %}
 {% block content %}
 {% comment %}
@@ -18,26 +18,19 @@
 </p>
 
 {% if error %}
-<p class="alert">{{ error }}</p>
+{% notice "alert" %}{{ error }}{% endnotice %}
 {% elif nothing_to_compare %}
-<p class="empty">
+{% notice "empty" %}
   Сравнивать не с чем: за {{ previous_title }} в базе нет ни одной суммы,
   доступной вашей роли. Отчёт сравнивает месяц с предыдущим, поэтому у первого
   посчитанного месяца расхождений не бывает по построению.
-</p>
+{% endnotice %}
 {% else %}
 
-{% if cuts %}
-<nav class="cuts">
-  {% for cut in cuts %}
-    {% if cut.selected %}<span class="cut current">{{ cut.title }}</span>
-    {% else %}<a class="cut" href="{{ cut.url }}">{{ cut.title }}</a>{% endif %}
-  {% endfor %}
-</nav>
-{% endif %}
+{% include "web/components/cuts.html" with cuts=cuts label="Разрез отчёта по регистрам" %}
 
 {% if lines %}
-<div class="scroll">
+{% scroll %}
 <table class="variance">
   <thead>
     <tr>
@@ -53,7 +46,7 @@
       <td>{{ line.employee }}</td>
       <td>{{ line.title }}<span class="hint">{{ line.code }}</span></td>
       <td>{{ line.unit }}</td>
-      <td><span class="ledger">{{ line.ledger }}</span></td>
+      <td>{% ledger line.ledger %}</td>
       <td class="num">{{ line.previous }}</td>
       <td class="num">{{ line.current }}</td>
       <td class="num delta">{{ line.delta }}</td>
@@ -70,17 +63,17 @@
     </tr>
   </tfoot>
 </table>
-</div>
+{% endscroll %}
 <p class="note">
   Сравнено пар «сотрудник × компонент»: {{ compared }}. Показаны только те, где
   превышены оба порога сразу — процент и сумма. Пороги задаются правилами
   страны и переопределяются партнёром; в коде их нет.
 </p>
 {% else %}
-<p class="empty">
+{% notice "empty" %}
   Отклонений выше порогов нет. Сравнено пар «сотрудник × компонент»:
   {{ compared }} — то есть сравнение состоялось, а не было пропущено.
-</p>
+{% endnotice %}
 {% endif %}
 
 {% endif %}

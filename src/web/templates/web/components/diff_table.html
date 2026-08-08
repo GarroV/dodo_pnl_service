@@ -1,0 +1,49 @@
+{% comment %}
+Таблица расхождений «в таблице — в расчёте — разница» (T031).
+
+Один и тот же вид данных показывается на экране сверки дважды: существенные
+расхождения и расхождения на копейки. Разведены они намеренно — округление на
+стороне бухгалтерии не повод искать ошибку в правиле, — но разметка у них одна,
+и двумя копиями она разъехалась бы на первой правке.
+
+Параметры:
+  lines         строки сверки (name, sheet, off[], causes[]);
+  highlight     помечать строки как расхождение (`tr.off`, красная разница):
+                копейки помечать нельзя, иначе существенное в них утонет;
+  with_causes   показывать, что разошлось на входе. «Входы сошлись, а итог нет»
+                значит, что разошлось правило расчёта, — и это главный вывод
+                экрана, ради которого сверка и делается.
+
+Имя человека стоит только в первой строке его группы: повторённое пять раз, оно
+читается как пять разных людей.
+{% endcomment %}<table class="sheet">
+  <thead>
+    <tr><th>Сотрудник</th><th>Что</th><th class="num">В таблице</th>
+        <th class="num">В расчёте</th><th class="num">Разница</th></tr>
+  </thead>
+  <tbody>
+    {% for line in lines %}
+      {% for amount in line.off %}
+      <tr{% if highlight %} class="off"{% endif %}>
+        <td>{% if forloop.first %}{{ line.name }}{% if with_causes %}<div class="why">{{ line.sheet }}</div>{% endif %}{% endif %}</td>
+        <td>{{ amount.title }}</td>
+        <td class="num">{{ amount.expected }}</td>
+        <td class="num">{{ amount.actual }}</td>
+        <td class="num{% if highlight %} off{% endif %}">{{ amount.diff }}</td>
+      </tr>
+      {% endfor %}
+      {% if with_causes %}
+      <tr>
+        <td></td>
+        <td colspan="4">
+          {% if line.causes %}
+          <ul class="why">{% for cause in line.causes %}<li>{{ cause }}</li>{% endfor %}</ul>
+          {% else %}
+          <span class="why">Входы сошлись — расхождение даёт правило расчёта.</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
