@@ -430,6 +430,62 @@ def test_journal_of_another_tenant_is_invisible(db):
         assert journal(conn, payrun_id) == []
 
 
+def test_the_journal_goes_away_with_its_payrun(db):
+    """Истории без расчёта не бывает: журнал исчезает вместе с ним.
+
+    Каскад — настоящий, внешним ключом в схеме, а не удалением из приложения:
+    «только пополняется» и «исчезает вместе с расчётом» уживаются лишь тогда,
+    когда второе делает база сама, внутри удаления самого расчёта.
+    """
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        payrun_id = payrun_in(conn, "calculated")
+        assert len(journal(conn, payrun_id)) == 2
+
+        conn.execute("delete from payruns where id = %s", (payrun_id,))
+        assert journal(conn, payrun_id) == []
+
+
+def test_the_seed_runs_over_a_period_that_was_approved():
+    """Сид обязан проходить и после того, как период утверждали и открывали.
+
+    Падало: `seed_dev` сносит расчёты через ORM, а Django исполняет каскад **в
+    Python** — то есть отдельным `delete` по журналу. Для триггера это прямое
+    удаление истории, а не каскад, и он отказывал. После первого же утверждения
+    базу разработки и демо нельзя было пересидировать.
+
+    Тест гоняет настоящую команду в подпроцессе на своей базе: воспроизводится
+    ровно то, что делает человек руками.
+    """
+    psycopg = pytest.importorskip("psycopg")
+
+    from conftest import run_manage, temp_database
+
+    with temp_database("payrun_seed") as dsn:
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn, autocommit=True) as conn:
+            payrun_id = conn.execute(
+                "insert into payruns (tenant_id, period) "
+                "select id, '2026-06-01' from tenants limit 1 returning id"
+            ).fetchone()[0]
+            set_status(conn, payrun_id, "calculated", "approved")
+            with conn.transaction():
+                conn.execute(
+                    "select set_config('app.transition_reason', %s, true)", (DEFAULT_REASON,)
+                )
+                conn.execute(
+                    "update payruns set status = 'reopened' where id = %s", (payrun_id,)
+                )
+            assert conn.execute("select count(*) from payrun_transitions").fetchone()[0] == 4
+
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn) as conn:
+            # Расчёт снесён — значит, и история его не пережила.
+            assert conn.execute("select count(*) from payruns").fetchone()[0] == 0
+            assert conn.execute("select count(*) from payrun_transitions").fetchone()[0] == 0
+
+
 # --- расчёт и статус ---------------------------------------------------------
 # Дальше — живой Django на базе с сидом: расчёт со страницы периода обязан
 # оставлять статус, а не молча держать черновик.

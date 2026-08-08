@@ -703,8 +703,15 @@ class PayrunTransition(models.Model):
     # `on delete cascade`. Django действие удаления в схему не пишет (каскад он
     # исполняет в Python), а журнал обязан исчезать вместе с расчётом даже
     # тогда, когда расчёт сносят чистым SQL.
+    #
+    # DO_NOTHING — не «ничего не происходит», а «Django в это не вмешивается»:
+    # каскад исполняет база настоящим внешним ключом. С `CASCADE` Django чистил
+    # журнал сам, отдельным `delete`, и для триггера это было прямое удаление
+    # истории, а не каскад — он отказывал, и `seed_dev` падал на любой базе, где
+    # период хоть раз утверждали (миграция `0043`). «Журнал только пополняется»
+    # и «журнал исчезает вместе с расчётом» уживаются только так.
     payrun = models.ForeignKey(
-        Payrun, on_delete=models.CASCADE, db_column="payrun_id", db_constraint=False
+        Payrun, on_delete=models.DO_NOTHING, db_column="payrun_id", db_constraint=False
     )
     # Пусто только у самой первой записи: у создания расчёта предыдущего статуса нет.
     from_status = EnumField(db_type_name=PAYRUN_STATUS, null=True, blank=True)
