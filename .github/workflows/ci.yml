@@ -1,0 +1,118 @@
+# Проверки на каждый pull request: линт, тесты, сборка образа (T037).
+#
+# Смысл — не «зелёная галочка», а блокировка слияния сломанного. Поэтому здесь
+# три вещи, каждая из которых на этом проекте уже стоила дефекта:
+#
+# 1. **Живой Postgres обязателен.** Тесты схемы и доступа создают временную базу
+#    и накатывают в неё миграции. Без базы они не падают, а пропускаются — и
+#    прогон получается зелёным, не проверив разграничение доступа вовсе. Именно
+#    так когда-то прожил незамеченным дефект видимости регистров.
+# 2. **Пропуски видны и проверяются.** Шаг «пропуски» разбирает отчёт и валит
+#    сборку, если пропущено что-то кроме сверки с настоящей таблицей партнёра.
+# 3. **Рабочий процесс очереди не поднимается.** Живая очередь подхватывает
+#    задания, заведённые тестами, и пересчитывает данные у теста под руками
+#    (issue #65). Здесь очереди нет — ни отдельной службы, ни `qcluster`.
+name: Проверки
+
+on:
+  pull_request:
+  # На master — тоже: ветка сливается локально, и без этого прогона поломка,
+  # приехавшая слиянием, осталась бы незамеченной до следующего PR.
+  push:
+    branches: [master]
+
+concurrency:
+  # Новый пуш в ту же ветку отменяет предыдущий прогон: ждать результата по
+  # устаревшему коду смысла нет.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Линт
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      # Ставим проект целиком, а не один ruff: версия линтера должна быть той,
+      # что записана в pyproject.toml, иначе локально и в CI разные правила.
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+
+  tests:
+    name: Тесты
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        # Тот же образ, что в docker-compose.yml и на площадке: расхождение
+        # версий Postgres даёт ошибки, видные только где-то одном.
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: app
+          POSTGRES_DB: dodo_pnl
+          # Пароля нет намеренно, и это не послабление: контейнер живёт внутри
+          # одного прогона, слушает только его runner и умирает вместе с ним.
+          # Пароль здесь был бы строкой в открытом файле, которая изображает
+          # секрет, но им не является.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d dodo_pnl"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      # Куда тесты ходят создавать временные базы. Без этой переменной они
+      # пропускаются молча — см. шаг «пропуски» ниже, он этого не допустит.
+      DODO_TEST_ADMIN_DSN: postgresql://app@127.0.0.1:5432/postgres
+      SECRET_KEY: ci-only-not-a-secret
+      DJANGO_SETTINGS_MODULE: config.settings
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[dev]"
+
+      # -rs печатает причину каждого пропуска прямо в лог: человек, открывший
+      # прогон, видит, что именно не проверялось, без раскопок в отчёте.
+      - name: pytest
+        run: pytest -rs --junitxml=pytest-report.xml
+
+      - name: Пропуски — только те, что положено
+        # Даже если pytest упал: пропуск, спрятавшийся за падением, — тот же
+        # необнаруженный пробел в проверках.
+        if: always()
+        run: python .github/scripts/check_skips.py pytest-report.xml
+
+      - name: Отчёт прогона
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: pytest-report.xml
+          if-no-files-found: warn
+
+  image:
+    name: Сборка образа
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Только сборка, без публикации: реестра у проекта нет, а образ на
+      # площадке собирается из этого же Dockerfile. Проверяем ровно то, что
+      # ломается чаще всего, — что он вообще собирается.
+      - run: docker build -t dodo-pnl-app:ci .
+      # Заодно — что compose-файл разбирается с примером окружения. Дешевле
+      # поймать опечатку здесь, чем при раскатке на площадку.
+      - name: docker compose config
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
