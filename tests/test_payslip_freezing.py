@@ -280,9 +280,20 @@ def test_freezing_needs_its_own_right(db):
 
 
 def test_releasing_needs_the_same_right(disputed, db):
+    """Снятие — то же право, что и заморозка, и отказ громкий, а не «0 строк».
+
+    Форма политики та же, что в `0022`: `with check` без `using`. Тихий отказ
+    приложение приняло бы за удачное снятие, и человек считал бы строку
+    размороженной.
+    """
     with as_app_user(db, USER_MANAGER) as conn:
-        # Правка без права даёт «изменено 0 строк» — тихо, но данные на месте.
-        assert release(conn, disputed["frozen"]) == 0
+        error = rejected(
+            conn,
+            """update payslip_freezes set released_at = now()
+                where payslip_id = %s and released_at is null""",
+            (disputed["frozen"],),
+        )
+        assert "row-level security" in str(error)
         assert conn.execute(
             """select released_at from payslip_freezes where payslip_id = %s""",
             (disputed["frozen"],),

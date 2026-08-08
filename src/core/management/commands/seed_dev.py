@@ -22,6 +22,7 @@ from typing import NamedTuple
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils.timezone import now
 
 from core import models
 from core.rules import import_presets
@@ -71,12 +72,17 @@ ROLES = [
     SeedRole(
         "director", "Оперативный директор",
         ["official", "supplementary", "internal"], None,
-        ["timesheet.edit", "payrun.calculate", "period.approve", "period.reopen"],
+        # `payslip.freeze` — заморозка спорной строки ведомости (T027): её
+        # ставит тот, кто ведёт месяц, а не управляющий точки.
+        [
+            "timesheet.edit", "payrun.calculate", "period.approve",
+            "period.reopen", "payslip.freeze",
+        ],
     ),
     SeedRole(
         "accountant", "Бухгалтер",
         ["official"], None,
-        ["timesheet.edit", "payrun.calculate", "period.approve"],
+        ["timesheet.edit", "payrun.calculate", "period.approve", "payslip.freeze"],
     ),
     SeedRole(
         "manager", "Управляющий точки",
@@ -215,6 +221,14 @@ class Command(BaseCommand):
         tenants = models.Tenant.objects.filter(code=TENANT_CODE)
         if not tenants.exists():
             return
+        # Замороженные строки ведомости база не даёт ни менять, ни удалять
+        # (T027), и держит это триггер — то есть правило действует и на
+        # владельца схемы. Уборка поэтому сначала снимает заморозки: иначе сид
+        # падал бы на чужом споре вместо того, чтобы убрать за ним. Снятие
+        # разрешено в любом состоянии периода как раз ради этого случая.
+        models.PayslipFreeze.objects.filter(
+            tenant__in=tenants, released_at__isnull=True
+        ).update(released_at=now())
         for model in (
             models.PayComponent, models.Payslip, models.Payrun, models.Timesheet,
             models.EmploymentTerm, models.Employee, models.EmployeeGroup,
