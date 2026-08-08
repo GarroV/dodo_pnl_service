@@ -207,6 +207,23 @@ def clean_payruns(web_env):
     wipe_payruns(web_env)
 
 
+HISTORY_HEADING = "История периода"
+
+
+def history_block(page: str) -> str:
+    """Только кусок страницы с историей — искать имя и причину надо в нём.
+
+    Иначе проверка зелёная не по той причине: имя вошедшего стоит в шапке
+    **каждой** страницы, и «имя есть где-то в HTML» проходит, даже если история
+    автора не показывает вовсе. Найдено порчей: обнуление имени автора в
+    `lifecycle.history` не покраснило ни одного теста.
+    """
+    assert HISTORY_HEADING in page, f"на странице нет истории:\n{page}"
+    start = page.index(HISTORY_HEADING)
+    end = page.find("<h2>", start)
+    return page[start : end if end != -1 else len(page)]
+
+
 def payrun_status(dsn: str) -> str:
     import psycopg
 
@@ -278,11 +295,11 @@ def test_reopening_shows_the_reason_and_the_author_in_the_history(client, clean_
     assert response.status_code == 200
     assert payrun_status(clean_payruns) == "reopened"
 
-    page = body(response)
-    assert REASON in page
+    shown = history_block(body(response))
+    assert REASON in shown
     # Автор — тот, кто нажал: в сиде имя учётки равно названию роли.
-    assert "Оперативный директор" in page
-    assert "Открыт заново" in page
+    assert "Оперативный директор" in shown
+    assert "Открыт заново" in shown
 
 
 def test_a_reopened_period_is_not_approved_again_without_a_recalculation(client, clean_payruns):
@@ -321,6 +338,8 @@ def test_the_history_shows_every_step(client, clean_payruns):
     url = calculated_period(client, clean_payruns)
     client.post(url + "approve/", follow=True)
 
-    page = body(client.get(url))
-    assert "История периода" in page
-    assert "Посчитан" in page and "Утверждён" in page
+    shown = history_block(body(client.get(url)))
+    # Именно в истории: «Утверждён» стоит и в сводке состояния, поэтому проверка
+    # по всей странице прошла бы и с пустой таблицей.
+    assert "Посчитан" in shown and "Утверждён" in shown
+    assert "Оперативный директор" in shown
