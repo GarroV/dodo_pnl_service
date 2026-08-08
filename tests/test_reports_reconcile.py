@@ -7,10 +7,18 @@
 Расхождение меньше динара показывается отдельной группой «округление» —
 видно, но не мешает читать существенное.
 
-**Наша сторона не выдумывается.** Строка, итогов которой база не отдала,
-уходит в «нет в расчёте» без единого нашего числа. Иначе разница между
-итогом файла и суммой видимых компонентов выдала бы скрытый регистр
-вычитанием — ровно так устроены две уже закрытые утечки (T050, T071).
+**Наша сторона не выдумывается.** Строка, итогов которой база не отдала, не
+показывает ни одного нашего числа. Иначе разница между итогом файла и суммой
+видимых компонентов выдала бы скрытый регистр вычитанием — ровно так устроены
+две уже закрытые утечки (T050, T071).
+
+**Но «нечего сравнивать» — это не «сошлось».** Итоги посчитаны по строке
+целиком и отдаются лишь роли, которой видны все регистры (T071), поэтому у
+бухгалтера денег нет ни по одной строке. Такая строка не выбрасывается: по ней
+сверяются входы — часы, ставка, коэффициент, — которые к регистрам отношения
+не имеют. Эти два состояния различают `compared` и `matched`, и различать их
+обязательно: пустое `all()` даёт истину, то есть без `compared` сверка
+отрапортовала бы бухгалтеру совпадение по расчёту, которого он не видел.
 
 **Причина расхождения названа входами.** Бухгалтеру мало «не сошлось на 812»:
 ему нужно знать, разошлись часы, ставка и надбавка — или сошлись, и тогда
@@ -75,6 +83,20 @@ def run_line(
         insured_hours=D(insured),
         base_rate=D(rate), coefficient=D(coefficient),
         meal=None if meal is None else D(meal),
+    )
+
+
+def run_line_without_totals(name: str = "MARKO JOVANOVIC", **kwargs) -> RunLine:
+    """Строка, которую база отдала без итогов: роли видны не все регистры.
+
+    Ровно то, что получает бухгалтер после T071. Входы у неё есть — они от
+    регистра не зависят, — а денег нет ни одной.
+    """
+    line = run_line(name, **kwargs)
+    return RunLine(
+        key=line.key, name=line.name, totals={}, hours=line.hours,
+        insured_hours=line.insured_hours, base_rate=line.base_rate,
+        coefficient=line.coefficient, meal=None,
     )
 
 
@@ -155,6 +177,59 @@ def test_a_row_the_run_did_not_give_us_carries_no_numbers_of_ours():
     assert absent.name == "PETAR PETROVIC"
     assert not hasattr(absent, "diff")
     assert "PETAR PETROVIC" not in {line.name for line in result.lines}
+
+
+def test_a_row_without_totals_is_never_called_a_match():
+    """Главная ловушка задачи: пустое `all()` даёт истину.
+
+    У роли, которой видны не все регистры, итогов нет ни по одной строке
+    (T071). Без различения «сравнивали» и «сошлось» такая строка прошла бы
+    как совпавшая, и бухгалтер прочитал бы «сошлось до копейки» по расчёту,
+    которого он не видел. Это не косметика: сверку открывают ровно затем,
+    чтобы узнать, сходится ли расчёт с его таблицей.
+    """
+    result = compare(
+        [file_row()], {"MARKO JOVANOVIC": run_line_without_totals()}
+    )
+    line = only(result.lines)
+
+    assert not line.compared, "сравнивать было нечего"
+    assert not line.matched, "несравнённая строка объявлена совпавшей"
+    assert not line.rounding_only
+    assert result.matched == 0 and result.mismatched == 0 and result.rounding == 0
+    assert result.inputs_only == 1
+    assert not result.clean, "сверка без единой сравнённой суммы не чиста"
+
+
+def test_a_row_without_totals_shows_no_number_of_ours():
+    """Ни суммы, ни разницы — иначе скрытая часть уходит вычитанием."""
+    result = compare(
+        [file_row()], {"MARKO JOVANOVIC": run_line_without_totals()}
+    )
+    line = only(result.lines)
+
+    assert [a.actual for a in line.amounts] == [None] * 4
+    assert [a.diff for a in line.amounts] == [None] * 4
+    assert result.total_actual == D(0) and result.total_expected == D(0)
+
+
+def test_a_row_without_totals_still_gets_its_inputs_compared():
+    """Польза сверки для роли с ограниченным доступом — во входах.
+
+    Часы и ставка к регистрам учёта отношения не имеют и видны по обычным
+    политикам, поэтому расхождение по ним обязано быть названо и там, где
+    деньги сравнить нельзя.
+    """
+    result = compare(
+        [file_row(hours={"regular": D("176")}, rate="371")],
+        {"MARKO JOVANOVIC": run_line_without_totals(
+            hours={"regular": D("160")}, rate="400",
+        )},
+    )
+    causes = {(cause.kind, cause.code) for cause in only(result.lines).causes}
+
+    assert ("hours", "regular") in causes
+    assert ("rate", "") in causes
 
 
 def test_a_row_present_only_in_the_run_is_named_too():
