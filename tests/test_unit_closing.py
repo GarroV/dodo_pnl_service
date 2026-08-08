@@ -34,6 +34,7 @@ from conftest import (
     U_NS1,
     U_NS2,
     U_OTHER,
+    USER_ACCOUNTANT,
     USER_DIRECTOR,
     USER_MANAGER,
     USER_OTHER,
@@ -227,12 +228,14 @@ def test_manager_cannot_close_another_unit(db):
 
 
 def test_role_without_the_right_cannot_close(db):
-    """У директора сида права `unit.close` нет — и база его не пускает.
+    """У бухгалтера права `unit.close` нет — и база его не пускает.
 
     Проверка не про иерархию ролей: право не подразумевается из «вижу все
-    точки», как и в T064.
+    точки» (как в T064) и не выдаётся заодно с `period.approve`. Бухгалтер
+    здесь именно потому, что он видит все точки тенанта и утверждает период —
+    то есть отказ нельзя списать ни на видимость, ни на «мало полномочий».
     """
-    with as_app_user(db, USER_DIRECTOR) as conn:
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
         attempt(conn)
         with pytest.raises(DENIED):
             conn.execute(
@@ -241,6 +244,66 @@ def test_role_without_the_right_cannot_close(db):
                 (T1, U_BG1, JUNE),
             )
         rollback(conn)
+
+
+def test_director_closes_any_unit(db):
+    """D033: закрывать часы точки вправе и оперативный директор.
+
+    До T076 это могла делать только точка сама себя: управляющий в отпуске —
+    месяц не закрыть никем, при том что весь период директор утверждает.
+    Проверяются все три точки тенанта, а не одна: право директора не привязано
+    к точке, и проверка на единственной точке этого бы не показала.
+    """
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        for unit in (U_BG1, U_NS1, U_NS2):
+            conn.execute(
+                """insert into timesheet_closures (tenant_id, unit_id, period)
+                   values (%s, %s, %s)""",
+                (T1, unit, JUNE),
+            )
+        assert conn.execute("select count(*) from timesheet_closures").fetchone()[0] == 3
+
+
+def test_director_reopens_a_unit_closed_by_the_manager(db):
+    """Открыть заново — то же право. Иначе тупик просто переехал бы на шаг.
+
+    Управляющий закрыл точку и ушёл в отпуск; если снять закрытие может только
+    он, часы так и останутся запертыми — ровно та беда, ради которой D033.
+    """
+    closure = close_unit(db, U_NS1)
+
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        changed = conn.execute(
+            "update timesheet_closures set reopened_at = now(), reopened_by = %s "
+            "where id = %s",
+            (USER_DIRECTOR, closure),
+        ).rowcount
+    assert changed == 1
+    assert db.execute(
+        "select reopened_at from timesheet_closures where id = %s", (closure,)
+    ).fetchone()[0] is not None
+
+
+def test_director_reopening_returns_hours_to_writable(db):
+    """Смысл открытия — часы снова пишутся, а не отметка в таблице закрытий."""
+    sheet = make_timesheet(db, "director-reopen", U_NS1)
+    closure = close_unit(db, U_NS1)
+
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        attempt(conn)
+        with pytest.raises(DENIED):
+            write_hours(conn, sheet)
+        rollback(conn)
+        conn.execute(
+            "update timesheet_closures set reopened_at = now(), reopened_by = %s "
+            "where id = %s",
+            (USER_DIRECTOR, closure),
+        )
+        write_hours(conn, sheet, "19.00")
+
+    assert db.execute(
+        "select hours->>'regular' from timesheets where id = %s", (sheet,)
+    ).fetchone()[0] == "19.00"
 
 
 def test_manager_sees_closures_of_own_unit_only(db):
@@ -444,10 +507,12 @@ def test_closing_one_unit_does_not_block_the_others_on_screen(client, clean_clos
 def test_role_without_the_right_gets_no_button_and_no_action(client, clean_closures):
     """Интерфейс не предлагает того, что запретит (T064, T072).
 
-    У директора сида нет права `unit.close`: формы закрытия он не видит, а
-    запрос мимо экрана получает отказ словами, а не ошибку базы.
+    У бухгалтера сида нет права `unit.close`: формы закрытия он не видит, а
+    запрос мимо экрана получает отказ словами, а не ошибку базы. Роль выбрана
+    та, что видит все точки и утверждает период, — иначе отказ можно было бы
+    списать на видимость или на «мало полномочий вообще».
     """
-    login_as(client, "director")
+    login_as(client, "accountant")
     url = grid_url(client)
     html = body(client.get(url))
     assert 'name="unit"' not in html
@@ -459,6 +524,55 @@ def test_role_without_the_right_gets_no_button_and_no_action(client, clean_closu
     response = client.post(f"{url}close/", {"unit": str(unit.id)})
     assert response.status_code == 403
     assert "не входит в права вашей роли" in response.content.decode()
+
+
+def test_manager_is_offered_only_his_own_unit(client, clean_closures):
+    """У управляющего осталась только своя точка — и на экране тоже (D033).
+
+    Проверяется числом форм, а не наличием одной: «кнопка есть» была бы
+    зелёной и в тот момент, когда управляющему предложили бы закрыть всю сеть.
+    """
+    from core.models import Membership, Unit, User
+
+    login_as(client, "manager")
+    html = body(client.get(grid_url(client)))
+    offered = re.findall(r'name="unit" value="([0-9a-f-]{36})"', html)
+
+    own = Membership.objects.get(
+        user_id=User.objects.get(username="manager").pk
+    ).unit_ids or []
+    assert len(own) == 1, "у управляющего сида не одна точка — тест надо переписать"
+    assert set(offered) == {str(own[0])}
+    # Контроль: точек в тенанте больше одной, иначе срез ничего не значит.
+    assert Unit.objects.filter(tenant__code="rs-dev").count() > 1
+
+
+def test_director_closes_and_reopens_any_unit_from_the_screen(client, clean_closures):
+    """Директор ведёт месяц целиком: ему предлагают все точки, и они работают.
+
+    Закрывается именно та точка, которая управляющему не своя, — иначе тест
+    прошёл бы и при праве «закрывать только свою».
+    """
+    from core.models import Membership, TimesheetClosure, User
+
+    login_as(client, "director")
+    url = grid_url(client)
+    html = body(client.get(url))
+    offered = re.findall(r'name="unit" value="([0-9a-f-]{36})"', html)
+    assert len(offered) > 1, f"директору предложена не вся сеть: {offered}"
+
+    managers_unit = str(
+        (Membership.objects.get(user_id=User.objects.get(username="manager").pk).unit_ids
+         or [None])[0]
+    )
+    alien = next(unit for unit in offered if unit != managers_unit)
+
+    assert client.post(f"{url}close/", {"unit": alien}).status_code in (200, 302)
+    closure = TimesheetClosure.objects.filter(unit_id=alien, reopened_at__isnull=True)
+    assert closure.exists(), "закрытие директора не легло в базу"
+
+    assert client.post(f"{url}reopen/", {"unit": alien}).status_code in (200, 302)
+    assert not closure.exists(), "открытие заново не сняло закрытие"
 
 
 def test_closed_rows_lose_their_input_fields(client, clean_closures):
