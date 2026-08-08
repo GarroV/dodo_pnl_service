@@ -54,9 +54,10 @@
 в разных копиях репозитория, номера разведены заранее (`0030+` — `timesheets`,
 `0040+` — `payrun`). Два листа в графе миграций Django ломают слияние.
 """
-import core.fields
 import django.db.models.deletion
 from django.db import migrations, models
+
+import core.fields
 
 # --- правило переходов -------------------------------------------------------
 # Одно место, откуда его берут и триггер, и приложение. Второй список в Python
