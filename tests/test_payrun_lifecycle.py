@@ -486,6 +486,53 @@ def test_the_seed_runs_over_a_period_that_was_approved():
             assert conn.execute("select count(*) from payrun_transitions").fetchone()[0] == 0
 
 
+def test_the_seed_runs_over_a_period_that_is_still_approved():
+    """И над **утверждённым** расчётом тоже, а не только над открытым заново.
+
+    Прошлый тест перед сидом период открывает, поэтому проверяет случай
+    «утверждали и открыли». Утверждённый период — обычное состояние продукта, и
+    на нём сид падал: заморозка расчёта (T023) не даёт снести его данные
+    (issue #62). Уборка обязана сначала открыть период — ослаблять сторожа
+    нельзя, он ровно для того и написан.
+    """
+    psycopg = pytest.importorskip("psycopg")
+
+    from conftest import run_manage, temp_database
+
+    with temp_database("payrun_seed_approved") as dsn:
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn, autocommit=True) as conn:
+            payrun_id = conn.execute(
+                "insert into payruns (tenant_id, period) "
+                "select id, '2026-06-01' from tenants limit 1 returning id"
+            ).fetchone()[0]
+            employee_id = conn.execute(
+                "select id from employees limit 1"
+            ).fetchone()[0]
+            payslip_id = conn.execute(
+                """insert into payslips (tenant_id, payrun_id, employee_id)
+                   select tenant_id, %s, %s from payruns where id = %s
+                   returning id""",
+                (payrun_id, employee_id, payrun_id),
+            ).fetchone()[0]
+            conn.execute(
+                """insert into pay_components
+                       (tenant_id, payslip_id, code, title, amount, ledger)
+                   select tenant_id, %s, 'hours.regular', 'Часы', 100, 'official'
+                     from payslips where id = %s""",
+                (payslip_id, payslip_id),
+            )
+            set_status(conn, payrun_id, "calculated", "approved")
+            assert status_of(conn, payrun_id) == "approved"
+
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn) as conn:
+            assert conn.execute("select count(*) from payruns").fetchone()[0] == 0
+            assert conn.execute("select count(*) from pay_components").fetchone()[0] == 0
+
+
 # --- расчёт и статус ---------------------------------------------------------
 # Дальше — живой Django на базе с сидом: расчёт со страницы периода обязан
 # оставлять статус, а не молча держать черновик.

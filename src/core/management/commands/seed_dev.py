@@ -21,7 +21,7 @@ from typing import NamedTuple
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import connection, transaction
 from django.utils.timezone import now
 
 from core import models
@@ -221,6 +221,22 @@ class Command(BaseCommand):
         tenants = models.Tenant.objects.filter(code=TENANT_CODE)
         if not tenants.exists():
             return
+        # Утверждённый расчёт база не даёт ни менять, ни удалять (T023), и это
+        # держит триггер — то есть правило действует и на владельца схемы.
+        # Уборка поэтому сначала открывает период заново, объяснив зачем:
+        # причина обязательна (T025) и тоже держится триггером. Без этого сид
+        # падал на любой базе, где расчёт остался утверждённым (issue #62).
+        # Ослаблять сторожей нельзя: они написаны ровно ради того, чтобы
+        # утверждённый расчёт не менялся ни одним путём записи.
+        approved = models.Payrun.objects.filter(tenant__in=tenants, status="approved")
+        if approved.exists():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "select set_config('app.transition_reason', %s, true)",
+                    ["уборка тестовых данных"],
+                )
+                approved.update(status="reopened")
+
         # Замороженные строки ведомости база не даёт ни менять, ни удалять
         # (T027), и держит это триггер — то есть правило действует и на
         # владельца схемы. Уборка поэтому сначала снимает заморозки: иначе сид
