@@ -219,6 +219,12 @@ def period_page(
                         "frozen": row.frozen,
                         "freeze_reason": row.freeze_reason,
                         "show_action": first_of_payslip(row.payslip_id, seen_payslips),
+                        # Строка разницы обязана объяснить себя словами: без
+                        # месяца-источника это непонятная сумма в чужом месяце.
+                        "is_retro": row.is_retro,
+                        "retro_title": (
+                            retro.month_title(row.retro_source) if row.is_retro else ""
+                        ),
                     }
                     for row in sheet.rows
                 ],
