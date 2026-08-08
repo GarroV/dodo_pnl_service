@@ -20,6 +20,12 @@
 {% if reopened %}
 <div class="ok">Период открыт заново. Причина и ваше имя записаны в историю.</div>
 {% endif %}
+{% if froze %}
+<div class="ok">Строка заморожена. Пересчёт её обходит, остальные считаются как прежде.</div>
+{% endif %}
+{% if released %}
+<div class="ok">Заморозка снята. Человек вернулся в общий расчёт.</div>
+{% endif %}
 
 <dl class="facts">
   <dt>Состояние</dt><dd>{{ status }}</dd>
@@ -137,6 +143,7 @@
       <th>Сотрудник</th><th>Точка</th><th>Регистр</th>
       {% for column in sheet.columns %}<th class="num">{{ column }}</th>{% endfor %}
       <th class="num">Итого</th>
+      <th>Спор</th>
     </tr>
   </thead>
   <tbody>
@@ -147,6 +154,30 @@
       <td><span class="ledger">{{ row.ledger }}</span></td>
       {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
       <td class="num strong">{{ row.total }}</td>
+      {% comment %}
+      Заморозка спорной строки (T027). Метка стоит у каждой строки человека —
+      их бывает две, по одной на регистр, и живая половина ведомости вводила бы
+      в заблуждение. Действие предлагается один раз: заморожена строка
+      ведомости целиком, а не её половина.
+      {% endcomment %}
+      <td class="freeze">
+        {% if row.frozen %}
+          <span class="frozen">Заморожена</span>
+          {% if row.show_action %}
+            <span class="hint">{{ row.freeze_reason }}</span>
+            {% if can_freeze %}
+            <form method="post" action="{% url 'payslip-release' row.payslip_id %}">{% csrf_token %}
+              <button type="submit">Снять заморозку</button>
+            </form>
+            {% endif %}
+          {% endif %}
+        {% elif row.show_action and can_freeze %}
+          <form method="post" action="{% url 'payslip-freeze' row.payslip_id %}">{% csrf_token %}
+            <input type="text" name="reason" placeholder="из-за чего спор" required>
+            <button type="submit">Заморозить</button>
+          </form>
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
   </tbody>
@@ -155,6 +186,7 @@
       <td colspan="3">Итого · {{ sheet.employees }} чел.</td>
       {% for cell in sheet.column_totals %}<td class="num">{{ cell }}</td>{% endfor %}
       <td class="num">{{ total }}</td>
+      <td></td>
     </tr>
   </tfoot>
 </table>
@@ -176,6 +208,14 @@
   Итог посчитан по тому, что видно вашей роли: строки чужих регистров не
   доезжают до страницы и не входят в сумму.
 </p>
+{% comment %}
+Кнопки заморозки нет по двум разным причинам, и они не смешиваются: права нет
+(тогда на её месте тот же текст, которым ответит отказ) или период утверждён
+(тогда заморожен весь расчёт, и об этом уже сказано выше).
+{% endcomment %}
+{% if freeze_denied %}
+<p class="note">{{ freeze_denied }}</p>
+{% endif %}
 {% else %}
 <p class="empty">Расчёта за этот период ещё не было.</p>
 {% endif %}
