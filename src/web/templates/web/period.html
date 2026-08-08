@@ -166,6 +166,85 @@
 Форму отката видно сразу с полем причины: причина не «уточнение по желанию», а
 условие действия — база откажет без неё и суперпользователю.
 {% endcomment %}
+{% comment %}
+Правки задним числом (T026). Расхождение показывается только у закрытого
+месяца: у открытого правка входных данных — обычная работа, её пересчитывают.
+Месяц-получатель назван словами: молча выбранный получатель — это сумма,
+появившаяся неизвестно где.
+{% endcomment %}
+{% if retro_posted %}
+<div class="ok">Разница перенесена. Закрытый период при этом не изменился.</div>
+{% endif %}
+
+{% if retro_pending %}
+<div class="alert retro-pending">
+  <strong>Разница за закрытый месяц ещё не в ведомости.</strong>
+  <ul>
+    {% for item in retro_pending %}
+    <li>
+      {% if item.cancelled %}
+        Перенос за {{ item.title }} отменён — этот месяц пересчитали, и разница
+        вошла в него самого. В ведомости она пока осталась ({{ item.shown }}):
+        пересчитайте период.
+      {% else %}
+        Перенос за {{ item.title }} на сумму {{ item.live }} в ведомость ещё не
+        вошёл: пересчитайте период.
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if retro_error %}
+<div class="alert">
+  <strong>Сверить закрытый месяц с сегодняшними данными не удалось.</strong>
+  {{ retro_error }}
+</div>
+{% endif %}
+
+{% if retro_drift %}
+<section class="retro">
+  <h2>Данные этого месяца изменились после утверждения</h2>
+  <p class="note">
+    Расхождение с тем, что хранит закрытый месяц: <strong>{{ retro_total }}</strong>
+    по {{ retro_drift.employees }} чел. У этого партнёра
+    {{ retro_mode_title }}.
+  </p>
+  <table class="retro-lines">
+    <thead>
+      <tr><th>Сотрудник</th><th>Компонент</th><th>Регистр</th><th class="num">Разница</th></tr>
+    </thead>
+    <tbody>
+      {% for line in retro_lines %}
+      <tr>
+        <td>{{ line.employee }}</td>
+        <td>{{ line.title }}</td>
+        <td><span class="ledger">{{ line.ledger }}</span></td>
+        <td class="num">{{ line.amount }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if can_post_retro %}
+  <form method="post" action="{% url 'period-retro' period.id %}">{% csrf_token %}
+    <button type="submit" class="primary">Перенести разницу в {{ retro_target }}</button>
+    <span class="note">
+      Закрытый период не изменится: разница ляжет помеченной строкой в
+      {{ retro_target }}, в тот же регистр учёта.
+    </span>
+  </form>
+  {% elif retro_denied %}
+  <p class="note">{{ retro_denied }}</p>
+  {% else %}
+  <p class="note">
+    У этого партнёра правки задним числом ведутся пересчётом: откройте период
+    заново с указанием причины и посчитайте его снова.
+  </p>
+  {% endif %}
+</section>
+{% endif %}
+
 {% if can_approve or approve_denied or can_reopen or reopen_denied %}
 <div class="lifecycle">
   {% if can_approve %}
@@ -249,8 +328,14 @@
   </thead>
   <tbody>
     {% for row in sheet.rows %}
-    <tr>
-      <td>{{ row.employee }}</td>
+    <tr{% if row.is_retro %} class="retro"{% endif %}>
+      {% comment %}
+      Разница за закрытый месяц (T026) — отдельная строка, а не слитая с
+      обычной: у неё те же колонки компонентов, поэтому без пометки она стала бы
+      невидимой прибавкой к сумме этого месяца.
+      {% endcomment %}
+      <td>{{ row.employee }}{% if row.is_retro %}
+        <span class="badge-retro">Перерасчёт за {{ row.retro_title }}</span>{% endif %}</td>
       <td>{{ row.unit }}</td>
       <td><span class="ledger">{{ row.ledger }}</span></td>
       {% comment %}

@@ -73,16 +73,20 @@ ROLES = [
         "director", "Оперативный директор",
         ["official", "supplementary", "internal"], None,
         # `payslip.freeze` — заморозка спорной строки ведомости (T027): её
-        # ставит тот, кто ведёт месяц, а не управляющий точки.
+        # ставит тот, кто ведёт месяц, а не управляющий точки. `retro.post` —
+        # перенос разницы за закрытый месяц (T026), по тому же доводу.
         [
             "timesheet.edit", "payrun.calculate", "period.approve",
-            "period.reopen", "payslip.freeze",
+            "period.reopen", "payslip.freeze", "retro.post",
         ],
     ),
     SeedRole(
         "accountant", "Бухгалтер",
         ["official"], None,
-        ["timesheet.edit", "payrun.calculate", "period.approve", "payslip.freeze"],
+        [
+            "timesheet.edit", "payrun.calculate", "period.approve",
+            "payslip.freeze", "retro.post",
+        ],
     ),
     SeedRole(
         "manager", "Управляющий точки",
@@ -228,14 +232,34 @@ class Command(BaseCommand):
         # падал на любой базе, где расчёт остался утверждённым (issue #62).
         # Ослаблять сторожей нельзя: они написаны ровно ради того, чтобы
         # утверждённый расчёт не менялся ни одним путём записи.
+        #
+        # Порядок — **от позднего месяца к раннему**, и это не мелочь. Разница,
+        # перенесённая задним числом (T026), не даёт открыть месяц-источник,
+        # пока она лежит в утверждённом получателе. Одним оператором на все
+        # периоды сразу порядок строк не задан, и уборка падала бы через раз в
+        # зависимости от него. Перенос всегда едет из раннего месяца в поздний,
+        # поэтому обратный порядок снимает запрет раньше, чем до него доходит.
         approved = models.Payrun.objects.filter(tenant__in=tenants, status="approved")
         if approved.exists():
             with connection.cursor() as cursor:
-                cursor.execute(
-                    "select set_config('app.transition_reason', %s, true)",
-                    ["уборка тестовых данных"],
-                )
-                approved.update(status="reopened")
+                for payrun_id in list(
+                    approved.order_by("-period").values_list("id", flat=True)
+                ):
+                    # Причина одноразовая: триггер журнала гасит её после
+                    # записи, чтобы пересчёт не наследовал чужое объяснение
+                    # (T025). Значит, на каждый откат её надо ставить заново —
+                    # иначе второй период падает «требует причины».
+                    cursor.execute(
+                        "select set_config('app.transition_reason', %s, true)",
+                        ["уборка тестовых данных"],
+                    )
+                    models.Payrun.objects.filter(pk=payrun_id).update(status="reopened")
+
+        # Переносы разницы задним числом (T026) на расчёты не ссылаются — они
+        # вход, а не результат, — поэтому вместе с ними не уходят. Удалять их
+        # уже можно: получатели выше открыты заново, а запрет стоит только на
+        # утверждённой разнице.
+        models.RetroAdjustment.objects.filter(tenant__in=tenants).delete()
 
         # Замороженные строки ведомости база не даёт ни менять, ни удалять
         # (T027), и держит это триггер — то есть правило действует и на

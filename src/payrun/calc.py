@@ -22,12 +22,16 @@
 Замороженные строки (T027) пересчёт обходит стороной: спорный сотрудник не
 держит остальных и не переписывается сам.
 
-Чего здесь нет и не должно быть: утверждения, отката, ретро-дельты и следа
-расчёта (D025) — это T025 и T026.
-
 Расчёт умеет рассказывать о ходе работы (`reporter`), но сам о нём ничего не
 знает: кому и куда рассказывать — дело `payrun.jobs`. Умолчание молчаливое,
 поэтому синхронный вызов ведёт себя ровно так же, как до появления очереди.
+
+Разница, перенесённая из закрытого месяца (T026), — такой же вход этого
+расчёта, как часы: она хранится своей таблицей и **материализуется** здесь, а не
+живёт готовой строкой ведомости. Иначе первый же пересчёт снёс бы её вместе с
+остальными строками.
+
+Чего здесь нет и не должно быть: следа расчёта (D025) — это T013.
 """
 from __future__ import annotations
 
@@ -44,12 +48,13 @@ from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, PayslipTo
 from core.models import Timesheet as TimesheetRow
 from payroll import Employee, PayrollEngine, Timesheet, d, insured_base, uses_insured_hours
 
+from . import retro
 from .errors import LedgerAccessDenied, PayrunRefused
 from .freezing import frozen_payslip_ids
 from .lifecycle import mark_calculated, refuse_if_approved
 from .rules import select_rules
 
-__all__ = ["CalcOutcome", "LedgerAccessDenied", "PayrunRefused", "calculate_period"]
+__all__ = ["CalcOutcome", "LedgerAccessDenied", "PayrunRefused", "calculate_period", "compute"]
 
 CENT = Decimal("0.01")
 
@@ -93,6 +98,8 @@ class CalcOutcome:
     ledgers: list[str] = field(default_factory=list)
     # Сколько строк пересчёт обошёл стороной: по ним идёт спор (T027).
     frozen: int = 0
+    # Сколько строк разницы приехало из закрытых месяцев (T026).
+    carried: int = 0
 
 
 def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
@@ -221,9 +228,18 @@ def check_insured_base(cases: list[Case], rules) -> None:
         )
 
 
-def check_ledgers(slips: list, visible_ledgers) -> list[str]:
-    """Записывать можно только то, что роль видит. Иначе — отказ до записи."""
-    used = sorted({component.ledger for _, slip in slips for component in slip.components})
+def check_ledgers(slips: list, visible_ledgers, carried=()) -> list[str]:
+    """Записывать можно только то, что роль видит. Иначе — отказ до записи.
+
+    `carried` — перенесённая из закрытого месяца разница (T026). Она такой же
+    вход этого расчёта, как часы, и её регистры проверяются вместе с
+    остальными: иначе бухгалтер, не видящий дополнительный регистр, получил бы
+    вместо объяснения ошибку политики на чужой строке.
+    """
+    used = sorted(
+        {component.ledger for _, slip in slips for component in slip.components}
+        | {row.ledger for row in carried}
+    )
     hidden = [ledger for ledger in used if ledger not in set(visible_ledgers or [])]
     if hidden:
         refusal = LedgerAccessDenied(
@@ -275,6 +291,32 @@ def _calculate_all(rules, cases: list[Case], reporter) -> list:
     return result
 
 
+def compute(tenant_id: UUID, period: date, reporter=None):
+    """Посчитать месяц по сегодняшним данным и **ничего не записать**.
+
+    Выделено из `calculate_period`, потому что один и тот же счёт нужен двум
+    разным вопросам: «посчитать месяц» и «а что этот месяц дал бы сегодня»
+    (T026). Второй задают **закрытому** периоду, и записывать по нему нельзя ни
+    строчки — поэтому запись живёт снаружи, а не отключается флагом. Отсутствие
+    ветки записи надёжнее её выключателя: выключатель однажды окажется не в том
+    положении, а отсутствующей ветки не бывает.
+
+    Возвращает правила и пары «случай → результат движка».
+    """
+    reporter = reporter or Silent()
+    tenant = Tenant.objects.filter(pk=tenant_id).first()
+    if tenant is None:
+        # Не «пустой расчёт»: тенанта не видно — значит, и права на него нет.
+        raise PayrunRefused("партнёр недоступен")
+
+    reporter.say("Собираем табели и условия найма")
+    rules = select_rules(tenant_id, tenant.country_code, period)
+    cases = collect_cases(tenant_id, period)
+    check_schemes(cases, rules.base)
+    check_insured_base(cases, rules)
+    return rules, _calculate_all(rules, cases, reporter)
+
+
 def calculate_period(
     *, tenant_id: UUID, period: date, visible_ledgers, reporter=None
 ) -> CalcOutcome:
@@ -286,29 +328,21 @@ def calculate_period(
     """
     reporter = reporter or Silent()
     with transaction.atomic():
-        tenant = Tenant.objects.filter(pk=tenant_id).first()
-        if tenant is None:
-            # Не «пустой расчёт»: тенанта не видно — значит, и права на него нет.
-            raise PayrunRefused("партнёр недоступен")
-
         # Раньше сбора данных: у утверждённого периода причина отказа одна и та
         # же, сколько бы ни было других поводов, и человеку нужна именно она.
         refuse_if_approved(tenant_id, period)
 
-        reporter.say("Собираем табели и условия найма")
-        rules = select_rules(tenant_id, tenant.country_code, period)
-        cases = collect_cases(tenant_id, period)
-        check_schemes(cases, rules.base)
-        check_insured_base(cases, rules)
-
-        slips = _calculate_all(rules, cases, reporter)
-        ledgers = check_ledgers(slips, visible_ledgers)
+        rules, slips = compute(tenant_id, period, reporter)
+        # Перенесённая разница — такой же вход этого месяца, как часы. Роль,
+        # которая её регистр не видит, записать её не может (T026).
+        carried = retro.adjustments_for(tenant_id, period)
+        ledgers = check_ledgers(slips, visible_ledgers, carried=carried)
 
         reporter.say("Записываем ведомость", done=len(slips), total=len(slips))
-        return _store(tenant_id, period, rules.code, slips, ledgers)
+        return _store(tenant_id, period, rules.code, slips, ledgers, carried)
 
 
-def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
+def _store(tenant_id, period, preset_code, slips, ledgers, carried=()) -> CalcOutcome:
     """Сохранить расчёт, заменив прежний за тот же период.
 
     Замороженные строки (T027) пересчёт обходит стороной: их не сносят и не
@@ -316,6 +350,11 @@ def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
     числа, либо держал бы весь месяц. Пропуск сделан явно, но гарантией не
     является: снос упёрся бы в триггер `payslips_row_frozen`, то есть
     «заморозка не заморозка» не может случиться молча.
+
+    `carried` — разница, перенесённая сюда из закрытого месяца (T026). Она
+    материализуется тем же способом, что и всё остальное: из **входа** в
+    компоненты выплаты. Хранить её готовой строкой ведомости было нельзя —
+    первый же пересчёт сносит ведомость целиком, и дельта исчезла бы молча.
     """
     payrun, _ = Payrun.objects.get_or_create(tenant_id=tenant_id, period=period)
     frozen = frozen_payslip_ids(payrun.pk)
@@ -363,6 +402,7 @@ def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
         for row, (_, slip) in zip(rows, slips, strict=True)
         for component in slip.components
     ]
+    components += _carry_in(tenant_id, payrun, rows, frozen_employees, carried)
     PayComponent.objects.bulk_create(components)
 
     calculated_at = timezone.now()
@@ -370,5 +410,60 @@ def _store(tenant_id, period, preset_code, slips, ledgers) -> CalcOutcome:
     return CalcOutcome(
         payrun_id=payrun.pk, preset_code=preset_code, slips=len(rows),
         components=len(components), calculated_at=calculated_at, ledgers=ledgers,
-        frozen=len(frozen),
+        frozen=len(frozen), carried=len(carried),
     )
+
+
+def _carry_in(tenant_id, payrun, rows, frozen_employees, carried) -> list:
+    """Разложить перенесённую разницу по строкам ведомости этого месяца (T026).
+
+    Человеку, у которого в этом месяце своего расчёта нет (уволился, нет
+    табеля), строка всё равно заводится: перенос надо куда-то положить, а
+    «молча не перенеслось» — худший из возможных исходов для денег. Итоги такой
+    строки нулевые, и это правда: своего июля у человека нет, есть только
+    разница за июнь.
+
+    Замороженный человек (T027) переноса не получает: его числа держат как есть
+    по спору, и подкладывать в них разницу значило бы обойти заморозку с другой
+    стороны. Дождётся снятия — получит при следующем пересчёте.
+    """
+    if not carried:
+        return []
+
+    by_employee = {row.employee_id: row for row in rows}
+    extra: list[Payslip] = []
+    for row in carried:
+        if row.employee_id in frozen_employees or row.employee_id in by_employee:
+            continue
+        slip = Payslip(
+            tenant_id=tenant_id, payrun=payrun,
+            employee_id=row.employee_id, unit_id=row.unit_id,
+            notes=[
+                "своего расчёта в этом месяце нет, только перенос за "
+                f"{row.source_period:%m.%Y}"
+            ],
+        )
+        by_employee[row.employee_id] = slip
+        extra.append(slip)
+
+    if extra:
+        Payslip.objects.bulk_create(extra)
+        # Итоги нулевые, но строка обязана быть: `payslip_totals` присоединяют
+        # отчёты, и строка ведомости без них пропала бы из них целиком.
+        PayslipTotals.objects.bulk_create([
+            PayslipTotals(tenant_id=tenant_id, payslip=slip) for slip in extra
+        ])
+        rows.extend(extra)
+
+    return [
+        PayComponent(
+            tenant_id=tenant_id, payslip=by_employee[row.employee_id],
+            code=row.code, title=row.title, amount=money(row.amount),
+            ledger=row.ledger, channel=row.channel, taxable=row.taxable,
+            # Та самая пометка, по которой видно, что это разница и за какой
+            # месяц. Без неё бухгалтер увидел бы непонятную сумму в июле.
+            retro_source_period=row.source_period,
+        )
+        for row in carried
+        if row.employee_id not in frozen_employees
+    ]

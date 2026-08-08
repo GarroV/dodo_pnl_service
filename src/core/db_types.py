@@ -26,6 +26,7 @@ ENUM_TYPES = (
     "payrun_status",
     "payrun_job_status",
     "rule_scope",
+    "retro_mode",
 )
 
 

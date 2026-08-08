@@ -181,7 +181,7 @@ R_OTHER = "e1111111-0000-0000-0000-00000000000f"
 # выданы все, чтобы отказ нельзя было списать на видимость.
 P_DIRECTOR = (
     '["timesheet.edit", "payrun.calculate", "period.approve", "period.reopen",'
-    ' "payslip.freeze"]'
+    ' "payslip.freeze", "retro.post"]'
 )
 P_ACCOUNTANT = (
     '["timesheet.edit", "payrun.calculate", "period.approve", "payslip.freeze"]'
@@ -366,14 +366,23 @@ def wipe_payruns(dsn: str) -> None:
         # выставляется в той же транзакции: при autocommit каждый оператор был
         # бы своей, и настройка не дожила бы до `update`.
         with conn.transaction():
-            conn.execute(
-                "select set_config('app.transition_reason', %s, true)",
-                ("уборка тестовых данных",),
-            )
-            conn.execute(
-                f"update payruns set status = 'reopened' "
-                f"where tenant_id in {tenants} and status = 'approved'"
-            )
+            # По одному и **от позднего месяца к раннему**: разница, уехавшая
+            # задним числом (T026), не даёт открыть месяц-источник, пока лежит
+            # в утверждённом получателе. Одним оператором порядок строк не
+            # задан, и уборка падала бы через раз (та же ловушка, что у сида).
+            # Причина ставится на каждый откат заново: триггер журнала гасит её
+            # после записи, чтобы пересчёт не наследовал чужое объяснение.
+            for (payrun_id,) in conn.execute(
+                f"select id from payruns where tenant_id in {tenants} "
+                f"and status = 'approved' order by period desc"
+            ).fetchall():
+                conn.execute(
+                    "select set_config('app.transition_reason', %s, true)",
+                    ("уборка тестовых данных",),
+                )
+                conn.execute(
+                    "update payruns set status = 'reopened' where id = %s", (payrun_id,)
+                )
         # Замороженную строку ведомости база не даёт ни менять, ни удалять
         # (T027) — держит триггер, то есть и на суперпользователя тоже. Уборка
         # снимает заморозки, а не стирает их: снятие разрешено в любом
@@ -387,6 +396,11 @@ def wipe_payruns(dsn: str) -> None:
         # оставшееся от соседнего теста, не даёт завести новое — этого требует
         # частичный уникальный индекс `payrun_jobs_active_uniq`.
         conn.execute(f"delete from payrun_jobs where tenant_id in {tenants}")
+        # Переносы разницы задним числом (T026) на `payruns` не ссылаются —
+        # они вход, а не результат, — поэтому вместе с расчётами не уходят.
+        # Удалять их можно: период-получатель выше уже открыт заново, а запрет
+        # стоит только на утверждённой разнице.
+        conn.execute(f"delete from retro_adjustments where tenant_id in {tenants}")
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
         conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")
