@@ -68,7 +68,7 @@ def make_timesheet(conn, ext_id: str, unit_id: str | None, period: str = JUNE) -
 def close_unit(conn, unit_id: str, period: str = JUNE, tenant: str = T1) -> str:
     """Закрыть часы точки владельцем — материал для проверки запрета."""
     return conn.execute(
-        """insert into unit_closures (tenant_id, unit_id, period, closed_by)
+        """insert into timesheet_closures (tenant_id, unit_id, period, closed_by)
            values (%s, %s, %s, %s) returning id""",
         (tenant, unit_id, period, USER_MANAGER),
     ).fetchone()[0]
@@ -191,7 +191,7 @@ def test_reopened_unit_accepts_hours_again(db):
     sheet = make_timesheet(db, "reopen-ns1", U_NS1)
     closure = close_unit(db, U_NS1)
     db.execute(
-        "update unit_closures set reopened_at = now(), reopened_by = %s where id = %s",
+        "update timesheet_closures set reopened_at = now(), reopened_by = %s where id = %s",
         (USER_MANAGER, closure),
     )
 
@@ -206,11 +206,11 @@ def test_reopened_unit_accepts_hours_again(db):
 def test_manager_closes_own_unit(db):
     with as_app_user(db, USER_MANAGER) as conn:
         conn.execute(
-            """insert into unit_closures (tenant_id, unit_id, period)
+            """insert into timesheet_closures (tenant_id, unit_id, period)
                values (%s, %s, %s)""",
             (T1, U_NS1, JUNE),
         )
-        assert conn.execute("select count(*) from unit_closures").fetchone()[0] == 1
+        assert conn.execute("select count(*) from timesheet_closures").fetchone()[0] == 1
 
 
 def test_manager_cannot_close_another_unit(db):
@@ -219,7 +219,7 @@ def test_manager_cannot_close_another_unit(db):
         attempt(conn)
         with pytest.raises(DENIED):
             conn.execute(
-                """insert into unit_closures (tenant_id, unit_id, period)
+                """insert into timesheet_closures (tenant_id, unit_id, period)
                    values (%s, %s, %s)""",
                 (T1, U_NS2, JUNE),
             )
@@ -236,7 +236,7 @@ def test_role_without_the_right_cannot_close(db):
         attempt(conn)
         with pytest.raises(DENIED):
             conn.execute(
-                """insert into unit_closures (tenant_id, unit_id, period)
+                """insert into timesheet_closures (tenant_id, unit_id, period)
                    values (%s, %s, %s)""",
                 (T1, U_BG1, JUNE),
             )
@@ -249,12 +249,12 @@ def test_manager_sees_closures_of_own_unit_only(db):
 
     with as_app_user(db, USER_MANAGER) as conn:
         seen = conn.execute(
-            "select u.code from unit_closures c join units u on u.id = c.unit_id"
+            "select u.code from timesheet_closures c join units u on u.id = c.unit_id"
         ).fetchall()
     assert [row[0] for row in seen] == ["NS1"]
 
     with as_app_user(db, USER_DIRECTOR) as conn:
-        assert conn.execute("select count(*) from unit_closures").fetchone()[0] == 2
+        assert conn.execute("select count(*) from timesheet_closures").fetchone()[0] == 2
 
 
 def test_closures_are_isolated_between_tenants(db):
@@ -262,7 +262,7 @@ def test_closures_are_isolated_between_tenants(db):
     close_unit(db, U_OTHER, tenant=T2)
 
     with as_app_user(db, USER_OTHER) as conn:
-        seen = conn.execute("select unit_id from unit_closures").fetchall()
+        seen = conn.execute("select unit_id from timesheet_closures").fetchall()
     assert [str(row[0]) for row in seen] == [U_OTHER]
 
 
@@ -272,11 +272,11 @@ def test_closing_another_unit_does_not_leak_through_the_write(db):
 
     with as_app_user(db, USER_MANAGER) as conn:
         changed = conn.execute(
-            "update unit_closures set reopened_at = now() where id = %s", (closure,)
+            "update timesheet_closures set reopened_at = now() where id = %s", (closure,)
         ).rowcount
     assert changed == 0
     assert db.execute(
-        "select reopened_at from unit_closures where id = %s", (closure,)
+        "select reopened_at from timesheet_closures where id = %s", (closure,)
     ).fetchone()[0] is None
 
 
@@ -303,7 +303,7 @@ def test_manager_does_not_see_days_of_another_unit(db):
 
     with as_app_user(db, USER_MANAGER) as conn:
         seen = conn.execute("select id from timesheet_days").fetchall()
-    assert [str(row[0]) for row in seen] == [mine]
+    assert [str(row[0]) for row in seen] == [str(mine)]
 
 
 def test_director_still_sees_days_of_every_unit(db):
@@ -355,7 +355,7 @@ def clean_closures(web_env):
 def _wipe_closures(dsn: str) -> None:
     with psycopg.connect(dsn, autocommit=True) as conn:
         conn.execute(
-            "delete from unit_closures where tenant_id in "
+            "delete from timesheet_closures where tenant_id in "
             "(select id from tenants where code = 'rs-dev')"
         )
 

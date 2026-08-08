@@ -651,6 +651,54 @@ class TimesheetDay(models.Model):
         ]
 
 
+class TimesheetClosure(models.Model):
+    """Часы точки за месяц закрыты: «я всё ввёл, больше не правьте» (T022).
+
+    Почему отдельная таблица, а не колонка у точки. У `units.closed_at` другой
+    смысл — пиццерия закрылась совсем; здесь же закрыт **месяц** этой точки, и
+    июнь может быть закрыт, когда июль ещё вводят.
+
+    Почему закрытие по точке, а не по периоду целиком: управляющий закрывает
+    свою точку независимо от соседних (спека), иначе один спорный человек
+    держал бы всю сеть.
+
+    Действующим закрытием считается строка с пустым `reopened_at`. Открытие
+    заново не удаляет строку, а помечает её: история закрытий — единственный
+    ответ на вопрос «когда точка была готова», и стирать его нельзя.
+
+    Запрет записи в закрытые часы держат политики базы (миграция `0031`), а не
+    это объявление: в табель пишут экран, импорт и коннектор Dodo IS, и
+    договариваться между собой они не обязаны.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, db_column="unit_id")
+    period = models.DateField()
+    closed_at = models.DateTimeField(db_default=now_default())
+    closed_by = models.UUIDField(null=True, blank=True)
+    # Пусто — закрытие действует. Заполнено — точку открыли заново, и часы
+    # снова правятся.
+    reopened_at = models.DateTimeField(null=True, blank=True)
+    reopened_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "timesheet_closures"
+        indexes = [
+            models.Index("tenant", "period", name="timesheet_closures_period_idx"),
+        ]
+        constraints = [
+            # Одно действующее закрытие на «точку + месяц». Частичный индекс, а
+            # не обычная уникальность: закрывать и открывать можно много раз, и
+            # прошлые закрытия обязаны оставаться в истории.
+            models.UniqueConstraint(
+                fields=["tenant", "unit", "period"],
+                condition=models.Q(reopened_at__isnull=True),
+                name="timesheet_closures_active_uniq",
+            ),
+        ]
+
+
 class Payrun(models.Model):
     """Расчёт за месяц целиком.
 
