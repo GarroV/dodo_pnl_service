@@ -30,8 +30,8 @@ from payrun.calc import calculate_period
 from payrun.lifecycle import approve
 
 from . import dataset
-from .guard import require_demo_data
 from .dataset import MONTHS, PEOPLE, UNITS, Month, Person
+from .guard import require_demo_data
 
 __all__ = ["ROLES", "TENANT_CODE", "det_id", "seed_demo"]
 
