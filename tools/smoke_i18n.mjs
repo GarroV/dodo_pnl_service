@@ -26,13 +26,19 @@
  *
  *     google-chrome --headless=new --remote-debugging-port=9351 \
  *         --user-data-dir=/tmp/chrome-i18n &
- *     PARTNER_DATA="$(docker exec dodo-pnl-i18n-db-1 psql -U app -d dodo_pnl -Atc "
+ *     PARTNER_DATA="$(docker exec <база стенда> psql -U app -d dodo_pnl -Atc "
  *         select title from tenants
  *         union select title from units
  *         union select code from units
  *         union select first_name from employees
  *         union select last_name from employees
- *         union select title from employee_groups")" \
+ *         union select title from employee_groups
+ *         union select full_name from users
+ *         union select title from rule_presets
+ *         union select trim(both '\"' from
+ *                jsonb_path_query(body, '\$.**.title')::text) from rule_presets
+ *         union select trim(both '\"' from
+ *                jsonb_path_query(body, '\$.**.pnl_line')::text) from rule_presets")" \
  *     APP=http://127.0.0.1:8063 CDP_PORT=9351 node tools/smoke_i18n.mjs
  */
 import { attach, loginWith } from "./cdp.mjs";
@@ -253,5 +259,15 @@ check("выбор языка переживает смену человека", 
 
 const noisy = logs.filter((line) => /error|exception|Uncaught/i.test(line));
 check("в консоли браузера чисто", noisy.length === 0, noisy.join(" | "));
+
+// Язык возвращается к русскому. Не вежливость: выбор языка живёт в cookie
+// браузера, то есть переживает этот смоук. Соседние смоуки написаны по-русски и
+// сверяют русские надписи — оставленный английский валит их все разом, и
+// выглядит это как сломанный продукт, а не как незакрытая за собой дверь.
+// Проверено: так и случилось на первом же прогоне подряд.
+await goto(`${APP}/periods/`);
+await switchTo("ru");
+const restored = await look();
+check("язык возвращён к русскому", restored.lang === "ru", `lang=${restored.lang}`);
 
 report();
