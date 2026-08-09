@@ -17,6 +17,7 @@ from decimal import Decimal
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse, HttpResponseNotFound
 from django.shortcuts import redirect, render
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from payrun.errors import PayrunRefused
@@ -244,7 +245,7 @@ def _switch_closing(request, period_id, *, closing: bool):
     if state is None:
         # Чужая точка и несуществующая выглядят одинаково: по ответу нельзя
         # понять, что такая точка вообще есть. Так же отвечает запись ячейки.
-        return HttpResponseNotFound("точка не найдена")
+        return HttpResponseNotFound(_("точка не найдена"))
 
     action = close_unit if closing else reopen_unit
     action(
@@ -279,12 +280,12 @@ def import_table(request, period_id):
 
     upload = request.FILES.get("table")
     if upload is None:
-        return _report(request, period, error="Файл не выбран.", status=400)
+        return _report(request, period, error=_("Файл не выбран."), status=400)
     if upload.size > MAX_UPLOAD:
         return _report(
             request, period, status=400,
-            error=f"Файл больше {MAX_UPLOAD // 1024 // 1024} МБ — "
-                  f"это не зарплатная таблица.",
+            error=_("Файл больше %(limit)s МБ — это не зарплатная таблица.")
+            % {"limit": MAX_UPLOAD // 1024 // 1024},
         )
 
     try:
@@ -307,7 +308,8 @@ def import_table(request, period_id):
         # человек должен прочитать, что файл не разобран, и каким он был.
         return _report(
             request, period, status=REFUSED,
-            error=f"Файл не удалось прочитать как книгу Excel: {broken}",
+            error=_("Файл не удалось прочитать как книгу Excel: %(reason)s")
+            % {"reason": broken},
         )
 
     return _report(request, period, result=result)

@@ -37,7 +37,7 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_noop as noop
+from django.utils.translation import gettext_noop
 
 from core.models import PayrunJob
 
@@ -65,18 +65,18 @@ FAILED = "failed"
 # в рабочем процессе сама.
 TASK = "payrun.jobs.run_job"
 
-BUSY_REFUSAL = noop(
+BUSY_REFUSAL = gettext_noop(
     "Расчёт этого периода уже идёт. Дождитесь, пока он закончится: "
     "второй запуск не ускорит его, а ведомость всё равно будет одна."
 )
 
-STUCK_HINT = noop(
+STUCK_HINT = gettext_noop(
     "Задача принята, но её до сих пор не взяли в работу — похоже, рабочий "
     "процесс очереди не запущен. Расчёт можно выполнить прямо сейчас, не "
     "дожидаясь очереди."
 )
 
-BROKEN = noop(
+BROKEN = gettext_noop(
     "Расчёт оборвался из-за внутренней ошибки. Данные периода не изменились; "
     "покажите этот период тому, кто ведёт сервис."
 )

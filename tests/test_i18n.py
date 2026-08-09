@@ -24,6 +24,7 @@
 """
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import subprocess
@@ -172,6 +173,18 @@ def test_no_untranslated_text_in_static_scripts():
 # --- 2. каталог -------------------------------------------------------------
 
 
+def unescape(literal: str) -> str:
+    """Строка `.po` — в то, что из неё получит gettext.
+
+    Разбор без разэкранирования был бы неверным ровно на длинных строках: в
+    каталоге перевод абзаца лежит одной записью с `\\n` внутри, а на экран
+    выходит настоящим переносом. Сравнение «как написано в файле» с «как отдал
+    `.mo`» без этого шага расходится на каждом многострочном тексте — и это
+    расхождение самого разбора, а не каталога.
+    """
+    return json.loads(literal)
+
+
 def read_po(path: Path) -> list[dict]:
     """Записи каталога: msgid, msgstr и пометка fuzzy. Без внешних библиотек."""
     entries: list[dict] = []
@@ -203,7 +216,7 @@ def read_po(path: Path) -> list[dict]:
                 field = "msgstr"
                 line = line.split("]", 1)[1].strip()
         if field and line.startswith('"'):
-            current[field].append(line[1:-1])
+            current[field].append(unescape(line))
     if current["msgid"] or current["msgstr"]:
         entries.append(current)
     return [

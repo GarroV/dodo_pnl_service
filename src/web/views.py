@@ -22,9 +22,8 @@ from django.http import (
 )
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_noop
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import gettext_noop as noop
 from django.views.decorators.http import require_POST
 
 from core.models import Calendar, Payrun, Payslip, Period, Timesheet
@@ -700,66 +699,66 @@ def payslip_release(request, payslip_id):
 # Подписи производных величин. Здесь, а не в `reports`: там данные, тут слова —
 # та же граница, что у названий регистров и формата чисел (T028).
 DERIVED_TITLES = {
-    "gross": noop("Бруто"),
-    "tax": noop("Налог"),
-    "contributions": noop("Взносы"),
-    "total_cost": noop("Полная стоимость"),
+    "gross": gettext_noop("Бруто"),
+    "tax": gettext_noop("Налог"),
+    "contributions": gettext_noop("Взносы"),
+    "total_cost": gettext_noop("Полная стоимость"),
 }
 
 # Как назвать вход шага по-человечески. Ключи движка английские и стабильные —
 # перевод их дело интерфейса, а не следа (см. `payroll.trace.TraceStep`).
 INPUT_TITLES = {
-    "hours": noop("часов"),
-    "rate": noop("ставка за час"),
-    "pay_percent": noop("процент оплаты"),
-    "floor": noop("минимум за час"),
-    "hour_types": noop("типы часов"),
-    "prorate_by": noop("пропорция"),
-    "amount_per_norm": noop("за полную норму"),
-    "worked_days": noop("отработано дней"),
-    "norm_days": noop("рабочих дней в месяце"),
-    "worked_hours": noop("отработано часов"),
-    "norm_hours": noop("норма часов"),
-    "method": noop("способ"),
-    "base": noop("база"),
-    "insured_hours": noop("база взносов, часов"),
+    "hours": gettext_noop("часов"),
+    "rate": gettext_noop("ставка за час"),
+    "pay_percent": gettext_noop("процент оплаты"),
+    "floor": gettext_noop("минимум за час"),
+    "hour_types": gettext_noop("типы часов"),
+    "prorate_by": gettext_noop("пропорция"),
+    "amount_per_norm": gettext_noop("за полную норму"),
+    "worked_days": gettext_noop("отработано дней"),
+    "norm_days": gettext_noop("рабочих дней в месяце"),
+    "worked_hours": gettext_noop("отработано часов"),
+    "norm_hours": gettext_noop("норма часов"),
+    "method": gettext_noop("способ"),
+    "base": gettext_noop("база"),
+    "insured_hours": gettext_noop("база взносов, часов"),
     # Найдено смоуком: эти два ключа приезжают в шаге часов и без подписи
     # читались как отладочный вывод. Ставка сотрудника — это базовая ставка,
     # умноженная на коэффициент, и обе величины нужны, чтобы повторить её.
-    "base_rate": noop("базовая ставка"),
-    "coefficient": noop("коэффициент"),
+    "base_rate": gettext_noop("базовая ставка"),
+    "coefficient": gettext_noop("коэффициент"),
     # Производные величины: по этим числам повторяют бруто, налог и взносы.
     # Список снят с движка целиком, а не по памяти: ключ без подписи читается
     # на экране как отладочный вывод, и это нашёл смоук.
-    "net": noop("нето"),
-    "gross": noop("бруто"),
-    "tax": noop("налог"),
-    "contributions": noop("взносы"),
-    "credit": noop("зачтено"),
-    "withheld": noop("удержано с работника"),
-    "share": noop("доля"),
-    "income_tax": noop("ставка налога"),
-    "employee_contributions": noop("взносы работника"),
-    "employer_contributions": noop("взносы работодателя"),
-    "combined_contributions": noop("взносы вместе"),
-    "net_factor": noop("множитель нето → бруто"),
-    "tax_free_monthly": noop("необлагаемый минимум в месяц"),
-    "half_tax_free": noop("половина необлагаемого"),
-    "min_contribution_base": noop("минимальная база взносов"),
-    "reference_norm_hours": noop("эталонная норма часов"),
-    "hours_divisor": noop("делитель часов"),
-    "hours_per_day": noop("часов в рабочем дне"),
-    "rate_key": noop("какая ставка"),
+    "net": gettext_noop("нето"),
+    "gross": gettext_noop("бруто"),
+    "tax": gettext_noop("налог"),
+    "contributions": gettext_noop("взносы"),
+    "credit": gettext_noop("зачтено"),
+    "withheld": gettext_noop("удержано с работника"),
+    "share": gettext_noop("доля"),
+    "income_tax": gettext_noop("ставка налога"),
+    "employee_contributions": gettext_noop("взносы работника"),
+    "employer_contributions": gettext_noop("взносы работодателя"),
+    "combined_contributions": gettext_noop("взносы вместе"),
+    "net_factor": gettext_noop("множитель нето → бруто"),
+    "tax_free_monthly": gettext_noop("необлагаемый минимум в месяц"),
+    "half_tax_free": gettext_noop("половина необлагаемого"),
+    "min_contribution_base": gettext_noop("минимальная база взносов"),
+    "reference_norm_hours": gettext_noop("эталонная норма часов"),
+    "hours_divisor": gettext_noop("делитель часов"),
+    "hours_per_day": gettext_noop("часов в рабочем дне"),
+    "rate_key": gettext_noop("какая ставка"),
 }
 
 # Откуда приехало правило: чьё это решение — страны, партнёра, группы или
 # человека. «input» — не правило вовсе, а число, введённое руками.
 LEVEL_TITLES = {
-    "country": noop("правило страны"),
-    "tenant": noop("переопределение партнёра"),
-    "group": noop("переопределение группы"),
-    "employee": noop("переопределение по сотруднику"),
-    "input": noop("введено руками"),
+    "country": gettext_noop("правило страны"),
+    "tenant": gettext_noop("переопределение партнёра"),
+    "group": gettext_noop("переопределение группы"),
+    "employee": gettext_noop("переопределение по сотруднику"),
+    "input": gettext_noop("введено руками"),
 }
 
 # Порядок входов на экране — как в формуле, слева направо: часы × ставка ×

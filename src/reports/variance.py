@@ -33,6 +33,8 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
+from django.utils.translation import gettext as _
+
 from payrun.sheet import LEDGER_ORDER, Cell
 from reports.sheet import ALL
 
@@ -47,17 +49,22 @@ SECTION = "variance"
 
 
 class ThresholdsMissing(LookupError):
-    """Порогов отклонений в правилах страны нет — сравнивать не с чем."""
+    """Порогов отклонений в правилах страны нет — сравнивать не с чем.
 
-    message = (
-        "В правилах страны не заданы пороги отклонений. Отчёт без них показывал "
-        "бы либо всё подряд, либо ничего — и то и другое выглядело бы как "
-        "настроенное поведение. Задайте раздел «variance» в пресете страны "
-        "(и перезагрузите его: python manage.py load_presets)."
-    )
+    Текст умолчания не вынесен атрибутом класса намеренно: класс объявляется
+    при импорте модуля, а модуль обязан импортироваться и без настроенного
+    Django (см. `reports.export`, ту же причину). `gettext`/`gettext_noop`
+    трогают `settings` при первом вызове, поэтому перевод собирается только
+    здесь, в момент создания исключения, а не на уровне тела класса.
+    """
 
     def __init__(self, message: str = ""):
-        super().__init__(message or self.message)
+        super().__init__(message or _(
+            "В правилах страны не заданы пороги отклонений. Отчёт без них показывал "
+            "бы либо всё подряд, либо ничего — и то и другое выглядело бы как "
+            "настроенное поведение. Задайте раздел «variance» в пресете страны "
+            "(и перезагрузите его: python manage.py load_presets)."
+        ))
 
 
 @dataclass(frozen=True)
@@ -260,7 +267,7 @@ def build_variance(tenant_id: UUID, period: date, cut: str = ALL) -> Report:
     tenant = Tenant.objects.filter(pk=tenant_id).first()
     if tenant is None:
         # Не пустой отчёт: партнёра не видно — значит и права на него нет.
-        raise ThresholdsMissing("партнёр недоступен")
+        raise ThresholdsMissing(_("партнёр недоступен"))
 
     # Правила берутся на **сравниваемый** месяц: пороги версионированы по датам,
     # и отчёт за июнь обязан меряться июньскими, даже если в июле их поменяли.

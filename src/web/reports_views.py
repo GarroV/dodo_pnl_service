@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 from django.shortcuts import render
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_noop as noop
+from django.utils.translation import gettext_noop
 
 from reports import export as exports
 from reports.reconcile import reconcile
@@ -38,20 +38,20 @@ REFUSED = 422
 # Как называются сверяемые числа в таблице бухгалтера. Порядок — тот, в котором
 # их читают: сначала то, что человек получит на руки.
 FIELD_TITLES = {
-    "net": noop("К выплате (нето)"),
-    "gross": noop("Бруто"),
-    "contributions": noop("Взносы"),
-    "total_cost": noop("Полная стоимость"),
+    "net": gettext_noop("К выплате (нето)"),
+    "gross": gettext_noop("Бруто"),
+    "contributions": gettext_noop("Взносы"),
+    "total_cost": gettext_noop("Полная стоимость"),
 }
 
 # Названия причин расхождения. Причина — это вход расчёта, а не сумма: если
 # сошлись все входы, а итог разошёлся, значит разошлось правило, и это тоже
 # ответ, который человек должен прочитать.
 CAUSE_TITLES = {
-    "insured": noop("Часы для взносов"),
-    "rate": noop("Ставка за час"),
-    "coefficient": noop("Коэффициент"),
-    "meal": noop("Топли оброк и регрес"),
+    "insured": gettext_noop("Часы для взносов"),
+    "rate": gettext_noop("Ставка за час"),
+    "coefficient": gettext_noop("Коэффициент"),
+    "meal": gettext_noop("Топли оброк и регрес"),
 }
 
 EXPORTS = {

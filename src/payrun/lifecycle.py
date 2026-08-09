@@ -14,7 +14,7 @@ from __future__ import annotations
 from django.db import connection, transaction
 from django.db.models import F, Func, TextField
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_noop as noop
+from django.utils.translation import gettext_noop
 
 from core.models import Payrun, PayrunTransition
 
@@ -30,23 +30,23 @@ REOPENED = "reopened"
 # берёт их отсюда же, чем отказ, — иначе на кнопке и в отказе об одном и том же
 # состоянии было бы написано по-разному.
 STATUS_TITLES = {
-    DRAFT: noop("Черновик"),
-    CALCULATED: noop("Посчитан"),
-    APPROVED: noop("Утверждён"),
-    REOPENED: noop("Открыт заново"),
-    "paid": noop("Выплачен"),
+    DRAFT: gettext_noop("Черновик"),
+    CALCULATED: gettext_noop("Посчитан"),
+    APPROVED: gettext_noop("Утверждён"),
+    REOPENED: gettext_noop("Открыт заново"),
+    "paid": gettext_noop("Выплачен"),
 }
 
 # Настройка транзакции, которой причина доезжает до триггера журнала. Та же
 # механика, что у `app.user_id`: разовая, живёт до конца транзакции.
 REASON_SETTING = "app.transition_reason"
 
-APPROVED_REFUSAL = noop(
+APPROVED_REFUSAL = gettext_noop(
     "Период утверждён: расчёт и его данные заморожены. "
     "Чтобы пересчитать, период нужно сначала открыть заново."
 )
 
-REASON_REFUSAL = noop(
+REASON_REFUSAL = gettext_noop(
     "Откат периода требует причины: напишите, зачем открываете период. "
     "Причина попадёт в историю рядом с вашим именем."
 )

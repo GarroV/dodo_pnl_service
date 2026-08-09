@@ -40,6 +40,8 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
+from django.utils.translation import gettext as _
+
 from payroll.importers import Finding
 from payroll.importers.plata_xlsx import ImportedRow
 
@@ -287,7 +289,7 @@ def compare(
             # одинаков для того, кого в расчёте действительно нет, и для того,
             # чью строку роли не видно. Различить их снаружи нельзя намеренно.
             result.only_in_file.append(Absent(
-                key, row.name, row.sheet, "в расчёте этого периода такой строки нет",
+                key, row.name, row.sheet, _("в расчёте этого периода такой строки нет"),
             ))
             continue
 
@@ -313,7 +315,7 @@ def compare(
     for key, ours in run.items():
         if key not in seen:
             result.only_in_run.append(Absent(
-                key, ours.name, "", "в загруженной таблице такой строки нет",
+                key, ours.name, "", _("в загруженной таблице такой строки нет"),
             ))
 
     # Сверху то, что разошлось сильнее: сверку читают сверху вниз и до первой

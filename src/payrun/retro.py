@@ -42,7 +42,7 @@ from uuid import UUID
 
 from django.db import transaction
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_noop as noop
+from django.utils.translation import gettext_noop
 
 from core.models import PayComponent, Payrun, RetroAdjustment, Tenant
 
@@ -57,22 +57,22 @@ DELTA = "delta"
 RECALCULATE = "recalculate"
 
 MODE_TITLES = {
-    DELTA: noop("разница переносится в текущий период"),
-    RECALCULATE: noop("период открывается заново и пересчитывается"),
+    DELTA: gettext_noop("разница переносится в текущий период"),
+    RECALCULATE: gettext_noop("период открывается заново и пересчитывается"),
 }
 
-WRONG_MODE_REFUSAL = noop(
+WRONG_MODE_REFUSAL = gettext_noop(
     "У этого партнёра правки задним числом ведутся пересчётом, а не переносом: "
     "закрытый период открывается заново с указанием причины и считается снова. "
     "Перенос разницы для него выключен настройкой."
 )
 
-NOTHING_REFUSAL = noop(
+NOTHING_REFUSAL = gettext_noop(
     "Расхождений с сегодняшними данными нет: переносить нечего. "
     "Возможно, разницу уже перенесли — посмотрите период-получатель."
 )
 
-NOT_APPROVED_REFUSAL = noop(
+NOT_APPROVED_REFUSAL = gettext_noop(
     "Перенос разницы делается только из закрытого месяца. "
     "Этот период ещё не утверждён — правьте данные и пересчитывайте его как обычно."
 )
@@ -449,7 +449,7 @@ def locked_out(tenant_id: UUID, period: date) -> bool:
         return bool(cursor.fetchone()[0])
 
 
-LOCKED_REFUSAL = noop(
+LOCKED_REFUSAL = gettext_noop(
     "Разница за этот месяц уже перенесена в утверждённый период и выплачена. "
     "Открыть его заново нельзя: пересчёт означал бы заплатить дважды."
 )

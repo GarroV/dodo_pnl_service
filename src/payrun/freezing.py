@@ -22,7 +22,7 @@ from uuid import UUID
 
 from django.utils.timezone import now
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_noop as noop
+from django.utils.translation import gettext_noop
 
 from core.models import Payslip, PayslipFreeze
 
@@ -33,17 +33,17 @@ __all__ = [
     "frozen_payslip_ids", "refuse_if_frozen", "release",
 ]
 
-REASON_REFUSAL = noop(
+REASON_REFUSAL = gettext_noop(
     "Заморозка строки требует причины: напишите, из-за чего идёт спор. "
     "Причина попадёт в историю рядом с вашим именем."
 )
 
-FROZEN_REFUSAL = noop(
+FROZEN_REFUSAL = gettext_noop(
     "Строка сотрудника заморожена: её числа не меняются и пересчёт её обходит. "
     "Чтобы вернуть человека в общий расчёт, заморозку нужно снять."
 )
 
-APPROVED_REFUSAL = noop(
+APPROVED_REFUSAL = gettext_noop(
     "Период утверждён: замораживать в нём нечего — заморожен весь расчёт. "
     "Чтобы менять расчёт, период нужно сначала открыть заново."
 )

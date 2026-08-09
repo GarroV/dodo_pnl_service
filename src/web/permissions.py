@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_noop as noop
+from django.utils.translation import gettext_noop
 
 # Коды прав. Ровно те, что стоят в политиках базы: разъехавшиеся списки означали
 # бы, что интерфейс обещает не то, что позволяет база.
@@ -48,16 +48,23 @@ RETRO_POST = "retro.post"
 # В словаре `gettext_noop`, а перевод — в `title()`. Так, а не `gettext_lazy`,
 # потому что значение уходит не только на страницу: оно попадает в поле `error`
 # фоновой задачи и в текст исключения, а отложенный объект там либо падает при
-# сериализации, либо превращается в служебный мусор. `noop` при этом обязателен:
-# без него `makemessages` эти семь строк не увидит вовсе.
+# сериализации, либо превращается в служебный мусор. Пометка при этом
+# обязательна: без неё `makemessages` эти семь строк не увидит вовсе.
+#
+# И вызывается она **своим полным именем**, а не через короткий псевдоним.
+# Извлечение строк смотрит на имя функции в тексте файла, а не на то, что она
+# на самом деле делает: `noop("…")` для него — обычный вызов, и строка молча не
+# попадает в каталог. Найдено в браузере: сообщение об отказе выводилось
+# наполовину переведённым — «Расчёт периода is outside the permissions of your
+# role». Каталог при этом был зелёным: сравнивать было не с чем.
 TITLES = {
-    TIMESHEET_EDIT: noop("Правка табеля"),
-    PAYRUN_CALCULATE: noop("Расчёт периода"),
-    PERIOD_APPROVE: noop("Утверждение периода"),
-    PERIOD_REOPEN: noop("Откат периода"),
-    UNIT_CLOSE: noop("Закрытие часов по точке"),
-    PAYSLIP_FREEZE: noop("Заморозка строки ведомости"),
-    RETRO_POST: noop("Перенос разницы за закрытый месяц"),
+    TIMESHEET_EDIT: gettext_noop("Правка табеля"),
+    PAYRUN_CALCULATE: gettext_noop("Расчёт периода"),
+    PERIOD_APPROVE: gettext_noop("Утверждение периода"),
+    PERIOD_REOPEN: gettext_noop("Откат периода"),
+    UNIT_CLOSE: gettext_noop("Закрытие часов по точке"),
+    PAYSLIP_FREEZE: gettext_noop("Заморозка строки ведомости"),
+    RETRO_POST: gettext_noop("Перенос разницы за закрытый месяц"),
 }
 
 
