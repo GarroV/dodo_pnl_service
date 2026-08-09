@@ -28,6 +28,15 @@
 <h1>{% blocktranslate %}Табель · {{ title }}{% endblocktranslate %}</h1>
 
 {% comment %}
+Дорога обратно в месяц — всегда, а не только когда табель показать не удалось
+(T077). Раньше эта ссылка стояла внутри ветки отказа, и с обычного табеля
+вернуться к месяцу было нечем: в шапке есть только «Периоды», то есть выход в
+список, откуда месяц надо искать заново. Табель — первый шаг месяца, и человек
+уходит с него на второй; ему нужна дверь, а не обход.
+{% endcomment %}
+<p class="back"><a href="{% url 'period' period.id %}">{% translate "← К месяцу" %}</a></p>
+
+{% comment %}
 Колонки сетки — типы часов из правил страны. Правил на месяц нет — показывать
 нечего, и человек должен прочитать то же объяснение, что на странице периода:
 без него он увидел бы «Server Error» и не узнал, что делать (T062).
@@ -37,7 +46,6 @@
 {% notice "alert" title=grid_error_title %}{{ error }}
   {% if details %}<div class="details">{{ details|join:", " }}</div>{% endif %}
 {% endnotice %}
-<p class="note"><a href="{% url 'period' period.id %}">{% translate "Вернуться к периоду" %}</a></p>
 {% else %}
 <p class="sub">
   {% blocktranslate with people_count=grid.rows|length %}{{ people_count }} чел.{% endblocktranslate %}
@@ -129,7 +137,6 @@
       {% blocktranslate %}За этот месяц не заведено ни одного сотрудника, поэтому и часов пока нет.
       Вносит их тот, у кого есть право на правку табеля.{% endblocktranslate %}
     {% endif %}
-    <a class="btn next" href="{% url 'period' period.id %}">{% translate "Вернуться к периоду" %}</a>
   {% endnotice %}
 {% else %}
 {% scroll %}

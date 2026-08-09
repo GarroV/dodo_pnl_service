@@ -233,6 +233,12 @@
   /* Пустое состояние объясняет следующий шаг, а не сообщает о пустоте.
      Поэтому у него есть заголовок, абзац и действие — как у любого экрана. */
   .empty .next { display: block; margin-top: 12px; }
+  /* Дорога назад со вложенного экрана (T077). Отдельно от `.note`, потому что
+     это не примечание, а навигация: она стоит выше содержимого и читается
+     раньше него. */
+  p.back { margin: -6px 0 18px; font-size: 13px; }
+  p.back a { color: var(--muted); }
+  p.back a:hover { color: var(--accent); }
   .empty h3 { margin: 0 0 6px; font-size: 15px; color: var(--ink); }
   tr.retro { background: #fffbeb; }
   .badge-retro { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 10px; font-size: 11px; color: #7c4a03; background: #fef3c7; border: 1px solid #fde68a; white-space: nowrap; }

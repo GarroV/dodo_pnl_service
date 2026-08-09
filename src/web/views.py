@@ -238,7 +238,10 @@ def period_page(
     # нет, а на её месте — тот же текст, которым ответит отказ.
     retro_locked = retro.locked_out(period.tenant_id, period.period)
     if retro_locked and lifecycle.REOPENED in allowed:
-        reopen_denied = reopen_denied or retro.LOCKED_REFUSAL
+        # Текст отказа переводится здесь, а не в `payrun`: там он объявлен
+        # `gettext_noop`, чтобы попасть в каталог, но остаться обычной строкой
+        # для очереди и для журнала (T017).
+        reopen_denied = reopen_denied or gettext(retro.LOCKED_REFUSAL)
 
     return render(
         request,
@@ -353,7 +356,8 @@ def period_page(
             # получит отказ «уже считается», а предлагать заведомый отказ — то же
             # самое, что обещать невозможное.
             "can_calculate": not calculate_denied and not frozen and job is None,
-            "calculate_denied": calculate_denied or (lifecycle.APPROVED_REFUSAL if frozen else ""),
+            "calculate_denied": calculate_denied
+            or (gettext(lifecycle.APPROVED_REFUSAL) if frozen else ""),
             # --- цикл периода (T025) ---
             "payrun_status": lifecycle.status_title(payrun_status) if payrun else "",
             "can_approve": lifecycle.APPROVED in allowed and not approve_denied,
@@ -373,7 +377,7 @@ def period_page(
             # Что партнёр делает при расхождении, сказано словами: настройка,
             # молча меняющая поведение денег, — худший вид настройки.
             "retro_mode": retro_mode,
-            "retro_mode_title": retro.MODE_TITLES.get(retro_mode, retro_mode),
+            "retro_mode_title": titled(retro.MODE_TITLES, retro_mode),
             "retro_drift": found,
             "retro_error": found.error,
             "retro_total": money(found.total) if found else "",

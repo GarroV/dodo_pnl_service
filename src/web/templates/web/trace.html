@@ -97,7 +97,8 @@
 </table>
 {% endscroll %}
 {% else %}
-{% notice "empty" %}
+{% translate "Объяснять нечего" as nothing_to_explain %}
+{% notice "empty" title=nothing_to_explain %}
   {% if error %}
     {% translate "Шагов расчёта нет: посчитать заново нечем." %}
   {% else %}
