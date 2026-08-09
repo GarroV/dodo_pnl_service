@@ -17,6 +17,7 @@ from uuid import UUID
 from core.models import Membership, Unit
 
 from .format import ledger_title
+from .i18n import role_title
 
 # Кладётся на запрос: страница спрашивает «кто вошёл» и в шапке, и в
 # представлении, а лишний запрос к базе на каждый вопрос не нужен.
@@ -96,7 +97,10 @@ def _from_membership(user) -> Principal:
         unit_ids=unit_ids,
         visible_ledgers=list(membership.role.visible_ledgers or []),
         permissions=list(membership.role.permissions or []),
-        role_title=membership.role.title,
+        # Роль называется на языке страницы, а не так, как её записали в базу
+        # (T017). Название из базы — запасной вариант: партнёр вправе завести
+        # свою роль, и перевода ей взять неоткуда.
+        role_title=role_title(membership.role.code, membership.role.title),
         tenant_title=membership.tenant.title,
         display_name=display_name,
         units_title=_units_title(unit_ids),
