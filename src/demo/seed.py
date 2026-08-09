@@ -69,6 +69,51 @@ GROUP_TITLES = {
     "temporary": "Temporary contracts",
 }
 
+# Английские подписи правил страны. Кладутся в базу переопределениями на уровне
+# партнёра — тем же механизмом, которым партнёр меняет любую другую величину
+# (`rule_overrides`, путь + значение + дата начала действия).
+#
+# Почему именно так, а не правкой пресета или словарём в коде демо. Подпись
+# компонента попадает в `pay_components.title` в момент расчёта: то, что видно в
+# ведомости, следе и отчёте расхождений, — это слова, действовавшие тогда, когда
+# месяц считали. Значит, английские подписи обязаны быть в **правилах**, и
+# положить их надо до расчёта. Пресет страны при этом остаётся русским: он общий
+# для всех партнёров Сербии, а англоязычен только демо-стенд.
+#
+# Границы у переопределения открыты слева: `valid_from` раньше первого месяца
+# демо, `valid_to` пусто. Иначе закрытый месяц однажды объяснялся бы словами,
+# которых в нём не было.
+RULE_TITLES = {
+    "hour_types.regular.title": "Worked hours",
+    "hour_types.holiday.title": "Public holiday",
+    "hour_types.vacation.title": "Annual leave",
+    "hour_types.sick.title": "Sick leave",
+    "hour_types.night.title": "Night hours",
+    "hour_types.overtime.title": "Overtime",
+    "allowances.meal_and_vacation_bonus.title": "Meal and vacation allowance",
+    # Две подписи, которые до этого были зашиты в движке: он читает их из
+    # правил с прежним русским умолчанием, чтобы демо могло их перевести (см.
+    # payroll/engine.py).
+    "minimum_guarantee.title": "Minimum wage top-up",
+    "manual_correction.title": "Manual correction",
+    "schemes.standard.title": "Full calculation",
+    "schemes.half_time.title": "Half time",
+    "schemes.half_time_min_base.title": "Half time, contributions from minimum base",
+    "schemes.temporary.title": "Temporary contract",
+    "schemes.direct.title": "Direct payout, no gross-up",
+    "groups.office.title": "Office",
+    "groups.management.title": "Unit managers",
+    "groups.kitchen.title": "Kitchen and counter",
+    "groups.doughmaker.title": "Dough maker",
+    "groups.couriers.title": "Couriers",
+    "groups.temporary.title": "Temporary contracts",
+}
+
+# С какой даты действуют английские подписи. Раньше самого раннего месяца демо:
+# правило, начавшее действовать в середине стенда, показало бы часть месяцев
+# по-русски.
+TITLES_FROM = date(2020, 1, 1)
+
 # Роли демо. Коды те же, что у продукта, — на них стоят политики базы и права;
 # по-английски здесь только подписи. Набор регистров и точка повторяют роли
 # сида разработки намеренно: демо должно показывать ту же разницу видимости,
@@ -136,6 +181,7 @@ def seed_demo(*, log=None) -> dict:
         wipe()
         import_presets()
         tenant = _org()
+        _english_titles(tenant)
         items = _pnl_items()
         groups = _groups(tenant, items)
         _roles_and_users(tenant)
@@ -208,6 +254,9 @@ def wipe() -> None:
         models.EmploymentTerm, models.Employee, models.EmployeeGroup,
         models.Membership, models.Role, models.Period, models.AllocationRule,
         models.Counterparty, models.Unit, models.LegalEntity,
+        # Английские подписи правил — тоже данные тенанта, и повторный прогон
+        # обязан их пересоздать, а не наткнуться на прежние.
+        models.RuleOverride,
     ):
         model.objects.filter(tenant__in=tenants).delete()
     models.PnlItem.objects.filter(tenant__in=tenants).delete()
@@ -250,6 +299,20 @@ def _org() -> models.Tenant:
             closed_at=now() if month.approved else None,
         )
     return tenant
+
+
+def _english_titles(tenant) -> None:
+    """Английские подписи правил — переопределениями на уровне партнёра.
+
+    Ставится до расчёта: подпись попадает в строку ведомости в момент счёта, и
+    положенная позже она не догонит уже посчитанные месяцы.
+    """
+    for path, title in RULE_TITLES.items():
+        models.RuleOverride.objects.create(
+            id=det_id("rule_override", path), tenant=tenant,
+            scope_type="tenant", scope_id=None,
+            path=path, value=title, valid_from=TITLES_FROM,
+        )
 
 
 def _pnl_items() -> dict[str, models.PnlItem]:

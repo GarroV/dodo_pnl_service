@@ -242,13 +242,21 @@ class PayrollEngine:
                 topped_up.append(kind)
 
         if total:
+            # Подпись берётся из правил, а умолчание оставлено прежним. Причина:
+            # подпись компонента попадает в ведомость в момент расчёта, и
+            # партнёру, который ведёт учёт на другом языке, поменять её иначе
+            # нечем — все остальные подписи в этом движке уже приходят из
+            # конфигурации (`cfg["title"]`), а эти две были единственными
+            # зашитыми. Нужно демо-стенду, который по правилу владельца всегда
+            # англоязычный; на расчёт не влияет ничем.
+            title = cfg.get("title") or "Доплата до минимума"
             slip.add(
                 code="minimum_guarantee",
-                title="Доплата до минимума",
+                title=title,
                 amount=total,
                 ledger=self.ledger_of(e),
                 step=self.step(
-                    "minimum_guarantee", "Доплата до минимума", total,
+                    "minimum_guarantee", title, total,
                     rule_path="minimum_guarantee",
                     inputs={
                         # Какая именно база — открытый вопрос бухгалтеру (Q001),
@@ -436,16 +444,23 @@ class PayrollEngine:
         earned = self.accrue_hours(slip, ts)
 
         if ts.manual_correction is not None:
-            # если бухгалтер поставил правку руками — уважаем ее и помечаем
+            # если бухгалтер поставил правку руками — уважаем ее и помечаем.
+            # Подпись — из правил с прежним умолчанием, по той же причине, что у
+            # доплаты до минимума: это единственные две подписи движка, которые
+            # нельзя было поменять конфигурацией.
+            correction_title = (
+                (self.p.get("manual_correction") or {}).get("title")
+                or "Ручная корректировка"
+            )
             slip.add(
                 code="manual_correction",
-                title="Ручная корректировка",
+                title=correction_title,
                 amount=d(ts.manual_correction),
                 ledger=self.ledger_of(e),
                 # Правка руками — не правило, а ввод. Выдавать её в следе за
                 # сработавшее правило нельзя: объяснять тогда будет нечего.
                 step=TraceStep(
-                    rule_code="manual_correction", title="Ручная корректировка",
+                    rule_code="manual_correction", title=correction_title,
                     applied_value=d(ts.manual_correction),
                     input_values={"amount": d(ts.manual_correction)},
                     rule_version_id=None, source_level="input",
