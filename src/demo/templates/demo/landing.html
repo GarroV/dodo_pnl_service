@@ -1,0 +1,157 @@
+{# Титульная страница демо. Единственный экран блока со своими словами.
+
+   По-английски целиком и без вариантов: демо показывают заказчику и кладут в
+   портфолио, и язык здесь не зависит от языка продукта (правило владельца).
+
+   Страница намеренно не наследует шаблон продукта: посетитель ещё не вошёл, и
+   шапка с «кто вы» и ссылкой на выход на этом экране бессмысленна. Стили
+   встроены — внешних файлов и CDN в этом продукте нет нигде (D017). #}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# Демо не должно попадать в поисковую выдачу: это стенд для показа, а не
+     страница продукта. #}
+  <meta name="robots" content="noindex, nofollow">
+  <title>Dodo P&amp;L — live demo</title>
+  <style>
+    :root {
+      --ink: #16181d;
+      --muted: #5d646f;
+      --line: #e2e5ea;
+      --paper: #ffffff;
+      --ground: #f5f6f8;
+      --accent: #c8102e;
+      --accent-ink: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--ground);
+      color: var(--ink);
+      font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .wrap { max-width: 52rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+    header p.kicker {
+      margin: 0 0 .5rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-size: .75rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    h1 { margin: 0 0 .75rem; font-size: clamp(1.9rem, 1.2rem + 2.4vw, 2.75rem); line-height: 1.15; }
+    .lede { margin: 0 0 2rem; font-size: 1.1rem; color: var(--muted); max-width: 42rem; }
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 { margin: 0 0 .75rem; font-size: 1.05rem; letter-spacing: .01em; }
+    .go {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--accent-ink);
+      text-decoration: none;
+      font-weight: 700;
+      padding: .85rem 1.6rem;
+      border-radius: 10px;
+    }
+    .go:hover, .go:focus { filter: brightness(1.08); }
+    .roles { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: .6rem; }
+    .roles a { color: var(--ink); text-decoration: none; font-weight: 600; }
+    .roles a:hover, .roles a:focus { color: var(--accent); text-decoration: underline; }
+    .roles span { color: var(--muted); font-weight: 400; }
+    ol.tour { margin: 0; padding-left: 1.2rem; }
+    ol.tour li { margin-bottom: .55rem; }
+    .note { color: var(--muted); font-size: .9rem; }
+    code {
+      background: var(--ground);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: .05rem .3rem;
+      font-size: .88em;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="kicker">Dodo Brands · internal product</p>
+    <h1>P&amp;L service — live demo</h1>
+    <p class="lede">
+      A payroll and P&amp;L service for Dodo partners. This demo is filled with a
+      complete network: two legal entities, three units, thirty people, three
+      accounting ledgers and three months of payroll — two of them already
+      closed. Everyone here is invented; no partner data ever reaches this stand.
+    </p>
+  </header>
+
+  <div class="card">
+    <h2>Open the demo</h2>
+    <p class="note">
+      One click, no sign-up. You start as the operations director, who sees every
+      unit and all three ledgers.
+    </p>
+    <p style="margin:1rem 0 0">
+      <a class="go" href="{% url 'demo-enter-as' default_role %}">Enter the demo →</a>
+    </p>
+
+    <ul class="roles">
+      {% for role in roles %}
+        {% if role.code != default_role %}
+          <li>
+            <a href="{% url 'demo-enter-as' role.code %}">Enter as {{ role.title }}</a>
+            <span>
+              — sees {{ role.ledgers|join:", " }}
+              {% if role.unit %}· one unit only ({{ role.unit }}){% else %}· all units{% endif %}
+            </span>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+    <p class="note" style="margin-bottom:0">
+      Switching roles is the point: an accountant sees only the official ledger,
+      and the numbers on screen are recomputed for what that role may see — the
+      hidden part cannot be recovered by subtracting.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>What to look at</h2>
+    <ol class="tour">
+      <li><strong>Periods</strong> — three months: June and July are approved, August is still open.</li>
+      <li><strong>Payroll sheet</strong> — one row per person, one column per component, with a ledger filter.</li>
+      <li><strong>Trace</strong> — open any amount and see which rules produced it, with which inputs and which version of the rate.</li>
+      <li><strong>Variance report</strong> — August against July: a pay rise, a sick leave, a vacation and one manual correction.</li>
+      <li><strong>Reconciliation</strong> — compare the calculation against the accountant's own spreadsheet (below).</li>
+      <li><strong>Exports</strong> — payout sheet, P&amp;L lines and the accountant's own layout, all as xlsx.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Trying the reconciliation screen</h2>
+    <p class="note">
+      Reconciliation needs a file: it compares the service against the spreadsheet
+      the accountant keeps by hand. Download the demo spreadsheet for
+      {{ reconcile_period|date:"F Y" }} and upload it on the reconciliation screen
+      of that period. It is generated from this demo's own payroll and carries
+      three deliberate discrepancies — one real, one rounding, and one person who
+      left but stayed in the file.
+    </p>
+    <p style="margin-bottom:0">
+      <a href="{% url 'demo-accountant-table' %}">Download accountant's spreadsheet ({{ reconcile_period|date:"F Y" }}) →</a>
+    </p>
+  </div>
+
+  <p class="note">
+    The stand resets itself on a schedule: whatever you change here goes away, and
+    the demo comes back exactly as you found it. It runs on its own database — no
+    write made here can reach live data.
+  </p>
+</div>
+</body>
+</html>

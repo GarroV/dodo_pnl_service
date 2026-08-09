@@ -1,0 +1,35 @@
+{# Демо включено, но войти нечем: базы нет или она ещё не наполнена.
+
+   Отдельная страница, а не «не пустило»: посетитель не сделал ничего плохого,
+   и молчаливый отказ он прочитает как «продукт сломан». Текст говорит, что
+   именно случилось и что стенд восстановится сам. #}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Dodo P&amp;L — demo is being rebuilt</title>
+  <style>
+    body {
+      margin: 0; background: #f5f6f8; color: #16181d;
+      font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .wrap { max-width: 34rem; margin: 0 auto; padding: 4rem 1.25rem; }
+    h1 { font-size: 1.5rem; margin: 0 0 .75rem; }
+    p { color: #5d646f; }
+    a { color: #c8102e; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>The demo is being rebuilt</h1>
+  <p>
+    This stand rebuilds itself from a template on a schedule, and right now the
+    account for <strong>{{ role }}</strong> is not in place yet. Nothing is broken —
+    try again in a minute.
+  </p>
+  <p><a href="{% url 'demo' %}">← back to the demo page</a></p>
+</div>
+</body>
+</html>

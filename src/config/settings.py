@@ -36,6 +36,11 @@ INSTALLED_APPS = [
     "core",
     "web",
     "timesheets",
+    # Демо-стенд: свои команды наполнения и сброса и своя точка входа. Само
+    # приложение безвредно в продукте — маршруты демо подключаются только при
+    # DEMO_MODE=1 (см. config/urls.py), а команды отказываются работать где-либо,
+    # кроме демо-базы (см. demo/guard.py).
+    "demo",
 ]
 
 MIDDLEWARE = [
@@ -78,6 +83,19 @@ AUTH_PASSWORD_VALIDATORS = [
 # при DJANGO_DEBUG=1: на площадке о нём нужно попросить явно (DEV_LOGIN=1).
 DEV_LOGIN_ENABLED = dev_login_enabled(os.environ, DEBUG)
 DEV_LOGIN_PASSWORD = dev_password(os.environ)
+
+# --- демо-стенд (T033, T034) --------------------------------------------------
+# Живое демо — отдельный экземпляр со своей базой (D016), а не режим продукта.
+# Выключено по умолчанию, и выключено означает «маршрутов нет»: в продукте
+# `demo.urls` не подключается вовсе (см. config/urls.py). Функциональность,
+# которая «выключена», но всё ещё отвечает, однажды ответит не то.
+DEMO_MODE = os.environ.get("DEMO_MODE", "0") == "1"
+# Лёгкий спидбамп на входе: спасает от прохожего и поисковика, а не от
+# злоумышленника. Секретом не является — в демо-базе только выдуманные люди.
+DEMO_KEY = os.environ.get("DEMO_KEY", "")
+# Пароль демо-учёток. Той же природы, что пароль базы в .env.example: нужен не
+# для тайны, а чтобы его можно было сменить, не пересобирая образ.
+DEMO_USER_PASSWORD = os.environ.get("DEMO_USER_PASSWORD", "demo-only-not-a-secret")
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
@@ -182,7 +200,10 @@ Q_CLUSTER = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LANGUAGE_CODE = "ru"
+# Язык интерфейса. Переменной, а не константой, ровно по одной причине: демо по
+# правилу владельца всегда англоязычное, независимо от языка продукта, и
+# демо-служба поднимается с DJANGO_LANGUAGE=en. Умолчание — язык продукта.
+LANGUAGE_CODE = os.environ.get("DJANGO_LANGUAGE", "ru")
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
