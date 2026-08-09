@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}{% load ui %}{% comment %}
+{% extends "web/base.html" %}{% load ui i18n %}{% comment %}
 Отчёт загрузки таблицы партнёра (T021).
 
 Порядок разделов не случаен и читается сверху вниз как ответ на три вопроса,
@@ -7,7 +7,7 @@
 на него смотрят всегда, а находки — только когда они есть.
 {% endcomment %}
 
-{% block title %}Загрузка таблицы · {{ title }}{% endblock %}
+{% block title %}{% blocktranslate %}Загрузка таблицы · {{ title }}{% endblocktranslate %}{% endblock %}
 
 {% block head %}
 {% comment %}
@@ -27,10 +27,11 @@
 
 {% block content %}
 <div class="report">
-<h1>Загрузка таблицы · {{ title }}</h1>
+<h1>{% blocktranslate %}Загрузка таблицы · {{ title }}{% endblocktranslate %}</h1>
 
 {% if error %}
-{% notice "alert" title="Таблица не загружена." %}{{ error }}
+{% translate "Таблица не загружена." as report_error_title %}
+{% notice "alert" title=report_error_title %}{{ error }}
   {% if details %}<div class="details">{{ details|join:", " }}</div>{% endif %}
 {% endnotice %}
 {% else %}
@@ -41,27 +42,27 @@
 {% endcomment %}
 <table class="sheet">
   <thead>
-    <tr><th>Что сделано</th><th class="num">Строк</th></tr>
+    <tr><th>{% translate "Что сделано" %}</th><th class="num">{% translate "Строк" %}</th></tr>
   </thead>
   <tbody>
-    <tr><td>Сопоставлено сотрудникам</td><td class="num strong">{{ result.matched }}</td></tr>
-    <tr><td>Заведено строк табеля</td><td class="num">{{ result.created }}</td></tr>
-    <tr><td>Изменено</td><td class="num">{{ result.updated }}</td></tr>
-    <tr><td>Без изменений</td><td class="num muted">{{ result.unchanged }}</td></tr>
-    <tr><td>Не сопоставлено</td>
+    <tr><td>{% translate "Сопоставлено сотрудникам" %}</td><td class="num strong">{{ result.matched }}</td></tr>
+    <tr><td>{% translate "Заведено строк табеля" %}</td><td class="num">{{ result.created }}</td></tr>
+    <tr><td>{% translate "Изменено" %}</td><td class="num">{{ result.updated }}</td></tr>
+    <tr><td>{% translate "Без изменений" %}</td><td class="num muted">{{ result.unchanged }}</td></tr>
+    <tr><td>{% translate "Не сопоставлено" %}</td>
         <td class="num {% if result.unmatched_rows %}strong{% else %}muted{% endif %}">{{ result.unmatched_rows|length }}</td></tr>
   </tbody>
 </table>
 
 {% if result.clean %}
-<p class="note">Файл разобран целиком, подозрительного не нашлось.</p>
+<p class="note">{% translate "Файл разобран целиком, подозрительного не нашлось." %}</p>
 {% endif %}
 
 {% if result.unmatched_rows %}
-<h2>Не загружено: некому записать</h2>
-<p class="sub">Эти строки в файле есть, а в табеле их нет.</p>
+<h2>{% translate "Не загружено: некому записать" %}</h2>
+<p class="sub">{% translate "Эти строки в файле есть, а в табеле их нет." %}</p>
 <table class="sheet">
-  <thead><tr><th>Лист</th><th>Кто</th><th>Почему</th></tr></thead>
+  <thead><tr><th>{% translate "Лист" %}</th><th>{% translate "Кто" %}</th><th>{% translate "Почему" %}</th></tr></thead>
   <tbody>
     {% for row in result.unmatched_rows %}
     <tr><td>{{ row.sheet }}</td><td class="who">{{ row.name }}</td><td>{{ row.why }}</td></tr>
@@ -71,12 +72,12 @@
 {% endif %}
 
 {% if result.findings %}
-<h2>Не разобрано в файле</h2>
+<h2>{% translate "Не разобрано в файле" %}</h2>
 <p class="sub">
-  Это не предупреждения: перечисленного в табеле <strong>нет</strong>.
+  {% blocktranslate %}Это не предупреждения: перечисленного в табеле <strong>нет</strong>.{% endblocktranslate %}
 </p>
 <table class="sheet">
-  <thead><tr><th>Где</th><th>Что</th></tr></thead>
+  <thead><tr><th>{% translate "Где" %}</th><th>{% translate "Что" %}</th></tr></thead>
   <tbody>
     {% for finding in result.findings %}
     <tr class="refused"><td>{{ finding.where }}</td><td>{{ finding.text }}</td></tr>
@@ -86,13 +87,13 @@
 {% endif %}
 
 {% if result.warnings %}
-<h2>Загружено, но стоит посмотреть</h2>
+<h2>{% translate "Загружено, но стоит посмотреть" %}</h2>
 <p class="sub">
-  Эти числа приняты. Ни одно из них не ошибка само по себе — но незамеченными
-  они и становятся неверной зарплатой.
+  {% blocktranslate %}Эти числа приняты. Ни одно из них не ошибка само по себе — но незамеченными
+  они и становятся неверной зарплатой.{% endblocktranslate %}
 </p>
 <table class="sheet">
-  <thead><tr><th>Где</th><th>Что</th></tr></thead>
+  <thead><tr><th>{% translate "Где" %}</th><th>{% translate "Что" %}</th></tr></thead>
   <tbody>
     {% for note in result.warnings %}
     <tr><td>{{ note.where }}</td><td>{{ note.text }}</td></tr>
@@ -104,8 +105,8 @@
 {% endif %}
 
 <p class="note">
-  <a href="{% url 'timesheets' period.id %}">К табелю</a> ·
-  <a href="{% url 'period' period.id %}">К периоду</a>
+  <a href="{% url 'timesheets' period.id %}">{% translate "К табелю" %}</a> ·
+  <a href="{% url 'period' period.id %}">{% translate "К периоду" %}</a>
 </p>
 </div>
 {% endblock %}
