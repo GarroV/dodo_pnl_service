@@ -137,7 +137,7 @@ sql("update employment_terms set base_rate = base_rate * 2");
 await goto(APP + june);
 page = await snapshot();
 check("страница увидела расхождение", page.retroSection);
-check("получатель назван словами — июль 2026", page.text.includes("июль 2026"), "");
+check("получатель назван словами — Июль 2026", page.text.includes("Июль 2026"), "");
 check("директору предложен перенос", page.retroButton);
 check(
   "закрытый месяц ещё не сдвинулся",
@@ -206,7 +206,7 @@ const retroRows = page.rows.filter((r) => r.retro);
 check("в июле появились строки разницы", retroRows.length > 0, String(retroRows.length));
 check(
   "строка разницы объясняет, за какой месяц она пришла",
-  retroRows.every((r) => r.badge.includes("Перерасчёт за июнь 2026")),
+  retroRows.every((r) => r.badge.includes("Перерасчёт за Июнь 2026")),
   retroRows[0] ? retroRows[0].badge : "",
 );
 check("плашки о неперенесённой разнице больше нет",

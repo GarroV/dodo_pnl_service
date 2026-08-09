@@ -22,6 +22,7 @@ from django.http import (
 )
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
 from core.models import Calendar, Payrun, Payslip, Period, Timesheet
@@ -31,25 +32,22 @@ from reports.sheet import build_slice
 from reports.trace import TraceNotFound, build_trace
 from reports.variance import ThresholdsMissing, build_variance
 
-from . import auth, permissions
+from . import auth, onboarding, permissions
 from .format import cut_title, hours, ledger_title, money
+from .i18n import month_title
 from .principal import get_current_principal
 
-MONTHS = (
-    "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-    "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
-)
-
 STATUS_TITLES = {
-    "open": "Открыт",
-    "closed": "Закрыт",
-    "locked": "Заблокирован",
+    "open": _("Открыт"),
+    "closed": _("Закрыт"),
+    "locked": _("Заблокирован"),
 }
 
 
-def month_title(value) -> str:
-    """«Июнь 2026». Своим списком, а не через локаль: месяц в шапке — не дата в тексте."""
-    return f"{MONTHS[value.month - 1]} {value.year}"
+def status_title(code: str) -> str:
+    """Состояние месяца словами. Незнакомое состояние показывается кодом как есть."""
+    known = STATUS_TITLES.get(code)
+    return str(known) if known is not None else code
 
 
 def index(request):
@@ -62,12 +60,20 @@ def periods(request):
         {
             "id": period.id,
             "title": month_title(period.period),
-            "status": STATUS_TITLES.get(period.status, period.status),
+            "status": status_title(period.status),
             "tenant": period.tenant.title,
         }
         for period in Period.objects.select_related("tenant").order_by("-period")
     ]
-    return render(request, "web/periods.html", {"periods": rows})
+    return render(
+        request,
+        "web/periods.html",
+        # Порядок работы за месяц показывается и здесь (T077): человек,
+        # впервые открывший продукт, попадает на этот экран, и «что делать
+        # дальше» он должен прочитать раньше, чем выберет месяц. Текущего шага
+        # тут нет — отсюда не видно, о каком месяце речь.
+        {"periods": rows, "steps": onboarding.month_steps()},
+    )
 
 
 def find_period(period_id) -> Period:
@@ -234,7 +240,7 @@ def period_page(
         {
             "period": period,
             "title": month_title(period.period),
-            "status": STATUS_TITLES.get(period.status, period.status),
+            "status": status_title(period.status),
             "sheet": {
                 "columns": [column.title for column in sheet.columns],
                 "rows": [
