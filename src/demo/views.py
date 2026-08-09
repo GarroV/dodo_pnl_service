@@ -133,6 +133,18 @@ def accountant_file(request):
     демо — те же самые.
     """
     _guard(request)
+
+    # Ссылка на файл лежит на титульной странице, то есть посетитель может нажать
+    # её раньше, чем войдёт. Данные при этом собираются под контекстом базы, и
+    # без сессии их просто нет — человек получил бы пустой файл или отказ,
+    # ничего не сделав неправильно. Поэтому вход подставляется тем же путём, что
+    # и по кнопке: демо и так открыто одним кликом, отдельного смысла держать
+    # эту ссылку закрытой нет.
+    if not request.user.is_authenticated:
+        if login_with_password(request, DEFAULT_ROLE, demo_password()) is None:
+            return render(request, "demo/unavailable.html", {"role": DEFAULT_ROLE},
+                          status=503)
+
     rows = accountant_rows(RECONCILE_PERIOD)
     if not rows:
         raise Http404("demo period is not calculated")
