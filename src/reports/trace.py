@@ -41,6 +41,8 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 from uuid import UUID
 
+from django.utils.translation import gettext as _
+
 from reports.sheet import ALL
 
 __all__ = [
@@ -339,7 +341,7 @@ def build_trace(
         # не надо.
         return _without_steps(
             stored, carried, visible_ledgers, cut,
-            "своего расчёта в этом месяце у строки нет — только перенос за прошлый",
+            _("своего расчёта в этом месяце у строки нет — только перенос за прошлый"),
             name=name, unit=unit, period=period, approved=approved,
         )
 

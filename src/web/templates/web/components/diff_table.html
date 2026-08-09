@@ -1,4 +1,4 @@
-{% comment %}
+{% load i18n %}{% comment %}
 Таблица расхождений «в таблице — в расчёте — разница» (T031).
 
 Один и тот же вид данных показывается на экране сверки дважды: существенные
@@ -18,8 +18,8 @@
 читается как пять разных людей.
 {% endcomment %}<table class="sheet">
   <thead>
-    <tr><th>Сотрудник</th><th>Что</th><th class="num">В таблице</th>
-        <th class="num">В расчёте</th><th class="num">Разница</th></tr>
+    <tr><th>{% translate "Сотрудник" %}</th><th>{% translate "Что" %}</th><th class="num">{% translate "В таблице" %}</th>
+        <th class="num">{% translate "В расчёте" %}</th><th class="num">{% translate "Разница" %}</th></tr>
   </thead>
   <tbody>
     {% for line in lines %}
@@ -39,7 +39,7 @@
           {% if line.causes %}
           <ul class="why">{% for cause in line.causes %}<li>{{ cause }}</li>{% endfor %}</ul>
           {% else %}
-          <span class="why">Входы сошлись — расхождение даёт правило расчёта.</span>
+          <span class="why">{% translate "Входы сошлись — расхождение даёт правило расчёта." %}</span>
           {% endif %}
         </td>
       </tr>

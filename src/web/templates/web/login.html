@@ -1,38 +1,40 @@
-{% extends "web/base.html" %}{% load ui %}
-{% block title %}Вход{% endblock %}
+{% extends "web/base.html" %}{% load ui i18n %}
+{% block title %}{% translate "Вход" %}{% endblock %}
 {% block content %}
-<h1>Вход</h1>
-<p class="sub">Логин и пароль выдаёт администратор сети.</p>
+<h1>{% translate "Вход" %}</h1>
+<p class="sub">{% translate "Логин и пароль выдаёт администратор сети." %}</p>
 
 {% if error %}{% notice "alert" %}{{ error }}{% endnotice %}{% endif %}
 
 <form method="post" action="{% url 'login' %}" class="card">{% csrf_token %}
   <input type="hidden" name="next" value="{{ next }}">
-  <p>{% include "web/components/field.html" with id="id_username" name="username" label="Логин" value=username autocomplete="username" autofocus=True required=True stacked=True %}</p>
-  <p>{% include "web/components/field.html" with id="id_password" name="password" label="Пароль" type="password" autocomplete="current-password" required=True stacked=True %}</p>
-  <p><button class="primary" type="submit">Войти</button></p>
+  {% translate "Логин" as login_label %}
+  {% translate "Пароль" as password_label %}
+  <p>{% include "web/components/field.html" with id="id_username" name="username" label=login_label value=username autocomplete="username" autofocus=True required=True stacked=True %}</p>
+  <p>{% include "web/components/field.html" with id="id_password" name="password" label=password_label type="password" autocomplete="current-password" required=True stacked=True %}</p>
+  <p><button class="primary" type="submit">{% translate "Войти" %}</button></p>
 </form>
 
 {% if dev_users %}
-<h2>Быстрый вход на время стройки</h2>
+<h2>{% translate "Быстрый вход на время стройки" %}</h2>
 <p class="sub">
-  Кнопка подставляет пароль учётки тестового сида и идёт тем же путём, что ввод
+  {% blocktranslate %}Кнопка подставляет пароль учётки тестового сида и идёт тем же путём, что ввод
   руками — отдельного способа войти у неё нет. Выключается переменной окружения
-  <code>DEV_LOGIN=0</code>; выданные ею сессии при этом перестают действовать.
+  <code>DEV_LOGIN=0</code>; выданные ею сессии при этом перестают действовать.{% endblocktranslate %}
 </p>
 <table>
-  <thead><tr><th>Пользователь</th><th>Логин</th><th>Видит регистры</th><th>Точки</th><th></th></tr></thead>
+  <thead><tr><th>{% translate "Пользователь" %}</th><th>{% translate "Логин" %}</th><th>{% translate "Видит регистры" %}</th><th>{% translate "Точки" %}</th><th></th></tr></thead>
   <tbody>
     {% for user in dev_users %}
     <tr>
       <td>{{ user.title }}</td>
       <td><code>{{ user.username }}</code></td>
       <td>{{ user.ledgers|join:", " }}</td>
-      <td>{% if user.unit %}{{ user.unit }}{% else %}все{% endif %}</td>
+      <td>{% if user.unit %}{{ user.unit }}{% else %}{% translate "все" %}{% endif %}</td>
       <td class="num">
         <form class="inline" method="post" action="{% url 'dev-login' %}">{% csrf_token %}
           <input type="hidden" name="user" value="{{ user.code }}">
-          <button type="submit">войти</button>
+          <button type="submit">{% translate "войти" %}</button>
         </form>
       </td>
     </tr>

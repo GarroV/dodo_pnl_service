@@ -96,6 +96,19 @@ export async function attach({ cdpPort = process.env.CDP_PORT || 9339 } = {}) {
   await send("Runtime.enable");
   await send("Network.enable");
 
+  // Язык, на котором смоук разговаривает с продуктом (T017). Задаётся явно, а
+  // не берётся у браузера: с появлением локализации продукт честно отвечает на
+  // языке, который просит браузер, а headless Chrome по умолчанию просит
+  // английский. Смоуки при этом написаны по-русски и сверяют русские надписи —
+  // без этой строки они начали бы падать все разом, и выглядело бы это как
+  // сломанный продукт, а не как несогласованный язык.
+  //
+  // Cookie сильнее заголовка, поэтому смоук локализации по-прежнему может
+  // переключать язык нажатием кнопки, и эта настройка ему не мешает.
+  await send("Network.setExtraHTTPHeaders", {
+    headers: { "Accept-Language": process.env.SMOKE_LANG || "ru,ru-RU;q=0.9" },
+  });
+
   return { send, evalIn, goto, key, type, check, checks, report, logs, ws };
 }
 

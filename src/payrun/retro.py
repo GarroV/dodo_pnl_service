@@ -41,6 +41,8 @@ from decimal import Decimal
 from uuid import UUID
 
 from django.db import transaction
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_noop
 
 from core.models import PayComponent, Payrun, RetroAdjustment, Tenant
 
@@ -55,22 +57,22 @@ DELTA = "delta"
 RECALCULATE = "recalculate"
 
 MODE_TITLES = {
-    DELTA: "разница переносится в текущий период",
-    RECALCULATE: "период открывается заново и пересчитывается",
+    DELTA: gettext_noop("разница переносится в текущий период"),
+    RECALCULATE: gettext_noop("период открывается заново и пересчитывается"),
 }
 
-WRONG_MODE_REFUSAL = (
+WRONG_MODE_REFUSAL = gettext_noop(
     "У этого партнёра правки задним числом ведутся пересчётом, а не переносом: "
     "закрытый период открывается заново с указанием причины и считается снова. "
     "Перенос разницы для него выключен настройкой."
 )
 
-NOTHING_REFUSAL = (
+NOTHING_REFUSAL = gettext_noop(
     "Расхождений с сегодняшними данными нет: переносить нечего. "
     "Возможно, разницу уже перенесли — посмотрите период-получатель."
 )
 
-NOT_APPROVED_REFUSAL = (
+NOT_APPROVED_REFUSAL = gettext_noop(
     "Перенос разницы делается только из закрытого месяца. "
     "Этот период ещё не утверждён — правьте данные и пересчитывайте его как обычно."
 )
@@ -84,11 +86,16 @@ def month_after(period: date) -> date:
 
 
 def month_title(period: date) -> str:
-    names = [
-        "январь", "февраль", "март", "апрель", "май", "июнь",
-        "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь",
-    ]
-    return f"{names[period.month - 1]} {period.year}"
+    """Месяц словами — тем же способом, что и везде в продукте (T017).
+
+    Своего списка месяцев здесь больше нет. Он был третьим по счёту в
+    репозитории, а с тремя языками стал бы девятым: девять списков, которые
+    никто не удержит в согласии. Импорт из `web` — как у `jobs.py`, который уже
+    так берёт контекст пользователя и права.
+    """
+    from web.i18n import month_title as titled
+
+    return titled(period)
 
 
 def mode(tenant_id: UUID) -> str:
@@ -314,24 +321,24 @@ def post(*, tenant_id: UUID, source: date, actor_id, visible_ledgers) -> tuple[d
     """
     payrun = Payrun.objects.filter(tenant_id=tenant_id, period=source).first()
     if payrun is None or payrun.status != "approved":
-        raise PayrunRefused(NOT_APPROVED_REFUSAL)
+        raise PayrunRefused(_(NOT_APPROVED_REFUSAL))
 
     if mode(tenant_id) != DELTA:
-        raise PayrunRefused(WRONG_MODE_REFUSAL)
+        raise PayrunRefused(_(WRONG_MODE_REFUSAL))
 
     found = drift(tenant_id, source)
     if found.error:
         raise PayrunRefused(found.error)
     if not found:
-        raise PayrunRefused(NOTHING_REFUSAL)
+        raise PayrunRefused(_(NOTHING_REFUSAL))
 
     hidden = [name for name in found.ledgers if name not in set(visible_ledgers or [])]
     if hidden:
         # Тот же порядок, что у расчёта: объясняет приложение, отвергает база.
         # Без этого человек получил бы ошибку политики на строке чужого регистра.
         refusal = LedgerAccessDenied(
-            "Разница за этот месяц попадает в регистры учёта, недоступные вашей "
-            "роли. Перенести её может тот, кто видит их все."
+            _("Разница за этот месяц попадает в регистры учёта, недоступные вашей "
+              "роли. Перенести её может тот, кто видит их все.")
         )
         refusal.ledgers = hidden
         raise refusal
@@ -442,7 +449,7 @@ def locked_out(tenant_id: UUID, period: date) -> bool:
         return bool(cursor.fetchone()[0])
 
 
-LOCKED_REFUSAL = (
+LOCKED_REFUSAL = gettext_noop(
     "Разница за этот месяц уже перенесена в утверждённый период и выплачена. "
     "Открыть его заново нельзя: пересчёт означал бы заплатить дважды."
 )
@@ -456,4 +463,4 @@ def refuse_if_locked(tenant_id: UUID, period: date) -> None:
     том, что делать дальше.
     """
     if locked_out(tenant_id, period):
-        raise PayrunRefused(LOCKED_REFUSAL)
+        raise PayrunRefused(_(LOCKED_REFUSAL))

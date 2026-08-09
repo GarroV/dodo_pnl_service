@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}{% load ui %}{% comment %}
+{% extends "web/base.html" %}{% load ui i18n %}{% comment %}
 Сверка с таблицей бухгалтера (T031).
 
 Порядок разделов — это порядок вопросов, которые задаёт бухгалтер: сошлось ли
@@ -11,7 +11,7 @@
 существенными, они заставляли бы каждый раз перебирать их глазами.
 {% endcomment %}
 
-{% block title %}Сверка · {{ title }}{% endblock %}
+{% block title %}{% blocktranslate with period_title=title %}Сверка · {{ period_title }}{% endblocktranslate %}{% endblock %}
 
 {% block head %}
 {% comment %}
@@ -33,89 +33,93 @@
 
 {% block content %}
 <div class="reconcile">
-<h1>Сверка с таблицей бухгалтера · {{ title }}</h1>
+<h1>{% blocktranslate with period_title=title %}Сверка с таблицей бухгалтера · {{ period_title }}{% endblocktranslate %}</h1>
 
 <p class="sub">
-  Файл сравнивается с расчётом этого периода построчно. Он нигде не
-  сохраняется — ни на диск, ни в базу: ответ живёт только на этой странице.
+  {% blocktranslate %}Файл сравнивается с расчётом этого периода построчно. Он нигде не
+  сохраняется — ни на диск, ни в базу: ответ живёт только на этой странице.{% endblocktranslate %}
 </p>
 
 <form class="upload" method="post" enctype="multipart/form-data"
       action="{% url 'period-reconcile' period.id %}">{% csrf_token %}
-  {% include "web/components/field.html" with id="table" name="table" type="file" label="Таблица бухгалтера (.xlsx)" accept=".xlsx" %}
-  <button type="submit" class="primary">Сверить</button>
+  {% translate "Таблица бухгалтера (.xlsx)" as table_label %}
+  {% include "web/components/field.html" with id="table" name="table" type="file" label=table_label accept=".xlsx" %}
+  <button type="submit" class="primary">{% translate "Сверить" %}</button>
 </form>
 
-{% if error %}{% notice "alert" title="Сверка не выполнена." %}{{ error }}{% endnotice %}{% endif %}
+{% translate "Сверка не выполнена." as reconcile_failed %}
+{% if error %}{% notice "alert" title=reconcile_failed %}{{ error }}{% endnotice %}{% endif %}
 
 {% if result %}
-<h2>Что получилось</h2>
+<h2>{% translate "Что получилось" %}</h2>
 <table class="sheet">
-  <thead><tr><th>Итог сверки</th><th class="num">Строк</th></tr></thead>
+  <thead><tr><th>{% translate "Итог сверки" %}</th><th class="num">{% translate "Строк" %}</th></tr></thead>
   <tbody>
-    <tr><td>Сошлось до копейки</td><td class="num strong">{{ result.matched }}</td></tr>
-    <tr><td>Разошлось на копейки (округление)</td>
+    <tr><td>{% translate "Сошлось до копейки" %}</td><td class="num strong">{{ result.matched }}</td></tr>
+    <tr><td>{% translate "Разошлось на копейки (округление)" %}</td>
         <td class="num {% if result.rounding %}strong{% else %}muted{% endif %}">{{ result.rounding }}</td></tr>
-    <tr><td>Разошлось</td>
+    <tr><td>{% translate "Разошлось" %}</td>
         <td class="num {% if result.mismatched %}strong{% else %}muted{% endif %}">{{ result.mismatched }}</td></tr>
-    <tr><td>Сверены только входы — деньги не сравнивались</td>
+    <tr><td>{% translate "Сверены только входы — деньги не сравнивались" %}</td>
         <td class="num {% if result.inputs_only %}strong{% else %}muted{% endif %}">{{ result.inputs_only }}</td></tr>
-    <tr><td>Есть в таблице, нет в расчёте</td>
+    <tr><td>{% translate "Есть в таблице, нет в расчёте" %}</td>
         <td class="num {% if result.only_in_file %}strong{% else %}muted{% endif %}">{{ result.only_in_file|length }}</td></tr>
-    <tr><td>Есть в расчёте, нет в таблице</td>
+    <tr><td>{% translate "Есть в расчёте, нет в таблице" %}</td>
         <td class="num {% if result.only_in_run %}strong{% else %}muted{% endif %}">{{ result.only_in_run|length }}</td></tr>
   </tbody>
   <tfoot>
     {% if totals.any %}
     <tr>
-      <td>К выплате по сверенным строкам: в таблице {{ totals.expected }},
-          в расчёте {{ totals.actual }}</td>
+      <td>{% blocktranslate with expected=totals.expected actual=totals.actual %}К выплате по сверенным строкам: в таблице {{ expected }},
+          в расчёте {{ actual }}{% endblocktranslate %}</td>
       <td class="num {% if totals.off %}off{% endif %}">{{ totals.diff }}</td>
     </tr>
     {% else %}
     <tr>
-      <td colspan="2">Деньги не сравнивались ни по одной строке: итоги расчёта
+      <td colspan="2">{% blocktranslate %}Деньги не сравнивались ни по одной строке: итоги расчёта
           вам не отданы. Ноль в такой сумме означал бы совпадение, поэтому
-          её здесь нет.</td>
+          её здесь нет.{% endblocktranslate %}</td>
     </tr>
     {% endif %}
   </tfoot>
 </table>
 
 {% if result.clean %}
-<p class="note">Всё сошлось до копейки, и файл прочитан целиком.</p>
+<p class="note">{% translate "Всё сошлось до копейки, и файл прочитан целиком." %}</p>
 {% endif %}
 
 {% if off_lines %}
-<h2>Разошлось</h2>
+<h2>{% translate "Разошлось" %}</h2>
 <p class="sub">
-  Сверху то, что разошлось сильнее. Под каждой строкой — что разошлось на
-  входе: если входы сошлись, а итог нет, значит разошлось правило расчёта.
+  {% blocktranslate %}Сверху то, что разошлось сильнее. Под каждой строкой — что разошлось на
+  входе: если входы сошлись, а итог нет, значит разошлось правило расчёта.{% endblocktranslate %}
 </p>
 {% include "web/components/diff_table.html" with lines=off_lines highlight=True with_causes=True %}
 {% endif %}
 
 {% if rounding_lines %}
-<h2>Разошлось на копейки</h2>
+<h2>{% translate "Разошлось на копейки" %}</h2>
 <p class="sub">
-  Меньше динара — округление на стороне бухгалтерии. Это не совпадение, но и
-  не повод искать ошибку в правиле.
+  {% blocktranslate %}Меньше динара — округление на стороне бухгалтерии. Это не совпадение, но и
+  не повод искать ошибку в правиле.{% endblocktranslate %}
 </p>
 {% include "web/components/diff_table.html" with lines=rounding_lines highlight=False with_causes=False %}
 {% endif %}
 
 {% if inputs_lines %}
-<h2>Сверены только входы · {{ inputs_lines|length }}</h2>
+{% with inputs_count=inputs_lines|length %}
+<h2>{% blocktranslate %}Сверены только входы · {{ inputs_count }}{% endblocktranslate %}</h2>
+{% endwith %}
 <p class="sub">
-  Итоги расчёта по этим строкам вам не отданы: нето, бруто и взносы посчитаны
+  {% blocktranslate %}Итоги расчёта по этим строкам вам не отданы: нето, бруто и взносы посчитаны
   по строке ведомости целиком, и база показывает их только роли, которой видны
   все регистры учёта. Поэтому <strong>деньги здесь не сравнивались</strong> — ни
   одного нашего числа по ним не показано, и совпадением это не считается.
   Сверено то, что от регистра не зависит: часы, ставка, коэффициент. Расхождение
-  чаще всего сидит именно там.
+  чаще всего сидит именно там.{% endblocktranslate %}
 </p>
 <table class="sheet">
-  <thead><tr><th>Лист</th><th>Кто</th><th>Что со входами</th></tr></thead>
+  <thead><tr><th>{% translate "Лист" %}</th><th>{% translate "Кто" %}</th><th>{% translate "Что со входами" %}</th></tr></thead>
   <tbody>
     {% for line in inputs_lines %}
     <tr {% if line.causes %}class="off"{% endif %}>
@@ -125,7 +129,7 @@
         {% if line.causes %}
         <ul class="why">{% for cause in line.causes %}<li>{{ cause }}</li>{% endfor %}</ul>
         {% else %}
-        <span class="why">Входы сошлись с таблицей.</span>
+        <span class="why">{% translate "Входы сошлись с таблицей." %}</span>
         {% endif %}
       </td>
     </tr>
@@ -135,13 +139,13 @@
 {% endif %}
 
 {% if result.only_in_file %}
-<h2>Есть в таблице, нет в расчёте</h2>
+<h2>{% translate "Есть в таблице, нет в расчёте" %}</h2>
 <p class="sub">
-  По этим строкам сверять нечего: расчёта за этот период по ним нет. Ни одного
-  числа с нашей стороны здесь не показано — сравнивать не с чем.
+  {% blocktranslate %}По этим строкам сверять нечего: расчёта за этот период по ним нет. Ни одного
+  числа с нашей стороны здесь не показано — сравнивать не с чем.{% endblocktranslate %}
 </p>
 <table class="sheet">
-  <thead><tr><th>Лист</th><th>Кто</th><th>Почему</th></tr></thead>
+  <thead><tr><th>{% translate "Лист" %}</th><th>{% translate "Кто" %}</th><th>{% translate "Почему" %}</th></tr></thead>
   <tbody>
     {% for row in result.only_in_file %}
     <tr><td>{{ row.sheet }}</td><td>{{ row.name }}</td><td>{{ row.why }}</td></tr>
@@ -151,9 +155,9 @@
 {% endif %}
 
 {% if result.only_in_run %}
-<h2>Есть в расчёте, нет в таблице</h2>
+<h2>{% translate "Есть в расчёте, нет в таблице" %}</h2>
 <table class="sheet">
-  <thead><tr><th>Кто</th><th>Почему</th></tr></thead>
+  <thead><tr><th>{% translate "Кто" %}</th><th>{% translate "Почему" %}</th></tr></thead>
   <tbody>
     {% for row in result.only_in_run %}
     <tr><td>{{ row.name }}</td><td>{{ row.why }}</td></tr>
@@ -163,13 +167,13 @@
 {% endif %}
 
 {% if result.findings %}
-<h2>Не разобрано в файле</h2>
+<h2>{% translate "Не разобрано в файле" %}</h2>
 <p class="sub">
-  Это не предупреждения: перечисленное в сверку <strong>не попало</strong>,
-  поэтому сошедшееся выше сошлось не по всему файлу.
+  {% blocktranslate %}Это не предупреждения: перечисленное в сверку <strong>не попало</strong>,
+  поэтому сошедшееся выше сошлось не по всему файлу.{% endblocktranslate %}
 </p>
 <table class="sheet">
-  <thead><tr><th>Где</th><th>Что</th></tr></thead>
+  <thead><tr><th>{% translate "Где" %}</th><th>{% translate "Что" %}</th></tr></thead>
   <tbody>
     {% for finding in result.findings %}
     <tr class="off"><td>{{ finding.where }}</td><td>{{ finding.text }}</td></tr>
@@ -179,7 +183,9 @@
 {% endif %}
 
 {% if matched_lines %}
-<h2>Сошлось до копейки · {{ matched_lines|length }}</h2>
+{% with matched_count=matched_lines|length %}
+<h2>{% blocktranslate %}Сошлось до копейки · {{ matched_count }}{% endblocktranslate %}</h2>
+{% endwith %}
 <p class="sub names">
   {% for line in matched_lines %}{{ line.name }}{% if not forloop.last %} · {% endif %}{% endfor %}
 </p>
@@ -188,7 +194,7 @@
 {% endif %}
 
 <p class="note">
-  <a href="{% url 'period' period.id %}">К периоду</a>
+  <a href="{% url 'period' period.id %}">{% translate "К периоду" %}</a>
 </p>
 </div>
 {% endblock %}

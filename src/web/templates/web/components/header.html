@@ -1,9 +1,9 @@
-{% comment %}
-Шапка: куда идти и кем вошли.
+{% load i18n %}{% comment %}
+Шапка: куда идти, кем вошли и на каком языке читаем.
 
-Отдельным файлом, а не куском базового шаблона: сюда придут переключатель языка
-(T017) и ссылка на админку справочников (T018), и обе правки будут в одном
-месте, а не в файле, который правят все.
+Отдельным файлом, а не куском базового шаблона: сюда пришёл переключатель языка
+(T017), сюда же придёт ссылка на админку справочников (T018), и обе правки в
+одном месте, а не в файле, который правят все.
 
 Что шапка обязана говорить и почему именно так.
 
@@ -11,29 +11,49 @@
 числа, и человек должен видеть, чьими глазами он смотрит, не нажимая ничего.
 
 **Регистры — перечислением того, что видно.** Не «регистры: все», а именно
-названия: «все» у бухгалтера и у директора означают разное.
+названия: «все» у бухгалтера и у директора означают разное. Перечисляется
+только видимое: список названий регистров и есть сообщение о том, что регистр
+существует (D023), поэтому переключатель языка их не перечисляет ни в каком виде.
 
 **Точка — только когда человек ею ограничен.** Объяснять надо срезанные данные,
 а не полные: пусто здесь значит «все точки партнёра». Иначе управляющий видел бы
 суммы меньше директорских и не знал почему.
+
+**Язык — формой с кнопками, а не ссылками.** Смена языка меняет состояние
+(cookie), и делать это переходом по ссылке нельзя: такую ссылку пройдёт любой
+предзагрузчик. Обработчик штатный (`/i18n/setlang/`): он проверяет и код языка,
+и адрес возврата. Список языков приезжает из настроек — списком в шаблоне он
+разъехался бы с каталогом переводов. При закреплённом языке (демо, UI_LANGUAGE)
+список пуст, и переключателя нет вовсе: выключенная ручка хуже отсутствующей.
 {% endcomment %}<header>
   <a class="brand" href="{% url 'periods' %}">Dodo P&amp;L</a>
-  <nav aria-label="Основная навигация"><a href="{% url 'periods' %}">Периоды</a></nav>
+  <nav aria-label="{% translate "Основная навигация" %}"><a href="{% url 'periods' %}">{% translate "Периоды" %}</a></nav>
   <div class="who">
+    {% if languages %}
+    <form class="lang" method="post" action="{% url 'set_language' %}">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      {% for language in languages %}
+      <button type="submit" name="language" value="{{ language.code }}"
+              class="lang-option{% if language.current %} current{% endif %}"
+              {% if language.current %}aria-current="true"{% endif %}
+              lang="{{ language.code }}">{{ language.title }}</button>
+      {% endfor %}
+    </form>
+    {% endif %}
     {% if dev_login %}
-      <span class="badge" title="На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)">dev-вход</span>
+      <span class="badge" title="{% translate "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)" %}">{% translate "dev-вход" %}</span>
     {% endif %}
     {% if principal %}
-      {# У учёток сида имя человека совпадает с названием роли — не повторяем его дважды. #}
+      {% comment %}У учёток сида имя человека совпадает с названием роли — не повторяем его дважды.{% endcomment %}
       <span><strong>{{ principal.display_name }}</strong>{% if principal.role_title and principal.role_title != principal.display_name %} · {{ principal.role_title }}{% endif %}{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
-      {% if visible_ledgers_title %}<span>регистры: {{ visible_ledgers_title }}</span>{% endif %}
-      {% if principal.units_title %}<span title="Данные и итоги на всех страницах — только по этой точке">точка: {{ principal.units_title }}</span>{% endif %}
-      <a class="btn" href="{% url 'password-change' %}">пароль</a>
+      {% if visible_ledgers_title %}<span>{% blocktranslate with names=visible_ledgers_title %}регистры: {{ names }}{% endblocktranslate %}</span>{% endif %}
+      {% if principal.units_title %}<span title="{% translate "Данные и итоги на всех страницах — только по этой точке" %}">{% blocktranslate with code=principal.units_title %}точка: {{ code }}{% endblocktranslate %}</span>{% endif %}
+      <a class="btn" href="{% url 'password-change' %}">{% translate "пароль" %}</a>
       <form class="inline" method="post" action="{% url 'logout' %}">{% csrf_token %}
-        <button type="submit">выйти</button>
+        <button type="submit">{% translate "выйти" %}</button>
       </form>
     {% else %}
-      <a class="btn" href="{% url 'login' %}">войти</a>
+      <a class="btn" href="{% url 'login' %}">{% translate "войти" %}</a>
     {% endif %}
   </div>
 </header>

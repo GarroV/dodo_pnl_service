@@ -22,6 +22,8 @@ from django.http import (
 )
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.translation import gettext, gettext_noop
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
 from core.models import Calendar, Payrun, Payslip, Period, Timesheet
@@ -31,25 +33,22 @@ from reports.sheet import build_slice
 from reports.trace import TraceNotFound, build_trace
 from reports.variance import ThresholdsMissing, build_variance
 
-from . import auth, permissions
+from . import auth, onboarding, permissions
 from .format import cut_title, hours, ledger_title, money
+from .i18n import month_title
 from .principal import get_current_principal
 
-MONTHS = (
-    "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-    "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
-)
-
 STATUS_TITLES = {
-    "open": "Открыт",
-    "closed": "Закрыт",
-    "locked": "Заблокирован",
+    "open": _("Открыт"),
+    "closed": _("Закрыт"),
+    "locked": _("Заблокирован"),
 }
 
 
-def month_title(value) -> str:
-    """«Июнь 2026». Своим списком, а не через локаль: месяц в шапке — не дата в тексте."""
-    return f"{MONTHS[value.month - 1]} {value.year}"
+def status_title(code: str) -> str:
+    """Состояние месяца словами. Незнакомое состояние показывается кодом как есть."""
+    known = STATUS_TITLES.get(code)
+    return str(known) if known is not None else code
 
 
 def index(request):
@@ -62,12 +61,20 @@ def periods(request):
         {
             "id": period.id,
             "title": month_title(period.period),
-            "status": STATUS_TITLES.get(period.status, period.status),
+            "status": status_title(period.status),
             "tenant": period.tenant.title,
         }
         for period in Period.objects.select_related("tenant").order_by("-period")
     ]
-    return render(request, "web/periods.html", {"periods": rows})
+    return render(
+        request,
+        "web/periods.html",
+        # Порядок работы за месяц показывается и здесь (T077): человек,
+        # впервые открывший продукт, попадает на этот экран, и «что делать
+        # дальше» он должен прочитать раньше, чем выберет месяц. Текущего шага
+        # тут нет — отсюда не видно, о каком месяце речь.
+        {"periods": rows, "steps": onboarding.month_steps()},
+    )
 
 
 def find_period(period_id) -> Period:
@@ -139,7 +146,11 @@ def period_page(
     period,
     *,
     error=None,
-    error_title="Расчёт не выполнен.",
+    # Умолчание вычисляется внутри, а не стоит в подписи (T017): значение по
+    # умолчанию считается один раз при импорте модуля, а язык страницы — у
+    # каждого запроса свой. Заголовок, переведённый на импорте, остался бы
+    # русским навсегда.
+    error_title=None,
     details=(),
     status=200,
     reason_value="",
@@ -226,7 +237,10 @@ def period_page(
     # нет, а на её месте — тот же текст, которым ответит отказ.
     retro_locked = retro.locked_out(period.tenant_id, period.period)
     if retro_locked and lifecycle.REOPENED in allowed:
-        reopen_denied = reopen_denied or retro.LOCKED_REFUSAL
+        # Текст отказа переводится здесь, а не в `payrun`: там он объявлен
+        # `gettext_noop`, чтобы попасть в каталог, но остаться обычной строкой
+        # для очереди и для журнала (T017).
+        reopen_denied = reopen_denied or gettext(retro.LOCKED_REFUSAL)
 
     return render(
         request,
@@ -234,7 +248,7 @@ def period_page(
         {
             "period": period,
             "title": month_title(period.period),
-            "status": STATUS_TITLES.get(period.status, period.status),
+            "status": status_title(period.status),
             "sheet": {
                 "columns": [column.title for column in sheet.columns],
                 "rows": [
@@ -302,13 +316,28 @@ def period_page(
             "calculated_at": payrun.calculated_at if payrun else None,
             "employees": timesheets.count(),
             "norm_hours": hours(norm_hours),
+            # Две формы, а не одна со вставкой: код страны стоит в предложении
+            # в разных местах у разных языков, и «хвост» переводчику не
+            # приставить (T017).
             "norm_hours_hint": (
-                f"производственный календарь {country}"
+                _("производственный календарь %(country)s") % {"country": country}
                 if norm_hours is not None
-                else f"календарь {country} на этот месяц не заведён"
+                else _("календарь %(country)s на этот месяц не заведён")
+                % {"country": country}
+            ),
+            # Порядок работы за месяц и то, где человек сейчас (T077). Шаги
+            # считаются по фактам о данных, а не по разметке: «часы внесены» —
+            # это наличие табелей, «посчитано» — наличие расчёта, «утверждено» —
+            # состояние цикла. Второго источника истины о том же самом быть не
+            # должно, поэтому и `has_hours` берётся из тех же табелей, что
+            # считает сводка выше.
+            "steps": onboarding.month_steps(
+                has_hours=timesheets.exists(),
+                calculated=payrun is not None,
+                approved=frozen,
             ),
             "error": error,
-            "error_title": error_title,
+            "error_title": error_title or _("Расчёт не выполнен."),
             "details": list(details),
             "calculated": request.GET.get("calculated") == "1",
             # --- ход фонового расчёта (T024) ---
@@ -326,7 +355,8 @@ def period_page(
             # получит отказ «уже считается», а предлагать заведомый отказ — то же
             # самое, что обещать невозможное.
             "can_calculate": not calculate_denied and not frozen and job is None,
-            "calculate_denied": calculate_denied or (lifecycle.APPROVED_REFUSAL if frozen else ""),
+            "calculate_denied": calculate_denied
+            or (gettext(lifecycle.APPROVED_REFUSAL) if frozen else ""),
             # --- цикл периода (T025) ---
             "payrun_status": lifecycle.status_title(payrun_status) if payrun else "",
             "can_approve": lifecycle.APPROVED in allowed and not approve_denied,
@@ -346,7 +376,7 @@ def period_page(
             # Что партнёр делает при расхождении, сказано словами: настройка,
             # молча меняющая поведение денег, — худший вид настройки.
             "retro_mode": retro_mode,
-            "retro_mode_title": retro.MODE_TITLES.get(retro_mode, retro_mode),
+            "retro_mode_title": titled(retro.MODE_TITLES, retro_mode),
             "retro_drift": found,
             "retro_error": found.error,
             "retro_total": money(found.total) if found else "",
@@ -515,7 +545,7 @@ def period_approve(request, period_id):
         code=permissions.PERIOD_APPROVE,
         run=lambda payrun, who: lifecycle.approve(payrun, actor_id=who.user_id),
         done_flag="approved",
-        error_title="Период не утверждён.",
+        error_title=_("Период не утверждён."),
     )
 
 
@@ -530,7 +560,7 @@ def period_reopen(request, period_id):
             payrun, reason=request.POST.get("reason", "")
         ),
         done_flag="reopened",
-        error_title="Период не открыт.",
+        error_title=_("Период не открыт."),
     )
 
 
@@ -565,14 +595,14 @@ def period_retro_post(request, period_id):
     except permissions.PermissionRefused as refusal:
         return period_page(
             request, period, error=refusal.message,
-            error_title="Разница не перенесена.", status=refusal.http_status,
+            error_title=_("Разница не перенесена."), status=refusal.http_status,
         )
     except PayrunRefused as refusal:
         # Регистры отказ называет кодами; человеку показываем их названия.
         details = refusal.details or [ledger_title(name) for name in refusal.ledgers]
         return period_page(
             request, period, error=refusal.message, details=details,
-            error_title="Разница не перенесена.", status=refusal.http_status,
+            error_title=_("Разница не перенесена."), status=refusal.http_status,
         )
 
     # Перенаправление после записи: обновление страницы не переносит второй раз.
@@ -647,7 +677,7 @@ def payslip_freeze(request, payslip_id):
             payslip, actor_id=who.user_id, reason=request.POST.get("reason", "")
         ),
         done_flag="froze",
-        error_title="Строка не заморожена.",
+        error_title=_("Строка не заморожена."),
     )
 
 
@@ -659,7 +689,7 @@ def payslip_release(request, payslip_id):
         request, payslip_id,
         run=lambda payslip, who: freezing.release(payslip, actor_id=who.user_id),
         done_flag="released",
-        error_title="Заморозка не снята.",
+        error_title=_("Заморозка не снята."),
     )
 
 
@@ -669,71 +699,86 @@ def payslip_release(request, payslip_id):
 # Подписи производных величин. Здесь, а не в `reports`: там данные, тут слова —
 # та же граница, что у названий регистров и формата чисел (T028).
 DERIVED_TITLES = {
-    "gross": "Бруто",
-    "tax": "Налог",
-    "contributions": "Взносы",
-    "total_cost": "Полная стоимость",
+    "gross": gettext_noop("Бруто"),
+    "tax": gettext_noop("Налог"),
+    "contributions": gettext_noop("Взносы"),
+    "total_cost": gettext_noop("Полная стоимость"),
 }
 
 # Как назвать вход шага по-человечески. Ключи движка английские и стабильные —
 # перевод их дело интерфейса, а не следа (см. `payroll.trace.TraceStep`).
 INPUT_TITLES = {
-    "hours": "часов",
-    "rate": "ставка за час",
-    "pay_percent": "процент оплаты",
-    "floor": "минимум за час",
-    "hour_types": "типы часов",
-    "prorate_by": "пропорция",
-    "amount_per_norm": "за полную норму",
-    "worked_days": "отработано дней",
-    "norm_days": "рабочих дней в месяце",
-    "worked_hours": "отработано часов",
-    "norm_hours": "норма часов",
-    "method": "способ",
-    "base": "база",
-    "insured_hours": "база взносов, часов",
+    "hours": gettext_noop("часов"),
+    "rate": gettext_noop("ставка за час"),
+    "pay_percent": gettext_noop("процент оплаты"),
+    "floor": gettext_noop("минимум за час"),
+    "hour_types": gettext_noop("типы часов"),
+    "prorate_by": gettext_noop("пропорция"),
+    "amount_per_norm": gettext_noop("за полную норму"),
+    "worked_days": gettext_noop("отработано дней"),
+    "norm_days": gettext_noop("рабочих дней в месяце"),
+    "worked_hours": gettext_noop("отработано часов"),
+    "norm_hours": gettext_noop("норма часов"),
+    "method": gettext_noop("способ"),
+    "base": gettext_noop("база"),
+    "insured_hours": gettext_noop("база взносов, часов"),
     # Найдено смоуком: эти два ключа приезжают в шаге часов и без подписи
     # читались как отладочный вывод. Ставка сотрудника — это базовая ставка,
     # умноженная на коэффициент, и обе величины нужны, чтобы повторить её.
-    "base_rate": "базовая ставка",
-    "coefficient": "коэффициент",
+    "base_rate": gettext_noop("базовая ставка"),
+    "coefficient": gettext_noop("коэффициент"),
     # Производные величины: по этим числам повторяют бруто, налог и взносы.
     # Список снят с движка целиком, а не по памяти: ключ без подписи читается
     # на экране как отладочный вывод, и это нашёл смоук.
-    "net": "нето",
-    "gross": "бруто",
-    "tax": "налог",
-    "contributions": "взносы",
-    "credit": "зачтено",
-    "withheld": "удержано с работника",
-    "share": "доля",
-    "income_tax": "ставка налога",
-    "employee_contributions": "взносы работника",
-    "employer_contributions": "взносы работодателя",
-    "combined_contributions": "взносы вместе",
-    "net_factor": "множитель нето → бруто",
-    "tax_free_monthly": "необлагаемый минимум в месяц",
-    "half_tax_free": "половина необлагаемого",
-    "min_contribution_base": "минимальная база взносов",
-    "reference_norm_hours": "эталонная норма часов",
-    "hours_divisor": "делитель часов",
-    "hours_per_day": "часов в рабочем дне",
-    "rate_key": "какая ставка",
+    "net": gettext_noop("нето"),
+    "gross": gettext_noop("бруто"),
+    "tax": gettext_noop("налог"),
+    "contributions": gettext_noop("взносы"),
+    "credit": gettext_noop("зачтено"),
+    "withheld": gettext_noop("удержано с работника"),
+    "share": gettext_noop("доля"),
+    "income_tax": gettext_noop("ставка налога"),
+    "employee_contributions": gettext_noop("взносы работника"),
+    "employer_contributions": gettext_noop("взносы работодателя"),
+    "combined_contributions": gettext_noop("взносы вместе"),
+    "net_factor": gettext_noop("множитель нето → бруто"),
+    "tax_free_monthly": gettext_noop("необлагаемый минимум в месяц"),
+    "half_tax_free": gettext_noop("половина необлагаемого"),
+    "min_contribution_base": gettext_noop("минимальная база взносов"),
+    "reference_norm_hours": gettext_noop("эталонная норма часов"),
+    "hours_divisor": gettext_noop("делитель часов"),
+    "hours_per_day": gettext_noop("часов в рабочем дне"),
+    "rate_key": gettext_noop("какая ставка"),
 }
 
 # Откуда приехало правило: чьё это решение — страны, партнёра, группы или
 # человека. «input» — не правило вовсе, а число, введённое руками.
 LEVEL_TITLES = {
-    "country": "правило страны",
-    "tenant": "переопределение партнёра",
-    "group": "переопределение группы",
-    "employee": "переопределение по сотруднику",
-    "input": "введено руками",
+    "country": gettext_noop("правило страны"),
+    "tenant": gettext_noop("переопределение партнёра"),
+    "group": gettext_noop("переопределение группы"),
+    "employee": gettext_noop("переопределение по сотруднику"),
+    "input": gettext_noop("введено руками"),
 }
 
 # Порядок входов на экране — как в формуле, слева направо: часы × ставка ×
 # процент. Прочие идут следом по алфавиту, чтобы не прыгали от шага к шагу.
 INPUT_ORDER = ["hours", "rate", "pay_percent", "floor", "amount_per_norm"]
+
+
+def titled(titles: dict, code: str, fallback: str = "") -> str:
+    """Подпись из словаря на языке страницы; незнакомый код — как есть (T017).
+
+    Словари выше держат русские строки через `gettext_noop`, а переводятся они
+    здесь, в момент показа: словарь собирается один раз на импорт, а язык у
+    каждого запроса свой. Пропущенный код — не ошибка: движок вправе завести
+    новый вход раньше, чем интерфейс придумает ему подпись, и тогда на экране
+    честнее показать ключ, чем пустоту.
+    """
+    known = titles.get(code)
+    if known is not None:
+        return gettext(known)
+    return fallback or code
 
 
 def input_pairs(values: dict) -> list[dict]:
@@ -750,7 +795,7 @@ def input_pairs(values: dict) -> list[dict]:
             shown = hours(value) if name.endswith(("hours", "days")) else money(value)
         else:
             shown = str(value)
-        pairs.append({"title": INPUT_TITLES.get(name, name), "value": shown})
+        pairs.append({"title": titled(INPUT_TITLES, name), "value": shown})
     return pairs
 
 
@@ -762,7 +807,7 @@ def trace_step(step) -> dict:
         "amount": money(step.amount),
         "ledger": ledger_title(step.ledger) if step.ledger else "",
         "inputs": input_pairs(step.inputs),
-        "level": LEVEL_TITLES.get(step.level, step.level),
+        "level": titled(LEVEL_TITLES, step.level),
         "differs": step.differs,
         # Сохранённое показывается, только когда оно отличается: одинаковое
         # число во второй колонке — шум, из-за которого перестают замечать
@@ -814,7 +859,7 @@ def payslip_trace(request, payslip_id):
             "cut_title": cut_title(view.cut) if view.cut else "",
             "steps": [trace_step(step) for step in view.steps],
             "derived": [
-                {**trace_step(step), "title": DERIVED_TITLES.get(step.kind, step.title)}
+                {**trace_step(step), "title": titled(DERIVED_TITLES, step.kind, step.title)}
                 for step in view.derived
             ],
             "carried": [
@@ -960,7 +1005,7 @@ def login_page(request):
             request,
             "web/login.html",
             {
-                "error": "Логин или пароль не подходят",
+                "error": _("Логин или пароль не подходят"),
                 "username": username,
                 "next": safe_next(request),
                 "dev_users": auth.DEV_USERS.values() if auth.dev_login_is_enabled() else [],

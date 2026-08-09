@@ -1,5 +1,5 @@
-{% extends "web/base.html" %}{% load ui %}
-{% block title %}Расхождения{% endblock %}
+{% extends "web/base.html" %}{% load ui i18n %}
+{% block title %}{% translate "Расхождения" %}{% endblock %}
 {% block content %}
 {% comment %}
 Отчёт расхождений «период против прошлого» (T030). Строка — пара «сотрудник ×
@@ -10,34 +10,36 @@
 почему строка здесь, а соседняя — нет.
 {% endcomment %}
 
-<h1>Расхождения с прошлым месяцем</h1>
+<h1>{% translate "Расхождения с прошлым месяцем" %}</h1>
 <p class="sub">
-  {{ title }}{% if previous_title %} против {{ previous_title }}{% endif %}
-  {% if cut_title %} · разрез: {{ cut_title }}{% endif %}
-  · <a href="{{ back_url }}">вернуться в ведомость</a>
+  {{ title }}{% if previous_title %}{% blocktranslate with previous=previous_title %} против {{ previous }}{% endblocktranslate %}{% endif %}
+  {% if cut_title %}{% blocktranslate with cut=cut_title %} · разрез: {{ cut }}{% endblocktranslate %}{% endif %}
+  · <a href="{{ back_url }}">{% translate "вернуться в ведомость" %}</a>
 </p>
 
 {% if error %}
 {% notice "alert" %}{{ error }}{% endnotice %}
 {% elif nothing_to_compare %}
-{% notice "empty" %}
-  Сравнивать не с чем: за {{ previous_title }} в базе нет ни одной суммы,
+{% translate "Сравнивать не с чем" as nothing_to_compare_title %}
+{% notice "empty" title=nothing_to_compare_title %}
+  {% blocktranslate with previous=previous_title %}Сравнивать не с чем: за {{ previous }} в базе нет ни одной суммы,
   доступной вашей роли. Отчёт сравнивает месяц с предыдущим, поэтому у первого
-  посчитанного месяца расхождений не бывает по построению.
+  посчитанного месяца расхождений не бывает по построению.{% endblocktranslate %}
 {% endnotice %}
 {% else %}
 
-{% include "web/components/cuts.html" with cuts=cuts label="Разрез отчёта по регистрам" %}
+{% translate "Разрез отчёта по регистрам" as cuts_label %}
+{% include "web/components/cuts.html" with cuts=cuts label=cuts_label %}
 
 {% if lines %}
 {% scroll %}
 <table class="variance">
   <thead>
     <tr>
-      <th>Сотрудник</th><th>Компонент</th><th>Точка</th><th>Регистр</th>
-      <th class="num">Было</th><th class="num">Стало</th>
-      <th class="num">Отклонение</th><th class="num">%</th>
-      <th>Порог</th>
+      <th>{% translate "Сотрудник" %}</th><th>{% translate "Компонент" %}</th><th>{% translate "Точка" %}</th><th>{% translate "Регистр" %}</th>
+      <th class="num">{% translate "Было" %}</th><th class="num">{% translate "Стало" %}</th>
+      <th class="num">{% translate "Отклонение" %}</th><th class="num">%</th>
+      <th>{% translate "Порог" %}</th>
     </tr>
   </thead>
   <tbody>
@@ -57,7 +59,7 @@
   </tbody>
   <tfoot>
     <tr class="grand">
-      <td colspan="6">Итого отклонений · {{ employees }} чел.</td>
+      <td colspan="6">{% blocktranslate with employees_count=employees %}Итого отклонений · {{ employees_count }} чел.{% endblocktranslate %}</td>
       <td class="num total">{{ total_delta }}</td>
       <td colspan="2"></td>
     </tr>
@@ -65,14 +67,15 @@
 </table>
 {% endscroll %}
 <p class="note">
-  Сравнено пар «сотрудник × компонент»: {{ compared }}. Показаны только те, где
+  {% blocktranslate with compared_count=compared %}Сравнено пар «сотрудник × компонент»: {{ compared_count }}. Показаны только те, где
   превышены оба порога сразу — процент и сумма. Пороги задаются правилами
-  страны и переопределяются партнёром; в коде их нет.
+  страны и переопределяются партнёром; в коде их нет.{% endblocktranslate %}
 </p>
 {% else %}
-{% notice "empty" %}
-  Отклонений выше порогов нет. Сравнено пар «сотрудник × компонент»:
-  {{ compared }} — то есть сравнение состоялось, а не было пропущено.
+{% translate "Отклонений нет" as no_variance %}
+{% notice "empty" title=no_variance %}
+  {% blocktranslate with compared_count=compared %}Отклонений выше порогов нет. Сравнено пар «сотрудник × компонент»:
+  {{ compared_count }} — то есть сравнение состоялось, а не было пропущено.{% endblocktranslate %}
 {% endnotice %}
 {% endif %}
 

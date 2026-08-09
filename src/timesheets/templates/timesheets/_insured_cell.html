@@ -1,4 +1,4 @@
-{% load timesheet_extras %}{% comment %}
+{% load timesheet_extras i18n %}{% comment %}
 Колонка «База взносов» одной строки.
 
 Общая для сетки и для ответа на запись ячейки: после правки часов база могла
@@ -10,4 +10,4 @@
 не сходится с часами, которые в неё входят, строка помечается, а расчёт периода
 на этом отказывает (`payrun.calc.check_insured_base`). Молча посчитать по
 устаревшей базе нельзя: получилось бы правдоподобное неверное число.
-{% endcomment %}<td id="insured-{{ row.timesheet_id }}"{% if oob %} hx-swap-oob="true"{% endif %} class="num insured{% if not row.insured_matches %} insured-mismatch{% endif %}"{% if not row.insured_matches %} title="По часам табеля в базу для взносов входит {{ row.insured_declared|hours|default:"0,00" }} ч, а записано {{ row.insured_hours|hours|default:"0,00" }} ч. Пока числа не сойдутся, период не считается."{% endif %}>{% if row.insured_matches %}{{ row.insured_hours|hours }}{% else %}{{ row.insured_hours|hours|default:"0,00" }}<span class="hint warn">по часам {{ row.insured_declared|hours|default:"0,00" }}</span>{% endif %}</td>
+{% endcomment %}{% with declared=row.insured_declared|hours|default:"0,00" recorded=row.insured_hours|hours|default:"0,00" %}<td id="insured-{{ row.timesheet_id }}"{% if oob %} hx-swap-oob="true"{% endif %} class="num insured{% if not row.insured_matches %} insured-mismatch{% endif %}"{% if not row.insured_matches %} title="{% blocktranslate %}По часам табеля в базу для взносов входит {{ declared }} ч, а записано {{ recorded }} ч. Пока числа не сойдутся, период не считается.{% endblocktranslate %}"{% endif %}>{% if row.insured_matches %}{{ row.insured_hours|hours }}{% else %}{{ row.insured_hours|hours|default:"0,00" }}<span class="hint warn">{% blocktranslate %}по часам {{ declared }}{% endblocktranslate %}</span>{% endif %}</td>{% endwith %}

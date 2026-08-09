@@ -21,6 +21,8 @@ from datetime import date
 from uuid import UUID
 
 from django.utils.timezone import now
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_noop
 
 from core.models import Payslip, PayslipFreeze
 
@@ -31,17 +33,17 @@ __all__ = [
     "frozen_payslip_ids", "refuse_if_frozen", "release",
 ]
 
-REASON_REFUSAL = (
+REASON_REFUSAL = gettext_noop(
     "Заморозка строки требует причины: напишите, из-за чего идёт спор. "
     "Причина попадёт в историю рядом с вашим именем."
 )
 
-FROZEN_REFUSAL = (
+FROZEN_REFUSAL = gettext_noop(
     "Строка сотрудника заморожена: её числа не меняются и пересчёт её обходит. "
     "Чтобы вернуть человека в общий расчёт, заморозку нужно снять."
 )
 
-APPROVED_REFUSAL = (
+APPROVED_REFUSAL = gettext_noop(
     "Период утверждён: замораживать в нём нечего — заморожен весь расчёт. "
     "Чтобы менять расчёт, период нужно сначала открыть заново."
 )
@@ -82,7 +84,7 @@ def refuse_if_frozen(payslip_id: UUID) -> None:
     if PayslipFreeze.objects.filter(
         payslip_id=payslip_id, released_at__isnull=True
     ).exists():
-        raise PayrunRefused(FROZEN_REFUSAL)
+        raise PayrunRefused(_(FROZEN_REFUSAL))
 
 
 def _refuse_if_period_approved(payslip: Payslip) -> None:
@@ -93,7 +95,7 @@ def _refuse_if_period_approved(payslip: Payslip) -> None:
     объясняет там, где заморожен весь расчёт.
     """
     if payslip.payrun.status == "approved":
-        raise PayrunRefused(APPROVED_REFUSAL)
+        raise PayrunRefused(_(APPROVED_REFUSAL))
 
 
 def freeze(payslip: Payslip, *, actor_id, reason: str) -> str:
@@ -106,7 +108,7 @@ def freeze(payslip: Payslip, *, actor_id, reason: str) -> str:
     _refuse_if_period_approved(payslip)
     reason = (reason or "").strip()
     if not reason:
-        raise ReasonRequired(REASON_REFUSAL)
+        raise ReasonRequired(_(REASON_REFUSAL))
 
     if PayslipFreeze.objects.filter(
         payslip_id=payslip.pk, released_at__isnull=True

@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}{% load static timesheet_extras ui %}{% comment %}
+{% extends "web/base.html" %}{% load static timesheet_extras ui i18n %}{% comment %}
 Сетка ввода часов: строки — сотрудники периода, колонки — типы часов страны.
 
 Единственный интерактивный экран продукта (D017). Грид сюда не подключён
@@ -8,7 +8,7 @@
 уходе со страницы (см. grid.js).
 {% endcomment %}
 
-{% block title %}Табель · {{ title }}{% endblock %}
+{% block title %}{% blocktranslate %}Табель · {{ title }}{% endblocktranslate %}{% endblock %}
 
 {% block head %}
   <link rel="stylesheet" href="{% static 'timesheets/grid.css' %}">
@@ -25,7 +25,16 @@
 {% endblock %}
 
 {% block content %}
-<h1>Табель · {{ title }}</h1>
+<h1>{% blocktranslate %}Табель · {{ title }}{% endblocktranslate %}</h1>
+
+{% comment %}
+Дорога обратно в месяц — всегда, а не только когда табель показать не удалось
+(T077). Раньше эта ссылка стояла внутри ветки отказа, и с обычного табеля
+вернуться к месяцу было нечем: в шапке есть только «Периоды», то есть выход в
+список, откуда месяц надо искать заново. Табель — первый шаг месяца, и человек
+уходит с него на второй; ему нужна дверь, а не обход.
+{% endcomment %}
+<p class="back"><a href="{% url 'period' period.id %}">{% translate "← К месяцу" %}</a></p>
 
 {% comment %}
 Колонки сетки — типы часов из правил страны. Правил на месяц нет — показывать
@@ -33,16 +42,16 @@
 без него он увидел бы «Server Error» и не узнал, что делать (T062).
 {% endcomment %}
 {% if error %}
-{% notice "alert" title="Табель показать нельзя." %}{{ error }}
+{% translate "Табель показать нельзя." as grid_error_title %}
+{% notice "alert" title=grid_error_title %}{{ error }}
   {% if details %}<div class="details">{{ details|join:", " }}</div>{% endif %}
 {% endnotice %}
-<p class="note"><a href="{% url 'period' period.id %}">Вернуться к периоду</a></p>
 {% else %}
 <p class="sub">
-  {{ grid.rows|length }} чел.
-  {% if limited_to_units %}· только ваши точки{% endif %}
-  {% if can_edit %}· часы за месяц; сохраняются сразу, кнопки «сохранить» нет
-  {% else %}· часы за месяц, только на просмотр{% endif %}
+  {% blocktranslate with people_count=grid.rows|length %}{{ people_count }} чел.{% endblocktranslate %}
+  {% if limited_to_units %}· {% translate "только ваши точки" %}{% endif %}
+  {% if can_edit %}· {% translate "часы за месяц; сохраняются сразу, кнопки «сохранить» нет" %}
+  {% else %}· {% translate "часы за месяц, только на просмотр" %}{% endif %}
 </p>
 
 {% comment %}
@@ -67,15 +76,17 @@
   {% for unit in units %}
     <div class="unit {% if unit.closed %}is-closed{% endif %}">
       <span class="unit-code">{{ unit.code }}</span>
-      <span class="hint">{{ unit.rows }} чел.</span>
+      <span class="hint">{% blocktranslate with unit_count=unit.rows %}{{ unit_count }} чел.{% endblocktranslate %}</span>
       {% if unit.closed %}
-        <span class="unit-state closed">часы закрыты {{ unit.closed_at|date:"d.m.Y H:i" }}</span>
+        {% with closed_at=unit.closed_at|date:"d.m.Y H:i" %}<span class="unit-state closed">{% blocktranslate %}часы закрыты {{ closed_at }}{% endblocktranslate %}</span>{% endwith %}
+        {% translate "Открыть заново" as reopen_label %}
         {% url 'timesheet-reopen' period.id as reopen_unit_url %}
-        {% include "web/components/action.html" with allowed=can_close url=reopen_unit_url label="Открыть заново" button_class="secondary" hidden_name="unit" hidden_value=unit.unit_id denied="" note="" inline=True reason_name="" primary=False %}
+        {% include "web/components/action.html" with allowed=can_close url=reopen_unit_url label=reopen_label button_class="secondary" hidden_name="unit" hidden_value=unit.unit_id denied="" note="" inline=True reason_name="" primary=False %}
       {% else %}
-        <span class="unit-state">часы открыты</span>
+        <span class="unit-state">{% translate "часы открыты" %}</span>
+        {% translate "Закрыть часы точки" as close_label %}
         {% url 'timesheet-close' period.id as close_unit_url %}
-        {% include "web/components/action.html" with allowed=can_close url=close_unit_url label="Закрыть часы точки" hidden_name="unit" hidden_value=unit.unit_id denied="" note="" inline=True reason_name="" primary=False button_class="" %}
+        {% include "web/components/action.html" with allowed=can_close url=close_unit_url label=close_label hidden_name="unit" hidden_value=unit.unit_id denied="" note="" inline=True reason_name="" primary=False button_class="" %}
       {% endif %}
     </div>
   {% endfor %}
@@ -97,35 +108,68 @@
 <form class="import" method="post" enctype="multipart/form-data"
       action="{% url 'timesheet-import' period.id %}">
   {% csrf_token %}
-  {% include "web/components/field.html" with id="table" name="table" type="file" label="Загрузить таблицу партнёра (.xlsx)" accept=".xlsx" %}
-  <button type="submit">Загрузить</button>
-  <span class="hint">Повторная загрузка того же файла ничего не изменит.</span>
+  {% translate "Загрузить таблицу партнёра (.xlsx)" as import_field_label %}
+  {% include "web/components/field.html" with id="table" name="table" type="file" label=import_field_label accept=".xlsx" %}
+  <button type="submit">{% translate "Загрузить" %}</button>
+  <span class="hint">{% translate "Повторная загрузка того же файла ничего не изменит." %}</span>
 </form>
 {% endif %}
 
 {% if not grid.rows %}
-  {% notice "empty" %}За этот период табелей нет.{% endnotice %}
+  {% comment %}
+  Пустое состояние объясняет следующий шаг, а не сообщает о пустоте (T077).
+  Причин пустоты две, и делать они требуют разного: сотрудников за месяц нет
+  вовсе — это к тому, кто заводит справочники; сотрудники есть, а видит их не
+  эта роль — управляющий смотрит только свои точки. Одно «табелей нет» на оба
+  случая отправляло бы половину людей искать не там.
+  {% endcomment %}
+  {% translate "Часов за этот месяц ещё нет" as no_hours %}
+  {% notice "empty" title=no_hours %}
+    {% if limited_to_units %}
+      {% blocktranslate %}По вашим точкам за этот месяц не заведено ни одного сотрудника. Если люди
+      работали, скажите тому, кто ведёт справочник сотрудников: строки табеля
+      появляются вместе с ними.{% endblocktranslate %}
+    {% elif can_edit %}
+      {% blocktranslate %}Строки табеля появляются вместе с сотрудниками месяца. Заведите их в
+      справочнике или загрузите таблицу партнёра формой выше — она заводит
+      строки табеля сама.{% endblocktranslate %}
+    {% else %}
+      {% blocktranslate %}За этот месяц не заведено ни одного сотрудника, поэтому и часов пока нет.
+      Вносит их тот, у кого есть право на правку табеля.{% endblocktranslate %}
+    {% endif %}
+  {% endnotice %}
 {% else %}
 {% scroll %}
   {% comment %}
   Адрес и защита от подделки запроса объявлены один раз на таблице: htmx
   наследует их всеми ячейками внутри, и 210 полей не тащат по копии токена.
+
+  Здесь же слова, которыми островок сетки объясняет отказ сохранения ячейки
+  (T017). Они обязаны приехать из разметки: `grid.js` отдаётся статикой, его не
+  проходит ни `makemessages`, ни движок шаблонов, и написанная в нём строка
+  осталась бы русской на английском экране — молча, потому что видна она только
+  в момент отказа. Подстановки в `data-failed` именованные (`%(value)s`,
+  `%(reason)s`): порядок слов в этой фразе у каждого языка свой.
   {% endcomment %}
   <table class="sheet grid" id="timesheet-grid"
+         data-rejected="{% translate "Не принято, в ячейке прежнее значение." %}"
+         data-current="{% translate "В ячейке — то, что сейчас в базе." %}"
+         data-failed="{% translate "Не удалось сохранить «%(value)s»: %(reason)s. В ячейке прежнее значение." %}"
+         data-offline="{% translate "нет связи с сервером" %}"
          {% if can_edit %}data-url="{% url 'timesheet-cell' period.id %}"
          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'{% endif %}>
     <thead>
       <tr>
-        <th>Сотрудник</th>
-        <th>Точка</th>
+        <th>{% translate "Сотрудник" %}</th>
+        <th>{% translate "Точка" %}</th>
         {% for column in grid.columns %}
           <th class="num">
             {{ column.title }}
             {% if column.pay_percent %}<span class="hint">{{ column.pay_percent|percent }}</span>{% endif %}
-            {% if column.unverified %}<span class="hint warn" title="Правило не подтверждено бухгалтером">?</span>{% endif %}
+            {% if column.unverified %}<span class="hint warn" title="{% translate "Правило не подтверждено бухгалтером" %}">?</span>{% endif %}
           </th>
         {% endfor %}
-        <th class="num">Итого</th>
+        <th class="num">{% translate "Итого" %}</th>
         {% comment %}
         База для взносов — только на просмотр: придумывать её от часов нельзя,
         у бухгалтера это отдельная колонка, и она может быть задана независимо
@@ -134,8 +178,8 @@
         часами, она идёт за ними и после правки; там, где не шла, — строка
         помечается, и период не считается, пока числа не сойдутся.
         {% endcomment %}
-        <th class="num muted" title="Вход расчёта наравне с часами: по ней считаются взносы и бруто">База взносов</th>
-        <th class="num muted">Норма</th>
+        <th class="num muted" title="{% translate "Вход расчёта наравне с часами: по ней считаются взносы и бруто" %}">{% translate "База взносов" %}</th>
+        <th class="num muted">{% translate "Норма" %}</th>
       </tr>
     </thead>
     <tbody>
@@ -184,7 +228,7 @@
     </tbody>
     <tfoot>
       <tr class="grand">
-        <td colspan="2">Итого</td>
+        <td colspan="2">{% translate "Итого" %}</td>
         {% for column in grid.columns %}
           <td class="num" id="col-total-{{ column.code }}">{{ grid.column_totals|get:column.code|hours }}</td>
         {% endfor %}
@@ -197,8 +241,8 @@
 
 {% if can_edit %}
 <p class="note">
-  Стрелки — переход между ячейками, Enter — вниз, Tab — вправо. Каждая ячейка
-  уходит на сервер сразу, как только вы её покинули.
+  {% blocktranslate %}Стрелки — переход между ячейками, Enter — вниз, Tab — вправо. Каждая ячейка
+  уходит на сервер сразу, как только вы её покинули.{% endblocktranslate %}
 </p>
 {% comment %}
 Отказ показывается у самой ячейки, а не внизу документа: при 35 строках низ

@@ -1,8 +1,18 @@
-{% extends "web/base.html" %}{% load ui %}
+{% extends "web/base.html" %}{% load ui i18n %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
 <h1>{{ title }}</h1>
 <p class="sub">{{ period.tenant.title }}</p>
+
+{% comment %}
+Онбординг (T077). Полоса «часы → расчёт → утверждение» стоит здесь выше всего
+остального, потому что именно с этого экрана человек начинает работать месяцем.
+Замечание владельца после первого живого просмотра было ровно про это: экран
+честно показывает данные и честно объясняет запреты, но нигде не сказано, с чего
+месяц начинается. В отличие от списка периодов, здесь известно, какой месяц и
+что с ним уже сделано, — поэтому текущий шаг выделен.
+{% endcomment %}
+{% include "web/components/steps.html" %}
 
 {% if error %}
 {% notice "alert" title=error_title %}{{ error }}
@@ -10,8 +20,8 @@
 {% endnotice %}
 {% endif %}
 
-{% if calculated %}{% notice "ok" %}Расчёт выполнен. Ниже — то, что видно вашей роли.{% endnotice %}{% endif %}
-{% if queued %}{% notice "ok" %}Расчёт принят и считается в фоне. Страницу можно не держать открытой.{% endnotice %}{% endif %}
+{% if calculated %}{% notice "ok" %}{% translate "Расчёт выполнен. Ниже — то, что видно вашей роли." %}{% endnotice %}{% endif %}
+{% if queued %}{% notice "ok" %}{% translate "Расчёт принят и считается в фоне. Страницу можно не держать открытой." %}{% endnotice %}{% endif %}
 
 {% comment %}
 Ход фонового расчёта (T024). Блок живёт, только пока живо задание: у
@@ -23,24 +33,25 @@
 подмены фонового расчёта синхронным нет — она случается только по нажатию.
 {% endcomment %}
 {% if job_running %}
-<section class="progress" data-status-url="{% url 'period-calculate-status' period.id %}">
-  <h2>Идёт расчёт периода</h2>
-  <p class="stage">{% if job.stage %}{{ job.stage }}{% else %}В очереди{% endif %}</p>
+{% blocktranslate with done='%done%' total='%total%' asvar job_counter_template %}{{ done }} из {{ total }} сотрудников{% endblocktranslate %}
+<section class="progress" data-status-url="{% url 'period-calculate-status' period.id %}" data-counter-template="{{ job_counter_template }}" data-queued-label="{% translate "В очереди" %}" data-network-error-label="{% translate "Состояние расчёта не отвечает — пробуем ещё раз" %}">
+  <h2>{% translate "Идёт расчёт периода" %}</h2>
+  <p class="stage">{% if job.stage %}{{ job.stage }}{% else %}{% translate "В очереди" %}{% endif %}</p>
   <div class="bar"><div class="fill" style="width: {{ job.percent }}%"></div></div>
   <p class="counter">
-    {% if job.total %}{{ job.done }} из {{ job.total }} сотрудников{% else %}&nbsp;{% endif %}
+    {% if job.total %}{% blocktranslate with done=job.done total=job.total %}{{ done }} из {{ total }} сотрудников{% endblocktranslate %}{% else %}&nbsp;{% endif %}
   </p>
   {% if job.hint %}
   <div class="alert stuck">
     {{ job.hint }}
     <form method="post" action="{% url 'period-calculate' period.id %}">{% csrf_token %}
       <input type="hidden" name="inline" value="1">
-      <button type="submit" class="primary">Посчитать прямо сейчас</button>
+      <button type="submit" class="primary">{% translate "Посчитать прямо сейчас" %}</button>
     </form>
   </div>
   {% endif %}
   <noscript>
-    <p class="note">Обновите страницу, чтобы увидеть, чем закончился расчёт.</p>
+    <p class="note">{% translate "Обновите страницу, чтобы увидеть, чем закончился расчёт." %}</p>
   </noscript>
 </section>
 <script>
@@ -51,6 +62,9 @@
     var block = document.querySelector('section.progress');
     if (!block) { return; }
     var url = block.dataset.statusUrl;
+    var counterTemplate = block.dataset.counterTemplate;
+    var queuedLabel = block.dataset.queuedLabel;
+    var networkErrorLabel = block.dataset.networkErrorLabel;
     var stage = block.querySelector('.stage');
     var fill = block.querySelector('.fill');
     var counter = block.querySelector('.counter');
@@ -64,10 +78,10 @@
             window.location.reload();
             return;
           }
-          stage.textContent = state.stage || 'В очереди';
+          stage.textContent = state.stage || queuedLabel;
           fill.style.width = state.percent + '%';
           counter.textContent = state.total
-            ? state.done + ' из ' + state.total + ' сотрудников' : ' ';
+            ? counterTemplate.replace('%done%', state.done).replace('%total%', state.total) : ' ';
           // Задача застряла — перерисовываем страницу целиком: вместе с
           // объяснением там появляется кнопка, а её рисует сервер.
           if (state.hint && !block.querySelector('.stuck')) {
@@ -79,7 +93,7 @@
         .catch(function () {
           // Сеть моргнула — не молчим и не бросаем опрос: следующая попытка
           // через большую паузу, а человек видит, что связь потерялась.
-          stage.textContent = 'Состояние расчёта не отвечает — пробуем ещё раз';
+          stage.textContent = networkErrorLabel;
           window.setTimeout(tick, 3000);
         });
     };
@@ -87,29 +101,29 @@
   })();
 </script>
 {% endif %}
-{% if approved %}{% notice "ok" %}Период утверждён. Расчёт и его данные заморожены.{% endnotice %}{% endif %}
-{% if reopened %}{% notice "ok" %}Период открыт заново. Причина и ваше имя записаны в историю.{% endnotice %}{% endif %}
-{% if froze %}{% notice "ok" %}Строка заморожена. Пересчёт её обходит, остальные считаются как прежде.{% endnotice %}{% endif %}
-{% if released %}{% notice "ok" %}Заморозка снята. Человек вернулся в общий расчёт.{% endnotice %}{% endif %}
+{% if approved %}{% notice "ok" %}{% translate "Период утверждён. Расчёт и его данные заморожены." %}{% endnotice %}{% endif %}
+{% if reopened %}{% notice "ok" %}{% translate "Период открыт заново. Причина и ваше имя записаны в историю." %}{% endnotice %}{% endif %}
+{% if froze %}{% notice "ok" %}{% translate "Строка заморожена. Пересчёт её обходит, остальные считаются как прежде." %}{% endnotice %}{% endif %}
+{% if released %}{% notice "ok" %}{% translate "Заморозка снята. Человек вернулся в общий расчёт." %}{% endnotice %}{% endif %}
 
 <dl class="facts">
-  <dt>Состояние</dt><dd>{{ status }}</dd>
+  <dt>{% translate "Состояние" %}</dt><dd>{{ status }}</dd>
   {% comment %}
   Состояние учётного месяца и состояние расчёта зарплаты — разные вещи и стоят
   разными строками намеренно: утверждение зарплаты не закрывает месяц целиком,
   в нём ещё будут платежи поставщикам и выручка (решено в T023).
   {% endcomment %}
-  {% if payrun_status %}<dt>Расчёт зарплаты</dt><dd>{{ payrun_status }}</dd>{% endif %}
-  <dt>Сотрудников в табеле</dt><dd>{{ employees }}</dd>
+  {% if payrun_status %}<dt>{% translate "Расчёт зарплаты" %}</dt><dd>{{ payrun_status }}</dd>{% endif %}
+  <dt>{% translate "Сотрудников в табеле" %}</dt><dd>{{ employees }}</dd>
   {% comment %}
   Норма часов показывается всегда, даже когда её нет. Пропасть строке нельзя:
   она общая для всех ролей, и разное число у разных людей было дефектом (её
   брали из первого попавшегося табеля, где норма персональная).
   {% endcomment %}
-  <dt>Норма часов <span class="hint">{{ norm_hours_hint }}</span></dt>
+  <dt>{% translate "Норма часов" %} <span class="hint">{{ norm_hours_hint }}</span></dt>
   <dd>{{ norm_hours }}</dd>
-  <dt>Последний расчёт</dt>
-  <dd>{% if calculated_at %}{{ calculated_at }}{% else %}не считался{% endif %}</dd>
+  <dt>{% translate "Последний расчёт" %}</dt>
+  <dd>{% if calculated_at %}{{ calculated_at }}{% else %}{% translate "не считался" %}{% endif %}</dd>
 </dl>
 
 {% comment %}
@@ -124,23 +138,24 @@
 каком периоде речь.
 {% endcomment %}
 {% url 'period-calculate' period.id as calculate_url %}
+{% translate "Посчитать период" as calculate_label %}
 <div class="actions">
-  {% include "web/components/action.html" with allowed=can_calculate denied=calculate_denied url=calculate_url label="Посчитать период" primary=True inline=True %}
+  {% include "web/components/action.html" with allowed=can_calculate denied=calculate_denied url=calculate_url label=calculate_label primary=True inline=True %}
   {% comment %}
   Табель и расхождения — про этот период, поэтому ссылки стоят рядом с кнопкой,
   а не в общей навигации: там они не знали бы, о каком месяце речь. Смотреть
   часы правом на расчёт не ограничено, поэтому ссылки видны и без права.
   {% endcomment %}
-  <a class="btn" href="{% url 'timesheets' period.id %}">Табель</a>
-  <a class="btn" href="{% url 'period-variance' period.id %}">Расхождения</a>
+  <a class="btn" href="{% url 'timesheets' period.id %}">{% translate "Табель" %}</a>
+  <a class="btn" href="{% url 'period-variance' period.id %}">{% translate "Расхождения" %}</a>
   {% if can_calculate %}
   <span class="note">
     {% if background_calculation %}
-    Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама.
+    {% translate "Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама." %}
     {% else %}
-    Считается сразу.
+    {% translate "Считается сразу." %}
     {% endif %}
-    Повторный запуск пересобирает ведомость заново.
+    {% translate "Повторный запуск пересобирает ведомость заново." %}
   </span>
   {% endif %}
 </div>
@@ -161,20 +176,21 @@
 Месяц-получатель назван словами: молча выбранный получатель — это сумма,
 появившаяся неизвестно где.
 {% endcomment %}
-{% if retro_posted %}{% notice "ok" %}Разница перенесена. Закрытый период при этом не изменился.{% endnotice %}{% endif %}
+{% if retro_posted %}{% notice "ok" %}{% translate "Разница перенесена. Закрытый период при этом не изменился." %}{% endnotice %}{% endif %}
 
 {% if retro_pending %}
-{% notice "alert" extra="retro-pending" title="Разница за закрытый месяц ещё не в ведомости." %}
+{% translate "Разница за закрытый месяц ещё не в ведомости." as retro_pending_title %}
+{% notice "alert" extra="retro-pending" title=retro_pending_title %}
   <ul>
     {% for item in retro_pending %}
     <li>
       {% if item.cancelled %}
-        Перенос за {{ item.title }} отменён — этот месяц пересчитали, и разница
-        вошла в него самого. В ведомости она пока осталась ({{ item.shown }}):
-        пересчитайте период.
+        {% blocktranslate with title=item.title shown=item.shown %}Перенос за {{ title }} отменён — этот месяц пересчитали, и разница
+        вошла в него самого. В ведомости она пока осталась ({{ shown }}):
+        пересчитайте период.{% endblocktranslate %}
       {% else %}
-        Перенос за {{ item.title }} на сумму {{ item.live }} в ведомость ещё не
-        вошёл: пересчитайте период.
+        {% blocktranslate with title=item.title live=item.live %}Перенос за {{ title }} на сумму {{ live }} в ведомость ещё не
+        вошёл: пересчитайте период.{% endblocktranslate %}
       {% endif %}
     </li>
     {% endfor %}
@@ -183,20 +199,21 @@
 {% endif %}
 
 {% if retro_error %}
-{% notice "alert" title="Сверить закрытый месяц с сегодняшними данными не удалось." %}{{ retro_error }}{% endnotice %}
+{% translate "Сверить закрытый месяц с сегодняшними данными не удалось." as retro_error_title %}
+{% notice "alert" title=retro_error_title %}{{ retro_error }}{% endnotice %}
 {% endif %}
 
 {% if retro_drift %}
 <section class="retro">
-  <h2>Данные этого месяца изменились после утверждения</h2>
+  <h2>{% translate "Данные этого месяца изменились после утверждения" %}</h2>
   <p class="note">
-    Расхождение с тем, что хранит закрытый месяц: <strong>{{ retro_total }}</strong>
-    по {{ retro_drift.employees }} чел. У этого партнёра
-    {{ retro_mode_title }}.
+    {% blocktranslate with total=retro_total employees=retro_drift.employees mode=retro_mode_title %}Расхождение с тем, что хранит закрытый месяц: <strong>{{ total }}</strong>
+    по {{ employees }} чел. У этого партнёра
+    {{ mode }}.{% endblocktranslate %}
   </p>
   <table class="retro-lines">
     <thead>
-      <tr><th>Сотрудник</th><th>Компонент</th><th>Регистр</th><th class="num">Разница</th></tr>
+      <tr><th>{% translate "Сотрудник" %}</th><th>{% translate "Компонент" %}</th><th>{% translate "Регистр" %}</th><th class="num">{% translate "Разница" %}</th></tr>
     </thead>
     <tbody>
       {% for line in retro_lines %}
@@ -211,17 +228,18 @@
   </table>
   {% if can_post_retro or retro_denied %}
   {% url 'period-retro' period.id as retro_url %}
-  {% include "web/components/action.html" with allowed=can_post_retro denied=retro_denied url=retro_url label="Перенести разницу в "|add:retro_target primary=True inline=True %}
+  {% blocktranslate with target=retro_target asvar retro_action_label %}Перенести разницу в {{ target }}{% endblocktranslate %}
+  {% include "web/components/action.html" with allowed=can_post_retro denied=retro_denied url=retro_url label=retro_action_label primary=True inline=True %}
   {% if can_post_retro %}
   <span class="note">
-    Закрытый период не изменится: разница ляжет помеченной строкой в
-    {{ retro_target }}, в тот же регистр учёта.
+    {% blocktranslate with target=retro_target %}Закрытый период не изменится: разница ляжет помеченной строкой в
+    {{ target }}, в тот же регистр учёта.{% endblocktranslate %}
   </span>
   {% endif %}
   {% else %}
   <p class="note">
-    У этого партнёра правки задним числом ведутся пересчётом: откройте период
-    заново с указанием причины и посчитайте его снова.
+    {% blocktranslate %}У этого партнёра правки задним числом ведутся пересчётом: откройте период
+    заново с указанием причины и посчитайте его снова.{% endblocktranslate %}
   </p>
   {% endif %}
 </section>
@@ -230,34 +248,40 @@
 {% if can_approve or approve_denied or can_reopen or reopen_denied %}
 {% url 'period-approve' period.id as approve_url %}
 {% url 'period-reopen' period.id as reopen_url %}
+{% translate "Утвердить период" as approve_label %}
+{% translate "После утверждения расчёт и его данные меняться не будут." as approve_note %}
+{% translate "Открыть заново" as reopen_label %}
+{% translate "Причина попадёт в историю рядом с вашим именем." as reopen_note %}
+{% translate "Зачем открываете период" as reopen_reason_label %}
+{% translate "например: ошиблись в часах за третью неделю" as reopen_reason_placeholder %}
 <div class="lifecycle">
-  {% include "web/components/action.html" with allowed=can_approve denied=approve_denied url=approve_url label="Утвердить период" primary=True note="После утверждения расчёт и его данные меняться не будут." %}
+  {% include "web/components/action.html" with allowed=can_approve denied=approve_denied url=approve_url label=approve_label primary=True note=approve_note %}
   {% comment %}
   Откат — то самое действие с обязательной причиной, которое в этом продукте
   заменяет диалог подтверждения: подтверждать нажатием нечего, если через
   полгода никто не вспомнит, зачем период открывали (D021, конституция об
   обратимости). Поле причины идёт тем же компонентом, что и остальные поля.
   {% endcomment %}
-  {% include "web/components/action.html" with allowed=can_reopen denied=reopen_denied url=reopen_url label="Открыть заново" note="Причина попадёт в историю рядом с вашим именем." reason_id="reason" reason_name="reason" reason_label="Зачем открываете период" reason_placeholder="например: ошиблись в часах за третью неделю" reason_value=reason_value %}
+  {% include "web/components/action.html" with allowed=can_reopen denied=reopen_denied url=reopen_url label=reopen_label note=reopen_note reason_id="reason" reason_name="reason" reason_label=reopen_reason_label reason_placeholder=reopen_reason_placeholder reason_value=reason_value %}
 </div>
 {% endif %}
 
 {% if history %}
-<h2>История периода</h2>
+<h2>{% translate "История периода" %}</h2>
 {% comment %}
 Журнал ведёт база триггером (T023) — здесь только показ. Второго журнала рядом
 не заводится: перехода без записи не бывает ни на одном пути записи.
 {% endcomment %}
 <table class="history">
   <thead>
-    <tr><th>Когда</th><th>Что стало</th><th>Кто</th><th>Причина</th></tr>
+    <tr><th>{% translate "Когда" %}</th><th>{% translate "Что стало" %}</th><th>{% translate "Кто" %}</th><th>{% translate "Причина" %}</th></tr>
   </thead>
   <tbody>
     {% for row in history %}
     <tr>
       <td>{{ row.at }}</td>
       <td>{% if row.from_title %}{{ row.from_title }} → {% endif %}<strong>{{ row.to_title }}</strong></td>
-      <td>{% if row.actor %}{{ row.actor }}{% else %}<span class="hint">мимо приложения</span>{% endif %}</td>
+      <td>{% if row.actor %}{{ row.actor }}{% else %}<span class="hint">{% translate "мимо приложения" %}</span>{% endif %}</td>
       <td>{% if row.reason %}{{ row.reason }}{% else %}—{% endif %}</td>
     </tr>
     {% endfor %}
@@ -265,7 +289,7 @@
 </table>
 {% endif %}
 
-<h2>Ведомость{% if cut_title %} · {{ cut_title }}{% endif %}</h2>
+<h2>{% translate "Ведомость" %}{% if cut_title %} · {{ cut_title }}{% endif %}</h2>
 {% if sheet.rows %}
 {% comment %}
 Одна таблица на все регистры с меткой в строке (D023). Строка — пара
@@ -278,7 +302,8 @@
 существует, а D023 требует «ни строк, ни следа». Разрез — обычная ссылка, а не
 кнопка со скриптом: он живёт в адресе, и им можно поделиться.
 {% endcomment %}
-{% include "web/components/cuts.html" with cuts=cuts label="Разрез ведомости по регистрам" %}
+{% translate "Разрез ведомости по регистрам" as cuts_label %}
+{% include "web/components/cuts.html" with cuts=cuts label=cuts_label %}
 {% comment %}
 Выгрузки и сверка (T031, T032).
 
@@ -297,9 +322,9 @@
 <table class="sheet">
   <thead>
     <tr>
-      <th>Сотрудник</th><th>Точка</th><th>Регистр</th><th>Спор</th>
+      <th>{% translate "Сотрудник" %}</th><th>{% translate "Точка" %}</th><th>{% translate "Регистр" %}</th><th>{% translate "Спор" %}</th>
       {% for column in sheet.columns %}<th class="num">{{ column }}</th>{% endfor %}
-      <th class="num">Итого</th>
+      <th class="num">{% translate "Итого" %}</th>
     </tr>
   </thead>
   <tbody>
@@ -311,7 +336,7 @@
       невидимой прибавкой к сумме этого месяца.
       {% endcomment %}
       <td>{{ row.employee }}{% if row.is_retro %}
-        <span class="badge-retro">Перерасчёт за {{ row.retro_title }}</span>{% endif %}</td>
+        <span class="badge-retro">{% blocktranslate with title=row.retro_title %}Перерасчёт за {{ title }}{% endblocktranslate %}</span>{% endif %}</td>
       <td>{{ row.unit }}</td>
       <td>{% ledger row.ledger %}</td>
       {% comment %}
@@ -322,17 +347,20 @@
       {% endcomment %}
       <td class="freeze">
         {% if row.frozen %}
-          <span class="frozen">Заморожена</span>
+          <span class="frozen">{% translate "Заморожена" %}</span>
           {% if row.show_action %}
             <span class="hint">{{ row.freeze_reason }}</span>
             {% if can_freeze %}
             {% url 'payslip-release' row.payslip_id as release_url %}
-            {% include "web/components/action.html" with allowed=True url=release_url label="Снять заморозку" primary=False note="" denied="" reason_name="" hidden_name="" %}
+            {% translate "Снять заморозку" as release_label %}
+            {% include "web/components/action.html" with allowed=True url=release_url label=release_label primary=False note="" denied="" reason_name="" hidden_name="" %}
             {% endif %}
           {% endif %}
         {% elif row.show_action and can_freeze %}
           {% url 'payslip-freeze' row.payslip_id as freeze_url %}
-          {% include "web/components/action.html" with allowed=True url=freeze_url label="Заморозить" reason_name="reason" reason_id="" reason_label="" reason_placeholder="из-за чего спор" primary=False note="" denied="" %}
+          {% translate "Заморозить" as freeze_label %}
+          {% translate "из-за чего спор" as freeze_reason_placeholder %}
+          {% include "web/components/action.html" with allowed=True url=freeze_url label=freeze_label reason_name="reason" reason_id="" reason_label="" reason_placeholder=freeze_reason_placeholder primary=False note="" denied="" %}
         {% endif %}
       </td>
       {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
@@ -343,13 +371,13 @@
       самый перелив, который там лечили.
       {% endcomment %}
       <td class="num strong">{% if row.trace_url %}<a class="trace" href="{{ row.trace_url }}"
-        title="Как получилась эта сумма">{{ row.total }}</a>{% else %}{{ row.total }}{% endif %}</td>
+        title="{% translate "Как получилась эта сумма" %}">{{ row.total }}</a>{% else %}{{ row.total }}{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>
   <tfoot>
     <tr class="grand">
-      <td colspan="4">Итого · {{ sheet.employees }} чел.</td>
+      <td colspan="4">{% blocktranslate with employees=sheet.employees %}Итого · {{ employees }} чел.{% endblocktranslate %}</td>
       {% for cell in sheet.column_totals %}<td class="num">{{ cell }}</td>{% endfor %}
       <td class="num">{{ total }}</td>
     </tr>
@@ -362,24 +390,23 @@
 разрезе по одному она слово в слово повторяла бы подвал ведомости.
 {% endcomment %}
 {% if show_ledger_totals %}
-<h2>Итоги по регистрам</h2>
+<h2>{% translate "Итоги по регистрам" %}</h2>
 <table>
-  <thead><tr><th>Регистр</th><th class="num">Сумма</th></tr></thead>
+  <thead><tr><th>{% translate "Регистр" %}</th><th class="num">{% translate "Сумма" %}</th></tr></thead>
   <tbody>
     {% for row in ledgers %}
     <tr><td>{{ row.title }}</td><td class="num">{{ row.total }}</td></tr>
     {% endfor %}
   </tbody>
   <tfoot>
-    <tr><td>Итого</td><td class="num">{{ total }}</td></tr>
+    <tr><td>{% translate "Итого" %}</td><td class="num">{{ total }}</td></tr>
   </tfoot>
 </table>
 {% endif %}
 <p class="note">
-  Итог посчитан по тому, что видно вашей роли: строки чужих регистров не
-  доезжают до страницы и не входят в сумму.
-  {% if cut_title %}Сейчас показан один регистр — {{ cut_title }};
-  итог посчитан по нему.{% endif %}
+  {% translate "Итог посчитан по тому, что видно вашей роли: строки чужих регистров не доезжают до страницы и не входят в сумму." %}
+  {% if cut_title %}{% blocktranslate with title=cut_title %}Сейчас показан один регистр — {{ title }};
+  итог посчитан по нему.{% endblocktranslate %}{% endif %}
 </p>
 {% comment %}
 Кнопки заморозки нет по двум разным причинам, и они не смешиваются: права нет
@@ -390,6 +417,26 @@
 <p class="note">{{ freeze_denied }}</p>
 {% endif %}
 {% else %}
-{% notice "empty" %}Расчёта за этот период ещё не было.{% endnotice %}
+{% comment %}
+Пустое состояние ведомости объясняет следующий шаг, а не сообщает о пустоте
+(T077). Причин пустоты две, и делать они требуют разного: часов ещё нет —
+идти в табель; часы есть, а расчёта не было — нажать кнопку выше. Свалить их
+в одно «расчёта не было» значило бы отправить человека нажимать кнопку, после
+которой он получит отказ «считать нечего».
+{% endcomment %}
+{% translate "Ведомости пока нет" as no_sheet %}
+{% notice "empty" title=no_sheet %}
+  {% if not employees %}
+    {% blocktranslate %}Месяц начинается с часов: без них считать нечего. Внесите их в табеле
+    руками или загрузите таблицей партнёра, а потом вернитесь сюда и посчитайте
+    период.{% endblocktranslate %}
+    <a class="btn next" href="{% url 'timesheets' period.id %}">{% translate "Перейти к табелю" %}</a>
+  {% else %}
+    {% blocktranslate %}Часы за месяц уже внесены — осталось посчитать период. Ведомость появится
+    здесь же: строка на каждого сотрудника в каждом регистре, который видно
+    вашей роли.{% endblocktranslate %}
+    {% if calculate_denied %}<span class="note">{{ calculate_denied }}</span>{% endif %}
+  {% endif %}
+{% endnotice %}
 {% endif %}
 {% endblock %}

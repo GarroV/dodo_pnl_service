@@ -23,6 +23,7 @@ from datetime import date, datetime
 from uuid import UUID
 
 from django.utils.timezone import now
+from django.utils.translation import gettext as _
 
 from core.models import Timesheet, TimesheetClosure, Unit
 from web.views import month_title
@@ -85,10 +86,10 @@ def is_closed(tenant_id: UUID, unit_id: UUID | None, period: date) -> bool:
 
 
 def refusal(unit_code: str, period: date) -> str:
-    return (
-        f"Часы точки {unit_code} за {month_title(period)} закрыты. "
+    return _(
+        "Часы точки %(unit)s за %(month)s закрыты. "
         "Чтобы их править, точку нужно открыть заново."
-    )
+    ) % {"unit": unit_code, "month": month_title(period)}
 
 
 def refuse_if_closed(row: Timesheet) -> None:

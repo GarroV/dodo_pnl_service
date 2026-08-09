@@ -24,6 +24,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from core.models import Employee, EmploymentTerm, Timesheet, Unit
 from payroll import d
@@ -122,20 +123,24 @@ def _check_data(row, employee, want: RowInput, period: date) -> list[Note]:
     negative = sorted(kind for kind, value in want.hours.items() if value < 0)
     if negative:
         notes.append(Note(
-            "negative", f"{who}: отрицательные часы ({', '.join(negative)})",
+            "negative",
+            _("%(who)s: отрицательные часы (%(kinds)s)")
+            % {"who": who, "kinds": ", ".join(negative)},
             where, key,
         ))
 
     if total == 0:
         notes.append(Note(
             "no_hours",
-            f"{who}: в файле нет ни одного часа — строка табеля будет пустой",
+            _("%(who)s: в файле нет ни одного часа — строка табеля будет пустой")
+            % {"who": who},
             where, key,
         ))
     elif want.norm_hours > 0 and total > want.norm_hours:
         notes.append(Note(
             "over_norm",
-            f"{who}: {total:.2f} ч при норме {want.norm_hours:.2f} ч",
+            _("%(who)s: %(total)s ч при норме %(norm)s ч")
+            % {"who": who, "total": f"{total:.2f}", "norm": f"{want.norm_hours:.2f}"},
             where, key,
         ))
 
@@ -144,8 +149,12 @@ def _check_data(row, employee, want: RowInput, period: date) -> list[Note]:
     if employee.dismissed_at and employee.dismissed_at < period and total > 0:
         notes.append(Note(
             "dismissed",
-            f"{who}: уволен {employee.dismissed_at:%d.%m.%Y}, "
-            f"а в файле {total:.2f} ч за этот месяц",
+            _("%(who)s: уволен %(date)s, а в файле %(total)s ч за этот месяц")
+            % {
+                "who": who,
+                "date": f"{employee.dismissed_at:%d.%m.%Y}",
+                "total": f"{total:.2f}",
+            },
             where, key,
         ))
     return notes
@@ -182,7 +191,7 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
             if person is None:
                 result.unmatched_rows.append(UnmatchedRow(
                     source.sheet, source.name,
-                    "такого сотрудника нет в справочнике партнёра",
+                    _("такого сотрудника нет в справочнике партнёра"),
                 ))
                 continue
 
@@ -192,7 +201,7 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
                 # табеля. Догадка здесь означала бы часы, записанные не туда.
                 result.unmatched_rows.append(UnmatchedRow(
                     source.sheet, source.name,
-                    "нет условий найма на этот месяц — неизвестно, на какой точке",
+                    _("нет условий найма на этот месяц — неизвестно, на какой точке"),
                 ))
                 continue
 
@@ -204,8 +213,8 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
             if term.unit_id is not None and term.unit_id in closures:
                 result.unmatched_rows.append(UnmatchedRow(
                     source.sheet, source.name,
-                    f"часы точки {unit_codes.get(term.unit_id, '')} за этот месяц "
-                    f"закрыты — строка не загружена",
+                    _("часы точки %(unit)s за этот месяц закрыты — строка не загружена")
+                    % {"unit": unit_codes.get(term.unit_id, "")},
                 ))
                 continue
 
@@ -228,8 +237,8 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
                 if kind not in known:
                     result.findings.append(Finding(
                         "column", source.sheet,
-                        f"типа часов «{kind}» нет в правилах страны — "
-                        f"эти часы не загружены",
+                        _("типа часов «%(kind)s» нет в правилах страны — "
+                          "эти часы не загружены") % {"kind": kind},
                     ))
 
             result.warnings.extend(_check_data(source, person, want, period))

@@ -33,6 +33,7 @@ from uuid import UUID
 from django.db import transaction
 from django.db.models import Sum
 from django.utils.timezone import now
+from django.utils.translation import gettext as _
 
 from core.models import Tenant, Timesheet, TimesheetDay
 from payroll import Timesheet as EngineTimesheet
@@ -86,11 +87,11 @@ def parse_hours(raw: str) -> Decimal:
     try:
         value = Decimal(text)
     except InvalidOperation:
-        raise CellRefused(f"«{raw}» — это не число часов") from None
+        raise CellRefused(_("«%(value)s» — это не число часов") % {"value": raw}) from None
     if not value.is_finite():
-        raise CellRefused(f"«{raw}» — это не число часов")
+        raise CellRefused(_("«%(value)s» — это не число часов") % {"value": raw})
     if value != value.quantize(CENT):
-        raise CellRefused("часы задаются с точностью до сотой")
+        raise CellRefused(_("часы задаются с точностью до сотой"))
     return value.quantize(CENT)
 
 
@@ -98,11 +99,13 @@ def check_cell(hour_type: str, hours: Decimal, known: dict[str, dict]) -> None:
     if hour_type not in known:
         # Тип, которого нет в правилах страны, движок посчитать не сможет:
         # запись такой ячейки означала бы часы, не попавшие ни в одну сумму.
-        raise CellRefused(f"типа часов «{hour_type}» нет в правилах страны")
+        raise CellRefused(_("типа часов «%(kind)s» нет в правилах страны") % {"kind": hour_type})
     if hours < 0:
-        raise CellRefused("отрицательных часов не бывает")
+        raise CellRefused(_("отрицательных часов не бывает"))
     if hours > MAX_HOURS:
-        raise CellRefused(f"больше {MAX_HOURS:.0f} часов в месяце не бывает")
+        raise CellRefused(
+            _("больше %(limit)s часов в месяце не бывает") % {"limit": f"{MAX_HOURS:.0f}"}
+        )
 
 
 def daily_totals(row: Timesheet) -> dict[str, Decimal]:
@@ -297,7 +300,7 @@ def store_row(*, timesheet: Timesheet, want: RowInput,
         # D025). Проверяется здесь заранее, чтобы человек прочитал причину, а не
         # текст нарушения ограничения.
         raise CellRefused(
-            "ручную правку нельзя записать без следа: нужен автор и причина"
+            _("ручную правку нельзя записать без следа: нужен автор и причина")
         )
 
     if not row_differs(timesheet, want):

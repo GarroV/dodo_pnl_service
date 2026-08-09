@@ -1,0 +1,1320 @@
+# Каталог перевода интерфейса Dodo P&L (T017).
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: dodo-pnl\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-09 09:50+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#, python-format
+msgid "нет условий найма на этот месяц: %(count)s чел. Расчёт без них выглядел бы верным, поэтому не выполняется."
+msgstr "No employment terms for this month: %(count)s people. A calculation without them would look correct, so it does not run."
+
+msgid "за этот период нет ни одного табеля — считать нечего. Внесите часы и повторите."
+msgstr "There is no timesheet at all for this period — nothing to calculate. Enter hours and try again."
+
+#, python-format
+msgid "в правилах страны нет схем расчёта: %(schemes)s. Поправьте группу сотрудников или пресет."
+msgstr "The country rules have no calculation schemes: %(schemes)s. Fix the employee group or the preset."
+
+#, python-format
+msgid "база для взносов не сходится с часами табеля: %(count)s чел. По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы верным. Проверьте колонку «База взносов» в табеле."
+msgstr "The contribution base does not match the timesheet hours: %(count)s people. Contributions and gross pay are calculated from it, so a calculation on an outdated base would look correct. Check the \"Contribution base\" column in the timesheet."
+
+msgid "Ведомость этого периода попадает в регистры учёта, недоступные вашей роли. Запустить расчёт может тот, кто видит их все."
+msgstr "This period's payroll sheet falls under ledgers not available to your role. Only someone who can see all of them can start the calculation."
+
+msgid "Считаем сотрудников"
+msgstr "Calculating employees"
+
+msgid "партнёр недоступен"
+msgstr "partner unavailable"
+
+msgid "Собираем табели и условия найма"
+msgstr "Collecting timesheets and employment terms"
+
+msgid "Записываем ведомость"
+msgstr "Writing the payroll sheet"
+
+msgid "Заморозка строки требует причины: напишите, из-за чего идёт спор. Причина попадёт в историю рядом с вашим именем."
+msgstr "Freezing a row requires a reason: write what the dispute is about. The reason will go into the history next to your name."
+
+msgid "Строка сотрудника заморожена: её числа не меняются и пересчёт её обходит. Чтобы вернуть человека в общий расчёт, заморозку нужно снять."
+msgstr "The employee's payslip is frozen: its numbers do not change, and recalculation skips it. To bring the person back into the shared calculation, the freeze needs to be lifted."
+
+msgid "Период утверждён: замораживать в нём нечего — заморожен весь расчёт. Чтобы менять расчёт, период нужно сначала открыть заново."
+msgstr "The period is approved: there is nothing to freeze in it — the whole calculation is already frozen. To change the calculation, the period must first be reopened."
+
+msgid "Расчёт этого периода уже идёт. Дождитесь, пока он закончится: второй запуск не ускорит его, а ведомость всё равно будет одна."
+msgstr "The calculation for this period is already running. Wait for it to finish: running it a second time will not speed it up, and there will still be only one payroll sheet."
+
+msgid "Задача принята, но её до сих пор не взяли в работу — похоже, рабочий процесс очереди не запущен. Расчёт можно выполнить прямо сейчас, не дожидаясь очереди."
+msgstr "The task was accepted, but it still hasn't been picked up — it looks like the queue worker process is not running. The calculation can be run right now, without waiting for the queue."
+
+msgid "Расчёт оборвался из-за внутренней ошибки. Данные периода не изменились; покажите этот период тому, кто ведёт сервис."
+msgstr "The calculation was interrupted by an internal error. The period's data did not change; show this period to whoever maintains the service."
+
+msgid "Готово"
+msgstr "Done"
+
+msgid "В очереди"
+msgstr "Queued"
+
+msgid "Считаем"
+msgstr "Calculating"
+
+msgid "Черновик"
+msgstr "Draft"
+
+msgid "Посчитан"
+msgstr "not calculated yet"
+
+msgid "Утверждён"
+msgstr "3. Approval"
+
+msgid "Открыт заново"
+msgstr "Reopen"
+
+msgid "Выплачен"
+msgstr "Paid"
+
+msgid "Период утверждён: расчёт и его данные заморожены. Чтобы пересчитать, период нужно сначала открыть заново."
+msgstr "Period approved. The calculation and its data are frozen."
+
+msgid "Откат периода требует причины: напишите, зачем открываете период. Причина попадёт в историю рядом с вашим именем."
+msgstr "Reopening the period requires a reason: write why you are reopening it. The reason will go into the history next to your name."
+
+msgid "Расчёта за этот период ещё не было: сначала посчитайте период."
+msgstr "There has been no calculation for this period yet: calculate the period first."
+
+#, python-format
+msgid "Период сейчас в состоянии «%(from_title)s», перевести его в «%(to_title)s» нельзя. Открытый заново период нужно пересчитать, прежде чем утверждать снова."
+msgstr "The period is currently in the \"%(from_title)s\" state; it cannot be moved to \"%(to_title)s\". A reopened period must be recalculated before it can be approved again."
+
+msgid "Состояние периода изменилось, пока страница была открыта. Обновите страницу и посмотрите, что с ним стало."
+msgstr "The period's state changed while the page was open. Refresh the page to see what happened to it."
+
+msgid "разница переносится в текущий период"
+msgstr "the difference is carried over to the current period"
+
+msgid "период открывается заново и пересчитывается"
+msgstr "Period reopened. The reason and your name are recorded in the history."
+
+msgid "У этого партнёра правки задним числом ведутся пересчётом, а не переносом: закрытый период открывается заново с указанием причины и считается снова. Перенос разницы для него выключен настройкой."
+msgstr ""
+"For this partner, backdated corrections are handled by recalculation: reopen the period\n"
+"    with a reason and calculate it again."
+
+msgid "Расхождений с сегодняшними данными нет: переносить нечего. Возможно, разницу уже перенесли — посмотрите период-получатель."
+msgstr "There are no discrepancies with today's data: there is nothing to carry over. The difference may have already been carried over — check the receiving period."
+
+msgid "Перенос разницы делается только из закрытого месяца. Этот период ещё не утверждён — правьте данные и пересчитывайте его как обычно."
+msgstr "Carrying over the difference is only done from a closed month. This period has not been approved yet — edit the data and recalculate it as usual."
+
+msgid "Разница за этот месяц попадает в регистры учёта, недоступные вашей роли. Перенести её может тот, кто видит их все."
+msgstr "This month's difference falls under ledgers not available to your role. Only someone who can see all of them can carry it over."
+
+msgid "Разница за этот месяц уже перенесена в утверждённый период и выплачена. Открыть его заново нельзя: пересчёт означал бы заплатить дважды."
+msgstr "The difference for this month has already been carried over to an approved period and paid. It cannot be reopened: recalculating it would mean paying twice."
+
+#, python-format
+msgid "Ведомость к выплате · %(sub)s"
+msgstr "Payroll sheet for payout · %(sub)s"
+
+msgid "№"
+msgstr "No."
+
+msgid "Сотрудник"
+msgstr "Employee"
+
+msgid "Точка"
+msgstr "Unit"
+
+msgid "Регистр"
+msgstr "Ledger"
+
+msgid "Итого"
+msgstr "Total"
+
+msgid "Примечание"
+msgstr "Note"
+
+#, python-format
+msgid "разница за %(date)s"
+msgstr "difference for %(date)s"
+
+#, python-format
+msgid "строка заморожена: %(reason)s"
+msgstr "payslip frozen: %(reason)s"
+
+msgid "строка заморожена"
+msgstr "payslip frozen"
+
+#, python-format
+msgid "человек: %(count)s"
+msgstr "people: %(count)s"
+
+msgid "Без статьи"
+msgstr "No line item"
+
+#, python-format
+msgid "Строки для P&L · %(sub)s"
+msgstr "Rows for P&L · %(sub)s"
+
+msgid "Статья P&L"
+msgstr "P&L line item"
+
+msgid "Тип строки"
+msgstr "Row type"
+
+msgid "Компонент"
+msgstr "Component"
+
+msgid "Сумма"
+msgstr "Amount"
+
+msgid "Начисление"
+msgstr "Accrual"
+
+msgid "Налог"
+msgstr "Tax"
+
+msgid "Налог на доход"
+msgstr "Income tax"
+
+msgid "Взносы"
+msgstr "Contributions"
+
+msgid "в расчёте этого периода такой строки нет"
+msgstr "there is no such payslip in this period's calculation"
+
+msgid "в загруженной таблице такой строки нет"
+msgstr "there is no such payslip in the uploaded table"
+
+msgid "своего расчёта в этом месяце у строки нет — только перенос за прошлый"
+msgstr "this payslip has no calculation of its own this month — only a carryover from the previous one"
+
+msgid "В правилах страны не заданы пороги отклонений. Отчёт без них показывал бы либо всё подряд, либо ничего — и то и другое выглядело бы как настроенное поведение. Задайте раздел «variance» в пресете страны (и перезагрузите его: python manage.py load_presets)."
+msgstr "The country rules have no variance thresholds set. A report without them would show either everything or nothing — and either one would look like intentional behavior. Set the \"variance\" section in the country preset (and reload it: python manage.py load_presets)."
+
+#, python-format
+msgid "Часы точки %(unit)s за %(month)s закрыты. Чтобы их править, точку нужно открыть заново."
+msgstr "Hours for unit %(unit)s for %(month)s are closed. To edit them, the unit needs to be reopened."
+
+#, python-format
+msgid "%(who)s: отрицательные часы (%(kinds)s)"
+msgstr "%(who)s: negative hours (%(kinds)s)"
+
+#, python-format
+msgid "%(who)s: в файле нет ни одного часа — строка табеля будет пустой"
+msgstr "%(who)s: the file has no hours at all — the timesheet row will be empty"
+
+#, python-format
+msgid "%(who)s: %(total)s ч при норме %(norm)s ч"
+msgstr "%(who)s: %(total)s h against a standard of %(norm)s h"
+
+#, python-format
+msgid "%(who)s: уволен %(date)s, а в файле %(total)s ч за этот месяц"
+msgstr "%(who)s: terminated on %(date)s, but the file shows %(total)s h for this month"
+
+msgid "такого сотрудника нет в справочнике партнёра"
+msgstr "this employee is not in the partner's directory"
+
+msgid "нет условий найма на этот месяц — неизвестно, на какой точке"
+msgstr "there are no employment terms for this month — the unit is unknown"
+
+#, python-format
+msgid "часы точки %(unit)s за этот месяц закрыты — строка не загружена"
+msgstr "hours for unit %(unit)s for this month are closed — the row was not uploaded"
+
+#, python-format
+msgid "типа часов «%(kind)s» нет в правилах страны — эти часы не загружены"
+msgstr "hour type \"%(kind)s\" is not in the country rules — these hours were not uploaded"
+
+#, python-format
+msgid "«%(value)s» — это не число часов"
+msgstr "\"%(value)s\" is not a number of hours"
+
+msgid "часы задаются с точностью до сотой"
+msgstr "hours are entered to the nearest hundredth"
+
+#, python-format
+msgid "типа часов «%(kind)s» нет в правилах страны"
+msgstr "hour type \"%(kind)s\" is not in the country rules"
+
+msgid "отрицательных часов не бывает"
+msgstr "hours cannot be negative"
+
+#, python-format
+msgid "больше %(limit)s часов в месяце не бывает"
+msgstr "there cannot be more than %(limit)s hours in a month"
+
+msgid "ручную правку нельзя записать без следа: нужен автор и причина"
+msgstr "a manual edit cannot be saved without a trace: an author and a reason are required"
+
+#, python-format
+msgid "По часам табеля в базу для взносов входит %(declared)s ч, а записано %(recorded)s ч. Пока числа не сойдутся, период не считается."
+msgstr "By timesheet hours, %(declared)s h should go into the contribution base, but %(recorded)s h were recorded. Until the numbers match, the period cannot be calculated."
+
+#, python-format
+msgid "по часам %(declared)s"
+msgstr "by hours: %(declared)s"
+
+#, python-format
+msgid "Табель · %(title)s"
+msgstr "Timesheet · %(title)s"
+
+msgid "← К месяцу"
+msgstr "← To the month"
+
+msgid "Табель показать нельзя."
+msgstr "The timesheet cannot be shown."
+
+#, python-format
+msgid "%(people_count)s чел."
+msgstr "%(people_count)s people"
+
+msgid "только ваши точки"
+msgstr "your units only"
+
+msgid "часы за месяц; сохраняются сразу, кнопки «сохранить» нет"
+msgstr "hours for the month; saved immediately, there is no \"save\" button"
+
+msgid "часы за месяц, только на просмотр"
+msgstr "hours for the month, view only"
+
+#, python-format
+msgid "%(unit_count)s чел."
+msgstr "%(unit_count)s people"
+
+#, python-format
+msgid "часы закрыты %(closed_at)s"
+msgstr "hours closed on %(closed_at)s"
+
+msgid "Открыть заново"
+msgstr "Reopen"
+
+msgid "часы открыты"
+msgstr "hours open"
+
+msgid "Закрыть часы точки"
+msgstr "Close unit hours"
+
+msgid "Загрузить таблицу партнёра (.xlsx)"
+msgstr "Upload the partner's table (.xlsx)"
+
+msgid "Загрузить"
+msgstr "Upload"
+
+msgid "Повторная загрузка того же файла ничего не изменит."
+msgstr "Uploading the same file again will not change anything."
+
+msgid "Часов за этот месяц ещё нет"
+msgstr "There are no hours for this month yet"
+
+msgid ""
+"По вашим точкам за этот месяц не заведено ни одного сотрудника. Если люди\n"
+"      работали, скажите тому, кто ведёт справочник сотрудников: строки табеля\n"
+"      появляются вместе с ними."
+msgstr "There are no employees registered for your units this month. If people\n      worked, tell whoever maintains the employee directory: timesheet rows\n      appear together with them."
+
+msgid ""
+"Строки табеля появляются вместе с сотрудниками месяца. Заведите их в\n"
+"      справочнике или загрузите таблицу партнёра формой выше — она заводит\n"
+"      строки табеля сама."
+msgstr "Timesheet rows appear together with the month's employees. Add them in\n      the directory, or upload the partner's table using the form above — it\n      creates the timesheet rows itself."
+
+msgid ""
+"За этот месяц не заведено ни одного сотрудника, поэтому и часов пока нет.\n"
+"      Вносит их тот, у кого есть право на правку табеля."
+msgstr "No employees are registered for this month yet, so there are no hours\n      either. They are entered by whoever has the right to edit the timesheet."
+
+msgid "Не принято, в ячейке прежнее значение."
+msgstr "Not accepted, the cell still has the previous value."
+
+msgid "В ячейке — то, что сейчас в базе."
+msgstr "The cell shows what is currently in the database."
+
+#, python-format
+msgid "Не удалось сохранить «%%(value)s»: %%(reason)s. В ячейке прежнее значение."
+msgstr "Failed to save \"%%(value)s\": %%(reason)s. The cell still has the previous value."
+
+msgid "нет связи с сервером"
+msgstr "no connection to server"
+
+msgid "Правило не подтверждено бухгалтером"
+msgstr "Rule not confirmed by accountant"
+
+msgid "Вход расчёта наравне с часами: по ней считаются взносы и бруто"
+msgstr "Calculation input on par with hours: contributions and gross are calculated from it"
+
+msgid "База взносов"
+msgstr "Contribution base"
+
+msgid "Норма"
+msgstr "Standard"
+
+msgid ""
+"Стрелки — переход между ячейками, Enter — вниз, Tab — вправо. Каждая ячейка\n"
+"  уходит на сервер сразу, как только вы её покинули."
+msgstr "Arrows move between cells, Enter — down, Tab — right. Each cell\n  is sent to the server as soon as you leave it."
+
+#, python-format
+msgid "Загрузка таблицы · %(title)s"
+msgstr "Table upload · %(title)s"
+
+msgid "Таблица не загружена."
+msgstr "Table not uploaded."
+
+msgid "Что сделано"
+msgstr "What was done"
+
+msgid "Строк"
+msgstr "Rows"
+
+msgid "Сопоставлено сотрудникам"
+msgstr "Matched to employees"
+
+msgid "Заведено строк табеля"
+msgstr "Timesheet rows entered"
+
+msgid "Изменено"
+msgstr "Changed"
+
+msgid "Без изменений"
+msgstr "Unchanged"
+
+msgid "Не сопоставлено"
+msgstr "Not matched"
+
+msgid "Файл разобран целиком, подозрительного не нашлось."
+msgstr "File parsed completely, nothing suspicious found."
+
+msgid "Не загружено: некому записать"
+msgstr "Not uploaded: no one to record it for"
+
+msgid "Эти строки в файле есть, а в табеле их нет."
+msgstr "These rows exist in the file but not in the timesheet."
+
+msgid "Лист"
+msgstr "Sheet"
+
+msgid "Кто"
+msgstr "Who"
+
+msgid "Почему"
+msgstr "Why"
+
+msgid "Не разобрано в файле"
+msgstr "Not parsed from file"
+
+msgid "Это не предупреждения: перечисленного в табеле <strong>нет</strong>."
+msgstr "These are not warnings: what's listed <strong>is not</strong> in the timesheet."
+
+msgid "Где"
+msgstr "Where"
+
+msgid "Что"
+msgstr "What"
+
+msgid "Загружено, но стоит посмотреть"
+msgstr "Uploaded, but worth checking"
+
+msgid ""
+"Эти числа приняты. Ни одно из них не ошибка само по себе — но незамеченными\n"
+"  они и становятся неверной зарплатой."
+msgstr "These numbers were accepted. None of them is an error by itself — but if they go\n  unnoticed, they become an incorrect payroll."
+
+msgid "К табелю"
+msgstr "To timesheet"
+
+msgid "К периоду"
+msgstr "To period"
+
+msgid "точка не найдена"
+msgstr "unit not found"
+
+msgid "Файл не выбран."
+msgstr "No file selected."
+
+#, python-format
+msgid "Файл больше %(limit)s МБ — это не зарплатная таблица."
+msgstr "File is larger than %(limit)s MB — this is not a payroll table."
+
+#, python-format
+msgid "Файл не удалось прочитать как книгу Excel: %(reason)s"
+msgstr "Could not read the file as an Excel workbook: %(reason)s"
+
+msgid "Официальный"
+msgstr "Official"
+
+msgid "Дополнительный"
+msgstr "Supplementary"
+
+msgid "Внутренний"
+msgstr "Internal"
+
+msgid "Все регистры"
+msgstr "All ledgers"
+
+msgid "Оперативный директор"
+msgstr "Operations Director"
+
+msgid "Бухгалтер"
+msgstr "Accountant"
+
+msgid "Управляющий точки"
+msgstr "Unit Manager"
+
+msgid "Администратор сети"
+msgstr "Network Administrator"
+
+msgid "1. Часы"
+msgstr "1. Hours"
+
+msgid "Внесите отработанные часы в табеле или загрузите их таблицей."
+msgstr "Enter worked hours in the timesheet or upload them as a table."
+
+msgid "2. Расчёт"
+msgstr "2. Calculation"
+
+msgid "Посчитайте период — получится ведомость по видимым вам регистрам."
+msgstr "Calculate the period — you'll get a payroll sheet for the ledgers visible to you."
+
+msgid "3. Утверждение"
+msgstr "3. Approval"
+
+msgid "Утвердите период: расчёт замораживается, откат — только с причиной."
+msgstr "Approve the period: the calculation is frozen, reverting requires a reason."
+
+msgid "Правка табеля"
+msgstr "Go to timesheet"
+
+msgid "Расчёт периода"
+msgstr "Calculating the period"
+
+msgid "Утверждение периода"
+msgstr "Approve the period"
+
+msgid "Откат периода"
+msgstr "Period history"
+
+msgid "Закрытие часов по точке"
+msgstr "Close unit hours"
+
+msgid "Заморозка строки ведомости"
+msgstr "Payslip total"
+
+msgid "Перенос разницы за закрытый месяц"
+msgstr "Carryover from a closed month"
+
+#, python-format
+msgid "%(action)s не входит в права вашей роли «%(role)s». Попросите того, у кого это право есть."
+msgstr "%(action)s is outside the permissions of your role \"%(role)s\". Ask someone who has this permission."
+
+#, python-format
+msgid "%(action)s не входит в права вашей роли. Попросите того, у кого это право есть."
+msgstr "%(action)s is outside the permissions of your role. Ask someone who has this permission."
+
+msgid "К выплате (нето)"
+msgstr "Payable (net)"
+
+msgid "Бруто"
+msgstr "Gross"
+
+msgid "Полная стоимость"
+msgstr "Payroll sheet"
+
+msgid "Часы для взносов"
+msgstr "Contribution base"
+
+msgid "Ставка за час"
+msgstr "Rate per hour"
+
+msgid "Коэффициент"
+msgstr "Coefficient"
+
+msgid "Топли оброк и регрес"
+msgstr "Топли оброк и регрес"
+
+#, python-format
+msgid "Часы · %(kind)s"
+msgstr "Hours · %(kind)s"
+
+#, python-format
+msgid "%(what)s: в таблице %(expected)s, в расчёте %(actual)s"
+msgstr "%(what)s: %(expected)s in the table, %(actual)s in the calculation"
+
+msgid "Периоды"
+msgstr "Periods"
+
+msgid "В таблице"
+msgstr "In the table"
+
+msgid "В расчёте"
+msgstr "In the calculation"
+
+msgid "Разница"
+msgstr "Difference"
+
+msgid "Входы сошлись — расхождение даёт правило расчёта."
+msgstr "Inputs match — the discrepancy comes from the calculation rule."
+
+msgid "Выгрузки и сверка"
+msgstr "Exports and reconciliation"
+
+msgid "Ведомость к выплате"
+msgstr "Payroll sheet for payment"
+
+msgid "Строки для P&L"
+msgstr "Rows for P&L"
+
+msgid "Вид бухгалтера"
+msgstr "Accountant view"
+
+msgid "Сверка с таблицей"
+msgstr "Reconciliation with the table"
+
+msgid "Основная навигация"
+msgstr "Main navigation"
+
+msgid "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)"
+msgstr "The login page has quick sign-in buttons for seed accounts (DEV_LOGIN=1)"
+
+msgid "dev-вход"
+msgstr "dev login"
+
+#, python-format
+msgid "регистры: %(names)s"
+msgstr "ledgers: %(names)s"
+
+msgid "Данные и итоги на всех страницах — только по этой точке"
+msgstr "Data and totals on all pages — for this unit only"
+
+#, python-format
+msgid "точка: %(code)s"
+msgstr "unit: %(code)s"
+
+msgid "пароль"
+msgstr "password"
+
+msgid "выйти"
+msgstr "log out"
+
+msgid "войти"
+msgstr "log in"
+
+msgid "Порядок работы за месяц"
+msgstr "Monthly workflow"
+
+msgid "Вход"
+msgstr "Login"
+
+msgid "Логин и пароль выдаёт администратор сети."
+msgstr "The network administrator issues your login and password."
+
+msgid "Логин"
+msgstr "Username"
+
+msgid "Пароль"
+msgstr "Password"
+
+msgid "Войти"
+msgstr "Log in"
+
+msgid "Быстрый вход на время стройки"
+msgstr "Quick login during the build"
+
+msgid ""
+"Кнопка подставляет пароль учётки тестового сида и идёт тем же путём, что ввод\n"
+"  руками — отдельного способа войти у неё нет. Выключается переменной окружения\n"
+"  <code>DEV_LOGIN=0</code>; выданные ею сессии при этом перестают действовать."
+msgstr "The button fills in the password of the test seed account and follows the same\n  path as typing it by hand — it has no separate way to log in. It's turned off with the\n  environment variable <code>DEV_LOGIN=0</code>; sessions it issued then stop working."
+
+msgid "Пользователь"
+msgstr "User"
+
+msgid "Видит регистры"
+msgstr "Sees ledgers"
+
+msgid "Точки"
+msgstr "Units"
+
+msgid "все"
+msgstr "all"
+
+msgid "Смена пароля"
+msgstr "Password change"
+
+msgid "Пароль знает только его владелец: в базе лежит не он, а его хэш."
+msgstr "Only the owner knows the password: the database stores its hash, not the password itself."
+
+msgid "Пароль изменён."
+msgstr "Password changed."
+
+msgid "Пароль не изменён."
+msgstr "Password not changed."
+
+msgid "Сменить"
+msgstr "Change"
+
+msgid "Расчёт выполнен. Ниже — то, что видно вашей роли."
+msgstr "Calculation complete. Below is what your role can see."
+
+msgid "Расчёт принят и считается в фоне. Страницу можно не держать открытой."
+msgstr "Calculation accepted and is running in the background. You don't need to keep this page open."
+
+#, python-format
+msgid "%(done)s из %(total)s сотрудников"
+msgstr "%(done)s of %(total)s employees"
+
+msgid "Состояние расчёта не отвечает — пробуем ещё раз"
+msgstr "Calculation status isn't responding — retrying"
+
+msgid "Идёт расчёт периода"
+msgstr "Calculating the period"
+
+msgid "Посчитать прямо сейчас"
+msgstr "Calculate now"
+
+msgid "Обновите страницу, чтобы увидеть, чем закончился расчёт."
+msgstr "Refresh the page to see how the calculation ended."
+
+msgid "Период утверждён. Расчёт и его данные заморожены."
+msgstr "Period approved. The calculation and its data are frozen."
+
+msgid "Период открыт заново. Причина и ваше имя записаны в историю."
+msgstr "Period reopened. The reason and your name are recorded in the history."
+
+msgid "Строка заморожена. Пересчёт её обходит, остальные считаются как прежде."
+msgstr "Row frozen. Recalculation skips it; the rest are calculated as before."
+
+msgid "Заморозка снята. Человек вернулся в общий расчёт."
+msgstr "Freeze removed. The person is back in the shared calculation."
+
+msgid "Состояние"
+msgstr "Status"
+
+msgid "Расчёт зарплаты"
+msgstr "Payroll calculation"
+
+msgid "Сотрудников в табеле"
+msgstr "Employees in timesheet"
+
+msgid "Норма часов"
+msgstr "Standard hours"
+
+msgid "Последний расчёт"
+msgstr "Last calculation"
+
+msgid "не считался"
+msgstr "not calculated yet"
+
+msgid "Посчитать период"
+msgstr "Calculate the period"
+
+msgid "Табель"
+msgstr "Timesheet"
+
+msgid "Расхождения"
+msgstr "Discrepancies"
+
+msgid "Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама."
+msgstr "The calculation will go into the queue: the page will show progress and refresh itself."
+
+msgid "Считается сразу."
+msgstr "Calculated immediately."
+
+msgid "Повторный запуск пересобирает ведомость заново."
+msgstr "Running it again rebuilds the payroll sheet from scratch."
+
+msgid "Разница перенесена. Закрытый период при этом не изменился."
+msgstr "The difference has been carried over. The closed period itself did not change."
+
+msgid "Разница за закрытый месяц ещё не в ведомости."
+msgstr "The difference for the closed month is not yet in the payroll sheet."
+
+#, python-format
+msgid ""
+"Перенос за %(title)s отменён — этот месяц пересчитали, и разница\n"
+"        вошла в него самого. В ведомости она пока осталась (%(shown)s):\n"
+"        пересчитайте период."
+msgstr "The carryover for %(title)s was canceled — that month was recalculated, and the difference\n        is now included in it. It's still in the payroll sheet (%(shown)s):\n        recalculate the period."
+
+#, python-format
+msgid ""
+"Перенос за %(title)s на сумму %(live)s в ведомость ещё не\n"
+"        вошёл: пересчитайте период."
+msgstr "The carryover for %(title)s in the amount of %(live)s hasn't been\n        added to the payroll sheet yet: recalculate the period."
+
+msgid "Сверить закрытый месяц с сегодняшними данными не удалось."
+msgstr "Could not reconcile the closed month with today's data."
+
+msgid "Данные этого месяца изменились после утверждения"
+msgstr "This month's data changed after approval"
+
+#, python-format
+msgid ""
+"Расхождение с тем, что хранит закрытый месяц: <strong>%(total)s</strong>\n"
+"    по %(employees)s чел. У этого партнёра\n"
+"    %(mode)s."
+msgstr "Discrepancy with what the closed month has on record: <strong>%(total)s</strong>\n    across %(employees)s people. This partner\n    %(mode)s."
+
+#, python-format
+msgid "Перенести разницу в %(target)s"
+msgstr "Carry the difference into %(target)s"
+
+#, python-format
+msgid ""
+"Закрытый период не изменится: разница ляжет помеченной строкой в\n"
+"    %(target)s, в тот же регистр учёта."
+msgstr "The closed period will not change: the difference will be added as a marked row in\n    %(target)s, in the same ledger."
+
+msgid ""
+"У этого партнёра правки задним числом ведутся пересчётом: откройте период\n"
+"    заново с указанием причины и посчитайте его снова."
+msgstr "For this partner, backdated corrections are handled by recalculation: reopen the period\n    with a reason and calculate it again."
+
+msgid "Утвердить период"
+msgstr "Approve the period"
+
+msgid "После утверждения расчёт и его данные меняться не будут."
+msgstr "After approval, the calculation and its data will not change."
+
+msgid "Причина попадёт в историю рядом с вашим именем."
+msgstr "The reason will be recorded in the history next to your name."
+
+msgid "Зачем открываете период"
+msgstr "Why are you reopening the period"
+
+msgid "например: ошиблись в часах за третью неделю"
+msgstr "for example: hours were entered wrong for the third week"
+
+msgid "История периода"
+msgstr "Period history"
+
+msgid "Когда"
+msgstr "When"
+
+msgid "Что стало"
+msgstr "What changed"
+
+msgid "Причина"
+msgstr "Reason"
+
+msgid "мимо приложения"
+msgstr "outside the app"
+
+msgid "Ведомость"
+msgstr "Payroll sheet"
+
+msgid "Разрез ведомости по регистрам"
+msgstr "Payroll sheet view by ledger"
+
+msgid "Спор"
+msgstr "Dispute"
+
+#, python-format
+msgid "Перерасчёт за %(title)s"
+msgstr "Recalculation for %(title)s"
+
+msgid "Заморожена"
+msgstr "Frozen"
+
+msgid "Снять заморозку"
+msgstr "Unfreeze"
+
+msgid "Заморозить"
+msgstr "Freeze"
+
+msgid "из-за чего спор"
+msgstr "what the dispute is about"
+
+msgid "Как получилась эта сумма"
+msgstr "How this amount was calculated"
+
+#, python-format
+msgid "Итого · %(employees)s чел."
+msgstr "Total · %(employees)s employees"
+
+msgid "Итоги по регистрам"
+msgstr "Totals by ledger"
+
+msgid "Итог посчитан по тому, что видно вашей роли: строки чужих регистров не доезжают до страницы и не входят в сумму."
+msgstr "The total is calculated based on what your role can see: rows from other ledgers never reach the page and are not included in the sum."
+
+#, python-format
+msgid ""
+"Сейчас показан один регистр — %(title)s;\n"
+"  итог посчитан по нему."
+msgstr "Right now only one ledger is shown — %(title)s;\n  the total is calculated from it."
+
+msgid "Ведомости пока нет"
+msgstr "There is no payroll sheet yet"
+
+msgid ""
+"Месяц начинается с часов: без них считать нечего. Внесите их в табеле\n"
+"    руками или загрузите таблицей партнёра, а потом вернитесь сюда и посчитайте\n"
+"    период."
+msgstr "The month starts with hours: without them there's nothing to calculate. Enter them in the timesheet\n    manually or upload the partner's spreadsheet, then come back here and calculate the\n    period."
+
+msgid "Перейти к табелю"
+msgstr "Go to timesheet"
+
+msgid ""
+"Часы за месяц уже внесены — осталось посчитать период. Ведомость появится\n"
+"    здесь же: строка на каждого сотрудника в каждом регистре, который видно\n"
+"    вашей роли."
+msgstr "Hours for the month are already entered — all that's left is to calculate the period. The payroll sheet\n    will appear right here: one row per employee in every ledger visible to\n    your role."
+
+msgid "Учётные месяцы партнёра и их состояние."
+msgstr "The partner's accounting months and their status."
+
+msgid "Откройте месяц — работа идёт внутри него."
+msgstr "Open a month — the work happens inside it."
+
+msgid "Месяц"
+msgstr "Month"
+
+msgid "Партнёр"
+msgstr "Partner"
+
+msgid "Учётных месяцев пока не видно"
+msgstr "No accounting months visible yet"
+
+msgid ""
+"Месяц заводится вместе с данными партнёра. Если продукт только что поставили,\n"
+"  наполните базу тестовыми данными командой <code>manage.py seed_dev</code>.\n"
+"  Если месяцы уже заведены, значит их не видит ваша роль — попросите доступ у того,\n"
+"  кто заводит пользователей."
+msgstr "A month is created together with the partner's data. If the product was just installed,\n  seed the database with test data using the <code>manage.py seed_dev</code> command.\n  If months already exist, your role simply can't see them — ask for access from whoever\n  creates users."
+
+msgid "Сначала войдите"
+msgstr "Log in first"
+
+msgid ""
+"Пока вы не вошли, база не показывает ничего: без пользователя политики доступа\n"
+"  отдают пустой результат, а не чужие данные."
+msgstr "Until you log in, the database shows nothing: without a user, access policies\n  return an empty result, not someone else's data."
+
+#, python-format
+msgid "Сверка · %(period_title)s"
+msgstr "Reconciliation · %(period_title)s"
+
+#, python-format
+msgid "Сверка с таблицей бухгалтера · %(period_title)s"
+msgstr "Reconciliation with the accountant's table · %(period_title)s"
+
+msgid ""
+"Файл сравнивается с расчётом этого периода построчно. Он нигде не\n"
+"  сохраняется — ни на диск, ни в базу: ответ живёт только на этой странице."
+msgstr "The file is compared to this period's calculation row by row. It is not\n  saved anywhere — not to disk, not to the database: the result lives only on this page."
+
+msgid "Таблица бухгалтера (.xlsx)"
+msgstr "Accountant's table (.xlsx)"
+
+msgid "Сверить"
+msgstr "Reconcile"
+
+msgid "Сверка не выполнена."
+msgstr "Reconciliation not performed."
+
+msgid "Что получилось"
+msgstr "Result"
+
+msgid "Итог сверки"
+msgstr "Reconciliation result"
+
+msgid "Сошлось до копейки"
+msgstr "Matched to the cent"
+
+msgid "Разошлось на копейки (округление)"
+msgstr "Off by cents (rounding)"
+
+msgid "Разошлось"
+msgstr "Off"
+
+msgid "Сверены только входы — деньги не сравнивались"
+msgstr "Only inputs reconciled — amounts were not compared"
+
+msgid "Есть в таблице, нет в расчёте"
+msgstr "In the table, not in the calculation"
+
+msgid "Есть в расчёте, нет в таблице"
+msgstr "In the calculation, not in the table"
+
+#, python-format
+msgid ""
+"К выплате по сверенным строкам: в таблице %(expected)s,\n"
+"          в расчёте %(actual)s"
+msgstr "Payable on reconciled rows: in the table %(expected)s,\n          in the calculation %(actual)s"
+
+msgid ""
+"Деньги не сравнивались ни по одной строке: итоги расчёта\n"
+"          вам не отданы. Ноль в такой сумме означал бы совпадение, поэтому\n"
+"          её здесь нет."
+msgstr "Amounts were not compared for a single row: the calculation totals\n          were not given to you. A zero in such a sum would imply a match, so\n          it is not shown here."
+
+msgid "Всё сошлось до копейки, и файл прочитан целиком."
+msgstr "Everything matched to the cent, and the file was read in full."
+
+msgid ""
+"Сверху то, что разошлось сильнее. Под каждой строкой — что разошлось на\n"
+"  входе: если входы сошлись, а итог нет, значит разошлось правило расчёта."
+msgstr "Rows that diverged the most are at the top. Under each row — what diverged\n  in the inputs: if the inputs matched but the total did not, the calculation rule diverged."
+
+msgid "Разошлось на копейки"
+msgstr "Off by cents"
+
+msgid ""
+"Меньше динара — округление на стороне бухгалтерии. Это не совпадение, но и\n"
+"  не повод искать ошибку в правиле."
+msgstr "Less than a dinar — rounding on the accountant's side. It is not a match, but\n  not a reason to look for an error in the rule either."
+
+#, python-format
+msgid "Сверены только входы · %(inputs_count)s"
+msgstr "Only inputs reconciled · %(inputs_count)s"
+
+msgid ""
+"Итоги расчёта по этим строкам вам не отданы: нето, бруто и взносы посчитаны\n"
+"  по строке ведомости целиком, и база показывает их только роли, которой видны\n"
+"  все регистры учёта. Поэтому <strong>деньги здесь не сравнивались</strong> — ни\n"
+"  одного нашего числа по ним не показано, и совпадением это не считается.\n"
+"  Сверено то, что от регистра не зависит: часы, ставка, коэффициент. Расхождение\n"
+"  чаще всего сидит именно там."
+msgstr "The calculation totals for these rows were not given to you: net, gross, and contributions are calculated\n  for the payslip as a whole, and the system shows them only to a role that can see\n  all ledgers. That is why <strong>amounts were not compared here</strong> — not\n  a single one of our numbers is shown for them, and this does not count as a match.\n  What was reconciled is what does not depend on the ledger: hours, rate, coefficient. The discrepancy\n  most often lives right there."
+
+msgid "Что со входами"
+msgstr "About the inputs"
+
+msgid "Входы сошлись с таблицей."
+msgstr "Inputs matched the table."
+
+msgid ""
+"По этим строкам сверять нечего: расчёта за этот период по ним нет. Ни одного\n"
+"  числа с нашей стороны здесь не показано — сравнивать не с чем."
+msgstr "There is nothing to reconcile for these rows: there is no calculation for this period for them. Not a single\n  number from our side is shown here — there is nothing to compare."
+
+msgid ""
+"Это не предупреждения: перечисленное в сверку <strong>не попало</strong>,\n"
+"  поэтому сошедшееся выше сошлось не по всему файлу."
+msgstr "These are not warnings: what is listed <strong>was not included</strong> in the reconciliation,\n  so the match shown above did not cover the whole file."
+
+#, python-format
+msgid "Сошлось до копейки · %(matched_count)s"
+msgstr "Matched to the cent · %(matched_count)s"
+
+msgid "След расчёта"
+msgstr "Calculation trace"
+
+#, python-format
+msgid "разрез: %(cut)s"
+msgstr "view: %(cut)s"
+
+msgid "вернуться в ведомость"
+msgstr "back to the payroll sheet"
+
+msgid "Объяснить эту сумму нечем."
+msgstr "There is nothing to explain this amount with."
+
+msgid "Сохранённые числа ниже показаны как есть."
+msgstr "The saved numbers below are shown as is."
+
+#, python-format
+msgid ""
+"\n"
+"  След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока\n"
+"  не хранится. Сверено с сохранённой суммой строки: <strong>сходится</strong>\n"
+"  до копейки (%(total)s), значит правила с момента расчёта не менялись.\n"
+"  "
+msgstr "\n  The trace is <strong>rebuilt</strong> using today's rules — the product does not\n  store it yet. Checked against the row's saved amount: <strong>it matches</strong>\n  to the cent (%(total)s), which means the rules have not changed since the calculation.\n  "
+
+#, python-format
+msgid ""
+"\n"
+"  След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока\n"
+"  не хранится, — и с сохранённой суммой <strong>не сходится</strong>:\n"
+"  сохранено %(stored)s, сегодняшние правила дают %(traced)s.\n"
+"  Строки, где разошлось, помечены ниже. Ведомость показывает сохранённое —\n"
+"  менять его этот экран не может и не должен.\n"
+"  "
+msgstr "\n  The trace is <strong>rebuilt</strong> using today's rules — the product does not\n  store it yet — and <strong>does not match</strong> the saved amount:\n  saved %(stored)s, today's rules give %(traced)s.\n  Rows where it diverges are marked below. The payroll sheet shows the saved value —\n  this screen cannot and must not change it.\n  "
+
+msgid ""
+"Период утверждён. Его числа неизменны, а объяснение — нет: оно пересобирается\n"
+"  каждый раз заново, поэтому сверка выше и нужна."
+msgstr "The period is approved. Its numbers are fixed, but the explanation is not: it is rebuilt\n  from scratch every time, which is why the reconciliation above is needed."
+
+msgid "Шаг"
+msgstr "Step"
+
+msgid "Из чего собрано"
+msgstr "Built from"
+
+msgid "Правило"
+msgstr "Rule"
+
+msgid "шага не было в расчёте"
+msgstr "step was not in the calculation"
+
+#, python-format
+msgid "было %(stored)s"
+msgstr "was %(stored)s"
+
+msgid "Итого по следу"
+msgstr "Trace total"
+
+msgid "Объяснять нечего"
+msgstr "Nothing to explain"
+
+msgid "Шагов расчёта нет: посчитать заново нечем."
+msgstr "There are no calculation steps: there is nothing to recalculate."
+
+msgid "По этой строке нет ни одного шага, доступного вашей роли."
+msgstr "There is not a single step on this row available to your role."
+
+msgid "Перенос из закрытого месяца"
+msgstr "Carryover from a closed month"
+
+msgid "За какой месяц"
+msgstr "For which month"
+
+msgid "Итого строки ведомости"
+msgstr "Payslip total"
+
+msgid ""
+"Разница посчитана правилами того месяца, из которого приехала. Её след — на\n"
+"  странице периода-источника, а не здесь: показать её шагами этого месяца\n"
+"  значило бы объяснить сумму не тем расчётом."
+msgstr "The difference was calculated using the rules of the month it came from. Its trace is on\n  the source period's page, not here: showing it through this month's steps\n  would mean explaining the amount with the wrong calculation."
+
+msgid "Производные величины"
+msgstr "Derived values"
+
+msgid "Величина"
+msgstr "Value"
+
+msgid "Это не слагаемые строки, а следствия: складывать их с начислениями нельзя."
+msgstr "These are not addends of the row, but consequences: they cannot be added to the accruals."
+
+msgid "Расхождения с прошлым месяцем"
+msgstr "Discrepancies from last month"
+
+#, python-format
+msgid " против %(previous)s"
+msgstr " vs %(previous)s"
+
+#, python-format
+msgid " · разрез: %(cut)s"
+msgstr " · view: %(cut)s"
+
+msgid "Сравнивать не с чем"
+msgstr "Nothing to compare with"
+
+#, python-format
+msgid ""
+"Сравнивать не с чем: за %(previous)s в базе нет ни одной суммы,\n"
+"  доступной вашей роли. Отчёт сравнивает месяц с предыдущим, поэтому у первого\n"
+"  посчитанного месяца расхождений не бывает по построению."
+msgstr "Nothing to compare with: for %(previous)s the database has no amount\n  available to your role. The report compares a month to the previous one, so the first\n  calculated month has no discrepancies by design."
+
+msgid "Разрез отчёта по регистрам"
+msgstr "Report view by ledger"
+
+msgid "Было"
+msgstr "Before"
+
+msgid "Стало"
+msgstr "After"
+
+msgid "Отклонение"
+msgstr "Variance"
+
+msgid "Порог"
+msgstr "Threshold"
+
+#, python-format
+msgid "Итого отклонений · %(employees_count)s чел."
+msgstr "Total variances · %(employees_count)s employees"
+
+#, python-format
+msgid ""
+"Сравнено пар «сотрудник × компонент»: %(compared_count)s. Показаны только те, где\n"
+"  превышены оба порога сразу — процент и сумма. Пороги задаются правилами\n"
+"  страны и переопределяются партнёром; в коде их нет."
+msgstr "Employee × component pairs compared: %(compared_count)s. Only those where\n  both thresholds are exceeded at once — percent and amount — are shown. Thresholds are set by\n  country rules and can be overridden by the partner; they are not in the code."
+
+msgid "Отклонений нет"
+msgstr "No variances"
+
+#, python-format
+msgid ""
+"Отклонений выше порогов нет. Сравнено пар «сотрудник × компонент»:\n"
+"  %(compared_count)s — то есть сравнение состоялось, а не было пропущено."
+msgstr "There are no variances above the thresholds. Employee × component pairs compared:\n  %(compared_count)s — meaning the comparison did take place and was not skipped."
+
+msgid "Открыт"
+msgstr "Open"
+
+msgid "Закрыт"
+msgstr "Closed"
+
+msgid "Заблокирован"
+msgstr "Blocked"
+
+#, python-format
+msgid "производственный календарь %(country)s"
+msgstr "%(country)s production calendar"
+
+#, python-format
+msgid "календарь %(country)s на этот месяц не заведён"
+msgstr "the %(country)s calendar for this month has not been set up"
+
+msgid "Расчёт не выполнен."
+msgstr "Calculation not performed."
+
+msgid "Период не утверждён."
+msgstr "Period not approved."
+
+msgid "Период не открыт."
+msgstr "Period not open."
+
+msgid "Разница не перенесена."
+msgstr "Difference not carried over."
+
+msgid "Строка не заморожена."
+msgstr "Row not frozen."
+
+msgid "Заморозка не снята."
+msgstr "Freeze not lifted."
+
+msgid "часов"
+msgstr "Standard hours"
+
+msgid "ставка за час"
+msgstr "rate per hour"
+
+msgid "процент оплаты"
+msgstr "Payroll calculation"
+
+msgid "минимум за час"
+msgstr "minimum per hour"
+
+msgid "типы часов"
+msgstr "Standard hours"
+
+msgid "пропорция"
+msgstr "proportion"
+
+msgid "за полную норму"
+msgstr "Result"
+
+msgid "отработано дней"
+msgstr "Not parsed from file"
+
+msgid "рабочих дней в месяце"
+msgstr "Carryover from a closed month"
+
+msgid "отработано часов"
+msgstr "Standard hours"
+
+msgid "норма часов"
+msgstr "Standard hours"
+
+msgid "способ"
+msgstr "method"
+
+msgid "база"
+msgstr "base"
+
+msgid "база взносов, часов"
+msgstr "Contribution base"
+
+msgid "базовая ставка"
+msgstr "base rate"
+
+msgid "коэффициент"
+msgstr "coefficient"
+
+msgid "нето"
+msgstr "net"
+
+msgid "бруто"
+msgstr "gross"
+
+msgid "налог"
+msgstr "Tax"
+
+msgid "взносы"
+msgstr "Contributions"
+
+msgid "зачтено"
+msgstr "credited"
+
+msgid "удержано с работника"
+msgstr "withheld from the employee"
+
+msgid "доля"
+msgstr "share"
+
+msgid "ставка налога"
+msgstr "unit not found"
+
+msgid "взносы работника"
+msgstr "employee contributions"
+
+msgid "взносы работодателя"
+msgstr "employer contributions"
+
+msgid "взносы вместе"
+msgstr "contributions together"
+
+msgid "множитель нето → бруто"
+msgstr "net → gross multiplier"
+
+msgid "необлагаемый минимум в месяц"
+msgstr "tax-exempt minimum per month"
+
+msgid "половина необлагаемого"
+msgstr "half of the tax-exempt amount"
+
+msgid "минимальная база взносов"
+msgstr "Contribution base"
+
+msgid "эталонная норма часов"
+msgstr "Standard hours"
+
+msgid "делитель часов"
+msgstr "Standard hours"
+
+msgid "часов в рабочем дне"
+msgstr "hours in a workday"
+
+msgid "какая ставка"
+msgstr "which rate"
+
+msgid "правило страны"
+msgstr "Rule"
+
+msgid "переопределение партнёра"
+msgstr "partner override"
+
+msgid "переопределение группы"
+msgstr "group override"
+
+msgid "переопределение по сотруднику"
+msgstr "Matched to employees"
+
+msgid "введено руками"
+msgstr "Timesheet rows entered"
+
+msgid "Логин или пароль не подходят"
+msgstr "Login or password is incorrect"

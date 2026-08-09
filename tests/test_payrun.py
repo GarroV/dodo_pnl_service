@@ -449,7 +449,18 @@ def test_hidden_ledgers_leave_no_trace_for_the_accountant(client, clean_payruns)
 
 
 def test_period_page_without_calculation_offers_to_run_it(client, clean_payruns):
+    """Месяц без расчёта зовёт посчитать, а не показывает пустую рамку.
+
+    Формулировка сверялась дословно, пока пустое состояние было одной фразой
+    «Расчёта за этот период ещё не было». С онбордингом (T077) их стало две:
+    без часов человека зовут в табель, с часами — считать. Здесь часы есть
+    (сид), поэтому проверяется именно второй случай — и проверяется смысл, а не
+    буква: в табель на этом экране отправлять уже некуда.
+    """
     login_as(client, "director")
     html = body(client.get(period_url(client)))
     assert "посчитать" in html.lower()
-    assert "Расчёта за этот период ещё не было" in html
+    assert 'class="empty"' in html, "пустого состояния нет вовсе"
+    assert 'class="btn next" href="/timesheets/' not in html, (
+        "часы внесены, а человека отправляют вносить часы"
+    )

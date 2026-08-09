@@ -1,5 +1,5 @@
-{% extends "web/base.html" %}{% load ui %}
-{% block title %}След расчёта{% endblock %}
+{% extends "web/base.html" %}{% load ui i18n %}
+{% block title %}{% translate "След расчёта" %}{% endblock %}
 {% block content %}
 {% comment %}
 Экран следа расчёта (T029, D025). Читается сверху вниз как объяснение суммы:
@@ -10,11 +10,11 @@
 задачи — «по следу можно повторить сумму руками», и она держится на этом.
 {% endcomment %}
 
-<h1>Как получилась эта сумма</h1>
+<h1>{% translate "Как получилась эта сумма" %}</h1>
 <p class="sub">
   {{ employee }}{% if unit %} · {{ unit }}{% endif %}{% if title %} · {{ title }}{% endif %}
-  {% if cut_title %} · разрез: {{ cut_title }}{% endif %}
-  · <a href="{{ back_url }}">вернуться в ведомость</a>
+  {% if cut_title %} · {% blocktranslate with cut=cut_title %}разрез: {{ cut }}{% endblocktranslate %}{% endif %}
+  · <a href="{{ back_url }}">{% translate "вернуться в ведомость" %}</a>
 </p>
 
 {% comment %}
@@ -24,29 +24,34 @@
 перестают замечать на второй день.
 {% endcomment %}
 {% if error %}
-{% notice "alert" title="Объяснить эту сумму нечем." %}{{ error }}
-  Сохранённые числа ниже показаны как есть.
+{% translate "Объяснить эту сумму нечем." as cannot_explain %}
+{% notice "alert" title=cannot_explain %}{{ error }}
+  {% translate "Сохранённые числа ниже показаны как есть." %}
 {% endnotice %}
 {% elif agrees %}
 {% notice "ok" %}
+  {% blocktranslate with total=stored_total %}
   След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока
   не хранится. Сверено с сохранённой суммой строки: <strong>сходится</strong>
-  до копейки ({{ stored_total }}), значит правила с момента расчёта не менялись.
+  до копейки ({{ total }}), значит правила с момента расчёта не менялись.
+  {% endblocktranslate %}
 {% endnotice %}
 {% else %}
 {% notice "alert" %}
+  {% blocktranslate with stored=stored_total traced=traced_total %}
   След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока
   не хранится, — и с сохранённой суммой <strong>не сходится</strong>:
-  сохранено {{ stored_total }}, сегодняшние правила дают {{ traced_total }}.
+  сохранено {{ stored }}, сегодняшние правила дают {{ traced }}.
   Строки, где разошлось, помечены ниже. Ведомость показывает сохранённое —
   менять его этот экран не может и не должен.
+  {% endblocktranslate %}
 {% endnotice %}
 {% endif %}
 
 {% if approved %}
 <p class="note">
-  Период утверждён. Его числа неизменны, а объяснение — нет: оно пересобирается
-  каждый раз заново, поэтому сверка выше и нужна.
+  {% blocktranslate %}Период утверждён. Его числа неизменны, а объяснение — нет: оно пересобирается
+  каждый раз заново, поэтому сверка выше и нужна.{% endblocktranslate %}
 </p>
 {% endif %}
 
@@ -55,8 +60,8 @@
 <table class="steps">
   <thead>
     <tr>
-      <th>Шаг</th><th>Из чего собрано</th><th>Правило</th>
-      <th class="num">Сумма</th>
+      <th>{% translate "Шаг" %}</th><th>{% translate "Из чего собрано" %}</th><th>{% translate "Правило" %}</th>
+      <th class="num">{% translate "Сумма" %}</th>
     </tr>
   </thead>
   <tbody>
@@ -75,7 +80,7 @@
         {{ step.level }}
         {% if step.differs %}
           <span class="badge">
-            {% if step.appeared %}шага не было в расчёте{% else %}было {{ step.stored }}{% endif %}
+            {% if step.appeared %}{% translate "шага не было в расчёте" %}{% else %}{% blocktranslate with stored=step.stored %}было {{ stored }}{% endblocktranslate %}{% endif %}
           </span>
         {% endif %}
       </td>
@@ -85,18 +90,19 @@
   </tbody>
   <tfoot>
     <tr class="grand">
-      <td colspan="3">Итого по следу</td>
+      <td colspan="3">{% translate "Итого по следу" %}</td>
       <td class="num">{{ traced_total }}</td>
     </tr>
   </tfoot>
 </table>
 {% endscroll %}
 {% else %}
-{% notice "empty" %}
+{% translate "Объяснять нечего" as nothing_to_explain %}
+{% notice "empty" title=nothing_to_explain %}
   {% if error %}
-    Шагов расчёта нет: посчитать заново нечем.
+    {% translate "Шагов расчёта нет: посчитать заново нечем." %}
   {% else %}
-    По этой строке нет ни одного шага, доступного вашей роли.
+    {% translate "По этой строке нет ни одного шага, доступного вашей роли." %}
   {% endif %}
 {% endnotice %}
 {% endif %}
@@ -106,10 +112,10 @@
 Разница за закрытый месяц (T026). Правилами этого месяца она не объясняется, и
 делать вид, что объясняется, нельзя: её след живёт в месяце-источнике.
 {% endcomment %}
-<h2>Перенос из закрытого месяца</h2>
+<h2>{% translate "Перенос из закрытого месяца" %}</h2>
 <table>
   <thead>
-    <tr><th>Компонент</th><th>Регистр</th><th>За какой месяц</th><th class="num">Сумма</th></tr>
+    <tr><th>{% translate "Компонент" %}</th><th>{% translate "Регистр" %}</th><th>{% translate "За какой месяц" %}</th><th class="num">{% translate "Сумма" %}</th></tr>
   </thead>
   <tbody>
     {% for line in carried %}
@@ -122,13 +128,13 @@
     {% endfor %}
   </tbody>
   <tfoot>
-    <tr><td colspan="3">Итого строки ведомости</td><td class="num">{{ row_total }}</td></tr>
+    <tr><td colspan="3">{% translate "Итого строки ведомости" %}</td><td class="num">{{ row_total }}</td></tr>
   </tfoot>
 </table>
 <p class="note">
-  Разница посчитана правилами того месяца, из которого приехала. Её след — на
+  {% blocktranslate %}Разница посчитана правилами того месяца, из которого приехала. Её след — на
   странице периода-источника, а не здесь: показать её шагами этого месяца
-  значило бы объяснить сумму не тем расчётом.
+  значило бы объяснить сумму не тем расчётом.{% endblocktranslate %}
 </p>
 {% endif %}
 
@@ -138,10 +144,10 @@
 они посчитаны по всем регистрам сразу — ровно поэтому `payslip_totals` закрыты
 своей политикой (T050).
 {% endcomment %}
-<h2>Производные величины</h2>
+<h2>{% translate "Производные величины" %}</h2>
 <table>
   <thead>
-    <tr><th>Величина</th><th>Из чего собрано</th><th class="num">Сумма</th></tr>
+    <tr><th>{% translate "Величина" %}</th><th>{% translate "Из чего собрано" %}</th><th class="num">{% translate "Сумма" %}</th></tr>
   </thead>
   <tbody>
     {% for step in derived %}
@@ -157,7 +163,7 @@
   </tbody>
 </table>
 <p class="note">
-  Это не слагаемые строки, а следствия: складывать их с начислениями нельзя.
+  {% translate "Это не слагаемые строки, а следствия: складывать их с начислениями нельзя." %}
 </p>
 {% endif %}
 {% endblock %}

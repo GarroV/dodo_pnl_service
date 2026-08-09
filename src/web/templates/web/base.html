@@ -15,12 +15,17 @@
 
 Комментарий именно {% comment %}: однострочный {# … #} многострочным не бывает
 и вывалился бы на страницу текстом (проверено в браузере дважды).
-{% endcomment %}<!doctype html>
-<html lang="ru">
+{% endcomment %}{% load i18n %}{% get_current_language as page_language %}<!doctype html>
+<html lang="{{ page_language }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}Периоды{% endblock %} · Dodo P&amp;L</title>
+{% comment %}
+`lang` у страницы — не украшение: от него зависят перенос слов, экранный диктор
+и предложение браузера перевести страницу. Ставить его константой при трёх
+языках значило бы врать в двух случаях из трёх.
+{% endcomment %}
+<title>{% block title %}{% translate "Периоды" %}{% endblock %} · Dodo P&amp;L</title>
 <style>
   :root {
     --ink: #16181d;
@@ -196,6 +201,45 @@
   section.retro h2 { font-size: 15px; margin: 0 0 8px; }
   section.retro table { margin: 12px 0; }
   section.retro form { margin-top: 12px; }
+  /* Переключатель языка (T017). Кнопки, а не ссылки: смена языка меняет
+     состояние, и переходом по ссылке это делать нельзя. Выбранный язык не
+     нажимается — как и выбранный разрез ведомости, по той же причине. */
+  form.lang { display: flex; gap: 4px; margin: 0; }
+  .lang-option {
+    font-size: 12px; padding: 2px 8px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 3px; background: #fff;
+  }
+  .lang-option:hover { color: var(--accent); border-color: var(--accent); }
+  .lang-option.current { color: #fff; background: var(--ink); border-color: var(--ink); cursor: default; }
+  /* Онбординг (T077). Три шага месяца стоят полосой над содержимым: человек,
+     впервые открывший продукт, должен увидеть порядок работы раньше, чем
+     первую таблицу. Пройденный шаг гасится, текущий выделен — полоса
+     показывает, где человек сейчас, а не просто перечисляет действия. */
+  ol.steps {
+    display: flex; flex-wrap: wrap; gap: 0; list-style: none;
+    margin: 0 0 24px; padding: 0;
+    background: #fff; border: 1px solid var(--line); border-radius: 4px; overflow: hidden;
+  }
+  ol.steps li {
+    flex: 1 1 220px; padding: 12px 18px; border-right: 1px solid var(--line);
+    color: var(--muted); font-size: 13px;
+  }
+  ol.steps li:last-child { border-right: none; }
+  ol.steps .name { display: block; color: var(--ink); font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  ol.steps li.done { background: #f7fbf8; }
+  ol.steps li.done .name::after { content: " ✓"; color: #14532d; }
+  ol.steps li.now { background: #f6f8ff; box-shadow: inset 3px 0 0 var(--accent); }
+  ol.steps li.now .name { color: var(--accent); }
+  /* Пустое состояние объясняет следующий шаг, а не сообщает о пустоте.
+     Поэтому у него есть заголовок, абзац и действие — как у любого экрана. */
+  .empty .next { display: block; margin-top: 12px; }
+  /* Дорога назад со вложенного экрана (T077). Отдельно от `.note`, потому что
+     это не примечание, а навигация: она стоит выше содержимого и читается
+     раньше него. */
+  p.back { margin: -6px 0 18px; font-size: 13px; }
+  p.back a { color: var(--muted); }
+  p.back a:hover { color: var(--accent); }
+  .empty h3 { margin: 0 0 6px; font-size: 15px; color: var(--ink); }
   tr.retro { background: #fffbeb; }
   .badge-retro { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 10px; font-size: 11px; color: #7c4a03; background: #fef3c7; border: 1px solid #fde68a; white-space: nowrap; }
 </style>

@@ -32,6 +32,7 @@ from decimal import Decimal
 from uuid import UUID
 
 import openpyxl
+from django.utils.translation import gettext as _
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
 
@@ -43,7 +44,10 @@ TaxLine = namedtuple("TaxLine", "article unit tax contributions")
 
 # Человек, у которого не заведена статья P&L, обязан быть виден в файле, а не
 # пропасть из него: пропавшая строка — это не найденная позже недостача.
-NO_ARTICLE = "Без статьи"
+#
+# Константы с этим текстом больше нет: строка переводится в местах, где
+# используется (`gettext("Без статьи")`), потому что перевод возможен только
+# когда Django уже настроен, а тело модуля выполняется раньше.
 
 # Колонки таблицы партнёра, под которыми лежит **то же самое**, что у нас.
 # Заголовков часов здесь нет намеренно: у партнёра «SATI RADA» — это часы, а у
@@ -124,11 +128,11 @@ def payout(view: SheetSlice, *, tenant_id=None, period=None, title="",
     ws.title = "K isplati"
 
     columns = view.sheet.columns
-    _head(ws, f"Ведомость к выплате · {_titled(title, view, ledger_title)}", 4)
+    _head(ws, _("Ведомость к выплате · %(sub)s") % {"sub": _titled(title, view, ledger_title)}, 4)
     _headers(ws, (
-        ["№", "Сотрудник", "Точка", "Регистр"]
+        [_("№"), _("Сотрудник"), _("Точка"), _("Регистр")]
         + [column.title for column in columns]
-        + ["Итого", "Примечание"]
+        + [_("Итого"), _("Примечание")]
     ))
 
     for number, row in enumerate(view.sheet.rows, start=1):
@@ -136,10 +140,12 @@ def payout(view: SheetSlice, *, tenant_id=None, period=None, title="",
         if row.is_retro:
             # Разница за закрытый месяц обязана объяснить себя: без источника
             # это непонятная сумма в чужом месяце (T026).
-            notes.append(f"разница за {row.retro_source:%m.%Y}")
+            notes.append(_("разница за %(date)s") % {"date": f"{row.retro_source:%m.%Y}"})
         if row.frozen:
-            why = f": {row.freeze_reason}" if row.freeze_reason else ""
-            notes.append(f"строка заморожена{why}")
+            notes.append(
+                _("строка заморожена: %(reason)s") % {"reason": row.freeze_reason}
+                if row.freeze_reason else _("строка заморожена")
+            )
         ws.append(
             [number, row.employee, row.unit, ledger_title(row.ledger)]
             + [row.amounts.get(column.code) for column in columns]
@@ -149,9 +155,9 @@ def payout(view: SheetSlice, *, tenant_id=None, period=None, title="",
     # Подвал считается по строкам этого файла, а не переносится из полной
     # ведомости: итог, больший суммы показанного, выдаёт скрытое вычитанием.
     _headers(ws, (
-        ["Итого", "", "", ""]
+        [_("Итого"), "", "", ""]
         + [view.sheet.column_totals.get(column.code) for column in columns]
-        + [view.sheet.total, f"человек: {view.sheet.employees}"]
+        + [view.sheet.total, _("человек: %(count)s") % {"count": view.sheet.employees}]
     ))
 
     _fit(ws, [5, 28, 8, 15] + [14] * len(columns) + [14, 30])
@@ -193,7 +199,7 @@ def collect_taxes(tenant_id: UUID, period: date, articles: dict[str, str]) -> li
         tenant_id=tenant_id, payslip__payrun__period=period
     ).select_related("payslip__employee", "payslip__unit"):
         key = (
-            articles.get(row.payslip.employee.external_id, NO_ARTICLE),
+            articles.get(row.payslip.employee.external_id, _("Без статьи")),
             row.payslip.unit.code if row.payslip.unit_id else "",
         )
         bucket = grouped.setdefault(key, [Decimal(0), Decimal(0)])
@@ -228,12 +234,14 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
     ws = book.active
     ws.title = "PnL"
 
-    _head(ws, f"Строки для P&L · {_titled(title, view, ledger_title)}", 4)
-    _headers(ws, ["Статья P&L", "Точка", "Регистр", "Тип строки", "Компонент", "Сумма"])
+    _head(ws, _("Строки для P&L · %(sub)s") % {"sub": _titled(title, view, ledger_title)}, 4)
+    _headers(ws, [
+        _("Статья P&L"), _("Точка"), _("Регистр"), _("Тип строки"), _("Компонент"), _("Сумма"),
+    ])
 
     accruals: dict[tuple[str, str, str, str, str], Decimal] = {}
     for row in view.sheet.rows:
-        article = articles.get(row.employee, NO_ARTICLE)
+        article = articles.get(row.employee, _("Без статьи"))
         for column in view.sheet.columns:
             amount = row.amounts.get(column.code)
             if not amount:
@@ -242,13 +250,13 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
             accruals[key] = accruals.get(key, Decimal(0)) + amount
 
     for (article, unit, ledger, _code, column_title), amount in sorted(accruals.items()):
-        ws.append([article, unit, ledger_title(ledger), "Начисление", column_title, amount])
+        ws.append([article, unit, ledger_title(ledger), _("Начисление"), column_title, amount])
 
     for line in taxes:
         # Регистра у налога нет, и прочерк здесь честнее пустой ячейки: пустая
         # читается как «забыли заполнить».
-        ws.append([line.article, line.unit, "—", "Налог", "Налог на доход", line.tax])
-        ws.append([line.article, line.unit, "—", "Взносы", "Взносы", line.contributions])
+        ws.append([line.article, line.unit, "—", _("Налог"), _("Налог на доход"), line.tax])
+        ws.append([line.article, line.unit, "—", _("Взносы"), _("Взносы"), line.contributions])
 
     _fit(ws, [26, 8, 15, 14, 26, 14])
     _money_format(ws, 6)
@@ -277,7 +285,7 @@ def partner(view: SheetSlice, *, tenant_id=None, period=None, title="",
     for unit in units or [""]:
         ws = book.create_sheet(unit or "Bez objekta")
         _head(ws, f"{_titled(title, view, ledger_title)} · {unit}", 4)
-        _headers(ws, ["R.br.", "IME I PREZIME", "Регистр"] + headers + [PARTNER_TOTAL])
+        _headers(ws, ["R.br.", "IME I PREZIME", _("Регистр")] + headers + [PARTNER_TOTAL])
 
         rows = [row for row in view.sheet.rows if row.unit == unit]
         for number, row in enumerate(rows, start=1):
