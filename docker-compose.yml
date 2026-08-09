@@ -183,5 +183,110 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+  # --- Демо-стенд (T033, T034) ------------------------------------------------
+  #
+  # Живёт в профиле `demo` и в обычный `docker compose up` не входит:
+  #
+  #     docker compose --profile demo up -d
+  #
+  # Отдельный экземпляр приложения на отдельной базе, а не режим продукта. База
+  # своя не ради чистоты, а потому что демо **сбрасывается пересозданием базы
+  # целиком** (D016): рядом лежат ФИО и суммы живых людей, и операция такого
+  # рода не должна иметь ни одного способа их задеть.
+  #
+  # Три службы, и разделены они по времени жизни, а не по вкусу:
+  #   demo-init   один раз собирает эталон и восстанавливает из него демо;
+  #   demo        сам стенд, поднимается после того, как база готова;
+  #   demo-reset  служба расписания: возвращает демо к эталону раз в N минут.
+
+  # Окружение демо одним куском — по той же причине, что и у продукта: службы
+  # обязаны видеть одно и то же. Разъехавшиеся списки переменных в этом файле
+  # уже дважды стоили дефекта.
+  demo-init: &demo-init
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-dodo-pnl}-app
+    profiles: ["demo"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: &demo-owner-env
+      # Роль владельца схемы: эта служба создаёт и удаляет базы и накатывает
+      # миграции. Роль продукта на это не уполномочена и уполномочена быть не
+      # должна — на разделении ролей стоит разграничение доступа (T058).
+      DATABASE_URL: postgresql://${MIGRATION_DB_USER:-${POSTGRES_USER}}:${MIGRATION_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-dodo_pnl_demo}
+      # Адрес демо-базы внутри сети compose. Он же сверяется предохранителем:
+      # команда демо не выполняется, если подключена не сюда (см. demo/guard.py).
+      DEMO_DATABASE_URL: postgresql://${MIGRATION_DB_USER:-${POSTGRES_USER}}:${MIGRATION_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-dodo_pnl_demo}
+      SECRET_KEY: ${SECRET_KEY:?задайте SECRET_KEY в .env}
+      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      # Демо всегда англоязычное, независимо от языка продукта. Не настройка
+      # вкуса: демо показывают заказчику и кладут в портфолио.
+      DJANGO_LANGUAGE: en
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD-}
+      # Расчёт трёх месяцев идёт прямо в команде наполнения; рабочий процесс
+      # очереди демо-стенду не нужен, и обещать фоновый расчёт ему нечем.
+      PAYRUN_BACKGROUND: "0"
+    # Собрать эталон заново и восстановить из него демо. Именно `--rebuild-template`:
+    # образ мог собраться с новым кодом и новыми миграциями, и эталон, оставшийся
+    # от прошлой версии, показывал бы вчерашний продукт.
+    command: ["python", "manage.py", "demo_reset", "--rebuild-template"]
+    restart: "no"
+
+  demo:
+    <<: *demo-init
+    profiles: ["demo"]
+    depends_on:
+      demo-init:
+        # Не «база жива», а «демо наполнено»: стенд, поднятый на пустой базе,
+        # встретил бы посетителя пустыми экранами.
+        condition: service_completed_successfully
+    environment:
+      <<: *demo-owner-env
+      # Единственное отличие от служб обслуживания — роль подключения: сам стенд
+      # ходит в базу ролью продукта, как и продукт. Иначе демо показывало бы
+      # разграничение доступа, которого у партнёра не будет.
+      DATABASE_URL: postgresql://${APP_DB_USER:-${POSTGRES_USER}}:${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-dodo_pnl_demo}
+      DEMO_DATABASE_URL: postgresql://${APP_DB_USER:-${POSTGRES_USER}}:${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-dodo_pnl_demo}
+      # Вход без регистрации живёт только здесь. У продукта этой переменной нет,
+      # и тогда маршрутов /demo/* не существует вовсе.
+      DEMO_MODE: "1"
+      DEMO_KEY: ${DEMO_KEY-}
+      # Кнопки быстрого входа учётками сида демо-стенду не нужны: у него своя
+      # точка входа, и вторая была бы вторым способом попасть внутрь.
+      DEV_LOGIN: "0"
+      HEALTHCHECK_PORT: "8000"
+      HEALTHCHECK_PATH: ${HEALTHCHECK_PATH:-/}
+      HEALTHCHECK_TIMEOUT: ${HEALTHCHECK_TIMEOUT:-5}
+    ports:
+      - "${DEMO_APP_PORT:-8010}:8000"
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    healthcheck:
+      test: ["CMD", "python", "docker/healthcheck.py"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  demo-reset:
+    <<: *demo-init
+    profiles: ["demo"]
+    depends_on:
+      demo-init:
+        condition: service_completed_successfully
+    # Сброс по расписанию, а не кнопкой в интерфейсе. Кнопка означает, что демо
+    # чинит человек, — то есть до первого дня, когда на него никто не смотрит.
+    command:
+      - "python"
+      - "manage.py"
+      - "demo_reset"
+      - "--every"
+      - "${DEMO_RESET_MINUTES:-60}"
+    restart: unless-stopped
+
 volumes:
   pgdata:
