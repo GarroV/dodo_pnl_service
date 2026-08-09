@@ -36,6 +36,8 @@ from datetime import timedelta
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_noop as noop
 
 from core.models import PayrunJob
 
@@ -63,18 +65,18 @@ FAILED = "failed"
 # в рабочем процессе сама.
 TASK = "payrun.jobs.run_job"
 
-BUSY_REFUSAL = (
+BUSY_REFUSAL = noop(
     "Расчёт этого периода уже идёт. Дождитесь, пока он закончится: "
     "второй запуск не ускорит его, а ведомость всё равно будет одна."
 )
 
-STUCK_HINT = (
+STUCK_HINT = noop(
     "Задача принята, но её до сих пор не взяли в работу — похоже, рабочий "
     "процесс очереди не запущен. Расчёт можно выполнить прямо сейчас, не "
     "дожидаясь очереди."
 )
 
-BROKEN = (
+BROKEN = noop(
     "Расчёт оборвался из-за внутренней ошибки. Данные периода не изменились; "
     "покажите этот период тому, кто ведёт сервис."
 )
@@ -148,7 +150,7 @@ class Reporter:
     def finish(self, *, error: str = "", details=()) -> None:
         self.write(
             status=FAILED if error else DONE,
-            stage="" if error else "Готово",
+            stage="" if error else _("Готово"),
             error=error,
             details=list(details),
             finished_at=timezone.now(),
@@ -220,7 +222,7 @@ def state_of(job: PayrunJob | None) -> dict:
         "error": job.error,
         "details": list(job.details or []),
         # Слова про застрявшую задачу — одни и те же на странице и в опросе.
-        "hint": STUCK_HINT if stuck else "",
+        "hint": _(STUCK_HINT) if stuck else "",
     }
 
 
@@ -261,10 +263,10 @@ def _create(*, tenant_id, period, actor_id, background: bool) -> PayrunJob:
             return PayrunJob.objects.create(
                 tenant_id=tenant_id, period=period, requested_by=actor_id,
                 background=background, status=QUEUED,
-                stage="В очереди" if background else "Считаем",
+                stage=_("В очереди") if background else _("Считаем"),
             )
     except IntegrityError as clash:
-        raise CalculationBusy(BUSY_REFUSAL) from clash
+        raise CalculationBusy(_(BUSY_REFUSAL)) from clash
 
 
 def _inline(*, tenant_id, period, actor_id) -> PayrunJob:
@@ -282,7 +284,7 @@ def _inline(*, tenant_id, period, actor_id) -> PayrunJob:
         )
     reporter = Reporter(job.pk, actor_id, background=False)
     if not reporter.claim():
-        raise CalculationBusy(BUSY_REFUSAL)
+        raise CalculationBusy(_(BUSY_REFUSAL))
     # Задание перехвачено у очереди: теперь оно считается здесь, и это должно
     # быть видно человеку, а не подменено молча.
     reporter.write(background=False, requested_by=actor_id)
@@ -334,7 +336,7 @@ def run_job(job_id: str, user_id: str) -> None:
         reporter.finish(error=refusal.message, details=refusal.details or refusal.ledgers)
         return
     except Exception:
-        reporter.finish(error=BROKEN)
+        reporter.finish(error=_(BROKEN))
         raise
     reporter.finish()
 

@@ -43,6 +43,7 @@ from uuid import UUID
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, PayslipTotals, Tenant
 from core.models import Timesheet as TimesheetRow
@@ -170,14 +171,15 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
 
     if missing:
         raise PayrunRefused(
-            f"нет условий найма на этот месяц: {len(missing)} чел. "
-            "Расчёт без них выглядел бы верным, поэтому не выполняется.",
+            _("нет условий найма на этот месяц: %(count)s чел. "
+              "Расчёт без них выглядел бы верным, поэтому не выполняется.")
+            % {"count": len(missing)},
             details=sorted(missing),
         )
     if not cases:
         raise PayrunRefused(
-            "за этот период нет ни одного табеля — считать нечего. "
-            "Внесите часы и повторите."
+            _("за этот период нет ни одного табеля — считать нечего. "
+              "Внесите часы и повторите.")
         )
     return cases
 
@@ -187,8 +189,9 @@ def check_schemes(cases: list[Case], preset: dict) -> None:
     unknown = sorted({case.employee.scheme for case in cases} - set(preset["schemes"]))
     if unknown:
         raise PayrunRefused(
-            f"в правилах страны нет схем расчёта: {', '.join(unknown)}. "
-            "Поправьте группу сотрудников или пресет.",
+            _("в правилах страны нет схем расчёта: %(schemes)s. "
+              "Поправьте группу сотрудников или пресет.")
+            % {"schemes": ", ".join(unknown)},
             details=[c.external_id for c in cases if c.employee.scheme in unknown],
         )
 
@@ -221,9 +224,10 @@ def check_insured_base(cases: list[Case], rules) -> None:
 
     if stale:
         raise PayrunRefused(
-            f"база для взносов не сходится с часами табеля: {len(stale)} чел. "
-            "По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе "
-            "выглядел бы верным. Проверьте колонку «База взносов» в табеле.",
+            _("база для взносов не сходится с часами табеля: %(count)s чел. "
+              "По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе "
+              "выглядел бы верным. Проверьте колонку «База взносов» в табеле.")
+            % {"count": len(stale)},
             details=sorted(stale),
         )
 
@@ -243,8 +247,8 @@ def check_ledgers(slips: list, visible_ledgers, carried=()) -> list[str]:
     hidden = [ledger for ledger in used if ledger not in set(visible_ledgers or [])]
     if hidden:
         refusal = LedgerAccessDenied(
-            "Ведомость этого периода попадает в регистры учёта, недоступные "
-            "вашей роли. Запустить расчёт может тот, кто видит их все."
+            _("Ведомость этого периода попадает в регистры учёта, недоступные "
+              "вашей роли. Запустить расчёт может тот, кто видит их все.")
         )
         refusal.ledgers = hidden
         raise refusal
@@ -287,7 +291,7 @@ def _calculate_all(rules, cases: list[Case], reporter) -> list:
         # Последний отмечается всегда: полоса, замершая на 28 из 30, выглядит
         # как незаконченный расчёт, хотя он давно закончен.
         if number % REPORT_EVERY == 0 or number == total:
-            reporter.say("Считаем сотрудников", done=number, total=total)
+            reporter.say(_("Считаем сотрудников"), done=number, total=total)
     return result
 
 
@@ -307,9 +311,9 @@ def compute(tenant_id: UUID, period: date, reporter=None):
     tenant = Tenant.objects.filter(pk=tenant_id).first()
     if tenant is None:
         # Не «пустой расчёт»: тенанта не видно — значит, и права на него нет.
-        raise PayrunRefused("партнёр недоступен")
+        raise PayrunRefused(_("партнёр недоступен"))
 
-    reporter.say("Собираем табели и условия найма")
+    reporter.say(_("Собираем табели и условия найма"))
     rules = select_rules(tenant_id, tenant.country_code, period)
     cases = collect_cases(tenant_id, period)
     check_schemes(cases, rules.base)
@@ -338,7 +342,7 @@ def calculate_period(
         carried = retro.adjustments_for(tenant_id, period)
         ledgers = check_ledgers(slips, visible_ledgers, carried=carried)
 
-        reporter.say("Записываем ведомость", done=len(slips), total=len(slips))
+        reporter.say(_("Записываем ведомость"), done=len(slips), total=len(slips))
         return _store(tenant_id, period, rules.code, slips, ledgers, carried)
 
 

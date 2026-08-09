@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from django.db import connection, transaction
 from django.db.models import F, Func, TextField
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_noop as noop
 
 from core.models import Payrun, PayrunTransition
 
@@ -28,30 +30,31 @@ REOPENED = "reopened"
 # берёт их отсюда же, чем отказ, — иначе на кнопке и в отказе об одном и том же
 # состоянии было бы написано по-разному.
 STATUS_TITLES = {
-    DRAFT: "Черновик",
-    CALCULATED: "Посчитан",
-    APPROVED: "Утверждён",
-    REOPENED: "Открыт заново",
-    "paid": "Выплачен",
+    DRAFT: noop("Черновик"),
+    CALCULATED: noop("Посчитан"),
+    APPROVED: noop("Утверждён"),
+    REOPENED: noop("Открыт заново"),
+    "paid": noop("Выплачен"),
 }
 
 # Настройка транзакции, которой причина доезжает до триггера журнала. Та же
 # механика, что у `app.user_id`: разовая, живёт до конца транзакции.
 REASON_SETTING = "app.transition_reason"
 
-APPROVED_REFUSAL = (
+APPROVED_REFUSAL = noop(
     "Период утверждён: расчёт и его данные заморожены. "
     "Чтобы пересчитать, период нужно сначала открыть заново."
 )
 
-REASON_REFUSAL = (
+REASON_REFUSAL = noop(
     "Откат периода требует причины: напишите, зачем открываете период. "
     "Причина попадёт в историю рядом с вашим именем."
 )
 
 
 def status_title(status: str | None) -> str:
-    return STATUS_TITLES.get(status, status or "")
+    title = STATUS_TITLES.get(status)
+    return _(title) if title is not None else (status or "")
 
 
 def refuse_if_approved(tenant_id, period) -> None:
@@ -67,7 +70,7 @@ def refuse_if_approved(tenant_id, period) -> None:
         .first()
     )
     if status == APPROVED:
-        raise PayrunRefused(APPROVED_REFUSAL)
+        raise PayrunRefused(_(APPROVED_REFUSAL))
 
 
 def mark_calculated(payrun_id, *, calculated_at) -> None:
@@ -118,13 +121,17 @@ def refuse_if_cycle_forbids(payrun: Payrun | None, to_status: str) -> None:
     """
     if payrun is None:
         raise PayrunRefused(
-            "Расчёта за этот период ещё не было: сначала посчитайте период."
+            _("Расчёта за этот период ещё не было: сначала посчитайте период.")
         )
     if to_status not in next_statuses(payrun.status):
         raise PayrunRefused(
-            f"Период сейчас в состоянии «{status_title(payrun.status)}», "
-            f"перевести его в «{status_title(to_status)}» нельзя. "
-            "Открытый заново период нужно пересчитать, прежде чем утверждать снова."
+            _("Период сейчас в состоянии «%(from_title)s», "
+              "перевести его в «%(to_title)s» нельзя. "
+              "Открытый заново период нужно пересчитать, прежде чем утверждать снова.")
+            % {
+                "from_title": status_title(payrun.status),
+                "to_title": status_title(to_status),
+            }
         )
 
 
@@ -158,8 +165,8 @@ def _switch(payrun: Payrun, to_status: str, **fields) -> None:
     )
     if not changed:
         raise PayrunRefused(
-            "Состояние периода изменилось, пока страница была открыта. "
-            "Обновите страницу и посмотрите, что с ним стало."
+            _("Состояние периода изменилось, пока страница была открыта. "
+              "Обновите страницу и посмотрите, что с ним стало.")
         )
 
 
@@ -187,7 +194,7 @@ def reopen(payrun: Payrun | None, *, reason: str) -> str:
 
     reason = (reason or "").strip()
     if reason_required(REOPENED) and not reason:
-        raise ReasonRequired(REASON_REFUSAL)
+        raise ReasonRequired(_(REASON_REFUSAL))
 
     with transaction.atomic():
         _set_reason(reason)
