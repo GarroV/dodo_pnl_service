@@ -36,6 +36,11 @@ from conftest import body, login_as, period_url
 # «нет ли русского» бессмысленно.
 TRANSLATED = ["en", "sr-latn"]
 
+# Названия языков в переключателе написаны каждое на своём языке. «Русский» на
+# английской странице — не забытый перевод, а сама суть кнопки: человек ищет
+# глазами родное слово, а не «Russian», которого он может не знать.
+SWITCHER = {"Русский"}
+
 ROLES = ["director", "accountant", "manager", "admin"]
 
 CYRILLIC = re.compile(r"[а-яёА-ЯЁ]+(?:[\s.,·×/«»()-]+[а-яёА-ЯЁ]+)*")
@@ -90,13 +95,22 @@ def data_terms(dsn: str) -> set[str]:
             "select title from employee_groups",
             "select title from legal_entities",
             "select title from rule_presets",
+            # Имена людей, вошедших в продукт. У учёток сида имя совпадает
+            # с названием роли по-русски — но это по-прежнему имя человека
+            # в базе, а не подпись продукта: подпись роли рядом с ним
+            # переводится (`web.i18n.role_title`), и её отсутствие тест
+            # поймает, а имя — нет и не должен.
+            "select full_name from users",
         ):
             for (value,) in conn.execute(query).fetchall():
                 add(value)
         for (preset,) in conn.execute("select body from rule_presets").fetchall():
             walk(preset)
-        for (overrides,) in conn.execute("select body from rule_overrides").fetchall():
-            walk(overrides)
+        # Переопределения партнёра лежат по одному значению на строку
+        # (`path` + `value`), а не целым пресетом: подпись, заменённая
+        # партнёром, — такие же его данные, как и подпись из страны.
+        for (value,) in conn.execute("select value from rule_overrides").fetchall():
+            walk(value)
 
     return terms
 
@@ -113,6 +127,8 @@ def foreign_words(html: str, allowed: set[str]) -> list[str]:
         # Кусок целиком объясняется данными, если каждое его слово — данные.
         words = [word for word in re.split(r"[\s.,·×/«»()-]+", piece) if word]
         if words and all(word in allowed for word in words):
+            continue
+        if piece in SWITCHER:
             continue
         found.append(piece)
     return found
@@ -227,26 +243,61 @@ def test_numbers_follow_the_language(client, web_env):
         assert money(1951806.13) == "1.951.806,13"
 
 
-def test_forced_language_hides_the_switch(client, web_env, settings):
+def test_forced_language_hides_the_switch(client, web_env):
     """Закреплённый язык (демо) отменяет выбор человека и убирает переключатель.
 
-    Правило владельца: демо всегда открывается по-английски, независимо от
-    того, кто смотрит. Проверяется здесь, а не в блоке демо, потому что
-    закрепление живёт в этом блоке и ломается правкой этого блока.
+    Правило владельца: демо всегда открывается по-английски, независимо от того,
+    кто смотрит. Проверяется здесь, а не в блоке демо, потому что закрепление
+    живёт в этом блоке и ломается правкой этого блока.
+
+    Клиенту нужен свой стек посредников: цепочка собирается один раз, а
+    `ForcedLanguageMiddleware` читает настройку при своём создании. Со старым
+    стеком проверялся бы экземпляр, созданный до подмены, — то есть ничего.
     """
     from django.test import Client
+    from django.test.client import ClientHandler
+    from django.test.utils import override_settings
 
-    settings.UI_LANGUAGE = "en"
-    # Посредник читает настройку при своём создании, поэтому клиенту нужен
-    # свежий стек — иначе проверялся бы старый экземпляр со старым значением.
-    from django.core.handlers.wsgi import WSGIHandler
+    with override_settings(UI_LANGUAGE="en"):
+        fresh = Client()
+        # Пересборка цепочки, а не новый клиент: `Client` создаёт обработчик в
+        # своём `__init__`, и к этому моменту подмена настройки ещё не видна.
+        fresh.handler = ClientHandler(enforce_csrf_checks=False)
+        fresh.handler.load_middleware()
+        login_as(fresh, "director")
+        # Человек просит русский — и всё равно получает английский.
+        fresh.cookies["django_language"] = "ru"
+        html = body(fresh.get("/periods/"))
 
-    fresh = Client()
-    fresh.handler = WSGIHandler()
-    login_as(fresh, "director")
-    # Человек просит русский — и всё равно получает английский.
-    fresh.cookies["django_language"] = "ru"
-    html = body(fresh.get("/periods/"))
     assert 'lang="en"' in html, "закреплённый язык не переопределил выбор человека"
     assert "Периоды" not in html
     assert 'class="lang"' not in html, "при закреплённом языке переключатель показан"
+
+
+def test_role_titles_are_translated_and_not_taken_from_the_database(web_env):
+    """Название роли переводится, а не берётся из базы как есть.
+
+    Отдельным тестом, потому что через экран это **не проверяется**: у учёток
+    тестового сида имя человека дословно совпадает с названием его роли
+    («Оперативный директор» и там, и там), а имя человека — данные, которые
+    продукт переводить не вправе. То есть подмена перевода на строку из базы
+    прошла бы по экранам незамеченной.
+
+    Проверяется именно то, что ломается: незнакомая роль показывается так, как
+    её назвал партнёр (переводить её неоткуда), а знакомая — на языке страницы.
+    """
+    from django.utils import translation
+
+    from web.i18n import role_title
+
+    expected = {
+        "ru": "Оперативный директор",
+        "en": "Operations Director",
+        "sr-latn": "Operativni direktor",
+    }
+    for language, title in expected.items():
+        with translation.override(language):
+            assert role_title("director", "из базы") == title
+            # Роль, которой продукт не знает, остаётся такой, как её завёл
+            # партнёр: выдумывать ей перевод неоткуда.
+            assert role_title("chief-taster", "Главный дегустатор") == "Главный дегустатор"

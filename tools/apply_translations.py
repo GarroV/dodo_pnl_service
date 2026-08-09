@@ -70,6 +70,24 @@ def apply(po: Path, table: dict[str, str]) -> tuple[int, list[str]]:
             index += 1
             continue
 
+        # Пометки, которые `makemessages` вешает на угаданный перевод, снимаем:
+        # `fuzzy` — потому что gettext строку с ней не показывает **вовсе**, и на
+        # экране она молча остаётся русской; `#| msgid` — потому что это остаток
+        # от прежнего ключа, к нашему переводу отношения не имеющий. Прочие
+        # флаги (`python-format`) остаются: ими gettext проверяет подстановки.
+        def guessed(line: str) -> bool:
+            return line.startswith("#|") or (line.startswith("#,") and "fuzzy" in line)
+
+        while out and guessed(out[-1]):
+            if out[-1].startswith("#|"):
+                out.pop()
+                continue
+            flags = [f.strip() for f in out[-1][2:].split(",") if f.strip() != "fuzzy"]
+            out.pop()
+            if flags:
+                out.append("#, " + ", ".join(flags))
+            break
+
         # Оригинал: строка `msgid` и продолжения под ней.
         raw = [line[len("msgid "):].strip()]
         index += 1
