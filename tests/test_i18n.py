@@ -131,6 +131,44 @@ def test_no_untranslated_text_in_template_scripts():
     assert not problems, "русский текст в скриптах мимо перевода:\n" + "\n".join(problems)
 
 
+# Свои скрипты продукта. Чужие библиотеки (htmx) не наши и не переводятся.
+STATIC_SCRIPTS = sorted(
+    path
+    for path in ROOT.glob("src/*/static/**/*.js")
+    if not path.name.endswith(".min.js")
+)
+
+
+def test_no_untranslated_text_in_static_scripts():
+    """Отдельный `.js` — самая тихая дыра из всех: его не видит вообще ничего.
+
+    Файл из `static/` не проходит ни движок шаблонов, ни `makemessages`:
+    написанная в нём строка не попадает в каталог, никем не переводится и
+    остаётся русской на английском и сербском экране. Заметить это глазами
+    почти нельзя — такие строки показываются только в отказах, то есть в
+    минуту, когда человеку и без того не до языка интерфейса.
+
+    Найдено на этой же задаче: тексты отказов сохранения ячейки табеля жили в
+    `grid.js` и не ловились ни одной из проверок выше. Теперь слова приезжают из
+    разметки через `data-`атрибуты, а этот тест держит дверь закрытой.
+    """
+    assert STATIC_SCRIPTS, "скрипты не нашлись — проверка проверяет пустоту"
+    problems = []
+    for path in STATIC_SCRIPTS:
+        source = path.read_text(encoding="utf-8")
+        # Комментарии объясняют код разработчику и на экран не попадают.
+        body = re.sub(r"//[^\n]*", " ", source)
+        body = re.sub(r"/\*.*?\*/", " ", body, flags=re.S)
+        for _quote, value in JS_STRING.findall(body):
+            if CYRILLIC.search(value):
+                problems.append(f"{path.relative_to(ROOT)}: {value!r}")
+    assert not problems, (
+        "русский текст в статическом скрипте (его не видит ни перевод, ни "
+        "каталог — вынесите строку в разметку через data-атрибут):\n"
+        + "\n".join(problems)
+    )
+
+
 # --- 2. каталог -------------------------------------------------------------
 
 

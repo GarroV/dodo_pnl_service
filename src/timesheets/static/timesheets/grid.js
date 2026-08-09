@@ -24,6 +24,29 @@
   const errorBox = document.getElementById("cell-error");
   const cells = () => Array.from(table.querySelectorAll("input.cell"));
 
+  // --- слова этого файла --------------------------------------------------
+  //
+  // Тексты отказов приезжают из разметки, а не написаны здесь (T017). Причина
+  // не в стиле: этот файл отдаётся статикой, его не проходит ни `makemessages`,
+  // ни движок шаблонов, и написанная тут строка осталась бы русской на
+  // английском и сербском экране — молча, потому что видна она только в момент
+  // отказа сохранения ячейки.
+  //
+  // Пропущенный ключ показывается как `[ключ]`, а не пустотой: отказ без слов
+  // — это молчаливый отказ, ровно то, ради чего эта подсказка и заводилась.
+  function text(name) {
+    return table.dataset[name] || "[" + name + "]";
+  }
+
+  // Подстановка в переведённую фразу. Функцией замены, а не строкой: в строке
+  // замены `$&` и `$1` для JS — управляющие последовательности, а сюда
+  // подставляется то, что человек набрал в ячейке.
+  function fill(pattern, values) {
+    return pattern.replace(/%\((\w+)\)s/g, function (whole, name) {
+      return name in values ? String(values[name]) : whole;
+    });
+  }
+
   // --- переход между ячейками ------------------------------------------------
 
   function move(from, rowStep, colStep) {
@@ -189,11 +212,13 @@
     showRefusal(
       input,
       spoken
-        ? xhr.responseText + " Не принято, в ячейке прежнее значение."
+        ? xhr.responseText + " " + text("rejected")
         : xhr.status === 409
-          ? xhr.responseText + " В ячейке — то, что сейчас в базе."
-          : "Не удалось сохранить «" + rejected + "»: " +
-            (xhr.status || "нет связи с сервером") + ". В ячейке прежнее значение.",
+          ? xhr.responseText + " " + text("current")
+          : fill(text("failed"), {
+              value: rejected,
+              reason: xhr.status || text("offline"),
+            }),
     );
     input.focus();
     input.setSelectionRange(input.value.length, input.value.length);
