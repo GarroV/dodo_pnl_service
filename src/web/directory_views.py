@@ -1,0 +1,890 @@
+"""Экраны справочников: сотрудники, условия найма, группы, точки, юрлица, календарь (T018).
+
+Что здесь есть и чего здесь нет.
+
+**Заведения сотрудников нет — это решение D029, а не пропуск.** Карточки
+появляются из данных партнёра, админка нужна для правки. Поэтому у сотрудников
+есть список и карточка, но нет кнопки «Добавить». У точек, юрлиц и групп
+заведение есть: их в таблице партнёра нет вовсе, взяться им больше неоткуда.
+
+**Удаления нет ни у одного справочника, и это тоже решение.** Точка закрывается
+датой (`closed_at`), человек увольняется датой (`dismissed_at`) — и то и другое
+обратимо и сохраняет историю. Удалённая строка уносит с собой смысл ссылок из
+закрытых месяцев: ведомость июня ссылается на точку, которой больше нет.
+Политики базы удаление тем не менее покрывают (миграция `0130`) — гарантия
+должна стоять на действии, а не на том, что экран его не предлагает.
+
+**Право проверяется дважды и по-разному.** База (`0130`) не даёт записать —
+это гарантия. Здесь (`permissions.check`) отказ объясняется словами, и ссылки на
+админку нет вовсе у того, кому она запрещена: экран не предлагает того, что сам
+же отвергнет (T072).
+
+**Правки, задевающие закрытый месяц, отклоняются с объяснением** — правило и его
+«почему» лежат в `web/directory.py`, здесь только показ отказа.
+"""
+from __future__ import annotations
+
+from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
+
+from django.contrib.auth.decorators import login_required
+from django.http import Http404
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.utils.translation import gettext as _
+
+from core.models import (
+    Calendar,
+    Employee,
+    EmployeeGroup,
+    EmploymentTerm,
+    LegalEntity,
+    Unit,
+)
+
+from . import directory, permissions
+from .format import hours, ledger_title
+from .i18n import month_title
+from .principal import get_current_principal
+
+# Регистры учёта, которые можно назначить группе. Список не из справочника, а
+# из того, что видно роли (D023): предложить назначить группе регистр, которого
+# человек не видит, значило бы дать ему завести данные, которые он потом не
+# найдёт на своих же экранах.
+LEDGER_CODES = ("official", "supplementary", "internal")
+
+# Что сказать после сохранения. Словарём, а не готовой фразой в адресе: фразу в
+# адресе не перевести и подставить в неё можно что угодно.
+#
+# «Ничего не изменилось» — отдельный ответ, а не «сохранено»: человек, нажавший
+# «Сохранить» и получивший «сохранено», уверен, что завёл новую версию условий
+# найма. Её нет, и он узнает об этом, когда расчёт даст прежние числа.
+def _saved_notices() -> dict:
+    return {
+        "person": _("Карточка сохранена."),
+        "terms": _("Заведена новая версия условий найма."),
+        "same": _("Ничего не изменилось — новая версия не заведена."),
+    }
+
+
+def _who(request):
+    return get_current_principal(request)
+
+
+def _country_of(who) -> str:
+    """Страна партнёра — ключ производственного календаря.
+
+    Читается запросом, а не хранится в `Principal`: тот описан контрактом блока
+    `auth`, и дописывать в него поле ради одного экрана значило бы править чужой
+    контракт. Выборка идёт под теми же политиками — чужой тенант отсюда не виден.
+    """
+    from core.models import Tenant
+
+    return (
+        Tenant.objects.filter(pk=who.tenant_id).values_list("country_code", flat=True).first()
+        or ""
+    )
+
+
+def _effective_ledger(term) -> str:
+    """Регистр учёта строки условий найма: свой или унаследованный от группы."""
+    return term.ledger or term.group.ledger
+
+
+def _visible_groups(who):
+    """Группы, регистр которых видит роль (D023).
+
+    Почему справочник фильтруется так же, как ведомость. Группа несёт регистр
+    учёта, и её строка на экране называет его словом. Роль, которая регистра не
+    видит, не должна узнать о нём ни из ведомости, ни из справочника — иначе
+    разграничение держится на том, в какой раздел человек не заглянул. Тот же
+    довод, по которому переключатель разрезов не рисует пустую кнопку для
+    невидимого регистра.
+
+    Что человек видит, ему уже сказано: шапка перечисляет его регистры на каждой
+    странице. Поэтому отдельной надписи «показано не всё» здесь нет — она
+    называла бы существование того, что и скрывается.
+    """
+    return EmployeeGroup.objects.filter(ledger__in=list(who.visible_ledgers))
+
+
+def _visible_terms(who, terms: list) -> list:
+    """Версии условий найма, регистр которых видит роль."""
+    seen = set(who.visible_ledgers)
+    return [term for term in terms if _effective_ledger(term) in seen]
+
+
+def _refusal(request, refusal, *, status=None):
+    """Страница отказа: одними и теми же словами, что и сам отказ."""
+    return render(
+        request,
+        "web/directory/denied.html",
+        {"message": refusal.message},
+        status=status or getattr(refusal, "http_status", 403),
+    )
+
+
+def _guard(request):
+    """Пропустить того, у кого есть право вести справочники; иначе — отказ страницей."""
+    who = _who(request)
+    try:
+        permissions.check(who, permissions.DIRECTORY_MANAGE)
+    except permissions.PermissionRefused as refusal:
+        return who, _refusal(request, refusal)
+    return who, None
+
+
+# --- оглавление ---------------------------------------------------------------
+
+# Из чего состоит админка. Список здесь, а не в шаблоне: подписи переводятся, а
+# счётчики считаются — и то и другое в разметке было бы не на месте.
+#
+# Счётчики считают ровно то, что человек увидит, открыв раздел. Иначе цифра сама
+# становится утечкой: «групп 6», а внутри три — и роль узнаёт, что где-то есть
+# ещё три, которых ей не видно (D023).
+def _sections(who) -> list[dict]:
+    return [
+        {
+            "url": reverse("directory-employees"),
+            "title": _("Сотрудники"),
+            "about": _("Карточки людей и условия найма: группа, точка, ставка, коэффициент"),
+            "count": len(_employee_rows(who)),
+        },
+        {
+            "url": reverse("directory-groups"),
+            "title": _("Группы сотрудников"),
+            "about": _("Схема расчёта и регистр учёта по умолчанию"),
+            "count": _visible_groups(who).count(),
+        },
+        {
+            "url": reverse("directory-units"),
+            "title": _("Точки"),
+            "about": _("Пиццерии: код, название, юрлицо, даты открытия и закрытия"),
+            "count": Unit.objects.count(),
+        },
+        {
+            "url": reverse("directory-legal-entities"),
+            "title": _("Юрлица"),
+            "about": _("С кем работает бухгалтерия: название и налоговый номер"),
+            "count": LegalEntity.objects.count(),
+        },
+        {
+            "url": reverse("directory-calendar"),
+            "title": _("Производственный календарь"),
+            "about": _("Норма часов и рабочие дни месяца — отсюда их берёт страница месяца"),
+            "count": Calendar.objects.count(),
+        },
+    ]
+
+
+@login_required
+def index(request):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    return render(
+        request,
+        "web/directory/index.html",
+        {"sections": _sections(who), "closed_through": directory.closed_through(who.tenant_id)},
+    )
+
+
+# --- разбор ввода -------------------------------------------------------------
+
+
+class BadInput(Exception):
+    """Введено не то. Отдельно от `DirectoryRefused`: там данные, здесь форма."""
+
+    http_status = 400
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+def _text(request, name: str, label: str, *, required: bool = True) -> str:
+    value = (request.POST.get(name) or "").strip()
+    if required and not value:
+        raise BadInput(_("Поле «%(label)s» обязательно.") % {"label": label})
+    return value
+
+
+def _date(request, name: str, label: str, *, required: bool = False) -> date | None:
+    raw = (request.POST.get(name) or "").strip()
+    if not raw:
+        if required:
+            raise BadInput(_("Поле «%(label)s» обязательно.") % {"label": label})
+        return None
+    try:
+        return datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError:
+        raise BadInput(
+            _("«%(label)s»: дата пишется как 2026-06-01, а не «%(value)s».")
+            % {"label": label, "value": raw}
+        ) from None
+
+
+def _number(request, name: str, label: str, *, required: bool = True) -> Decimal | None:
+    raw = (request.POST.get(name) or "").strip().replace(",", ".")
+    if not raw:
+        if required:
+            raise BadInput(_("Поле «%(label)s» обязательно.") % {"label": label})
+        return None
+    try:
+        value = Decimal(raw)
+    except InvalidOperation:
+        raise BadInput(
+            _("«%(label)s»: нужно число, а не «%(value)s».")
+            % {"label": label, "value": raw}
+        ) from None
+    if value < 0:
+        raise BadInput(_("«%(label)s»: отрицательное значение.") % {"label": label})
+    return value
+
+
+def _choice(request, name: str, label: str, allowed, *, required: bool = True):
+    """Выбор из списка. Чужое значение — отказ, а не молчаливая подстановка."""
+    raw = (request.POST.get(name) or "").strip()
+    if not raw:
+        if required:
+            raise BadInput(_("Поле «%(label)s» обязательно.") % {"label": label})
+        return None
+    if str(raw) not in {str(item) for item in allowed}:
+        raise BadInput(_("«%(label)s»: такого варианта нет.") % {"label": label})
+    return raw
+
+
+def _select(name: str, label: str, rows, selected, **extra) -> dict:
+    """Поле выбора для `directory/fields.html` из пар (значение, подпись).
+
+    `empty_selected` считается здесь, а не в шаблоне: «ни один вариант не
+    отмечен» — это ответ на вопрос обо всём списке сразу, и посчитать его в
+    цикле шаблона нельзя. Не посчитать его вовсе значило бы показывать первый
+    вариант списка выбранным при пустом значении — то есть предлагать выбор,
+    которого человек не делал.
+    """
+    options = [
+        {"code": str(code), "title": title, "selected": str(code) == str(selected or "")}
+        for code, title in rows
+    ]
+    return {
+        "kind": "select", "name": name, "label": label, "options": options,
+        "empty_selected": not any(option["selected"] for option in options),
+        **extra,
+    }
+
+
+# --- сотрудники ---------------------------------------------------------------
+
+
+@login_required
+def employees(request):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+
+    query = (request.GET.get("q") or "").strip()
+    rows = _employee_rows(who, query)
+
+    return render(request, "web/directory/list.html", {
+        "heading": _("Сотрудники"),
+        "about": _(
+            "Карточки заводятся вместе с данными партнёра, а не здесь: "
+            "имя, коэффициент и ставку приносит загрузка таблицы. Править — можно."
+        ),
+        "search_value": query,
+        "search_label": _("Поиск по имени или внешнему ключу"),
+        "columns": [
+            {"label": _("Сотрудник")},
+            {"label": _("Внешний ключ")},
+            {"label": _("Группа")},
+            {"label": _("Точка")},
+            {"label": _("Уволен")},
+        ],
+        "rows": rows,
+        "empty": _("Сотрудников нет. Они появятся, когда загрузите таблицу партнёра."),
+    })
+
+
+def _current_terms(who) -> dict:
+    """Действующая версия условий найма на человека — та же, что берёт расчёт.
+
+    Порядок по `valid_from` возрастающий, поэтому последняя запись побеждает.
+    Тот же приём, что в `payrun.calc.collect_cases`: справочник обязан называть
+    ту версию, по которой человека посчитают, а не первую попавшуюся.
+    """
+    terms = {}
+    for term in EmploymentTerm.objects.select_related("group", "unit").order_by("valid_from"):
+        terms[term.employee_id] = term
+    return terms
+
+
+def _employee_rows(who, query: str = "") -> list[dict]:
+    """Строки списка сотрудников — уже отобранные по регистру роли (D023).
+
+    Человек без условий найма показывается всем: регистра у него ещё нет, и
+    скрывать нечего. Спрятать его было бы хуже прямой ошибки — именно такой
+    человек и требует внимания администратора: без условий найма он не попадёт
+    ни в табель, ни в ведомость.
+    """
+    found = Employee.objects.order_by("last_name", "first_name")
+    if query:
+        # Поиск по тому, что человек видит глазами в списке: имени, фамилии и
+        # внешнему ключу. Тридцать человек листаются, три тысячи — нет.
+        from django.db.models import Q
+
+        found = found.filter(
+            Q(last_name__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(external_id__icontains=query)
+        )
+
+    terms = _current_terms(who)
+    seen = set(who.visible_ledgers)
+    rows = []
+    for person in found:
+        term = terms.get(person.id)
+        if term is not None and _effective_ledger(term) not in seen:
+            continue
+        rows.append({
+            "url": reverse("directory-employee", args=[person.id]),
+            "cells": [
+                {"text": f"{person.last_name} {person.first_name}".strip()},
+                {"text": person.external_id},
+                {"text": term.group.title if term else "—"},
+                {"text": term.unit.code if term and term.unit else "—"},
+                {"text": person.dismissed_at.isoformat() if person.dismissed_at else "—"},
+            ],
+        })
+    return rows
+
+
+def _employee_or_404(who, employee_id) -> Employee:
+    person = Employee.objects.filter(pk=employee_id).first()
+    # Чужой сотрудник, несуществующий и человек чужого регистра отвечают
+    # одинаково: по ответу нельзя понять, что он вообще есть. 404, а не 403, —
+    # 403 сказал бы «такой есть, но не для вас», то есть выдал бы ровно то, что
+    # скрывается (D023).
+    if person is None:
+        raise Http404("сотрудник не найден")
+    term = _current_terms(who).get(person.id)
+    if term is not None and _effective_ledger(term) not in set(who.visible_ledgers):
+        raise Http404("сотрудник не найден")
+    return person
+
+
+@login_required
+def employee(request, employee_id):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    person = _employee_or_404(who, employee_id)
+
+    notice = error = ""
+    if request.method == "POST":
+        try:
+            if request.POST.get("what") == "person":
+                _save_person(request, person)
+                saved = "person"
+            else:
+                saved = _save_terms(request, who, person)
+            # Перенаправление после записи: обновление страницы не сохраняет
+            # второй раз. Что именно случилось, уезжает в адрес кодом, а не
+            # готовой фразой: фраза в адресе не переводится и подставляется
+            # кем угодно.
+            return redirect(
+                reverse("directory-employee", args=[person.id]) + f"?saved={saved}"
+            )
+        except BadInput as bad:
+            error = bad.message
+        except directory.DirectoryRefused as refusal:
+            error = refusal.message
+
+    notice = _saved_notices().get(request.GET.get("saved", ""), "")
+
+    return render(request, "web/directory/employee.html", _employee_context(
+        request, who, person, notice=notice, error=error,
+    ))
+
+
+def _save_person(request, person: Employee) -> None:
+    person.last_name = _text(request, "last_name", _("Фамилия"))
+    person.first_name = _text(request, "first_name", _("Имя"))
+    person.external_id = _text(request, "external_id", _("Внешний ключ"))
+    person.hired_at = _date(request, "hired_at", _("Принят"))
+    person.dismissed_at = _date(request, "dismissed_at", _("Уволен"))
+    if person.hired_at and person.dismissed_at and person.dismissed_at < person.hired_at:
+        raise BadInput(_("Дата увольнения раньше даты приёма."))
+    person.save(update_fields=[
+        "last_name", "first_name", "external_id", "hired_at", "dismissed_at",
+    ])
+
+
+def _save_terms(request, who, person: Employee) -> str:
+    """Новая версия условий найма. Возвращает код того, что случилось.
+
+    Правило и его «почему» — в `web/directory.py`.
+    """
+    valid_from = _date(request, "valid_from", _("Действует с"), required=True)
+    # Разрешены только группы видимого регистра: иначе человека можно было бы
+    # перевести в группу, о существовании которой роли знать не положено, —
+    # подбором значения в форме (D023).
+    groups = list(_visible_groups(who).values_list("id", flat=True))
+    units = list(Unit.objects.values_list("id", flat=True))
+    wanted = {
+        "group_id": _choice(request, "group", _("Группа"), groups),
+        "unit_id": _choice(request, "unit", _("Точка"), units, required=False),
+        "base_rate": _number(request, "base_rate", _("Ставка")),
+        "coefficient": _number(request, "coefficient", _("Коэффициент")),
+        "scheme": _text(request, "scheme", _("Схема расчёта"), required=False) or None,
+        "ledger": _choice(request, "ledger", _("Регистр учёта"), LEDGER_CODES, required=False),
+    }
+    change = directory.save_terms(
+        who.tenant_id, person.id, valid_from=valid_from, wanted=wanted,
+    )
+    return "same" if not change.changed else "terms"
+
+
+def _employee_context(request, who, person: Employee, *, notice: str, error: str) -> dict:
+    versions = _visible_terms(who, list(
+        EmploymentTerm.objects.filter(employee_id=person.id)
+        .select_related("group", "unit")
+        .order_by("valid_from")
+    ))
+    current = versions[-1] if versions else None
+    edge = directory.closed_through(who.tenant_id)
+    return {
+        "person": person,
+        "back_url": reverse("directory-employees"),
+        "notice": notice,
+        "error": error,
+        "closed_through": edge,
+        "person_fields": [
+            {"kind": "text", "name": "last_name", "label": _("Фамилия"),
+             "value": person.last_name, "required": True},
+            {"kind": "text", "name": "first_name", "label": _("Имя"),
+             "value": person.first_name, "required": True},
+            {"kind": "text", "name": "external_id", "label": _("Внешний ключ"),
+             "value": person.external_id, "required": True,
+             "help": _("Сквозной ключ между системами, например JMBG. "
+                       "По нему сходится загрузка табеля.")},
+            {"kind": "date", "name": "hired_at", "label": _("Принят"),
+             "value": person.hired_at.isoformat() if person.hired_at else ""},
+            {"kind": "date", "name": "dismissed_at", "label": _("Уволен"),
+             "value": person.dismissed_at.isoformat() if person.dismissed_at else ""},
+        ],
+        "versions": [
+            {
+                "from": term.valid_from.isoformat(),
+                "to": term.valid_to.isoformat() if term.valid_to else "—",
+                "group": term.group.title,
+                "unit": term.unit.code if term.unit else "—",
+                "rate": term.base_rate,
+                "coefficient": term.coefficient,
+                "scheme": term.scheme or term.group.scheme,
+                "ledger": ledger_title(term.ledger or term.group.ledger),
+            }
+            for term in versions
+        ],
+        "terms_fields": [
+            {"kind": "date", "name": "valid_from", "label": _("Действует с"),
+             "value": "", "required": True,
+             "help": _("С этой даты действует новая версия. Прошлая закрывается "
+                       "этим же днём и остаётся в истории.")},
+            _select(
+                "group", _("Группа"),
+                _visible_groups(who).order_by("title").values_list("id", "title"),
+                current.group_id if current else None, required=True,
+            ),
+            _select(
+                "unit", _("Точка"),
+                Unit.objects.order_by("code").values_list("id", "code"),
+                current.unit_id if current else None, empty_label=_("не задана"),
+            ),
+            {"kind": "number", "name": "base_rate", "label": _("Ставка"), "required": True,
+             "value": current.base_rate if current else ""},
+            {"kind": "number", "name": "coefficient", "label": _("Коэффициент"), "required": True,
+             "value": current.coefficient if current else ""},
+            {"kind": "text", "name": "scheme", "label": _("Схема расчёта"),
+             "value": (current.scheme if current else "") or "",
+             "help": _("Пусто — как у группы. Заполняется только там, где человек "
+                       "считается иначе своей группы.")},
+            _select(
+                "ledger", _("Регистр учёта"),
+                [(code, ledger_title(code)) for code in LEDGER_CODES
+                 if code in who.visible_ledgers],
+                current.ledger if current else None, empty_label=_("как у группы"),
+            ),
+        ],
+    }
+
+
+# --- группы, точки, юрлица ----------------------------------------------------
+
+
+@login_required
+def groups(request):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    rows = [
+        {
+            "url": reverse("directory-group", args=[group.id]),
+            "cells": [
+                {"text": group.code},
+                {"text": group.title},
+                {"text": group.scheme},
+                {"text": ledger_title(group.ledger)},
+            ],
+        }
+        for group in _visible_groups(who).order_by("title")
+    ]
+    return render(request, "web/directory/list.html", {
+        "heading": _("Группы сотрудников"),
+        "about": _(
+            "Группа задаёт схему расчёта и регистр учёта по умолчанию. "
+            "Отдельному человеку и то и другое переопределяется в условиях найма — с датой."
+        ),
+        "add_url": reverse("directory-group-new"),
+        "add_label": _("Завести группу"),
+        "columns": [
+            {"label": _("Код")}, {"label": _("Название")},
+            {"label": _("Схема расчёта")}, {"label": _("Регистр учёта")},
+        ],
+        "rows": rows,
+        "empty": _("Групп нет."),
+    })
+
+
+@login_required
+def group(request, group_id=None):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    item = None
+    if group_id is not None:
+        item = _visible_groups(who).filter(pk=group_id).first()
+        if item is None:
+            # Группа чужого регистра и несуществующая отвечают одинаково — тот
+            # же довод, что у карточки сотрудника (D023).
+            raise Http404("группа не найдена")
+
+    error = ""
+    if request.method == "POST":
+        try:
+            code = _text(request, "code", _("Код"))
+            title = _text(request, "title", _("Название"))
+            scheme = _text(request, "scheme", _("Схема расчёта"))
+            ledger = _choice(request, "ledger", _("Регистр учёта"), LEDGER_CODES)
+            if item is not None and (item.scheme != scheme or item.ledger != ledger):
+                # Схема и регистр группы участвуют в расчёте, а версий у группы
+                # нет: правка изменила бы правило для всех месяцев сразу,
+                # включая утверждённые. Отказ — тот же, что у условий найма, и
+                # обходится тем же способом: переопределением с датой в карточке
+                # человека или переоткрытием месяца с причиной.
+                directory.refuse_if_touches_closed_month(
+                    who.tenant_id, date.min, _("схема расчёта и регистр группы"),
+                )
+            if item is None:
+                item = EmployeeGroup(tenant_id=who.tenant_id)
+            item.code, item.title, item.scheme, item.ledger = code, title, scheme, ledger
+            item.save()
+            return redirect(reverse("directory-groups"))
+        except BadInput as bad:
+            error = bad.message
+        except directory.DirectoryRefused as refusal:
+            error = refusal.message
+
+    return render(request, "web/directory/form.html", {
+        "heading": item.title if item else _("Новая группа"),
+        "back_url": reverse("directory-groups"),
+        "back_label": _("← К группам"),
+        "error": error,
+        "submit_label": _("Сохранить"),
+        "fields": [
+            {"kind": "text", "name": "code", "label": _("Код"), "required": True,
+             "value": item.code if item else "",
+             "help": _("По нему группа названа в правилах страны. "
+                       "Менять — только вместе с правилами.")},
+            {"kind": "text", "name": "title", "label": _("Название"), "required": True,
+             "value": item.title if item else ""},
+            {"kind": "text", "name": "scheme", "label": _("Схема расчёта"), "required": True,
+             "value": item.scheme if item else "",
+             "help": _("Ключ схемы из правил страны: по ней движок считает людей группы.")},
+            _select(
+                "ledger", _("Регистр учёта"),
+                [(code, ledger_title(code)) for code in LEDGER_CODES
+                 if code in who.visible_ledgers],
+                item.ledger if item else "official", required=True,
+            ),
+        ],
+    })
+
+
+@login_required
+def units(request):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    rows = [
+        {
+            "url": reverse("directory-unit", args=[unit.id]),
+            "cells": [
+                {"text": unit.code},
+                {"text": unit.title},
+                {"text": unit.legal_entity.title if unit.legal_entity else "—"},
+                {"text": unit.opened_at.isoformat() if unit.opened_at else "—"},
+                {"text": unit.closed_at.isoformat() if unit.closed_at else "—"},
+            ],
+        }
+        for unit in Unit.objects.select_related("legal_entity").order_by("code")
+    ]
+    return render(request, "web/directory/list.html", {
+        "heading": _("Точки"),
+        "about": _("Расходы разносятся на точку, а не на юрлицо. "
+                   "Закрытая точка остаётся в истории."),
+        "add_url": reverse("directory-unit-new"),
+        "add_label": _("Завести точку"),
+        "columns": [
+            {"label": _("Код")}, {"label": _("Название")}, {"label": _("Юрлицо")},
+            {"label": _("Открыта")}, {"label": _("Закрыта")},
+        ],
+        "rows": rows,
+        "empty": _("Точек нет."),
+    })
+
+
+@login_required
+def unit(request, unit_id=None):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    item = None
+    if unit_id is not None:
+        item = Unit.objects.filter(pk=unit_id).first()
+        if item is None:
+            raise Http404("точка не найдена")
+
+    error = ""
+    if request.method == "POST":
+        try:
+            code = _text(request, "code", _("Код"))
+            title = _text(request, "title", _("Название"))
+            entities = list(LegalEntity.objects.values_list("id", flat=True))
+            entity_id = _choice(request, "legal_entity", _("Юрлицо"), entities, required=False)
+            opened_at = _date(request, "opened_at", _("Открыта"))
+            closed_at = _date(request, "closed_at", _("Закрыта"))
+            if opened_at and closed_at and closed_at < opened_at:
+                raise BadInput(_("Дата закрытия раньше даты открытия."))
+            if item is None:
+                item = Unit(tenant_id=who.tenant_id)
+            item.code, item.title = code, title
+            item.legal_entity_id = entity_id
+            item.opened_at, item.closed_at = opened_at, closed_at
+            item.save()
+            return redirect(reverse("directory-units"))
+        except BadInput as bad:
+            error = bad.message
+
+    return render(request, "web/directory/form.html", {
+        "heading": item.title if item else _("Новая точка"),
+        "back_url": reverse("directory-units"),
+        "back_label": _("← К точкам"),
+        "error": error,
+        "submit_label": _("Сохранить"),
+        "fields": [
+            {"kind": "text", "name": "code", "label": _("Код"), "required": True,
+             "value": item.code if item else "",
+             "help": _("Короткий код точки, например NS1. "
+                       "Им точка названа в таблице партнёра.")},
+            {"kind": "text", "name": "title", "label": _("Название"), "required": True,
+             "value": item.title if item else ""},
+            _select(
+                "legal_entity", _("Юрлицо"),
+                LegalEntity.objects.order_by("title").values_list("id", "title"),
+                item.legal_entity_id if item else None, empty_label=_("не задано"),
+            ),
+            {"kind": "date", "name": "opened_at", "label": _("Открыта"),
+             "value": item.opened_at.isoformat() if item and item.opened_at else ""},
+            {"kind": "date", "name": "closed_at", "label": _("Закрыта"),
+             "value": item.closed_at.isoformat() if item and item.closed_at else "",
+             "help": _("Точка закрывается датой, а не удалением: "
+                       "закрытые месяцы ссылаются на неё.")},
+        ],
+    })
+
+
+@login_required
+def legal_entities(request):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    rows = [
+        {
+            "url": reverse("directory-legal-entity", args=[entity.id]),
+            "cells": [{"text": entity.title}, {"text": entity.tax_number or "—"}],
+        }
+        for entity in LegalEntity.objects.order_by("title")
+    ]
+    return render(request, "web/directory/list.html", {
+        "heading": _("Юрлица"),
+        "about": _("Бухгалтерия работает с юрлицом, пиццерий для неё нет."),
+        "add_url": reverse("directory-legal-entity-new"),
+        "add_label": _("Завести юрлицо"),
+        "columns": [{"label": _("Название")}, {"label": _("Налоговый номер")}],
+        "rows": rows,
+        "empty": _("Юрлиц нет."),
+    })
+
+
+@login_required
+def legal_entity(request, entity_id=None):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    item = None
+    if entity_id is not None:
+        item = LegalEntity.objects.filter(pk=entity_id).first()
+        if item is None:
+            raise Http404("юрлицо не найдено")
+
+    error = ""
+    if request.method == "POST":
+        try:
+            title = _text(request, "title", _("Название"))
+            tax_number = _text(request, "tax_number", _("Налоговый номер"), required=False)
+            if item is None:
+                item = LegalEntity(tenant_id=who.tenant_id)
+            item.title, item.tax_number = title, tax_number or None
+            item.save()
+            return redirect(reverse("directory-legal-entities"))
+        except BadInput as bad:
+            error = bad.message
+
+    return render(request, "web/directory/form.html", {
+        "heading": item.title if item else _("Новое юрлицо"),
+        "back_url": reverse("directory-legal-entities"),
+        "back_label": _("← К юрлицам"),
+        "error": error,
+        "submit_label": _("Сохранить"),
+        "fields": [
+            {"kind": "text", "name": "title", "label": _("Название"), "required": True,
+             "value": item.title if item else ""},
+            {"kind": "text", "name": "tax_number", "label": _("Налоговый номер"),
+             "value": (item.tax_number if item else "") or ""},
+        ],
+    })
+
+
+# --- производственный календарь -----------------------------------------------
+
+
+def _month_or_400(raw: str) -> date:
+    try:
+        return datetime.strptime(raw, "%Y-%m").date().replace(day=1)
+    except ValueError:
+        raise Http404("месяц не разобран") from None
+
+
+@login_required
+def calendar(request):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    country = _country_of(who)
+    edge = directory.closed_through(who.tenant_id)
+    rows = [
+        {
+            "url": reverse("directory-calendar-month", args=[month.period.strftime("%Y-%m")]),
+            "cells": [
+                {"text": month_title(month.period)},
+                {"text": hours(month.norm_hours), "num": True},
+                {"text": str(month.working_days), "num": True},
+                {"text": _("закрыт") if edge and month.period <= edge else ""},
+            ],
+        }
+        for month in Calendar.objects.filter(country_code=country).order_by("-period")
+    ]
+    return render(request, "web/directory/list.html", {
+        "heading": _("Производственный календарь"),
+        "about": _(
+            "Норма часов месяца берётся отсюда — её показывает страница месяца. "
+            "Календаря на месяц нет — там стоит прочерк, а не правдоподобное число."
+        ),
+        "add_url": reverse("directory-calendar-new"),
+        "add_label": _("Завести месяц"),
+        "columns": [
+            {"label": _("Месяц")}, {"label": _("Норма часов"), "num": True},
+            {"label": _("Рабочих дней"), "num": True}, {"label": _("Зарплата")},
+        ],
+        "rows": rows,
+        "empty": _("Календарь пуст. Пока его нет, норма часов на странице месяца — прочерк."),
+    })
+
+
+@login_required
+def calendar_month(request, month=None):
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    country = _country_of(who)
+    period = _month_or_400(month) if month else None
+    item = (
+        Calendar.objects.filter(country_code=country, period=period).first()
+        if period is not None else None
+    )
+    if period is not None and item is None:
+        raise Http404("месяца в календаре нет")
+
+    error = ""
+    if request.method == "POST":
+        try:
+            wanted = period or _month_or_new(request)
+            norm = _number(request, "norm_hours", _("Норма часов"))
+            days = _number(request, "working_days", _("Рабочих дней"))
+            # Норма часов закрытого месяца — то же правило задним числом, что и
+            # ставка: пересчёт после правки дал бы другие числа, чем ведомость,
+            # уже выданная людям.
+            directory.refuse_if_touches_closed_month(
+                who.tenant_id, wanted, _("производственный календарь"),
+            )
+            Calendar.objects.update_or_create(
+                country_code=country, period=wanted,
+                defaults={"norm_hours": norm, "working_days": int(days)},
+            )
+            return redirect(reverse("directory-calendar"))
+        except BadInput as bad:
+            error = bad.message
+        except directory.DirectoryRefused as refusal:
+            error = refusal.message
+
+    return render(request, "web/directory/form.html", {
+        "heading": month_title(period) if period else _("Новый месяц календаря"),
+        "back_url": reverse("directory-calendar"),
+        "back_label": _("← К календарю"),
+        "error": error,
+        "submit_label": _("Сохранить"),
+        "fields": ([] if period else [
+            {"kind": "month", "name": "month", "label": _("Месяц"), "required": True,
+             "value": "",
+             "help": _("Календарь общий для страны: его видят все партнёры этой страны.")},
+        ]) + [
+            {"kind": "number", "name": "norm_hours", "label": _("Норма часов"), "required": True,
+             "value": item.norm_hours if item else ""},
+            {"kind": "number", "name": "working_days", "label": _("Рабочих дней"),
+             "required": True, "value": item.working_days if item else ""},
+        ],
+    })
+
+
+def _month_or_new(request) -> date:
+    raw = (request.POST.get("month") or "").strip()
+    if not raw:
+        raise BadInput(_("Поле «%(label)s» обязательно.") % {"label": _("Месяц")})
+    try:
+        return datetime.strptime(raw, "%Y-%m").date().replace(day=1)
+    except ValueError:
+        raise BadInput(
+            _("«%(label)s»: месяц пишется как 2026-06, а не «%(value)s».")
+            % {"label": _("Месяц"), "value": raw}
+        ) from None

@@ -1,0 +1,46 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Оглавление админки: что здесь вообще можно вести.
+
+Счётчик рядом с каждым справочником — не украшение. Пустой справочник и
+справочник, которого роль не видит, на экране выглядят одинаково, и цифра
+отличает одно от другого до того, как человек откроет и удивится.
+
+Предупреждение о закрытом месяце стоит здесь, а не только в форме отказа:
+администратор должен узнать, что часть правок сейчас отклонят, до того как
+наберёт их, а не после.
+{% endcomment %}
+{% block title %}{% translate "Справочники" %}{% endblock %}
+{% block content %}
+<h1>{% translate "Справочники" %}</h1>
+<p class="sub">{% translate "Из чего расчёт берёт людей, ставки, точки и норму часов." %}</p>
+
+{% if closed_through %}
+{% translate "Часть месяцев уже закрыта" as closed_title %}
+{% notice "alert" title=closed_title %}
+  {% blocktranslate with edge=closed_through|date:"Y-m-d" %}Зарплата утверждена по {{ edge }} включительно. Правки, которые изменили бы
+  расчёт этих месяцев — ставка, схема группы, норма часов, — будут отклонены:
+  ведомость за них уже на руках. Чтобы всё-таки поправить, откройте месяц заново
+  с причиной на его странице.{% endblocktranslate %}
+{% endnotice %}
+{% endif %}
+
+<table>
+  <thead>
+    <tr>
+      <th>{% translate "Справочник" %}</th>
+      <th>{% translate "Что в нём" %}</th>
+      <th class="num">{% translate "Записей" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for section in sections %}
+    <tr>
+      <td><a href="{{ section.url }}">{{ section.title }}</a></td>
+      <td>{{ section.about }}</td>
+      <td class="num">{{ section.count }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

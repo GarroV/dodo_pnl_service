@@ -1,0 +1,178 @@
+"""Правила ведения справочников (T018).
+
+Зачем модуль отдельно от представлений. Экранов пять, а правил, которые они
+обязаны соблюдать, — три, и все три общие. Разложенные по пяти представлениям,
+они разъедутся на первой же правке, а разъехавшееся правило здесь означает
+поехавший закрытый месяц.
+
+**Правило первое: справочник сотрудников не заводится экранами (D029).**
+Карточки появляются из данных, админка нужна для правки. Поэтому здесь нет и не
+должно появиться `create_employee`: экран создания продублировал бы то, что и так
+приходит с таблицей партнёра, и отложил бы первый рабочий расчёт.
+
+**Правило второе: правка версионируемого заводит новую версию, а не переписывает
+старую.** Условия найма (`employment_terms`) версионируются по датам, и расчёт
+берёт версию, действующую **в считаемом месяце** (`payrun.calc.collect_cases`).
+Значит смена ставки — это новая строка с датой начала, а не `update` по месту:
+переписанная строка изменила бы прошлое, и июнь, пересчитанный в августе, дал бы
+другие числа, чем июнь, посчитанный в июне. Ведомость при этом уже на руках у
+людей (D020, T026).
+
+**Правило третье: закрытый месяц не правится ничем.** Версия условий найма с
+датой внутри утверждённого месяца, изменение нормы часов закрытого месяца,
+смена схемы расчёта группы, по которой уже посчитан утверждённый месяц, — всё
+это правка правил задним числом, только разными руками. Отказ один и тот же, и
+он называет месяц, из-за которого отказано, а не говорит «нельзя».
+
+Обратимость от этого не страдает: закрытый месяц открывается заново с причиной
+(D021, `payrun.lifecycle.reopen`), и после этого правка проходит. Запрет здесь
+не «никогда», а «не молча».
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
+
+from django.db import transaction
+from django.utils.translation import gettext as _
+
+from core.models import EmploymentTerm, Payrun
+from payrun.calc import month_end
+
+# Поля условий найма, из которых считаются деньги. Правка любого из них — новая
+# версия; всё остальное (их сегодня нет) правилось бы по месту. Список нужен
+# затем, чтобы «что считается изменением» было записано один раз, а не выведено
+# из того, какие поля попали в форму.
+VERSIONED_FIELDS = ("group_id", "unit_id", "base_rate", "coefficient", "scheme", "ledger")
+
+
+class DirectoryRefused(Exception):
+    """Правка справочника отклонена. Сообщение показывается человеку как есть."""
+
+    # 409, а не 400: с формой всё в порядке, не в порядке состояние данных —
+    # месяц закрыт. Разные коды затем, чтобы «вы ошиблись» и «сейчас нельзя»
+    # не выглядели одинаково в журнале сервера.
+    http_status = 409
+
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+def closed_through(tenant_id) -> date | None:
+    """Последний день последнего утверждённого месяца зарплаты. Нет таких — None.
+
+    Почему именно `max`, а не «попадает ли дата в какой-то утверждённый месяц».
+    Версия условий найма, начавшая действовать с даты X, влияет на **все** месяцы
+    от X и дальше. Значит она не задевает утверждённого, только если начинается
+    позже последнего из них. Проверка «попал ли ровно в закрытый месяц»
+    пропустила бы правку с датой в открытом мае при утверждённом июне — и июнь
+    поехал бы при первом же пересчёте.
+    """
+    period = (
+        Payrun.objects.filter(tenant_id=tenant_id, status="approved")
+        .order_by("-period")
+        .values_list("period", flat=True)
+        .first()
+    )
+    return month_end(period) if period is not None else None
+
+
+def refuse_if_touches_closed_month(tenant_id, effective_from: date, what: str) -> None:
+    """Отказать, если правка задевает утверждённый месяц.
+
+    `what` — что именно правят, словами и на языке страницы: отказ читает
+    человек, и «условия найма» он поймёт, а «employment_terms» нет.
+    """
+    edge = closed_through(tenant_id)
+    if edge is None or effective_from > edge:
+        return
+    raise DirectoryRefused(
+        _(
+            "%(what)s нельзя изменить с %(from)s: зарплата за %(month)s уже "
+            "утверждена, и правка переписала бы закрытый месяц задним числом. "
+            "Возьмите дату позже %(edge)s или откройте месяц заново с причиной."
+        )
+        % {
+            "what": what,
+            "from": effective_from.isoformat(),
+            "month": edge.strftime("%Y-%m"),
+            "edge": edge.isoformat(),
+        }
+    )
+
+
+@dataclass(frozen=True)
+class TermChange:
+    """Что именно поменялось между действующей версией и заявленной."""
+
+    changed: bool
+    previous: EmploymentTerm | None
+
+
+def term_at(tenant_id, employee_id, moment: date) -> EmploymentTerm | None:
+    """Версия условий найма, действующая на дату. Тем же правилом, что у расчёта."""
+    return (
+        EmploymentTerm.objects.filter(
+            tenant_id=tenant_id, employee_id=employee_id, valid_from__lte=moment
+        )
+        .exclude(valid_to__lte=moment)
+        .order_by("valid_from")
+        .last()
+    )
+
+
+def differs(term: EmploymentTerm | None, wanted: dict) -> bool:
+    """Отличается ли заявленное от действующей версии хоть одним полем денег."""
+    if term is None:
+        return True
+    for name in VERSIONED_FIELDS:
+        if getattr(term, name) != wanted.get(name):
+            return True
+    return False
+
+
+@transaction.atomic
+def save_terms(tenant_id, employee_id, *, valid_from: date, wanted: dict) -> TermChange:
+    """Завести новую версию условий найма с указанной даты.
+
+    Старая версия **закрывается**, а не переписывается: `valid_to` предыдущей
+    ставится в день начала новой. Так у человека остаётся история — из неё видно,
+    сколько он получал в июне, даже когда в августе у него другая ставка. На этом
+    же стоит воспроизводимость закрытого месяца: расчёт июня возьмёт июньскую
+    версию, потому что она никуда не делась.
+
+    Ничего не изменилось — не заводим версию вовсе. Иначе история засорялась бы
+    строками «то же самое с другой даты», и найти в ней настоящую смену ставки
+    стало бы нельзя.
+    """
+    current = term_at(tenant_id, employee_id, valid_from)
+    if not differs(current, wanted):
+        return TermChange(changed=False, previous=current)
+
+    refuse_if_touches_closed_month(tenant_id, valid_from, _("условия найма"))
+
+    if current is not None:
+        if current.valid_from == valid_from:
+            # Версия начинается тем же днём — она ещё не действовала ни одного
+            # дня отдельно от новой, и вторая строка с той же датой всё равно не
+            # прошла бы: пересечение периодов запрещено ограничением базы
+            # (`employment_terms_no_overlap`). Правим по месту — истории здесь
+            # терять нечего.
+            for name in VERSIONED_FIELDS:
+                setattr(current, name, wanted.get(name))
+            current.save(update_fields=list(VERSIONED_FIELDS))
+            return TermChange(changed=True, previous=None)
+        # Закрываем предыдущую версию днём начала новой. Именно `valid_from`, а
+        # не «день до»: границы периодов полуоткрытые (`[valid_from, valid_to)`),
+        # и ограничение непересечения в базе написано так же.
+        EmploymentTerm.objects.filter(pk=current.pk).update(valid_to=valid_from)
+
+    EmploymentTerm.objects.create(
+        tenant_id=tenant_id,
+        employee_id=employee_id,
+        valid_from=valid_from,
+        valid_to=current.valid_to if current is not None else None,
+        **wanted,
+    )
+    return TermChange(changed=True, previous=current)

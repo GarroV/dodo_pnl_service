@@ -1,0 +1,78 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Карточка сотрудника: сам человек и история его условий найма.
+
+Две формы, а не одна, и это не вёрстка, а разные правила записи. Верхняя правит
+карточку по месту: имя и внешний ключ денег не считают, и переписать опечатку в
+фамилии можно без следа. Нижняя **заводит новую версию** условий найма с даты:
+ставка, коэффициент, группа и точка участвуют в расчёте, и переписанная версия
+изменила бы уже закрытые месяцы (D020, T026).
+
+История версий стоит между ними намеренно: человек, собравшийся менять ставку,
+сначала видит, что было, и с какого числа. Без этого «действует с» набирается
+наугад.
+
+Кнопки «Завести сотрудника» здесь нет и не будет — D029: карточки появляются из
+данных партнёра, админка нужна для правки.
+{% endcomment %}
+{% block title %}{{ person.last_name }} {{ person.first_name }}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К сотрудникам" %}</a></p>
+<h1>{{ person.last_name }} {{ person.first_name }}</h1>
+
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+{% if error %}
+{% translate "Не сохранено." as not_saved %}
+{% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
+{% endif %}
+
+<h2>{% translate "Карточка" %}</h2>
+<form class="card" method="post">{% csrf_token %}
+  <input type="hidden" name="what" value="person">
+  {% include "web/directory/fields.html" with fields=person_fields %}
+  <button type="submit" class="primary">{% translate "Сохранить карточку" %}</button>
+</form>
+
+<h2>{% translate "Условия найма" %}</h2>
+{% if versions %}
+<p class="note">{% translate "Расчёт берёт версию, действующую в считаемом месяце. Поэтому закрытый месяц не меняется от новой версии." %}</p>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Действует с" %}</th>
+      <th>{% translate "По" %}</th>
+      <th>{% translate "Группа" %}</th>
+      <th>{% translate "Точка" %}</th>
+      <th class="num">{% translate "Ставка" %}</th>
+      <th class="num">{% translate "Коэффициент" %}</th>
+      <th>{% translate "Схема расчёта" %}</th>
+      <th>{% translate "Регистр учёта" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for version in versions %}
+    <tr>
+      <td>{{ version.from }}</td>
+      <td>{{ version.to }}</td>
+      <td>{{ version.group }}</td>
+      <td>{{ version.unit }}</td>
+      <td class="num">{{ version.rate }}</td>
+      <td class="num">{{ version.coefficient }}</td>
+      <td>{{ version.scheme }}</td>
+      <td>{% ledger version.ledger %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% else %}
+{% notice "empty" %}{% translate "Условий найма нет. Без них расчёт не знает ни группы, ни точки, и человек не попадёт в ведомость." %}{% endnotice %}
+{% endif %}
+
+<h2>{% translate "Новая версия условий" %}</h2>
+<p class="note">{% translate "Прежняя версия закрывается днём начала новой и остаётся в истории. Ничего не изменилось — версия не заводится." %}</p>
+<form class="card" method="post">{% csrf_token %}
+  <input type="hidden" name="what" value="terms">
+  {% include "web/directory/fields.html" with fields=terms_fields %}
+  <button type="submit" class="primary">{% translate "Завести версию" %}</button>
+</form>
+{% endblock %}

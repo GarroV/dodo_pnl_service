@@ -1,0 +1,54 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Список справочника: колонки и строки приезжают из представления.
+
+Один шаблон на пять справочников, а не пять почти одинаковых. Копии здесь стоили
+бы не объёма: в разметке списка живут соглашения блока — числа по правому краю
+моноширинным (`num`), пустое значение прочерком, первая ячейка ссылкой на
+карточку. Пять копий этих соглашений разъехались бы, и таблицы стали бы
+читаться по-разному на соседних экранах.
+
+Подписи колонок приходят из Python переведёнными: `makemessages` берёт строки и
+оттуда, а собрать их в шаблоне было бы нельзя — состав колонок у каждого
+справочника свой.
+
+Кнопки «Завести» нет у сотрудников, и это решение D029: карточки появляются из
+данных партнёра, экраны нужны для правки. Поэтому кнопка рисуется только там,
+где представление дало `add_url`, — а не «всегда, но у сотрудников спрятана».
+{% endcomment %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<p class="note"><a href="{% url 'directory' %}">{% translate "← К справочникам" %}</a></p>
+<h1>{{ heading }}</h1>
+<p class="sub">{{ about }}</p>
+
+{% if search_label %}
+<form class="search" method="get">
+  {% include "web/components/field.html" with id="q" name="q" label=search_label value=search_value %}
+  <button type="submit">{% translate "Найти" %}</button>
+</form>
+{% endif %}
+
+{% if add_url %}
+<p><a class="btn" href="{{ add_url }}">{{ add_label }}</a></p>
+{% endif %}
+
+{% if rows %}
+{% scroll %}<table>
+  <thead>
+    <tr>{% for column in columns %}<th{% if column.num %} class="num"{% endif %}>{{ column.label }}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      {% for cell in row.cells %}
+      <td{% if cell.num %} class="num"{% endif %}>{% if forloop.first %}<a href="{{ row.url }}">{{ cell.text }}</a>{% else %}{{ cell.text }}{% endif %}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% else %}
+{% notice "empty" %}{{ empty }}{% endnotice %}
+{% endif %}
+{% endblock %}

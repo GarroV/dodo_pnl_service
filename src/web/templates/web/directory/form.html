@@ -1,0 +1,23 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Правка одной записи справочника: группа, точка, юрлицо, месяц календаря.
+
+Отказ показывается плашкой над формой, а введённое остаётся в полях: набирать
+заново из-за одной опечатки человек не должен. Это то же правило, по которому
+причина отката не пропадает вместе с отказом на странице месяца.
+{% endcomment %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{{ back_label }}</a></p>
+<h1>{{ heading }}</h1>
+
+{% if error %}
+{% translate "Не сохранено." as not_saved %}
+{% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
+{% endif %}
+
+<form class="card" method="post">{% csrf_token %}
+  {% include "web/directory/fields.html" with fields=fields %}
+  <button type="submit" class="primary">{{ submit_label }}</button>
+</form>
+{% endblock %}

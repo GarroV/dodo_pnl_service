@@ -1,7 +1,7 @@
 """Маршруты интерфейса."""
 from django.urls import path
 
-from . import reports_views, views
+from . import directory_views, reports_views, views
 
 urlpatterns = [
     path("", views.index, name="index"),
@@ -57,5 +57,58 @@ urlpatterns = [
         "periods/<uuid:period_id>/export/<slug:kind>/",
         reports_views.period_export,
         name="period-export",
+    ),
+    # Админка справочников (T018). Все адреса под одним префиксом, а не
+    # россыпью по корню: право `directory.manage` — одно на все пять экранов, и
+    # общий префикс делает это видно по адресу, а не только по коду.
+    #
+    # Заведения сотрудника среди адресов нет намеренно (D029): карточки
+    # появляются из данных партнёра, админка нужна для правки. Отсутствие
+    # адреса — часть решения, а не забытый маршрут.
+    #
+    # Список и правка — разные адреса, а не одна страница с формой на каждой
+    # строке: правка справочника меняет расчёт, и человек должен видеть, что
+    # именно он открыл, до того как наберёт новую ставку.
+    path("directory/", directory_views.index, name="directory"),
+    path("directory/employees/", directory_views.employees, name="directory-employees"),
+    path(
+        "directory/employees/<uuid:employee_id>/",
+        directory_views.employee,
+        name="directory-employee",
+    ),
+    path("directory/groups/", directory_views.groups, name="directory-groups"),
+    path("directory/groups/new/", directory_views.group, name="directory-group-new"),
+    path("directory/groups/<uuid:group_id>/", directory_views.group, name="directory-group"),
+    path("directory/units/", directory_views.units, name="directory-units"),
+    path("directory/units/new/", directory_views.unit, name="directory-unit-new"),
+    path("directory/units/<uuid:unit_id>/", directory_views.unit, name="directory-unit"),
+    path(
+        "directory/legal-entities/",
+        directory_views.legal_entities,
+        name="directory-legal-entities",
+    ),
+    path(
+        "directory/legal-entities/new/",
+        directory_views.legal_entity,
+        name="directory-legal-entity-new",
+    ),
+    path(
+        "directory/legal-entities/<uuid:entity_id>/",
+        directory_views.legal_entity,
+        name="directory-legal-entity",
+    ),
+    # Месяц календаря адресуется самим месяцем, а не uuid: строка одна на
+    # страну и месяц, и `2026-06` в адресе читается человеком, в отличие от
+    # случайного ключа.
+    path("directory/calendar/", directory_views.calendar, name="directory-calendar"),
+    path(
+        "directory/calendar/new/",
+        directory_views.calendar_month,
+        name="directory-calendar-new",
+    ),
+    path(
+        "directory/calendar/<slug:month>/",
+        directory_views.calendar_month,
+        name="directory-calendar-month",
     ),
 ]
