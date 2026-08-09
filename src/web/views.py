@@ -323,6 +323,17 @@ def period_page(
                 else _("календарь %(country)s на этот месяц не заведён")
                 % {"country": country}
             ),
+            # Порядок работы за месяц и то, где человек сейчас (T077). Шаги
+            # считаются по фактам о данных, а не по разметке: «часы внесены» —
+            # это наличие табелей, «посчитано» — наличие расчёта, «утверждено» —
+            # состояние цикла. Второго источника истины о том же самом быть не
+            # должно, поэтому и `has_hours` берётся из тех же табелей, что
+            # считает сводка выше.
+            "steps": onboarding.month_steps(
+                has_hours=timesheets.exists(),
+                calculated=payrun is not None,
+                approved=frozen,
+            ),
             "error": error,
             "error_title": error_title or _("Расчёт не выполнен."),
             "details": list(details),
