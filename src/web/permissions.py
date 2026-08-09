@@ -15,6 +15,9 @@
 """
 from __future__ import annotations
 
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_noop as noop
+
 # Коды прав. Ровно те, что стоят в политиках базы: разъехавшиеся списки означали
 # бы, что интерфейс обещает не то, что позволяет база.
 TIMESHEET_EDIT = "timesheet.edit"
@@ -38,15 +41,30 @@ RETRO_POST = "retro.post"
 
 # Что показать человеку. Отказ называет само действие, а не код права: «нет
 # payrun.calculate» — сообщение для разработчика, а не для бухгалтера.
+#
+# Название действия переводится на язык страницы (T017): отказ читает человек, и
+# читает он его на том же языке, на котором написана кнопка, которой нет.
+#
+# В словаре `gettext_noop`, а перевод — в `title()`. Так, а не `gettext_lazy`,
+# потому что значение уходит не только на страницу: оно попадает в поле `error`
+# фоновой задачи и в текст исключения, а отложенный объект там либо падает при
+# сериализации, либо превращается в служебный мусор. `noop` при этом обязателен:
+# без него `makemessages` эти семь строк не увидит вовсе.
 TITLES = {
-    TIMESHEET_EDIT: "Правка табеля",
-    PAYRUN_CALCULATE: "Расчёт периода",
-    PERIOD_APPROVE: "Утверждение периода",
-    PERIOD_REOPEN: "Откат периода",
-    UNIT_CLOSE: "Закрытие часов по точке",
-    PAYSLIP_FREEZE: "Заморозка строки ведомости",
-    RETRO_POST: "Перенос разницы за закрытый месяц",
+    TIMESHEET_EDIT: noop("Правка табеля"),
+    PAYRUN_CALCULATE: noop("Расчёт периода"),
+    PERIOD_APPROVE: noop("Утверждение периода"),
+    PERIOD_REOPEN: noop("Откат периода"),
+    UNIT_CLOSE: noop("Закрытие часов по точке"),
+    PAYSLIP_FREEZE: noop("Заморозка строки ведомости"),
+    RETRO_POST: noop("Перенос разницы за закрытый месяц"),
 }
+
+
+def title(code: str) -> str:
+    """Название действия на языке страницы. Незнакомый код — как есть."""
+    known = TITLES.get(code)
+    return _(known) if known is not None else code
 
 
 def message(code: str, role_title: str = "") -> str:
@@ -55,13 +73,21 @@ def message(code: str, role_title: str = "") -> str:
     Страница спрашивает это, чтобы объяснить, почему кнопки нет; отказ на само
     действие — чтобы объяснить 403. Две формулировки одного запрета разъехались
     бы на первой правке, и человек читал бы про один и тот же запрет разное.
+
+    Форм две, а не одна со вставкой (T017): в языке, где роль стоит в другом
+    падеже или в другом месте предложения, «хвост» из кавычек переводчику не
+    приставить. Пустая роль — не редкость: до входа роли нет вовсе.
     """
-    action = TITLES.get(code, code)
-    role = f" «{role_title}»" if role_title else ""
-    return (
-        f"{action} не входит в права вашей роли{role}. "
+    action = title(code)
+    if role_title:
+        return _(
+            "%(action)s не входит в права вашей роли «%(role)s». "
+            "Попросите того, у кого это право есть."
+        ) % {"action": action, "role": role_title}
+    return _(
+        "%(action)s не входит в права вашей роли. "
         "Попросите того, у кого это право есть."
-    )
+    ) % {"action": action}
 
 
 class PermissionRefused(Exception):

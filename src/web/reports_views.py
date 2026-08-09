@@ -15,6 +15,8 @@ from __future__ import annotations
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 from django.shortcuts import render
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_noop as noop
 
 from reports import export as exports
 from reports.reconcile import reconcile
@@ -36,20 +38,20 @@ REFUSED = 422
 # Как называются сверяемые числа в таблице бухгалтера. Порядок — тот, в котором
 # их читают: сначала то, что человек получит на руки.
 FIELD_TITLES = {
-    "net": "К выплате (нето)",
-    "gross": "Бруто",
-    "contributions": "Взносы",
-    "total_cost": "Полная стоимость",
+    "net": noop("К выплате (нето)"),
+    "gross": noop("Бруто"),
+    "contributions": noop("Взносы"),
+    "total_cost": noop("Полная стоимость"),
 }
 
 # Названия причин расхождения. Причина — это вход расчёта, а не сумма: если
 # сошлись все входы, а итог разошёлся, значит разошлось правило, и это тоже
 # ответ, который человек должен прочитать.
 CAUSE_TITLES = {
-    "insured": "Часы для взносов",
-    "rate": "Ставка за час",
-    "coefficient": "Коэффициент",
-    "meal": "Топли оброк и регрес",
+    "insured": noop("Часы для взносов"),
+    "rate": noop("Ставка за час"),
+    "coefficient": noop("Коэффициент"),
+    "meal": noop("Топли оброк и регрес"),
 }
 
 EXPORTS = {
@@ -82,11 +84,25 @@ def _hour_titles(period) -> dict[str, str]:
 
 def _cause_text(cause, hour_titles: dict[str, str]) -> str:
     """Причина словами: что и на что разошлось. Оба числа, а не только разница."""
+    # Число подставляется уже готовой строкой, а не числом: у формы предложения
+    # и у формата числа разные хозяева, и склеивать их в одном ключе перевода
+    # значило бы отдать переводчику ещё и разделитель дробной части (T017).
     if cause.kind == "hours":
-        what = f"Часы · {hour_titles.get(cause.code, cause.code)}"
-        return f"{what}: в таблице {cause.expected:g}, в расчёте {cause.actual:g}"
-    what = CAUSE_TITLES.get(cause.kind, cause.kind)
-    return f"{what}: в таблице {money(cause.expected)}, в расчёте {money(cause.actual)}"
+        # Вид часов — данные партнёра (название приезжает из правил страны), а
+        # «Часы» перед ним — слово продукта. Поэтому переводится только оно.
+        what = _("Часы · %(kind)s") % {"kind": hour_titles.get(cause.code, cause.code)}
+        return _("%(what)s: в таблице %(expected)s, в расчёте %(actual)s") % {
+            "what": what,
+            "expected": f"{cause.expected:g}",
+            "actual": f"{cause.actual:g}",
+        }
+    known = CAUSE_TITLES.get(cause.kind)
+    what = _(known) if known is not None else cause.kind
+    return _("%(what)s: в таблице %(expected)s, в расчёте %(actual)s") % {
+        "what": what,
+        "expected": money(cause.expected),
+        "actual": money(cause.actual),
+    }
 
 
 def _amount_view(amount) -> dict:
@@ -104,7 +120,7 @@ def _amount_view(amount) -> dict:
     else:
         state = "off"
     return {
-        "title": FIELD_TITLES.get(amount.code, amount.code),
+        "title": _(FIELD_TITLES[amount.code]) if amount.code in FIELD_TITLES else amount.code,
         "expected": money(amount.expected) if amount.expected is not None else "—",
         "actual": money(amount.actual) if amount.actual is not None else "—",
         "diff": money(amount.diff) if amount.diff is not None else "—",
@@ -188,12 +204,12 @@ def period_reconcile(request, period_id):
 
     upload = request.FILES.get("table")
     if upload is None:
-        return _report(request, period, error="Файл не выбран.", status=400)
+        return _report(request, period, error=_("Файл не выбран."), status=400)
     if upload.size > MAX_UPLOAD:
         return _report(
             request, period, status=400,
-            error=f"Файл больше {MAX_UPLOAD // 1024 // 1024} МБ — "
-                  f"это не зарплатная таблица.",
+            error=_("Файл больше %(limit)s МБ — это не зарплатная таблица.")
+                  % {"limit": MAX_UPLOAD // 1024 // 1024},
         )
 
     try:
@@ -204,7 +220,8 @@ def period_reconcile(request, period_id):
         # прочитать, что файл не разобран, и почему.
         return _report(
             request, period, status=REFUSED,
-            error=f"Файл не удалось прочитать как книгу Excel: {broken}",
+            error=_("Файл не удалось прочитать как книгу Excel: %(reason)s")
+                  % {"reason": broken},
         )
 
     return _report(request, period, result=result)

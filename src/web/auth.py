@@ -57,7 +57,7 @@ class DevUser:
     """Учётка сида для страницы-ярлыка: что показать и под каким логином войти."""
 
     code: str
-    title: str
+    seeded_title: str
     ledgers: tuple[str, ...]
     unit: str | None
 
@@ -66,13 +66,30 @@ class DevUser:
         return self.code
 
     @property
+    def title(self) -> str:
+        """Название роли на языке страницы входа (T017).
+
+        Свойством, а не полем: список учёток собирается один раз при импорте
+        модуля, а язык у каждого запроса свой — записанное в поле название
+        осталось бы русским навсегда, в том числе на демо, которое обязано быть
+        английским. Название из сида остаётся запасным: сид вправе завести роль,
+        которой продукт не знает, и выдумывать ей перевод неоткуда.
+        """
+        from .i18n import role_title
+
+        return role_title(self.code, self.seeded_title)
+
+    @property
     def user_id(self) -> UUID:
         return det_id("user", self.code)
 
 
 DEV_USERS: dict[str, DevUser] = {
     role.code: DevUser(
-        code=role.code, title=role.title, ledgers=tuple(role.ledgers), unit=role.unit
+        code=role.code,
+        seeded_title=role.title,
+        ledgers=tuple(role.ledgers),
+        unit=role.unit,
     )
     for role in ROLES
 }

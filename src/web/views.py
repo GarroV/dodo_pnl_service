@@ -22,7 +22,9 @@ from django.http import (
 )
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_noop as noop
 from django.views.decorators.http import require_POST
 
 from core.models import Calendar, Payrun, Payslip, Period, Timesheet
@@ -145,7 +147,11 @@ def period_page(
     period,
     *,
     error=None,
-    error_title="Расчёт не выполнен.",
+    # Умолчание вычисляется внутри, а не стоит в подписи (T017): значение по
+    # умолчанию считается один раз при импорте модуля, а язык страницы — у
+    # каждого запроса свой. Заголовок, переведённый на импорте, остался бы
+    # русским навсегда.
+    error_title=None,
     details=(),
     status=200,
     reason_value="",
@@ -308,13 +314,17 @@ def period_page(
             "calculated_at": payrun.calculated_at if payrun else None,
             "employees": timesheets.count(),
             "norm_hours": hours(norm_hours),
+            # Две формы, а не одна со вставкой: код страны стоит в предложении
+            # в разных местах у разных языков, и «хвост» переводчику не
+            # приставить (T017).
             "norm_hours_hint": (
-                f"производственный календарь {country}"
+                _("производственный календарь %(country)s") % {"country": country}
                 if norm_hours is not None
-                else f"календарь {country} на этот месяц не заведён"
+                else _("календарь %(country)s на этот месяц не заведён")
+                % {"country": country}
             ),
             "error": error,
-            "error_title": error_title,
+            "error_title": error_title or _("Расчёт не выполнен."),
             "details": list(details),
             "calculated": request.GET.get("calculated") == "1",
             # --- ход фонового расчёта (T024) ---
@@ -521,7 +531,7 @@ def period_approve(request, period_id):
         code=permissions.PERIOD_APPROVE,
         run=lambda payrun, who: lifecycle.approve(payrun, actor_id=who.user_id),
         done_flag="approved",
-        error_title="Период не утверждён.",
+        error_title=_("Период не утверждён."),
     )
 
 
@@ -536,7 +546,7 @@ def period_reopen(request, period_id):
             payrun, reason=request.POST.get("reason", "")
         ),
         done_flag="reopened",
-        error_title="Период не открыт.",
+        error_title=_("Период не открыт."),
     )
 
 
@@ -571,14 +581,14 @@ def period_retro_post(request, period_id):
     except permissions.PermissionRefused as refusal:
         return period_page(
             request, period, error=refusal.message,
-            error_title="Разница не перенесена.", status=refusal.http_status,
+            error_title=_("Разница не перенесена."), status=refusal.http_status,
         )
     except PayrunRefused as refusal:
         # Регистры отказ называет кодами; человеку показываем их названия.
         details = refusal.details or [ledger_title(name) for name in refusal.ledgers]
         return period_page(
             request, period, error=refusal.message, details=details,
-            error_title="Разница не перенесена.", status=refusal.http_status,
+            error_title=_("Разница не перенесена."), status=refusal.http_status,
         )
 
     # Перенаправление после записи: обновление страницы не переносит второй раз.
@@ -653,7 +663,7 @@ def payslip_freeze(request, payslip_id):
             payslip, actor_id=who.user_id, reason=request.POST.get("reason", "")
         ),
         done_flag="froze",
-        error_title="Строка не заморожена.",
+        error_title=_("Строка не заморожена."),
     )
 
 
@@ -665,7 +675,7 @@ def payslip_release(request, payslip_id):
         request, payslip_id,
         run=lambda payslip, who: freezing.release(payslip, actor_id=who.user_id),
         done_flag="released",
-        error_title="Заморозка не снята.",
+        error_title=_("Заморозка не снята."),
     )
 
 
@@ -675,71 +685,86 @@ def payslip_release(request, payslip_id):
 # Подписи производных величин. Здесь, а не в `reports`: там данные, тут слова —
 # та же граница, что у названий регистров и формата чисел (T028).
 DERIVED_TITLES = {
-    "gross": "Бруто",
-    "tax": "Налог",
-    "contributions": "Взносы",
-    "total_cost": "Полная стоимость",
+    "gross": noop("Бруто"),
+    "tax": noop("Налог"),
+    "contributions": noop("Взносы"),
+    "total_cost": noop("Полная стоимость"),
 }
 
 # Как назвать вход шага по-человечески. Ключи движка английские и стабильные —
 # перевод их дело интерфейса, а не следа (см. `payroll.trace.TraceStep`).
 INPUT_TITLES = {
-    "hours": "часов",
-    "rate": "ставка за час",
-    "pay_percent": "процент оплаты",
-    "floor": "минимум за час",
-    "hour_types": "типы часов",
-    "prorate_by": "пропорция",
-    "amount_per_norm": "за полную норму",
-    "worked_days": "отработано дней",
-    "norm_days": "рабочих дней в месяце",
-    "worked_hours": "отработано часов",
-    "norm_hours": "норма часов",
-    "method": "способ",
-    "base": "база",
-    "insured_hours": "база взносов, часов",
+    "hours": noop("часов"),
+    "rate": noop("ставка за час"),
+    "pay_percent": noop("процент оплаты"),
+    "floor": noop("минимум за час"),
+    "hour_types": noop("типы часов"),
+    "prorate_by": noop("пропорция"),
+    "amount_per_norm": noop("за полную норму"),
+    "worked_days": noop("отработано дней"),
+    "norm_days": noop("рабочих дней в месяце"),
+    "worked_hours": noop("отработано часов"),
+    "norm_hours": noop("норма часов"),
+    "method": noop("способ"),
+    "base": noop("база"),
+    "insured_hours": noop("база взносов, часов"),
     # Найдено смоуком: эти два ключа приезжают в шаге часов и без подписи
     # читались как отладочный вывод. Ставка сотрудника — это базовая ставка,
     # умноженная на коэффициент, и обе величины нужны, чтобы повторить её.
-    "base_rate": "базовая ставка",
-    "coefficient": "коэффициент",
+    "base_rate": noop("базовая ставка"),
+    "coefficient": noop("коэффициент"),
     # Производные величины: по этим числам повторяют бруто, налог и взносы.
     # Список снят с движка целиком, а не по памяти: ключ без подписи читается
     # на экране как отладочный вывод, и это нашёл смоук.
-    "net": "нето",
-    "gross": "бруто",
-    "tax": "налог",
-    "contributions": "взносы",
-    "credit": "зачтено",
-    "withheld": "удержано с работника",
-    "share": "доля",
-    "income_tax": "ставка налога",
-    "employee_contributions": "взносы работника",
-    "employer_contributions": "взносы работодателя",
-    "combined_contributions": "взносы вместе",
-    "net_factor": "множитель нето → бруто",
-    "tax_free_monthly": "необлагаемый минимум в месяц",
-    "half_tax_free": "половина необлагаемого",
-    "min_contribution_base": "минимальная база взносов",
-    "reference_norm_hours": "эталонная норма часов",
-    "hours_divisor": "делитель часов",
-    "hours_per_day": "часов в рабочем дне",
-    "rate_key": "какая ставка",
+    "net": noop("нето"),
+    "gross": noop("бруто"),
+    "tax": noop("налог"),
+    "contributions": noop("взносы"),
+    "credit": noop("зачтено"),
+    "withheld": noop("удержано с работника"),
+    "share": noop("доля"),
+    "income_tax": noop("ставка налога"),
+    "employee_contributions": noop("взносы работника"),
+    "employer_contributions": noop("взносы работодателя"),
+    "combined_contributions": noop("взносы вместе"),
+    "net_factor": noop("множитель нето → бруто"),
+    "tax_free_monthly": noop("необлагаемый минимум в месяц"),
+    "half_tax_free": noop("половина необлагаемого"),
+    "min_contribution_base": noop("минимальная база взносов"),
+    "reference_norm_hours": noop("эталонная норма часов"),
+    "hours_divisor": noop("делитель часов"),
+    "hours_per_day": noop("часов в рабочем дне"),
+    "rate_key": noop("какая ставка"),
 }
 
 # Откуда приехало правило: чьё это решение — страны, партнёра, группы или
 # человека. «input» — не правило вовсе, а число, введённое руками.
 LEVEL_TITLES = {
-    "country": "правило страны",
-    "tenant": "переопределение партнёра",
-    "group": "переопределение группы",
-    "employee": "переопределение по сотруднику",
-    "input": "введено руками",
+    "country": noop("правило страны"),
+    "tenant": noop("переопределение партнёра"),
+    "group": noop("переопределение группы"),
+    "employee": noop("переопределение по сотруднику"),
+    "input": noop("введено руками"),
 }
 
 # Порядок входов на экране — как в формуле, слева направо: часы × ставка ×
 # процент. Прочие идут следом по алфавиту, чтобы не прыгали от шага к шагу.
 INPUT_ORDER = ["hours", "rate", "pay_percent", "floor", "amount_per_norm"]
+
+
+def titled(titles: dict, code: str, fallback: str = "") -> str:
+    """Подпись из словаря на языке страницы; незнакомый код — как есть (T017).
+
+    Словари выше держат русские строки через `gettext_noop`, а переводятся они
+    здесь, в момент показа: словарь собирается один раз на импорт, а язык у
+    каждого запроса свой. Пропущенный код — не ошибка: движок вправе завести
+    новый вход раньше, чем интерфейс придумает ему подпись, и тогда на экране
+    честнее показать ключ, чем пустоту.
+    """
+    known = titles.get(code)
+    if known is not None:
+        return gettext(known)
+    return fallback or code
 
 
 def input_pairs(values: dict) -> list[dict]:
@@ -756,7 +781,7 @@ def input_pairs(values: dict) -> list[dict]:
             shown = hours(value) if name.endswith(("hours", "days")) else money(value)
         else:
             shown = str(value)
-        pairs.append({"title": INPUT_TITLES.get(name, name), "value": shown})
+        pairs.append({"title": titled(INPUT_TITLES, name), "value": shown})
     return pairs
 
 
@@ -768,7 +793,7 @@ def trace_step(step) -> dict:
         "amount": money(step.amount),
         "ledger": ledger_title(step.ledger) if step.ledger else "",
         "inputs": input_pairs(step.inputs),
-        "level": LEVEL_TITLES.get(step.level, step.level),
+        "level": titled(LEVEL_TITLES, step.level),
         "differs": step.differs,
         # Сохранённое показывается, только когда оно отличается: одинаковое
         # число во второй колонке — шум, из-за которого перестают замечать
@@ -820,7 +845,7 @@ def payslip_trace(request, payslip_id):
             "cut_title": cut_title(view.cut) if view.cut else "",
             "steps": [trace_step(step) for step in view.steps],
             "derived": [
-                {**trace_step(step), "title": DERIVED_TITLES.get(step.kind, step.title)}
+                {**trace_step(step), "title": titled(DERIVED_TITLES, step.kind, step.title)}
                 for step in view.derived
             ],
             "carried": [
@@ -966,7 +991,7 @@ def login_page(request):
             request,
             "web/login.html",
             {
-                "error": "Логин или пароль не подходят",
+                "error": _("Логин или пароль не подходят"),
                 "username": username,
                 "next": safe_next(request),
                 "dev_users": auth.DEV_USERS.values() if auth.dev_login_is_enabled() else [],
