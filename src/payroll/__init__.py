@@ -1,12 +1,12 @@
 """Зарплатный движок: правила в конфигурации, не в коде."""
 
 from .engine import (
+    HOURS,
     Component,
     Employee,
     PayrollEngine,
     Payslip,
     Timesheet,
-    HOURS,
     d,
     insured_base,
     uses_insured_hours,
