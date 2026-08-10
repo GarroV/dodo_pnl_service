@@ -197,3 +197,272 @@ def test_trace_of_fixed_amount_does_not_pretend_there_is_a_rate(serbia_preset):
     step = next(s for s in slip.trace if s.rule_code == "piecework.fixed_amount")
     assert step.input_values["pay_per_unit"] is False
     assert step.input_values["rate"] is None
+
+
+# =============================================================================
+# 4. Живая база: ввод величины, права и закрытый период
+# =============================================================================
+#
+# Дальше идёт то, ради чего задача и заведена: способ оплаты — версионируемое
+# правило, а не свойство «навсегда». Переключение способа не имеет права
+# сдвинуть уже посчитанный месяц — это то же требование, что в T026.
+
+from contextlib import contextmanager  # noqa: E402
+from datetime import date  # noqa: E402
+
+from conftest import as_app_user, body, login_as  # noqa: E402
+
+JUNE = date(2026, 6, 1)
+JULY = date(2026, 7, 1)
+ALL_LEDGERS = ["official", "supplementary", "internal"]
+
+COURIERS_MEASURE = "groups.couriers.work_measure"
+
+
+@contextmanager
+def measure_switched(tenant_id, measure: str, *, since: date):
+    """Переключить способ оплаты курьеров с указанной даты — и вернуть обратно.
+
+    Тем же механизмом, которым партнёр меняет любое другое правило: строка
+    `rule_overrides` с путём, значением и датой начала действия. Отдельной
+    «настройки способа оплаты» в продукте нет намеренно — иначе одно и то же
+    правило имело бы два места жительства и две разные истории версий.
+    """
+    from core.models import RuleOverride
+
+    row = RuleOverride.objects.create(
+        tenant_id=tenant_id, scope_type="tenant", scope_id=None,
+        path=COURIERS_MEASURE, value=measure, valid_from=since,
+    )
+    try:
+        yield row
+    finally:
+        row.delete()
+
+
+def courier_row(period=JUNE):
+    """Строка табеля курьера в сиде разработки."""
+    from core.models import EmploymentTerm
+    from core.models import Timesheet as Row
+
+    ids = EmploymentTerm.objects.filter(group__code="couriers").values_list(
+        "employee_id", flat=True
+    )
+    row = (
+        Row.objects.filter(period=period, employee_id__in=list(ids))
+        .select_related("employee")
+        .order_by("employee__external_id")
+        .first()
+    )
+    assert row is not None, "в сиде нет ни одного курьера — тест бессмысленен"
+    return row
+
+
+def grid_url(client) -> str:
+    import re
+
+    from conftest import period_url
+
+    match = re.search(r"([0-9a-f-]{36})", period_url(client))
+    return f"/timesheets/{match.group(1)}/"
+
+
+def test_piece_column_appears_only_for_piecework_groups(client, web_env):
+    """Колонка сдельной величины показывается, когда есть кому её вводить."""
+    login_as(client, "director")
+    url = grid_url(client)
+
+    assert "timesheet-piece" not in body(client.get(url))
+    assert 'name="piece"' not in body(client.get(url))
+
+    row = courier_row()
+    with measure_switched(row.tenant_id, "deliveries", since=JUNE):
+        html = body(client.get(url))
+
+    assert 'name="piece"' in html
+    # Подпись способа стоит у ячейки: 120 доставок и 120 динаров — разные деньги.
+    assert "Доставки" in html
+
+
+def test_piece_value_is_saved_and_survives_reload(client, web_env):
+    """Ввёл сдельную величину, ушёл со страницы, вернулся — число на месте."""
+    from core.models import Timesheet as Row
+
+    login_as(client, "director")
+    url = grid_url(client)
+    row = courier_row()
+
+    with measure_switched(row.tenant_id, "deliveries", since=JUNE):
+        response = client.post(f"{url}piece/", {"row": str(row.pk), "piece": "120"})
+        assert response.status_code == 200
+        assert response["X-Cell-Value"] == "120.00"
+
+        assert Row.objects.get(pk=row.pk).piece_value == Decimal("120.00")
+        assert 'value="120.00"' in body(client.get(url))
+
+    Row.objects.filter(pk=row.pk).update(piece_value=0)
+
+
+def test_garbage_in_the_piece_cell_is_refused_out_loud(client, web_env):
+    from core.models import Timesheet as Row
+
+    login_as(client, "director")
+    url = grid_url(client)
+    row = courier_row()
+
+    with measure_switched(row.tenant_id, "deliveries", since=JUNE):
+        response = client.post(f"{url}piece/", {"row": str(row.pk), "piece": "восемь"})
+
+    assert response.status_code == 422
+    assert "не число" in response.content.decode()
+    # Отказ обязан ничего не менять и вернуть то, что осталось в базе.
+    assert response["X-Cell-Value"] == "0.00"
+    assert Row.objects.get(pk=row.pk).piece_value == Decimal(0)
+
+
+def test_negative_piece_value_is_refused(client, web_env):
+    login_as(client, "director")
+    url = grid_url(client)
+    row = courier_row()
+
+    response = client.post(f"{url}piece/", {"row": str(row.pk), "piece": "-5"})
+
+    assert response.status_code == 422
+    assert "отрицательной" in response.content.decode()
+
+
+def test_manager_cannot_write_piece_value_of_another_unit(client, web_env):
+    """Чужая точка и несуществующая строка выглядят одинаково — как и у часов."""
+    from core.models import Timesheet as Row
+    from core.models import Unit
+
+    login_as(client, "manager")
+    url = grid_url(client)
+    ns1 = Unit.objects.filter(code="NS1").values_list("id", flat=True).first()
+    stranger = Row.objects.filter(period=JUNE).exclude(unit_id=ns1).first()
+
+    response = client.post(f"{url}piece/", {"row": str(stranger.pk), "piece": "10"})
+
+    assert response.status_code == 404
+    assert Row.objects.get(pk=stranger.pk).piece_value == Decimal(0)
+
+
+def test_app_user_cannot_read_piece_value_of_another_tenant(db):
+    """Колонка живёт в той же строке табеля, что и часы, — и закрыта так же.
+
+    Проверяется ролью `app_user`: владелец таблиц политики обходит, и проверка
+    им была бы зелёной всегда.
+    """
+    from conftest import T1, U_BG1, USER_OTHER
+
+    employee_id = db.execute(
+        """insert into employees (tenant_id, external_id, first_name, last_name)
+           values (%s, 'piece-1', 'Курир', 'Тестов') returning id""",
+        (T1,),
+    ).fetchone()[0]
+    db.execute(
+        """insert into timesheets (tenant_id, employee_id, unit_id, period,
+                                   norm_hours, hours, piece_value)
+           values (%s, %s, %s, %s, 176, '{}'::jsonb, 120)""",
+        (T1, employee_id, U_BG1, JUNE),
+    )
+
+    with as_app_user(db, USER_OTHER) as conn:
+        seen = conn.execute(
+            "select piece_value from timesheets where employee_id = %s", (employee_id,)
+        ).fetchall()
+
+    assert seen == [], "сдельная величина чужого партнёра видна"
+
+
+def test_switching_the_measure_does_not_move_a_closed_period(web_env):
+    """Главный тест задачи: переключение способа не ломает закрытый месяц.
+
+    Способ оплаты — версионируемое правило: он начинает действовать с даты, а не
+    задним числом. Уже посчитанный и утверждённый июнь обязан остаться прежним
+    до копейки — и в базе, и при повторном счёте по сегодняшним правилам.
+    """
+    from conftest import wipe_payruns
+    from core.models import PayComponent, Payrun
+    from core.models import Timesheet as Row
+    from payrun.calc import calculate_period, compute
+    from payrun.lifecycle import approve
+
+    wipe_payruns(web_env)
+    row = courier_row()
+    Row.objects.filter(pk=row.pk).update(piece_value=Decimal("120.00"))
+    try:
+        outcome = calculate_period(
+            tenant_id=row.tenant_id, period=JUNE, visible_ledgers=ALL_LEDGERS
+        )
+        before = sorted(
+            (str(c.payslip_id), c.code, str(c.amount))
+            for c in PayComponent.objects.filter(payslip__payrun_id=outcome.payrun_id)
+        )
+        approve(Payrun.objects.get(pk=outcome.payrun_id), actor_id=None)
+
+        # Партнёр переключает курьеров на сдельную оплату с ИЮЛЯ.
+        with measure_switched(row.tenant_id, "deliveries", since=JULY):
+            after = sorted(
+                (str(c.payslip_id), c.code, str(c.amount))
+                for c in PayComponent.objects.filter(payslip__payrun_id=outcome.payrun_id)
+            )
+            assert after == before, "закрытый месяц переписан сменой способа оплаты"
+
+            # И пересчёт по сегодняшним правилам дал бы июню ровно то же самое:
+            # правило начало действовать позже, чем этот месяц.
+            _, slips = compute(row.tenant_id, JUNE)
+            fresh = sorted(
+                (case.external_id, component.code, f"{component.amount:.2f}")
+                for case, slip in slips for component in slip.components
+            )
+            stored = sorted(
+                (c.payslip.employee.external_id, c.code, f"{c.amount:.2f}")
+                for c in PayComponent.objects.filter(
+                    payslip__payrun_id=outcome.payrun_id
+                ).select_related("payslip__employee")
+            )
+            assert fresh == stored
+    finally:
+        Row.objects.filter(pk=row.pk).update(piece_value=0)
+        wipe_payruns(web_env)
+
+
+def test_the_same_switch_from_june_does_change_june(web_env):
+    """Обратная сторона: правило, начавшее действовать в июне, июнь меняет.
+
+    Без этой проверки предыдущий тест доказывал бы не «версионирование
+    работает», а «переключатель ни на что не влияет».
+    """
+    from conftest import wipe_payruns
+    from core.models import Timesheet as Row
+    from payrun.calc import compute
+
+    wipe_payruns(web_env)
+    row = courier_row()
+    Row.objects.filter(pk=row.pk).update(piece_value=Decimal("120.00"))
+    try:
+        def nets():
+            _, slips = compute(row.tenant_id, JUNE)
+            return {
+                case.external_id: slip.net for case, slip in slips
+                if case.employee_id == row.employee_id
+            }
+
+        by_hours = nets()
+        with measure_switched(row.tenant_id, "deliveries", since=JUNE):
+            by_pieces = nets()
+
+        assert by_hours != by_pieces, "переключатель способа ничего не меняет"
+        # 120 доставок × ставка курьера — число, которое можно проверить руками.
+        from core.models import EmploymentTerm
+
+        term = (
+            EmploymentTerm.objects.filter(employee_id=row.employee_id)
+            .order_by("-valid_from").first()
+        )
+        expected = Decimal("120") * term.base_rate * term.coefficient
+        assert list(by_pieces.values())[0] == expected
+    finally:
+        Row.objects.filter(pk=row.pk).update(piece_value=0)
+        wipe_payruns(web_env)

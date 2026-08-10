@@ -17,10 +17,12 @@ from decimal import Decimal
 from uuid import UUID
 
 from core.models import Timesheet
-from payroll import insured_base
+from payroll import HOURS, insured_base, work_measure
+from payrun.calc import terms_in_force
+from payrun.rules import select_rules
 
 from .closing import open_closures
-from .store import country_of, hour_types
+from .store import country_of
 
 __all__ = ["Column", "Grid", "Row", "build_grid"]
 
@@ -54,6 +56,16 @@ class Row:
     # в этом весь смысл «спорная точка не держит остальные».
     unit_id: UUID | None = None
     closed: bool = False
+    # Чем меряется работа этого человека (D032, T075). Свойство строки, а не
+    # сетки: на одном экране соседствуют почасовая кухня и сдельные курьеры —
+    # в этом весь смысл поддержки обоих способов.
+    measure: str = HOURS
+    measure_title: str = ""
+    piece_value: Decimal = Decimal("0")
+
+    @property
+    def piecework(self) -> bool:
+        return self.measure != HOURS
 
     @property
     def total(self) -> Decimal:
@@ -73,6 +85,16 @@ class Row:
 class Grid:
     columns: list[Column]
     rows: list[Row]
+
+    @property
+    def has_piecework(self) -> bool:
+        """Есть ли на экране хоть одна сдельная строка.
+
+        От этого зависит, показывать ли колонку сдельной величины. Пустая
+        колонка на каждом табеле мира была бы приглашением ввести в неё что-то
+        там, где её никто не спрашивает.
+        """
+        return any(row.piecework for row in self.rows)
 
     @property
     def column_totals(self) -> dict[str, Decimal]:
@@ -124,18 +146,42 @@ def visible_rows(tenant_id: UUID, period: date, unit_ids=None):
     return rows
 
 
+def measure_of(rules, term) -> tuple[str, str]:
+    """Мера работы строки и её подпись — по правилам, действующим на этот месяц.
+
+    Правила берутся ровно те же и тем же способом, каким их берёт расчёт
+    (`payrun.calc`): с переопределениями группы и человека. Иначе экран
+    предлагал бы вводить одно, а расчёт читал бы другое — и разошлись бы они
+    молча, ровно у того партнёра, который правило и переопределил.
+
+    Условий найма нет — меры нет: чем меряется работа, записано у группы, а
+    группа человека живёт в условиях найма. Такую строку расчёт всё равно
+    отвергнет по имени, и придумывать ей способ оплаты здесь не за чем.
+    """
+    if term is None:
+        return HOURS, ""
+    preset = rules.preset(group_id=term.group_id, employee_id=term.employee_id)
+    measure = work_measure((preset.get("groups") or {}).get(term.group.code))
+    title = ((preset.get("work_measures") or {}).get(measure) or {}).get("title") or ""
+    return measure, title
+
+
 def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
-    known = hour_types(tenant_id, period, country_of(tenant_id))
+    rules = select_rules(tenant_id, country_of(tenant_id), period)
+    known = dict(rules.base.get("hour_types") or {})
     columns = build_columns(known)
     codes = [column.code for column in columns]
 
     # Закрытия читаются один раз на сетку, а не по строке на человека: 35 строк
-    # дали бы 35 одинаковых запросов ради одного и того же ответа.
+    # дали бы 35 одинаковых запросов ради одного и того же ответа. То же и с
+    # условиями найма: группа человека нужна каждой строке.
     closed = set(open_closures(tenant_id, period))
+    terms = terms_in_force(tenant_id, period)
 
     rows = []
     for sheet in visible_rows(tenant_id, period, unit_ids):
         stored = sheet.hours or {}
+        measure, measure_title = measure_of(rules, terms.get(sheet.employee_id))
         rows.append(
             Row(
                 timesheet_id=sheet.id,
@@ -151,6 +197,9 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                 cells={code: Decimal(str(stored.get(code, 0))) for code in codes},
                 unit_id=sheet.unit_id,
                 closed=sheet.unit_id in closed,
+                measure=measure,
+                measure_title=measure_title,
+                piece_value=Decimal(str(sheet.piece_value)),
             )
         )
     return Grid(columns=columns, rows=rows)

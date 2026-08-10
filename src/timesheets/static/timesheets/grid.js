@@ -237,12 +237,23 @@
       // Ячейка изменена, но подтверждения от сервера нет: либо запрос ещё
       // летит, либо его не было вовсе (уход прямо из поля). Повтор безвреден —
       // запись ячейки идемпотентна.
+      //
+      // Ячеек в сетке два рода: часы и сдельная величина (T075). У них разные
+      // адреса и разные имена поля, и досылка обязана попасть туда же, куда
+      // ушёл бы обычный запрос, — иначе сдельная величина доехала бы в записи
+      // часов и была бы отвергнута как неизвестный тип часа. Умолчания —
+      // часы: так вела себя эта досылка до появления второго рода.
+      const field = input.dataset.field || "kind";
       const body = new FormData();
       body.append("row", input.dataset.row);
-      body.append("kind", input.dataset.kind);
-      body.append("hours", input.value);
+      if (field === "kind") {
+        body.append("kind", input.dataset.kind);
+        body.append("hours", input.value);
+      } else {
+        body.append(field, input.value);
+      }
       body.append("csrfmiddlewaretoken", token.value);
-      navigator.sendBeacon(table.dataset.url, body);
+      navigator.sendBeacon(input.dataset.url || table.dataset.url, body);
     });
   });
 })();

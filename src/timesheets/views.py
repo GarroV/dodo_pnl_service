@@ -34,9 +34,9 @@ from .closing import (
 )
 from .grid import build_grid, visible_rows
 from .importer import import_partner_table
-from .store import CellRefused, parse_hours, set_cell
+from .store import CellRefused, parse_hours, parse_piece, set_cell, set_piece
 
-__all__ = ["cell", "close", "grid", "import_table", "reopen"]
+__all__ = ["cell", "close", "grid", "import_table", "piece", "reopen"]
 
 # Больше этого файл зарплатной таблицы не бывает: восемь листов на несколько
 # сотен человек — это сотни килобайт. Ограничение не про безопасность, а про
@@ -57,7 +57,7 @@ def _context(request, period):
     return who
 
 
-def _refused(status: int, text: str, row, hour_type: str) -> HttpResponse:
+def _refused(status: int, text: str, stored) -> HttpResponse:
     """Отказ на запись ячейки — одним и тем же способом, каким бы он ни был.
 
     Три вещи, которые обязан получить экран: код ответа, текст для человека и
@@ -65,12 +65,20 @@ def _refused(status: int, text: str, row, hour_type: str) -> HttpResponse:
     оставался бы непринятый ввод, и человек читал бы отказ, глядя на число,
     которого в базе нет (T066). Здесь это одно место на все причины отказа,
     чтобы новая причина не завела себе третий способ объясняться.
+
+    Значение передаётся готовым, а не выковыривается отсюда из строки табеля:
+    ячеек в сетке два рода — часы и сдельная величина (T075), — и лезть за
+    каждым в своё поле означало бы ветку на род ячейки внутри общего отказа.
     """
     response = HttpResponse(
         text, status=status, content_type="text/plain; charset=utf-8"
     )
-    response["X-Cell-Value"] = f"{Decimal(str((row.hours or {}).get(hour_type, 0))):.2f}"
+    response["X-Cell-Value"] = f"{Decimal(str(stored or 0)):.2f}"
     return response
+
+
+def _hours_of(row, hour_type: str):
+    return (row.hours or {}).get(hour_type, 0)
 
 
 @login_required
@@ -172,18 +180,18 @@ def cell(request, period_id):
         set_cell(timesheet=row, hour_type=hour_type, hours=hours)
         table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
     except CellRefused as refusal:
-        return _refused(REFUSED, str(refusal), row, hour_type)
+        return _refused(REFUSED, str(refusal), _hours_of(row, hour_type))
     except ClosureRefused as refusal:
         # Тем же способом, что и остальные отказы на записи ячейки: код,
         # текст для человека и значение, оставшееся в базе (T066, T073).
-        return _refused(refusal.http_status, refusal.message, row, hour_type)
+        return _refused(refusal.http_status, refusal.message, _hours_of(row, hour_type))
     except PayrunRefused as refusal:
         # Колонки сетки — типы часов страны, то есть те же правила, на которых
         # стоит расчёт. Страница могла открыться, когда они ещё действовали, а
         # ячейка уходит на сервер уже после того, как перестали (T073). Без этой
         # ветки человек получал 500 — «Server Error» ровно тому, кто набирал
         # часы, — вместо того же объяснения, что даёт страница с T062.
-        return _refused(refusal.http_status, refusal.message, row, hour_type)
+        return _refused(refusal.http_status, refusal.message, _hours_of(row, hour_type))
 
     changed = next((item for item in table.rows if item.timesheet_id == row.id), None)
     response = render(
@@ -201,6 +209,59 @@ def cell(request, period_id):
     # Значение в том виде, в каком оно легло в базу: «8,5» и «8.50» — одно и то
     # же число, но человек должен увидеть, что именно сохранилось.
     response["X-Cell-Value"] = f"{hours:.2f}"
+    return response
+
+
+@login_required
+@require_POST
+def piece(request, period_id):
+    """Записать сдельную величину строки табеля (T075).
+
+    Свой адрес, а не значение поля `kind` у записи часов. Причина та же, по
+    которой закрытие и открытие точки — разные адреса: это разные величины с
+    разными правилами. Часы проверяются по типам часов страны и раскладываются
+    по дням; сдельная величина — ни то, ни другое, и одна общая ручка означала
+    бы, что род ячейки решает скрытое поле.
+
+    Отвечает пустым телом: пересчитывать на сетке нечего. Итог строки и итоги
+    колонок — это часы, а сдельную величину не суммируют по столбцу вовсе:
+    у одного партнёра рядом могут стоять доставки и фиксированные суммы, и их
+    сумма не означала бы ничего.
+    """
+    period = find_period(period_id)
+    who = _context(request, period)
+
+    try:
+        permissions.check(who, permissions.TIMESHEET_EDIT)
+    except permissions.PermissionRefused as refusal:
+        return HttpResponse(
+            refusal.message,
+            status=refusal.http_status,
+            content_type="text/plain; charset=utf-8",
+        )
+
+    row = (
+        visible_rows(period.tenant_id, period.period, who.unit_ids)
+        .filter(pk=request.POST.get("row") or None)
+        .first()
+    )
+    if row is None:
+        return HttpResponseNotFound("строка табеля не найдена")
+
+    try:
+        value = parse_piece(request.POST.get("piece", ""))
+        # Тот же запрет, что у часов: закрытую точку не правят. Проверка стоит
+        # здесь, а не только при построении страницы, — точку могли закрыть уже
+        # после того, как страница открылась.
+        refuse_if_closed(row)
+        set_piece(timesheet=row, value=value)
+    except CellRefused as refusal:
+        return _refused(REFUSED, str(refusal), row.piece_value)
+    except ClosureRefused as refusal:
+        return _refused(refusal.http_status, refusal.message, row.piece_value)
+
+    response = HttpResponse("", content_type="text/plain; charset=utf-8")
+    response["X-Cell-Value"] = f"{value:.2f}"
     return response
 
 
