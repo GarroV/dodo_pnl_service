@@ -323,6 +323,20 @@ def test_nothing_changed_means_no_new_version(client, sql, terms_restored):
     client.post("/logout/")
 
 
+@pytest.fixture
+def payruns_restored(web_env):
+    """Утверждённый месяц не переживает теста.
+
+    Тесты ниже утверждают июнь, чтобы было чему сопротивляться правке
+    справочника. Оставленный утверждённым, он меняет вид страницы месяца для
+    **всех** остальных тестов стенда: полоса шагов перестаёт показывать текущий
+    шаг, потому что пройдены все. Проверка онбординга из-за этого падала, и
+    выглядело это поломкой соседнего блока, а не следом здешнего теста.
+    """
+    yield
+    wipe_payruns(web_env)
+
+
 def approve_june(client, web_env) -> str:
     """Посчитать и утвердить июнь — руками по экрану, как это делает человек."""
     wipe_payruns(web_env)
@@ -357,7 +371,7 @@ def june_rates(web_env) -> dict:
     }
 
 
-def test_a_directory_edit_does_not_move_a_closed_period(client, sql, web_env, terms_restored):
+def test_a_directory_edit_does_not_move_a_closed_period(client, sql, web_env, terms_restored, payruns_restored):
     """Главная проверка задачи: закрытый месяц остаётся байт в байт прежним.
 
     Проверяется двумя способами, и второй важнее первого. Первый (строки не
@@ -391,7 +405,7 @@ def test_a_directory_edit_does_not_move_a_closed_period(client, sql, web_env, te
     )
 
 
-def test_a_version_inside_a_closed_month_is_refused(client, sql, web_env, terms_restored):
+def test_a_version_inside_a_closed_month_is_refused(client, sql, web_env, terms_restored, payruns_restored):
     """Дату внутри утверждённого месяца экран не принимает и объясняет почему."""
     approve_june(client, web_env)
     client.post("/logout/")
@@ -417,7 +431,7 @@ def test_a_version_inside_a_closed_month_is_refused(client, sql, web_env, terms_
     client.post("/logout/")
 
 
-def test_the_group_scheme_is_frozen_while_a_month_is_closed(client, sql, web_env):
+def test_the_group_scheme_is_frozen_while_a_month_is_closed(client, sql, web_env, payruns_restored):
     """Схема расчёта группы версий не имеет — значит при закрытом месяце не правится.
 
     Название группы при этом править можно: оно денег не считает. Проверяется и
@@ -453,7 +467,7 @@ def test_the_group_scheme_is_frozen_while_a_month_is_closed(client, sql, web_env
         client.post("/logout/")
 
 
-def test_the_calendar_of_a_closed_month_is_refused(client, sql, web_env):
+def test_the_calendar_of_a_closed_month_is_refused(client, sql, web_env, payruns_restored):
     """Норма часов закрытого месяца — то же правило задним числом, что и ставка."""
     approve_june(client, web_env)
     client.post("/logout/")
