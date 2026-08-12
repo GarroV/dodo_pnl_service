@@ -467,287 +467,237 @@ msgstr "Fajl nije moguće pročitati kao Excel radnu svesku: %(reason)s"
 
 #, python-format
 msgid "%(what)s нельзя изменить с %(from)s: зарплата за %(month)s уже утверждена, и правка переписала бы закрытый месяц задним числом. Возьмите дату позже %(edge)s или откройте месяц заново с причиной."
-msgstr ""
+msgstr "%(what)s ne može se promeniti od %(from)s: plata za %(month)s je već odobrena, a izmena bi retroaktivno prepisala zatvoren mesec. Izaberite datum kasnije od %(edge)s ili ponovo otvorite mesec sa razlogom."
 
-#, fuzzy
-#| msgid "Основная навигация"
 msgid "условия найма"
-msgstr "Glavna navigacija"
+msgstr "uslovi zapošljavanja"
 
-#, fuzzy
-#| msgid "точка не найдена"
 msgid "Карточка сохранена."
-msgstr "objekat nije pronađen"
+msgstr "Kartica je sačuvana."
 
-#, fuzzy
-#| msgid "Собираем табели и условия найма"
 msgid "Заведена новая версия условий найма."
-msgstr "Prikupljamo evidencije sati i uslove zapošljavanja"
+msgstr "Zavedena je nova verzija uslova zapošljavanja."
 
-#, fuzzy
-#| msgid "Данные этого месяца изменились после утверждения"
 msgid "Ничего не изменилось — новая версия не заведена."
-msgstr "Podaci ovog meseca su se promenili posle odobrenja"
+msgstr "Ništa se nije promenilo — nova verzija nije zavedena."
 
-#, fuzzy
-#| msgid "Сотрудник"
 msgid "Сотрудники"
 msgstr "Zaposleni"
 
 msgid "Карточки людей и условия найма: группа, точка, ставка, коэффициент"
-msgstr ""
+msgstr "Kartice ljudi i uslovi zapošljavanja: grupa, objekat, stopa, koeficijent"
 
-#, fuzzy
-#| msgid "Считаем сотрудников"
 msgid "Группы сотрудников"
-msgstr "Obračunavamo zaposlene"
+msgstr "Grupe zaposlenih"
 
 msgid "Схема расчёта и регистр учёта по умолчанию"
-msgstr ""
+msgstr "Podrazumevana šema obračuna i knjiga"
 
 msgid "Точки"
 msgstr "Objekti"
 
 msgid "Пиццерии: код, название, юрлицо, даты открытия и закрытия"
-msgstr ""
+msgstr "Picerije: šifra, naziv, pravno lice, datumi otvaranja i zatvaranja"
 
 msgid "Юрлица"
-msgstr ""
+msgstr "Pravna lica"
 
 msgid "С кем работает бухгалтерия: название и налоговый номер"
-msgstr ""
+msgstr "Sa kim radi računovodstvo: naziv i poreski broj"
 
-#, fuzzy
-#| msgid "производственный календарь %(country)s"
 msgid "Производственный календарь"
-msgstr "proizvodni kalendar %(country)s"
+msgstr "Proizvodni kalendar"
 
 msgid "Норма часов и рабочие дни месяца — отсюда их берёт страница месяца"
-msgstr ""
+msgstr "Norma časova i radni dani meseca — odavde ih uzima stranica meseca"
 
 #, python-format
 msgid "Поле «%(label)s» обязательно."
-msgstr ""
+msgstr "Polje „%(label)s“ je obavezno."
 
 #, python-format
 msgid "«%(label)s»: дата пишется как 2026-06-01, а не «%(value)s»."
-msgstr ""
+msgstr "„%(label)s“: datum se piše kao 2026-06-01, a ne „%(value)s“."
 
 #, python-format
 msgid "«%(label)s»: нужно число, а не «%(value)s»."
-msgstr ""
+msgstr "„%(label)s“: potreban je broj, a ne „%(value)s“."
 
 #, python-format
 msgid "«%(label)s»: отрицательное значение."
-msgstr ""
+msgstr "„%(label)s“: negativna vrednost."
 
 #, python-format
 msgid "«%(label)s»: такого варианта нет."
-msgstr ""
+msgstr "„%(label)s“: takva opcija ne postoji."
 
 msgid "Карточки заводятся вместе с данными партнёра, а не здесь: имя, коэффициент и ставку приносит загрузка таблицы. Править — можно."
-msgstr ""
+msgstr "Kartice se zavode zajedno sa podacima partnera, a ne ovde: ime, koeficijent i stopu donosi učitavanje tabele. Izmena je moguća."
 
 msgid "Поиск по имени или внешнему ключу"
-msgstr ""
+msgstr "Pretraga po imenu ili eksternom ključu"
 
-#, fuzzy
-#| msgid "Отклонений нет"
 msgid "Внешний ключ"
-msgstr "Nema odstupanja"
+msgstr "Eksterni ključ"
 
 msgid "Группа"
-msgstr ""
+msgstr "Grupa"
 
 msgid "Уволен"
-msgstr ""
+msgstr "Otpušten"
 
-#, fuzzy
-#| msgid "Сотрудников в табеле"
 msgid "Сотрудников нет."
-msgstr "Zaposlenih u evidenciji sati"
+msgstr "Nema zaposlenih."
 
 msgid "Карточки заводит загрузка таблицы партнёра: откройте месяц и загрузите табель — люди появятся вместе с часами."
-msgstr ""
+msgstr "Kartice zavodi učitavanje tabele partnera: otvorite mesec i učitajte evidenciju sati — ljudi će se pojaviti zajedno sa satima."
 
 msgid "Фамилия"
-msgstr ""
+msgstr "Prezime"
 
 msgid "Имя"
-msgstr ""
+msgstr "Ime"
 
 msgid "Принят"
-msgstr ""
+msgstr "Primljen"
 
 msgid "Дата увольнения раньше даты приёма."
-msgstr ""
+msgstr "Datum otpuštanja je pre datuma prijema."
 
 msgid "Действует с"
-msgstr ""
+msgstr "Od"
 
-#, fuzzy
-#| msgid "Ставка за час"
 msgid "Ставка"
 msgstr "Stopa po satu"
 
 msgid "Коэффициент"
 msgstr "Koeficijent"
 
-#, fuzzy
-#| msgid "След расчёта"
 msgid "Схема расчёта"
-msgstr "Trag obračuna"
+msgstr "Šema obračuna"
 
-#, fuzzy
-#| msgid "Регистр"
 msgid "Регистр учёта"
 msgstr "Knjiga"
 
 msgid "Сквозной ключ между системами, например JMBG. По нему сходится загрузка табеля."
-msgstr ""
+msgstr "Ključ zajednički za sve sisteme, na primer JMBG. Po njemu se poklapa učitavanje evidencije sati."
 
 msgid "С этой даты действует новая версия. Прошлая закрывается этим же днём и остаётся в истории."
-msgstr ""
+msgstr "Od ovog datuma važi nova verzija. Prethodna se zatvara istog dana i ostaje u istoriji."
 
 msgid "не задана"
-msgstr ""
+msgstr "nije podešen"
 
 msgid "Пусто — как у группы. Заполняется только там, где человек считается иначе своей группы."
-msgstr ""
+msgstr "Prazno — kao u grupi. Popunjava se samo tamo gde se osoba obračunava drugačije od svoje grupe."
 
 msgid "как у группы"
-msgstr ""
+msgstr "kao u grupi"
 
 msgid "Группа задаёт схему расчёта и регистр учёта по умолчанию. Отдельному человеку и то и другое переопределяется в условиях найма — с датой."
-msgstr ""
+msgstr "Grupa određuje podrazumevanu šemu obračuna i knjigu. Kod pojedinačne osobe oba se mogu preklopiti u uslovima zapošljavanja — sa datumom."
 
 msgid "Завести группу"
-msgstr ""
+msgstr "Dodaj grupu"
 
-#, fuzzy
-#| msgid "Когда"
 msgid "Код"
-msgstr "Kada"
+msgstr "Šifra"
 
-#, fuzzy
-#| msgid "Примечание"
 msgid "Название"
-msgstr "Napomena"
+msgstr "Naziv"
 
 msgid "Групп нет."
-msgstr ""
+msgstr "Nema grupa."
 
 msgid "Без группы человека не посчитать: она задаёт схему расчёта."
-msgstr ""
+msgstr "Bez grupe osoba se ne može obračunati: ona određuje šemu obračuna."
 
-#, fuzzy
-#| msgid "Разрез отчёта по регистрам"
 msgid "схема расчёта и регистр группы"
-msgstr "Prikaz izveštaja po knjigama"
+msgstr "šema obračuna i knjiga grupe"
 
-#, fuzzy
-#| msgid "базовая ставка"
 msgid "Новая группа"
-msgstr "osnovna stopa"
+msgstr "Nova grupa"
 
 msgid "← К группам"
-msgstr ""
+msgstr "← Na grupe"
 
-#, fuzzy
-#| msgid "Сменить"
 msgid "Сохранить"
-msgstr "Promeni"
+msgstr "Sačuvaj"
 
 msgid "По нему группа названа в правилах страны. Менять — только вместе с правилами."
-msgstr ""
+msgstr "Po njemu je grupa imenovana u pravilima zemlje. Menjati — samo zajedno sa pravilima."
 
 msgid "Ключ схемы из правил страны: по ней движок считает людей группы."
-msgstr ""
+msgstr "Ključ šeme iz pravila zemlje: po njemu mehanizam obračunava ljude iz grupe."
 
 msgid "Расходы разносятся на точку, а не на юрлицо. Закрытая точка остаётся в истории."
-msgstr ""
+msgstr "Troškovi se raspoređuju na objekat, a ne na pravno lice. Zatvoren objekat ostaje u istoriji."
 
-#, fuzzy
-#| msgid "Управляющий точки"
 msgid "Завести точку"
-msgstr "Menadžer objekta"
+msgstr "Dodaj objekat"
 
 msgid "Юрлицо"
-msgstr ""
+msgstr "Pravno lice"
 
-#, fuzzy
-#| msgid "Открыт"
 msgid "Открыта"
 msgstr "Otvoren"
 
-#, fuzzy
-#| msgid "Закрыт"
 msgid "Закрыта"
 msgstr "Zatvoren"
 
 msgid "Точек нет."
-msgstr ""
+msgstr "Nema objekata."
 
 msgid "На точку разносятся часы и расходы — с неё и начинается учёт."
-msgstr ""
+msgstr "Na objekat se raspoređuju sati i troškovi — od njega i počinje evidentiranje."
 
 msgid "Дата закрытия раньше даты открытия."
-msgstr ""
+msgstr "Datum zatvaranja je pre datuma otvaranja."
 
-#, fuzzy
-#| msgid "базовая ставка"
 msgid "Новая точка"
-msgstr "osnovna stopa"
+msgstr "Novi objekat"
 
-#, fuzzy
-#| msgid "Точка"
 msgid "← К точкам"
-msgstr "Objekat"
+msgstr "← Na objekte"
 
 msgid "Короткий код точки, например NS1. Им точка названа в таблице партнёра."
-msgstr ""
+msgstr "Kratka šifra objekta, na primer NS1. Njome je objekat imenovan u tabeli partnera."
 
 msgid "не задано"
-msgstr ""
+msgstr "nije podešeno"
 
 msgid "Точка закрывается датой, а не удалением: закрытые месяцы ссылаются на неё."
-msgstr ""
+msgstr "Objekat se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na njega."
 
 msgid "Бухгалтерия работает с юрлицом, пиццерий для неё нет."
-msgstr ""
+msgstr "Računovodstvo radi sa pravnim licem, picerije za njega ne postoje."
 
 msgid "Завести юрлицо"
-msgstr ""
+msgstr "Dodaj pravno lice"
 
-#, fuzzy
-#| msgid "Налог на доход"
 msgid "Налоговый номер"
-msgstr "Porez na dohodak"
+msgstr "Poreski broj"
 
 msgid "Юрлиц нет."
-msgstr ""
+msgstr "Nema pravnih lica."
 
 msgid "Юрлицо нужно точке: с ним бухгалтерия работает в официальном регистре."
-msgstr ""
+msgstr "Objektu je potrebno pravno lice: sa njim računovodstvo radi u zvaničnoj knjizi."
 
 msgid "Новое юрлицо"
-msgstr ""
+msgstr "Novo pravno lice"
 
 msgid "← К юрлицам"
-msgstr ""
+msgstr "← Na pravna lica"
 
-#, fuzzy
-#| msgid "Закрыт"
 msgid "закрыт"
-msgstr "Zatvoren"
+msgstr "zatvoren"
 
 msgid "Норма часов месяца берётся отсюда — её показывает страница месяца. Календаря на месяц нет — там стоит прочерк, а не правдоподобное число."
-msgstr ""
+msgstr "Norma časova meseca se uzima odavde — prikazuje je stranica meseca. Ako za mesec nema kalendara, stoji crta, a ne broj koji samo izgleda tačno."
 
-#, fuzzy
-#| msgid "За какой месяц"
 msgid "Завести месяц"
-msgstr "Za koji mesec"
+msgstr "Dodaj mesec"
 
 msgid "Месяц"
 msgstr "Mesec"
@@ -755,37 +705,33 @@ msgstr "Mesec"
 msgid "Норма часов"
 msgstr "Norma sati"
 
-#, fuzzy
-#| msgid "отработано дней"
 msgid "Рабочих дней"
-msgstr "Nije obrađeno u fajlu"
+msgstr "Radnih dana"
 
 msgid "Зарплата"
-msgstr ""
+msgstr "Plata"
 
 msgid "Календарь пуст."
-msgstr ""
+msgstr "Kalendar je prazan."
 
 msgid "Пока месяца нет в календаре, норма часов на его странице — прочерк, и недоработку считать не от чего."
-msgstr ""
+msgstr "Dok mesec nije u kalendaru, norma časova na njegovoj stranici je crta, i nema od čega da se računa manjak."
 
-#, fuzzy
-#| msgid "производственный календарь %(country)s"
 msgid "производственный календарь"
-msgstr "proizvodni kalendar %(country)s"
+msgstr "proizvodni kalendar"
 
 msgid "Новый месяц календаря"
-msgstr ""
+msgstr "Novi mesec kalendara"
 
 msgid "← К календарю"
-msgstr ""
+msgstr "← Na kalendar"
 
 msgid "Календарь общий для страны: его видят все партнёры этой страны."
-msgstr ""
+msgstr "Kalendar je zajednički za zemlju: vide ga svi partneri te zemlje."
 
 #, python-format
 msgid "«%(label)s»: месяц пишется как 2026-06, а не «%(value)s»."
-msgstr ""
+msgstr "„%(label)s“: mesec se piše kao 2026-06, a ne „%(value)s“."
 
 msgid "Официальный"
 msgstr "Zvanična"
@@ -850,10 +796,8 @@ msgstr "Ukupno obračunskog reda"
 msgid "Перенос разницы за закрытый месяц"
 msgstr "Prenos iz zatvorenog meseca"
 
-#, fuzzy
-#| msgid "Утверждение периода"
 msgid "Ведение справочников"
-msgstr "Odobri period"
+msgstr "Upravljanje imenicima"
 
 #, python-format
 msgid "%(action)s не входит в права вашей роли «%(role)s». Попросите того, у кого это право есть."
@@ -922,10 +866,8 @@ msgstr "Usaglašavanje sa tabelom"
 msgid "Основная навигация"
 msgstr "Glavna navigacija"
 
-#, fuzzy
-#| msgid "Управляющий точки"
 msgid "Справочники"
-msgstr "Menadžer objekta"
+msgstr "Imenici"
 
 msgid "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)"
 msgstr "Stranica za prijavu ima dugmad za brzu prijavu sa seed nalozima (DEV_LOGIN=1)"
@@ -956,69 +898,53 @@ msgstr "prijava"
 msgid "Порядок работы за месяц"
 msgstr "Redosled rada za mesec"
 
-#, fuzzy
-#| msgid "Период не открыт."
 msgid "Этот экран вам не открыт."
-msgstr "Period nije otvoren."
+msgstr "Ovaj ekran vam nije dostupan."
 
-#, fuzzy
-#| msgid "К периоду"
 msgid "← К периодам"
-msgstr "Ka periodu"
+msgstr "← Na periode"
 
-#, fuzzy
-#| msgid "Сотрудник"
 msgid "← К сотрудникам"
-msgstr "Zaposleni"
+msgstr "← Na zaposlene"
 
-#, fuzzy
-#| msgid "Не сопоставлено"
 msgid "Не сохранено."
-msgstr "Nije upareno"
+msgstr "Nije sačuvano."
 
-#, fuzzy
-#| msgid "Точка"
 msgid "Карточка"
-msgstr "Objekat"
+msgstr "Kartica"
 
 msgid "Сохранить карточку"
-msgstr ""
+msgstr "Sačuvaj karticu"
 
-#, fuzzy
-#| msgid "Основная навигация"
 msgid "Условия найма"
-msgstr "Glavna navigacija"
+msgstr "Uslovi zapošljavanja"
 
 msgid "Расчёт берёт версию, действующую в считаемом месяце. Поэтому закрытый месяц не меняется от новой версии."
-msgstr ""
+msgstr "Obračun uzima verziju koja važi u mesecu koji se obračunava. Zato se zatvoren mesec ne menja zbog nove verzije."
 
-#, fuzzy
-#| msgid "Кто"
 msgid "По"
-msgstr "Ko"
+msgstr "Do"
 
-#, fuzzy
-#| msgid "Отклонений нет"
 msgid "Условий найма нет."
-msgstr "Nema odstupanja"
+msgstr "Nema uslova zapošljavanja."
 
 msgid "Без них расчёт не знает ни группы, ни точки, и человек не попадёт в ведомость. Заведите первую версию формой ниже — с той даты, с которой человек работает."
-msgstr ""
+msgstr "Bez njih obračun ne poznaje ni grupu ni objekat, i osoba neće ući u obračunsku listu. Zavedite prvu verziju formom ispod — od datuma od kada osoba radi."
 
 msgid "Новая версия условий"
-msgstr ""
+msgstr "Nova verzija uslova"
 
 msgid "Прежняя версия закрывается днём начала новой и остаётся в истории. Ничего не изменилось — версия не заводится."
-msgstr ""
+msgstr "Prethodna verzija se zatvara danom početka nove i ostaje u istoriji. Ako se ništa nije promenilo, verzija se ne zavodi."
 
 msgid "Завести версию"
-msgstr ""
+msgstr "Dodaj verziju"
 
 msgid "Из чего расчёт берёт людей, ставки, точки и норму часов."
-msgstr ""
+msgstr "Odakle obračun uzima ljude, stope, objekte i normu časova."
 
 msgid "Часть месяцев уже закрыта"
-msgstr ""
+msgstr "Deo meseci je već zatvoren"
 
 #, python-format
 msgid ""
@@ -1026,28 +952,22 @@ msgid ""
 "  расчёт этих месяцев — ставка, схема группы, норма часов, — будут отклонены:\n"
 "  ведомость за них уже на руках. Чтобы всё-таки поправить, откройте месяц заново\n"
 "  с причиной на его странице."
-msgstr ""
+msgstr "Plata je odobrena zaključno sa %(edge)s. Izmene koje bi promenile\n  obračun ovih meseci — stopa, šema grupe, norma časova — biće odbijene:\n  obračunska lista za njih je već u rukama. Da biste ipak ispravili, ponovo otvorite mesec\n  sa razlogom na njegovoj stranici."
 
-#, fuzzy
-#| msgid "Управляющий точки"
 msgid "Справочник"
-msgstr "Menadžer objekta"
+msgstr "Imenik"
 
-#, fuzzy
-#| msgid "Что со входами"
 msgid "Что в нём"
-msgstr "Šta je sa ulazima"
+msgstr "Šta sadrži"
 
 msgid "Записей"
-msgstr ""
+msgstr "Zapisa"
 
-#, fuzzy
-#| msgid "взносы работника"
 msgid "← К справочникам"
-msgstr "doprinosi zaposlenog"
+msgstr "← Na imenike"
 
 msgid "Найти"
-msgstr ""
+msgstr "Pretraga"
 
 msgid "Вход"
 msgstr "Prijava"

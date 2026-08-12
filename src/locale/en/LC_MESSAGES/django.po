@@ -467,287 +467,237 @@ msgstr "Could not read the file as an Excel workbook: %(reason)s"
 
 #, python-format
 msgid "%(what)s нельзя изменить с %(from)s: зарплата за %(month)s уже утверждена, и правка переписала бы закрытый месяц задним числом. Возьмите дату позже %(edge)s или откройте месяц заново с причиной."
-msgstr ""
+msgstr "%(what)s cannot be changed from %(from)s: the payroll for %(month)s has already been approved, and the edit would rewrite a closed month retroactively. Pick a date later than %(edge)s or reopen the month with a reason."
 
-#, fuzzy
-#| msgid "Основная навигация"
 msgid "условия найма"
-msgstr "Main navigation"
+msgstr "employment terms"
 
-#, fuzzy
-#| msgid "точка не найдена"
 msgid "Карточка сохранена."
-msgstr "unit not found"
+msgstr "Card saved."
 
-#, fuzzy
-#| msgid "Собираем табели и условия найма"
 msgid "Заведена новая версия условий найма."
-msgstr "Collecting timesheets and employment terms"
+msgstr "A new version of the employment terms has been created."
 
-#, fuzzy
-#| msgid "Данные этого месяца изменились после утверждения"
 msgid "Ничего не изменилось — новая версия не заведена."
-msgstr "This month's data changed after approval"
+msgstr "Nothing changed — no new version was created."
 
-#, fuzzy
-#| msgid "Сотрудник"
 msgid "Сотрудники"
-msgstr "Employee"
+msgstr "Employees"
 
 msgid "Карточки людей и условия найма: группа, точка, ставка, коэффициент"
-msgstr ""
+msgstr "People's cards and employment terms: group, unit, rate, coefficient"
 
-#, fuzzy
-#| msgid "Считаем сотрудников"
 msgid "Группы сотрудников"
-msgstr "Calculating employees"
+msgstr "Employee groups"
 
 msgid "Схема расчёта и регистр учёта по умолчанию"
-msgstr ""
+msgstr "Default calculation scheme and ledger"
 
 msgid "Точки"
 msgstr "Units"
 
 msgid "Пиццерии: код, название, юрлицо, даты открытия и закрытия"
-msgstr ""
+msgstr "Pizzerias: code, name, legal entity, opening and closing dates"
 
 msgid "Юрлица"
-msgstr ""
+msgstr "Legal entities"
 
 msgid "С кем работает бухгалтерия: название и налоговый номер"
-msgstr ""
+msgstr "Who accounting works with: name and tax number"
 
-#, fuzzy
-#| msgid "производственный календарь %(country)s"
 msgid "Производственный календарь"
-msgstr "%(country)s production calendar"
+msgstr "Production calendar"
 
 msgid "Норма часов и рабочие дни месяца — отсюда их берёт страница месяца"
-msgstr ""
+msgstr "Standard hours and working days of the month — the month page takes them from here"
 
 #, python-format
 msgid "Поле «%(label)s» обязательно."
-msgstr ""
+msgstr "The \"%(label)s\" field is required."
 
 #, python-format
 msgid "«%(label)s»: дата пишется как 2026-06-01, а не «%(value)s»."
-msgstr ""
+msgstr "\"%(label)s\": a date is written as 2026-06-01, not \"%(value)s\"."
 
 #, python-format
 msgid "«%(label)s»: нужно число, а не «%(value)s»."
-msgstr ""
+msgstr "\"%(label)s\": a number is needed, not \"%(value)s\"."
 
 #, python-format
 msgid "«%(label)s»: отрицательное значение."
-msgstr ""
+msgstr "\"%(label)s\": negative value."
 
 #, python-format
 msgid "«%(label)s»: такого варианта нет."
-msgstr ""
+msgstr "\"%(label)s\": there is no such option."
 
 msgid "Карточки заводятся вместе с данными партнёра, а не здесь: имя, коэффициент и ставку приносит загрузка таблицы. Править — можно."
-msgstr ""
+msgstr "Cards are created together with the partner's data, not here: the name, coefficient and rate come from the table upload. Editing is allowed."
 
 msgid "Поиск по имени или внешнему ключу"
-msgstr ""
+msgstr "Search by name or external key"
 
-#, fuzzy
-#| msgid "Отклонений нет"
 msgid "Внешний ключ"
-msgstr "No variances"
+msgstr "External key"
 
 msgid "Группа"
-msgstr ""
+msgstr "Group"
 
 msgid "Уволен"
-msgstr ""
+msgstr "Terminated"
 
-#, fuzzy
-#| msgid "Сотрудников в табеле"
 msgid "Сотрудников нет."
-msgstr "Employees in timesheet"
+msgstr "No employees."
 
 msgid "Карточки заводит загрузка таблицы партнёра: откройте месяц и загрузите табель — люди появятся вместе с часами."
-msgstr ""
+msgstr "Cards are created by uploading the partner's table: open the month and upload the timesheet — people will appear together with their hours."
 
 msgid "Фамилия"
-msgstr ""
+msgstr "Last name"
 
 msgid "Имя"
-msgstr ""
+msgstr "First name"
 
 msgid "Принят"
-msgstr ""
+msgstr "Hired"
 
 msgid "Дата увольнения раньше даты приёма."
-msgstr ""
+msgstr "The termination date is earlier than the hire date."
 
 msgid "Действует с"
-msgstr ""
+msgstr "From"
 
-#, fuzzy
-#| msgid "Ставка за час"
 msgid "Ставка"
 msgstr "Rate per hour"
 
 msgid "Коэффициент"
 msgstr "Coefficient"
 
-#, fuzzy
-#| msgid "След расчёта"
 msgid "Схема расчёта"
-msgstr "Calculation trace"
+msgstr "Calculation scheme"
 
-#, fuzzy
-#| msgid "Регистр"
 msgid "Регистр учёта"
 msgstr "Ledger"
 
 msgid "Сквозной ключ между системами, например JMBG. По нему сходится загрузка табеля."
-msgstr ""
+msgstr "A cross-system key, for example JMBG. The timesheet upload is matched by it."
 
 msgid "С этой даты действует новая версия. Прошлая закрывается этим же днём и остаётся в истории."
-msgstr ""
+msgstr "The new version is effective from this date. The previous one closes on the same day and stays in the history."
 
 msgid "не задана"
-msgstr ""
+msgstr "not set"
 
 msgid "Пусто — как у группы. Заполняется только там, где человек считается иначе своей группы."
-msgstr ""
+msgstr "Empty — same as the group. Fill it in only where the person is calculated differently from their group."
 
 msgid "как у группы"
-msgstr ""
+msgstr "same as the group"
 
 msgid "Группа задаёт схему расчёта и регистр учёта по умолчанию. Отдельному человеку и то и другое переопределяется в условиях найма — с датой."
-msgstr ""
+msgstr "The group sets the default calculation scheme and ledger. For an individual person, either one can be overridden in the employment terms — with a date."
 
 msgid "Завести группу"
-msgstr ""
+msgstr "Add group"
 
-#, fuzzy
-#| msgid "Когда"
 msgid "Код"
-msgstr "When"
+msgstr "Code"
 
-#, fuzzy
-#| msgid "Примечание"
 msgid "Название"
-msgstr "Note"
+msgstr "Name"
 
 msgid "Групп нет."
-msgstr ""
+msgstr "No groups."
 
 msgid "Без группы человека не посчитать: она задаёт схему расчёта."
-msgstr ""
+msgstr "A person cannot be calculated without a group: it sets the calculation scheme."
 
-#, fuzzy
-#| msgid "Разрез отчёта по регистрам"
 msgid "схема расчёта и регистр группы"
-msgstr "Report view by ledger"
+msgstr "calculation scheme and group ledger"
 
-#, fuzzy
-#| msgid "базовая ставка"
 msgid "Новая группа"
-msgstr "base rate"
+msgstr "New group"
 
 msgid "← К группам"
-msgstr ""
+msgstr "← To the groups"
 
-#, fuzzy
-#| msgid "Сменить"
 msgid "Сохранить"
-msgstr "Change"
+msgstr "Save"
 
 msgid "По нему группа названа в правилах страны. Менять — только вместе с правилами."
-msgstr ""
+msgstr "The group is named by it in the country rules. Change it only together with the rules."
 
 msgid "Ключ схемы из правил страны: по ней движок считает людей группы."
-msgstr ""
+msgstr "The scheme key from the country rules: the engine uses it to calculate the people in the group."
 
 msgid "Расходы разносятся на точку, а не на юрлицо. Закрытая точка остаётся в истории."
-msgstr ""
+msgstr "Expenses are allocated to the unit, not the legal entity. A closed unit stays in the history."
 
-#, fuzzy
-#| msgid "Управляющий точки"
 msgid "Завести точку"
-msgstr "Unit Manager"
+msgstr "Add unit"
 
 msgid "Юрлицо"
-msgstr ""
+msgstr "Legal entity"
 
-#, fuzzy
-#| msgid "Открыт"
 msgid "Открыта"
-msgstr "Open"
+msgstr "Opened"
 
-#, fuzzy
-#| msgid "Закрыт"
 msgid "Закрыта"
 msgstr "Closed"
 
 msgid "Точек нет."
-msgstr ""
+msgstr "No units."
 
 msgid "На точку разносятся часы и расходы — с неё и начинается учёт."
-msgstr ""
+msgstr "Hours and expenses are allocated to the unit — accounting starts from it."
 
 msgid "Дата закрытия раньше даты открытия."
-msgstr ""
+msgstr "The closing date is earlier than the opening date."
 
-#, fuzzy
-#| msgid "базовая ставка"
 msgid "Новая точка"
-msgstr "base rate"
+msgstr "New unit"
 
-#, fuzzy
-#| msgid "Точка"
 msgid "← К точкам"
-msgstr "Unit"
+msgstr "← To the units"
 
 msgid "Короткий код точки, например NS1. Им точка названа в таблице партнёра."
-msgstr ""
+msgstr "A short unit code, for example NS1. The unit is named by it in the partner's table."
 
 msgid "не задано"
-msgstr ""
+msgstr "not set"
 
 msgid "Точка закрывается датой, а не удалением: закрытые месяцы ссылаются на неё."
-msgstr ""
+msgstr "A unit is closed with a date, not by deleting it: closed months refer to it."
 
 msgid "Бухгалтерия работает с юрлицом, пиццерий для неё нет."
-msgstr ""
+msgstr "Accounting works with the legal entity; pizzerias do not exist for it."
 
 msgid "Завести юрлицо"
-msgstr ""
+msgstr "Add legal entity"
 
-#, fuzzy
-#| msgid "Налог на доход"
 msgid "Налоговый номер"
-msgstr "Income tax"
+msgstr "Tax number"
 
 msgid "Юрлиц нет."
-msgstr ""
+msgstr "No legal entities."
 
 msgid "Юрлицо нужно точке: с ним бухгалтерия работает в официальном регистре."
-msgstr ""
+msgstr "A unit needs a legal entity: accounting uses it to work in the official ledger."
 
 msgid "Новое юрлицо"
-msgstr ""
+msgstr "New legal entity"
 
 msgid "← К юрлицам"
-msgstr ""
+msgstr "← To the legal entities"
 
-#, fuzzy
-#| msgid "Закрыт"
 msgid "закрыт"
-msgstr "Closed"
+msgstr "closed"
 
 msgid "Норма часов месяца берётся отсюда — её показывает страница месяца. Календаря на месяц нет — там стоит прочерк, а не правдоподобное число."
-msgstr ""
+msgstr "The month's standard hours are taken from here — the month page shows them. If there is no calendar for a month, it shows a dash, not a plausible-looking number."
 
-#, fuzzy
-#| msgid "За какой месяц"
 msgid "Завести месяц"
-msgstr "For which month"
+msgstr "Add month"
 
 msgid "Месяц"
 msgstr "Month"
@@ -755,37 +705,33 @@ msgstr "Month"
 msgid "Норма часов"
 msgstr "Standard hours"
 
-#, fuzzy
-#| msgid "отработано дней"
 msgid "Рабочих дней"
-msgstr "Not parsed from file"
+msgstr "Working days"
 
 msgid "Зарплата"
-msgstr ""
+msgstr "Payroll"
 
 msgid "Календарь пуст."
-msgstr ""
+msgstr "The calendar is empty."
 
 msgid "Пока месяца нет в календаре, норма часов на его странице — прочерк, и недоработку считать не от чего."
-msgstr ""
+msgstr "Until the month is in the calendar, the standard hours on its page are a dash, and there is nothing to calculate the shortfall from."
 
-#, fuzzy
-#| msgid "производственный календарь %(country)s"
 msgid "производственный календарь"
-msgstr "%(country)s production calendar"
+msgstr "production calendar"
 
 msgid "Новый месяц календаря"
-msgstr ""
+msgstr "New calendar month"
 
 msgid "← К календарю"
-msgstr ""
+msgstr "← To the calendar"
 
 msgid "Календарь общий для страны: его видят все партнёры этой страны."
-msgstr ""
+msgstr "The calendar is shared for the country: all partners in that country see it."
 
 #, python-format
 msgid "«%(label)s»: месяц пишется как 2026-06, а не «%(value)s»."
-msgstr ""
+msgstr "\"%(label)s\": a month is written as 2026-06, not \"%(value)s\"."
 
 msgid "Официальный"
 msgstr "Official"
@@ -850,10 +796,8 @@ msgstr "Payslip total"
 msgid "Перенос разницы за закрытый месяц"
 msgstr "Carryover from a closed month"
 
-#, fuzzy
-#| msgid "Утверждение периода"
 msgid "Ведение справочников"
-msgstr "Approve the period"
+msgstr "Directory management"
 
 #, python-format
 msgid "%(action)s не входит в права вашей роли «%(role)s». Попросите того, у кого это право есть."
@@ -922,10 +866,8 @@ msgstr "Reconciliation with the table"
 msgid "Основная навигация"
 msgstr "Main navigation"
 
-#, fuzzy
-#| msgid "Управляющий точки"
 msgid "Справочники"
-msgstr "Unit Manager"
+msgstr "Directories"
 
 msgid "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)"
 msgstr "The login page has quick sign-in buttons for seed accounts (DEV_LOGIN=1)"
@@ -956,69 +898,53 @@ msgstr "log in"
 msgid "Порядок работы за месяц"
 msgstr "Monthly workflow"
 
-#, fuzzy
-#| msgid "Период не открыт."
 msgid "Этот экран вам не открыт."
-msgstr "Period not open."
+msgstr "This screen is not open to you."
 
-#, fuzzy
-#| msgid "К периоду"
 msgid "← К периодам"
-msgstr "To period"
+msgstr "← To the periods"
 
-#, fuzzy
-#| msgid "Сотрудник"
 msgid "← К сотрудникам"
-msgstr "Employee"
+msgstr "← To the employees"
 
-#, fuzzy
-#| msgid "Не сопоставлено"
 msgid "Не сохранено."
-msgstr "Not matched"
+msgstr "Not saved."
 
-#, fuzzy
-#| msgid "Точка"
 msgid "Карточка"
-msgstr "Unit"
+msgstr "Card"
 
 msgid "Сохранить карточку"
-msgstr ""
+msgstr "Save card"
 
-#, fuzzy
-#| msgid "Основная навигация"
 msgid "Условия найма"
-msgstr "Main navigation"
+msgstr "Employment terms"
 
 msgid "Расчёт берёт версию, действующую в считаемом месяце. Поэтому закрытый месяц не меняется от новой версии."
-msgstr ""
+msgstr "The calculation takes the version effective in the month being calculated. That is why a closed month does not change because of a new version."
 
-#, fuzzy
-#| msgid "Кто"
 msgid "По"
-msgstr "Who"
+msgstr "To"
 
-#, fuzzy
-#| msgid "Отклонений нет"
 msgid "Условий найма нет."
-msgstr "No variances"
+msgstr "No employment terms."
 
 msgid "Без них расчёт не знает ни группы, ни точки, и человек не попадёт в ведомость. Заведите первую версию формой ниже — с той даты, с которой человек работает."
-msgstr ""
+msgstr "Without them the calculation knows neither the group nor the unit, and the person will not make it into the payroll sheet. Create the first version with the form below — from the date the person started working."
 
 msgid "Новая версия условий"
-msgstr ""
+msgstr "New version of the terms"
 
 msgid "Прежняя версия закрывается днём начала новой и остаётся в истории. Ничего не изменилось — версия не заводится."
-msgstr ""
+msgstr "The previous version closes on the day the new one starts and stays in the history. If nothing changed, no version is created."
 
 msgid "Завести версию"
-msgstr ""
+msgstr "Add version"
 
 msgid "Из чего расчёт берёт людей, ставки, точки и норму часов."
-msgstr ""
+msgstr "Where the calculation takes people, rates, units and standard hours from."
 
 msgid "Часть месяцев уже закрыта"
-msgstr ""
+msgstr "Some months are already closed"
 
 #, python-format
 msgid ""
@@ -1026,28 +952,22 @@ msgid ""
 "  расчёт этих месяцев — ставка, схема группы, норма часов, — будут отклонены:\n"
 "  ведомость за них уже на руках. Чтобы всё-таки поправить, откройте месяц заново\n"
 "  с причиной на его странице."
-msgstr ""
+msgstr "Payroll is approved through %(edge)s inclusive. Edits that would change\n  the calculation for these months — rate, group scheme, standard hours — will be rejected:\n  the payroll sheet for them is already in hand. To fix it anyway, reopen the month\n  with a reason on its page."
 
-#, fuzzy
-#| msgid "Управляющий точки"
 msgid "Справочник"
-msgstr "Unit Manager"
+msgstr "Directory"
 
-#, fuzzy
-#| msgid "Что со входами"
 msgid "Что в нём"
-msgstr "About the inputs"
+msgstr "What it holds"
 
 msgid "Записей"
-msgstr ""
+msgstr "Records"
 
-#, fuzzy
-#| msgid "взносы работника"
 msgid "← К справочникам"
-msgstr "employee contributions"
+msgstr "← To the directories"
 
 msgid "Найти"
-msgstr ""
+msgstr "Search"
 
 msgid "Вход"
 msgstr "Login"
