@@ -263,7 +263,7 @@ def terms_restored(sql):
         )
 
 
-def post_new_version(client, sql, employee_id, *, valid_from: str, rate: str) -> "object":
+def post_new_version(client, sql, employee_id, *, valid_from: str, rate: str):
     """Завести версию условий найма экраном — так же, как это делает человек."""
     current = sql.execute(
         "select group_id, unit_id, coefficient, scheme, ledger from employment_terms "
@@ -371,7 +371,9 @@ def june_rates(web_env) -> dict:
     }
 
 
-def test_a_directory_edit_does_not_move_a_closed_period(client, sql, web_env, terms_restored, payruns_restored):
+def test_a_directory_edit_does_not_move_a_closed_period(
+    client, sql, web_env, terms_restored, payruns_restored,
+):
     """Главная проверка задачи: закрытый месяц остаётся байт в байт прежним.
 
     Проверяется двумя способами, и второй важнее первого. Первый (строки не
@@ -405,7 +407,9 @@ def test_a_directory_edit_does_not_move_a_closed_period(client, sql, web_env, te
     )
 
 
-def test_a_version_inside_a_closed_month_is_refused(client, sql, web_env, terms_restored, payruns_restored):
+def test_a_version_inside_a_closed_month_is_refused(
+    client, sql, web_env, terms_restored, payruns_restored,
+):
     """Дату внутри утверждённого месяца экран не принимает и объясняет почему."""
     approve_june(client, web_env)
     client.post("/logout/")
