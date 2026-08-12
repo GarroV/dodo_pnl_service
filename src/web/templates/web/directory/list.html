@@ -49,6 +49,6 @@
   </tbody>
 </table>{% endscroll %}
 {% else %}
-{% notice "empty" %}{{ empty }}{% endnotice %}
+{% notice "empty" title=empty %}{{ empty_next }}{% if add_url %} <a href="{{ add_url }}">{{ add_label }}</a>{% endif %}{% endnotice %}
 {% endif %}
 {% endblock %}
