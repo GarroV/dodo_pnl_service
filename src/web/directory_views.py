@@ -243,15 +243,25 @@ def _number(request, name: str, label: str, *, required: bool = True) -> Decimal
 
 
 def _choice(request, name: str, label: str, allowed, *, required: bool = True):
-    """Выбор из списка. Чужое значение — отказ, а не молчаливая подстановка."""
+    """Выбор из списка. Чужое значение — отказ, а не молчаливая подстановка.
+
+    Возвращается **значение из списка**, а не строка из формы. Разница не
+    косметическая: список групп и точек состоит из `UUID`, а форма приносит их
+    текстом, и `UUID(...) != "..."`. На такой паре сравнение «что было — что
+    стало» всегда говорило «изменилось», и «Сохранить» без единой правки
+    заводило новую версию условий найма. Заметно это не сразу: история просто
+    обрастала одинаковыми строками, а при закрытом месяце пустая правка ещё и
+    получала отказ.
+    """
     raw = (request.POST.get(name) or "").strip()
     if not raw:
         if required:
             raise BadInput(_("Поле «%(label)s» обязательно.") % {"label": label})
         return None
-    if str(raw) not in {str(item) for item in allowed}:
-        raise BadInput(_("«%(label)s»: такого варианта нет.") % {"label": label})
-    return raw
+    for item in allowed:
+        if str(item) == raw:
+            return item
+    raise BadInput(_("«%(label)s»: такого варианта нет.") % {"label": label})
 
 
 def _select(name: str, label: str, rows, selected, **extra) -> dict:
@@ -381,6 +391,11 @@ def employee(request, employee_id):
     person = _employee_or_404(who, employee_id)
 
     notice = error = ""
+    # Код ответа формы: 200, пока ничего не отклонено. Отказ по состоянию данных
+    # (закрытый месяц) обязан отвечать 409 — иначе «сохранено» и «отказано»
+    # неразличимы для всего, что смотрит на ответ, а не на разметку: смоук,
+    # журнал сервера, будущий API.
+    status = 200
     if request.method == "POST":
         try:
             if request.POST.get("what") == "person":
@@ -398,13 +413,13 @@ def employee(request, employee_id):
         except BadInput as bad:
             error = bad.message
         except directory.DirectoryRefused as refusal:
-            error = refusal.message
+            error, status = refusal.message, refusal.http_status
 
     notice = _saved_notices().get(request.GET.get("saved", ""), "")
 
     return render(request, "web/directory/employee.html", _employee_context(
         request, who, person, notice=notice, error=error,
-    ))
+    ), status=status)
 
 
 def _save_person(request, person: Employee) -> None:
@@ -569,7 +584,7 @@ def group(request, group_id=None):
             # же довод, что у карточки сотрудника (D023).
             raise Http404("группа не найдена")
 
-    error = ""
+    error, status = "", 200
     if request.method == "POST":
         try:
             code = _text(request, "code", _("Код"))
@@ -593,7 +608,7 @@ def group(request, group_id=None):
         except BadInput as bad:
             error = bad.message
         except directory.DirectoryRefused as refusal:
-            error = refusal.message
+            error, status = refusal.message, refusal.http_status
 
     return render(request, "web/directory/form.html", {
         "heading": item.title if item else _("Новая группа"),
@@ -618,7 +633,7 @@ def group(request, group_id=None):
                 item.ledger if item else "official", required=True,
             ),
         ],
-    })
+    }, status=status)
 
 
 @login_required
@@ -836,7 +851,7 @@ def calendar_month(request, month=None):
     if period is not None and item is None:
         raise Http404("месяца в календаре нет")
 
-    error = ""
+    error, status = "", 200
     if request.method == "POST":
         try:
             wanted = period or _month_or_new(request)
@@ -856,7 +871,7 @@ def calendar_month(request, month=None):
         except BadInput as bad:
             error = bad.message
         except directory.DirectoryRefused as refusal:
-            error = refusal.message
+            error, status = refusal.message, refusal.http_status
 
     return render(request, "web/directory/form.html", {
         "heading": month_title(period) if period else _("Новый месяц календаря"),
@@ -874,7 +889,7 @@ def calendar_month(request, month=None):
             {"kind": "number", "name": "working_days", "label": _("Рабочих дней"),
              "required": True, "value": item.working_days if item else ""},
         ],
-    })
+    }, status=status)
 
 
 def _month_or_new(request) -> date:
