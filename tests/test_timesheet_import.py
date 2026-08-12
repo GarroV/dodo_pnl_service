@@ -173,30 +173,10 @@ def test_rows_below_the_old_scan_limit_are_read(sample_copy):
 # =============================================================================
 
 
-@pytest.fixture
-def period_restored(web_env):
-    """Снимок табеля периода до теста и точный возврат к нему после.
-
-    База `web_env` живёт весь прогон, а импорт переписывает её целиком —
-    без возврата следующий тест считал бы уже не то, что задумано.
-    """
-    from core.models import Timesheet, TimesheetDay
-
-    fields = [f.name for f in Timesheet._meta.concrete_fields]
-    sheets = [
-        {name: getattr(row, name) for name in fields}
-        for row in Timesheet.objects.filter(period=JUNE)
-    ]
-    day_fields = [f.name for f in TimesheetDay._meta.concrete_fields]
-    days = [
-        {name: getattr(day, name) for name in day_fields}
-        for day in TimesheetDay.objects.filter(timesheet__period=JUNE)
-    ]
-    yield
-    TimesheetDay.objects.filter(timesheet__period=JUNE).delete()
-    Timesheet.objects.filter(period=JUNE).delete()
-    Timesheet.objects.bulk_create([Timesheet(**row) for row in sheets])
-    TimesheetDay.objects.bulk_create([TimesheetDay(**day) for day in days])
+# Снимок табеля и возврат к нему (`period_restored`) живёт в `conftest.py`: он
+# нужен не только импорту, а каждому, кто пишет в табель общей базы. Второй
+# экземпляр здесь означал бы две правды об одном правиле — и одна из них молча
+# отстала бы.
 
 
 def _tenant_id():
