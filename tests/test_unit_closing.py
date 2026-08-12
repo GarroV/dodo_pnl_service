@@ -456,7 +456,7 @@ def test_manager_closes_own_unit_from_the_screen(client, clean_closures):
     assert "закрыт" in after.lower()
 
 
-def test_closed_unit_refuses_the_cell_and_says_why(client, clean_closures):
+def test_closed_unit_refuses_the_cell_and_says_why(client, clean_closures, period_restored):
     login_as(client, "manager")
     url = grid_url(client)
     html = body(client.get(url))
@@ -477,7 +477,9 @@ def test_closed_unit_refuses_the_cell_and_says_why(client, clean_closures):
     assert Decimal(str(stored.get(kind, 0))) == Decimal("12.00")
 
 
-def test_closing_one_unit_does_not_block_the_others_on_screen(client, clean_closures):
+def test_closing_one_unit_does_not_block_the_others_on_screen(
+    client, clean_closures, period_restored
+):
     """То же требование, что в базе, но по пути, которым ходит человек."""
     from core.models import Membership, Timesheet, User
 
@@ -587,7 +589,7 @@ def test_closed_rows_lose_their_input_fields(client, clean_closures):
     assert f'data-row="{row_id}"' not in after
 
 
-def test_reopening_from_the_screen_restores_editing(client, clean_closures):
+def test_reopening_from_the_screen_restores_editing(client, clean_closures, period_restored):
     login_as(client, "manager")
     url = grid_url(client)
     html = body(client.get(url))

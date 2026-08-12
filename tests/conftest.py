@@ -330,6 +330,46 @@ def client(web_env):
     return Client()
 
 
+@pytest.fixture
+def period_restored(web_env):
+    """Снимок табеля июня до теста и точный возврат к нему после.
+
+    **Обязательна каждому тесту, который пишет в табель общей базы** — с экрана,
+    импортом или напрямую. База `web_env` живёт весь прогон и одна на все
+    модули, а суммы расчёта считаются из этого самого табеля: строка, оставленная
+    изменённой, двигает контрольные числа у всех, кто считает период после.
+
+    Почему это не «гигиена на будущее», а починка. Экранные тесты сетки
+    (`test_timesheets.py`) писали в первую строку табеля и не возвращали её.
+    Прогон целиком оставался зелёным только потому, что `test_timesheet_import.py`
+    сортируется по имени **раньше** `test_timesheets.py` и успевал посчитать
+    суммы до порчи. Стоило запустить эти два файла в другом порядке — и
+    `test_import_does_not_move_the_calculation` краснел на числе 1 951 806,13,
+    хотя импорт был ни при чём. Красный не по своей вине хуже отсутствующего
+    теста: настоящую поломку в следующий раз спишут на тот же шум.
+
+    Дни возвращаются вместе со строками: итог обязан сходиться с ними, иначе
+    инвариант подневного хранения рвётся молча.
+    """
+    from core.models import Timesheet, TimesheetDay
+
+    fields = [f.name for f in Timesheet._meta.concrete_fields]
+    sheets = [
+        {name: getattr(row, name) for name in fields}
+        for row in Timesheet.objects.filter(period=JUNE)
+    ]
+    day_fields = [f.name for f in TimesheetDay._meta.concrete_fields]
+    days = [
+        {name: getattr(day, name) for name in day_fields}
+        for day in TimesheetDay.objects.filter(timesheet__period=JUNE)
+    ]
+    yield
+    TimesheetDay.objects.filter(timesheet__period=JUNE).delete()
+    Timesheet.objects.filter(period=JUNE).delete()
+    Timesheet.objects.bulk_create([Timesheet(**row) for row in sheets])
+    TimesheetDay.objects.bulk_create([TimesheetDay(**day) for day in days])
+
+
 def login_as(client, code: str):
     return client.post("/dev/login/", {"user": code})
 

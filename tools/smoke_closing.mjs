@@ -4,8 +4,9 @@
  * Проверяет то, чего разбор разметки доказать не может: что управляющий
  * закрывает свою точку настоящим нажатием кнопки, что после этого часы не
  * пишутся ни с экрана, ни мимо него, что соседняя точка при этом продолжает
- * вводиться, и что у роли без права `unit.close` кнопки нет, а запрос всё
- * равно отвергается.
+ * вводиться, и что право `unit.close` роздано так, как решено в D033:
+ * директору — вся сеть, управляющему — только своя точка, бухгалтеру не
+ * выдано вовсе.
  *
  *     node tools/smoke_closing.mjs            (APP=http://127.0.0.1:8052)
  */
@@ -166,27 +167,67 @@ await goto(APP + gridHref);
   check("строки закрытой точки на общем экране не правятся", closedRows);
 }
 
-// --- 5. Роль без права: кнопки нет, действие отвергается ---------------------
-{
-  const html = await evalIn(`document.body.innerText`);
-  const forms = await evalIn(`document.querySelectorAll('input[name=unit]').length`);
-  check("у директора кнопки закрытия нет", forms === 0, String(forms));
-  check("и сказано, почему", /не входит в права вашей роли/.test(html));
+// --- 5. Кому право закрытия выдано, а кому нет (D033) ------------------------
+// Раньше здесь проверялось обратное — что кнопки нет у директора. Правило
+// отменено решением D033 (T076): закрывать вправе и тот, кто ведёт месяц
+// целиком, иначе отпуск управляющего запирает период. Проверяется теперь
+// действующее распределение права, а не отменённое.
 
-  const denied = await evalIn(`
-    (async () => {
-      const csrf = document.cookie.match(/csrftoken=([^;]+)/)[1];
-      const body = new URLSearchParams({ unit: "00000000-0000-0000-0000-000000000000" });
-      const res = await fetch(${JSON.stringify(APP + gridHref)} + "close/", {
-        method: "POST", headers: { "X-CSRFToken": csrf,
-          "Content-Type": "application/x-www-form-urlencoded" },
-        body, credentials: "include",
-      });
-      return { status: res.status, text: await res.text() };
-    })()
+/** POST мимо экрана настоящей сессией браузера. */
+const postAs = (url, fields) => evalIn(`
+  (async () => {
+    const csrf = document.cookie.match(/csrftoken=([^;]+)/)[1];
+    const res = await fetch(${JSON.stringify(url)}, {
+      method: "POST",
+      headers: { "X-CSRFToken": csrf, "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(${JSON.stringify(fields)}),
+      credentials: "include",
+    });
+    return { status: res.status, text: await res.text() };
+  })()
+`);
+
+// Сюда мы пришли директором (шаг 4) — с его же экрана берём чужую для
+// управляющего точку: её идентификатор ему самому взять неоткуда.
+let alien = null;
+{
+  const cards = await evalIn(`
+    [...document.querySelectorAll(".unit")].map(u => ({
+      code: u.querySelector(".unit-code")?.textContent.trim(),
+      unit: u.querySelector("input[name=unit]")?.value || null,
+    }))
   `);
-  check("закрытие мимо экрана отвергнуто", denied.status === 403, String(denied.status));
-  check("отказ по праву объяснён", /не входит в права вашей роли/.test(denied.text));
+  alien = cards.find((c) => c.code !== "NS1" && c.unit);
+  check("директору кнопка закрытия предложена на каждой точке",
+    cards.length > 1 && cards.every((c) => !!c.unit),
+    JSON.stringify(cards.map((c) => [c.code, !!c.unit])));
+}
+
+await login("manager");
+await goto(APP + gridHref);
+{
+  // Именно 404, а не 403: чужая точка не должна выдавать управляющему даже
+  // факт своего существования.
+  const denied = await postAs(APP + gridHref + "close/", { unit: alien?.unit });
+  // Наличие самой точки — часть проверки: на несуществующем идентификаторе 404
+  // приходит сам собой, и без этого условия проверка прошла бы впустую.
+  check(`управляющему чужая точка ${alien?.code} отвечает 404, а не 403`,
+    !!alien?.unit && denied.status === 404,
+    (alien?.unit || "чужой точки не нашлось") + " → " + denied.status);
+}
+
+await login("accountant");
+await goto(APP + gridHref);
+{
+  const forms = await evalIn(`document.querySelectorAll('input[name=unit]').length`);
+  const html = await evalIn(`document.body.innerText`);
+  check("у бухгалтера кнопки закрытия нет, а на её месте объяснение",
+    forms === 0 && /не входит в права вашей роли/.test(html), String(forms));
+
+  const denied = await postAs(APP + gridHref + "close/", { unit: alien?.unit });
+  check("закрытие бухгалтером мимо экрана отвергнуто по праву",
+    denied.status === 403 && /не входит в права вашей роли/.test(denied.text),
+    denied.status + " " + denied.text.slice(0, 60));
 }
 
 // --- 6. Открытие заново возвращает правку -----------------------------------
