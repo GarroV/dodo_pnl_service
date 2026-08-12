@@ -222,10 +222,13 @@ def test_constraint_holds_for_the_application_role(db):
     Проверяется отдельно, потому что политики RLS ведут себя для разных ролей
     по-разному, и легко решить, что и ограничения тоже.
     """
-    from conftest import USER_DIRECTOR
+    from conftest import as_directory_admin
 
     employee, group = _employee(db), _group(db)
-    with as_app_user(db, USER_DIRECTOR) as conn:
+    # Контекст — администратор сети: условия найма с T018 пишет тот, у кого есть
+    # `directory.manage`. Роль при этом остаётся `app_user`, а именно про неё
+    # тест: ограничение не должно зависеть от того, кто пишет.
+    with as_app_user(db, None) as conn, as_directory_admin(conn):
         _term(conn, employee, group, JAN, None)
         with _rejected(conn), conn.transaction():
             _term(conn, employee, group, APR, None)

@@ -143,11 +143,20 @@ def journal(conn, payrun_id: str) -> list[tuple]:
 
 
 def employee(conn, external_id: str) -> str:
-    return conn.execute(
-        """insert into employees (tenant_id, external_id, first_name, last_name)
-           values (%s, %s, 'Тест', 'Тестов') returning id""",
-        (T1, external_id),
-    ).fetchone()[0]
+    """Человек как материал для проверки заморозки.
+
+    Контекст на время вставки — администратор сети: справочник с T018 ведёт
+    тот, у кого есть `directory.manage`, а тесты этого модуля про заморозку
+    утверждённого расчёта, а не про право вести справочник.
+    """
+    from conftest import as_directory_admin
+
+    with as_directory_admin(conn):
+        return conn.execute(
+            """insert into employees (tenant_id, external_id, first_name, last_name)
+               values (%s, %s, 'Тест', 'Тестов') returning id""",
+            (T1, external_id),
+        ).fetchone()[0]
 
 
 def make_slip(conn, payrun_id: str) -> dict:

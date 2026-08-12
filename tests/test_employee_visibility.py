@@ -33,6 +33,7 @@
 """
 from __future__ import annotations
 
+import psycopg
 import pytest
 
 from conftest import (
@@ -42,6 +43,7 @@ from conftest import (
     U_BG1,
     U_NS1,
     USER_ACCOUNTANT,
+    USER_ADMIN,
     USER_DIRECTOR,
     USER_MANAGER,
     as_app_user,
@@ -164,6 +166,12 @@ def test_a_manager_cannot_write_a_person_of_another_unit(people):
     Чужая строка для правки просто не находится (политика `using`), поэтому
     отказ выглядит как «изменено 0 строк», а не как ошибка базы. Это то же
     поведение, что у остальных таблиц с точкой.
+
+    Со своим человеком с T018 работает второе правило поверх первого: править
+    справочник вправе только `directory.manage`, и у управляющего его нет.
+    Здесь отказ уже громкий — `with check` ограничивающей политики. Проверяются
+    оба: если бы осталось одно, «нельзя чужого» и «нельзя никакого» стали бы
+    неразличимы.
     """
     alien = people.execute(
         "select id from employees where external_id = 'bg1'"
@@ -176,11 +184,21 @@ def test_a_manager_cannot_write_a_person_of_another_unit(people):
         conn.execute("rollback to savepoint attempt")
     assert changed == 0
 
-    # А своего — правит: ограничение не должно превращаться в «нельзя ничего».
+    # Своего управляющий видит, но не правит: право вести справочник — не его.
     mine = people.execute(
         "select id from employees where external_id = 'ns1'"
     ).fetchone()[0]
     with as_app_user(people, USER_MANAGER) as conn:
+        assert conn.execute(
+            "select count(*) from employees where id = %s", (mine,)
+        ).fetchone()[0] == 1
+        conn.execute("savepoint attempt")
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            conn.execute("update employees set last_name = 'ПОДМЕНА' where id = %s", (mine,))
+        conn.execute("rollback to savepoint attempt")
+
+    # А администратор сети правит: запрет не должен превращаться в «нельзя никому».
+    with as_app_user(people, USER_ADMIN) as conn:
         assert conn.execute(
             "update employees set last_name = 'ns1' where id = %s", (mine,)
         ).rowcount == 1

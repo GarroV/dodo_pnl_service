@@ -429,14 +429,35 @@ def as_app_user(conn, user_id: str | None):
         conn.execute("select set_config('app.user_id', '', true)")
 
 
+@contextmanager
+def as_directory_admin(conn):
+    """Подготовить справочник — временно администратором сети (T018).
+
+    С миграции `0130` завести человека, группу или точку вправе только тот, у
+    кого есть `directory.manage`, а это в фикстуре один администратор сети.
+    Тестам ниже человек нужен как материал: они проверяют заморозку расчёта или
+    пересечение правил, а не право вести справочник. Подменяется только
+    контекст пользователя — роль остаётся `app_user`, то есть политики
+    продолжают действовать и подготовка идёт настоящим путём продукта, а не
+    обходом RLS владельцем схемы.
+    """
+    previous = conn.execute("select current_setting('app.user_id', true)").fetchone()[0]
+    conn.execute("select set_config('app.user_id', %s, true)", (USER_ADMIN,))
+    try:
+        yield conn
+    finally:
+        conn.execute("select set_config('app.user_id', %s, true)", (previous or "",))
+
+
 def pay_component(conn, *, ledger: str, amount: str = "1000.00", code: str = "hours.regular",
                   tenant: str = T1) -> str:
     """Компонент выплаты нужного регистра — материал для проверки видимости."""
-    employee_id = conn.execute(
-        """insert into employees (tenant_id, external_id, first_name, last_name)
-           values (%s, %s, 'Тест', 'Тестов') returning id""",
-        (tenant, f"ext-{ledger}-{code}-{amount}"),
-    ).fetchone()[0]
+    with as_directory_admin(conn):
+        employee_id = conn.execute(
+            """insert into employees (tenant_id, external_id, first_name, last_name)
+               values (%s, %s, 'Тест', 'Тестов') returning id""",
+            (tenant, f"ext-{ledger}-{code}-{amount}"),
+        ).fetchone()[0]
     payrun_id = conn.execute(
         """insert into payruns (tenant_id, period) values (%s, %s)
            on conflict (tenant_id, period) do update set period = excluded.period
