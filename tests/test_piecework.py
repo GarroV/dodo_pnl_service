@@ -375,6 +375,108 @@ def test_app_user_cannot_read_piece_value_of_another_tenant(db):
     assert seen == [], "сдельная величина чужого партнёра видна"
 
 
+def test_closed_unit_refuses_the_piece_value_in_the_database(db):
+    """Закрытие точки (T022) накрывает и сдельную величину, а не только часы.
+
+    Проверяется в базе и ролью `app_user`: обещание «объясняет приложение,
+    гарантирует база» должно держаться и для новой колонки. Владелец таблиц
+    политики обходит, и проверка им была бы зелёной при любой дыре.
+    """
+    import psycopg
+
+    from conftest import T1, U_NS1, USER_MANAGER
+
+    denied = psycopg.errors.InsufficientPrivilege
+    employee_id = db.execute(
+        """insert into employees (tenant_id, external_id, first_name, last_name)
+           values (%s, 'piece-closed', 'Курир', 'Закрытов') returning id""",
+        (T1,),
+    ).fetchone()[0]
+    sheet = db.execute(
+        """insert into timesheets (tenant_id, employee_id, unit_id, period,
+                                   norm_hours, hours, piece_value)
+           values (%s, %s, %s, %s, 176, '{}'::jsonb, 120) returning id""",
+        (T1, employee_id, U_NS1, JUNE),
+    ).fetchone()[0]
+    db.execute(
+        """insert into timesheet_closures (tenant_id, unit_id, period, closed_by)
+           values (%s, %s, %s, %s)""",
+        (T1, U_NS1, JUNE, USER_MANAGER),
+    )
+
+    with as_app_user(db, USER_MANAGER) as conn:
+        conn.execute("savepoint attempt")
+        with pytest.raises(denied):
+            conn.execute(
+                "update timesheets set piece_value = 999 where id = %s", (sheet,)
+            )
+        conn.execute("rollback to savepoint attempt")
+
+    assert db.execute(
+        "select piece_value from timesheets where id = %s", (sheet,)
+    ).fetchone()[0] == Decimal("120.00")
+
+
+def test_closed_unit_refuses_the_piece_value_on_screen_and_says_why(client, web_env):
+    """И то же самое экраном: отказ с объяснением и с числом, которое в базе."""
+    import psycopg
+
+    from conftest import USER_MANAGER
+    from core.models import Timesheet as Row
+    from core.models import Unit
+
+    login_as(client, "director")
+    url = grid_url(client)
+    row = courier_row()
+    Row.objects.filter(pk=row.pk).update(piece_value=Decimal("120.00"))
+    unit_code = Unit.objects.filter(pk=row.unit_id).values_list("code", flat=True).first()
+
+    with psycopg.connect(web_env, autocommit=True) as conn:
+        conn.execute(
+            """insert into timesheet_closures (tenant_id, unit_id, period, closed_by)
+               values (%s, %s, %s, %s)""",
+            (str(row.tenant_id), str(row.unit_id), JUNE, USER_MANAGER),
+        )
+    try:
+        with measure_switched(row.tenant_id, "deliveries", since=JUNE):
+            response = client.post(f"{url}piece/", {"row": str(row.pk), "piece": "500"})
+
+        assert response.status_code == 409
+        assert unit_code in response.content.decode()
+        # Экран обязан вернуться к тому, что осталось в базе (T066).
+        assert response["X-Cell-Value"] == "120.00"
+        assert Row.objects.get(pk=row.pk).piece_value == Decimal("120.00")
+    finally:
+        with psycopg.connect(web_env, autocommit=True) as conn:
+            conn.execute(
+                "delete from timesheet_closures where tenant_id = %s and period = %s",
+                (str(row.tenant_id), JUNE),
+            )
+        Row.objects.filter(pk=row.pk).update(piece_value=0)
+
+
+def test_a_typo_in_the_measure_refuses_the_run_by_name(web_env):
+    """Опечатка в способе оплаты — отказ с именами, а не 500 из середины счёта.
+
+    Движок на неизвестной мере поднимает `ValueError` — и это правильно: тихо
+    посчитать по часам он не имеет права. Но человеку, который переопределил
+    правило, `ValueError` посреди счёта показывается как «Server Error», а
+    исправлять правило ему. Поэтому мера проверяется до счёта и называет людей,
+    ровно как схема расчёта и база для взносов.
+    """
+    from payrun.calc import compute
+    from payrun.errors import PayrunRefused
+
+    row = courier_row()
+
+    with measure_switched(row.tenant_id, "per_delivery", since=JUNE):
+        with pytest.raises(PayrunRefused) as refusal:
+            compute(row.tenant_id, JUNE)
+
+    assert "per_delivery" in refusal.value.message
+    assert row.employee.external_id in refusal.value.details
+
+
 def test_switching_the_measure_does_not_move_a_closed_period(web_env):
     """Главный тест задачи: переключение способа не ломает закрытый месяц.
 

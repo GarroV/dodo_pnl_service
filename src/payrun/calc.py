@@ -375,6 +375,7 @@ def compute(tenant_id: UUID, period: date, reporter=None):
     rules = select_rules(tenant_id, tenant.country_code, period)
     cases = collect_cases(tenant_id, period)
     check_schemes(cases, rules.base)
+    check_measures(cases, rules)
     check_insured_base(cases, rules)
     return rules, _calculate_all(rules, cases, reporter)
 
