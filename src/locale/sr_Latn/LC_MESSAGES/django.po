@@ -25,10 +25,9 @@ msgstr "Za ovaj period ne postoji nijedna evidencija sati — nema šta da se ob
 msgid "в правилах страны нет схем расчёта: %(schemes)s. Поправьте группу сотрудников или пресет."
 msgstr "U pravilima zemlje nema šema obračuna: %(schemes)s. Ispravite grupu zaposlenih ili preset."
 
-#, fuzzy, python-format
-#| msgid "в правилах страны нет схем расчёта: %(schemes)s. Поправьте группу сотрудников или пресет."
+#, python-format
 msgid "в правилах страны нет способов измерения работы: %(measures)s. Поправьте настройку группы или пресет."
-msgstr "U pravilima zemlje nema šema obračuna: %(schemes)s. Ispravite grupu zaposlenih ili preset."
+msgstr "U pravilima zemlje nema načina merenja rada: %(measures)s. Ispravite podešavanje grupe ili preset."
 
 #, python-format
 msgid "база для взносов не сходится с часами табеля: %(count)s чел. По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы верным. Проверьте колонку «База взносов» в табеле."
@@ -251,15 +250,12 @@ msgstr "„%(value)s“ nije broj sati"
 msgid "часы задаются с точностью до сотой"
 msgstr "sati se unose sa tačnošću do stotog dela"
 
-#, fuzzy
-#| msgid "отрицательных часов не бывает"
 msgid "отрицательной сдельной величины не бывает"
-msgstr "sati ne mogu biti negativni"
+msgstr "vrednost učinka ne može biti negativna"
 
-#, fuzzy, python-format
-#| msgid "больше %(limit)s часов в месяце не бывает"
+#, python-format
 msgid "больше %(limit)s за месяц не бывает — проверьте, не лишний ли ноль"
-msgstr "ne može biti više od %(limit)s sati u mesecu"
+msgstr "ne može biti više od %(limit)s za mesec — proverite da li ima suvišnu nulu"
 
 #, python-format
 msgid "типа часов «%(kind)s» нет в правилах страны"
@@ -377,10 +373,10 @@ msgid "Правило не подтверждено бухгалтером"
 msgstr "Pravilo nije potvrđeno od strane knjigovođe"
 
 msgid "Чем меряется работа группы, задано правилом; у почасовых групп величины нет"
-msgstr ""
+msgstr "Čime se meri rad grupe, određuje pravilo; satne grupe nemaju vrednost"
 
 msgid "Сдельно"
-msgstr ""
+msgstr "Po učinku"
 
 msgid "Вход расчёта наравне с часами: по ней считаются взносы и бруто"
 msgstr "Ulaz u obračun ravnopravno sa satima: iz nje se obračunavaju doprinosi i bruto"
@@ -392,10 +388,10 @@ msgid "Норма"
 msgstr "Norma"
 
 msgid "Эти часы не оплачиваются: работа группы меряется сдельно"
-msgstr ""
+msgstr "Ovi sati se ne plaćaju: rad grupe se meri po učinku"
 
 msgid "Работа этой группы меряется часами"
-msgstr ""
+msgstr "Rad ove grupe se meri satima"
 
 msgid ""
 "Стрелки — переход между ячейками, Enter — вниз, Tab — вправо. Каждая ячейка\n"
