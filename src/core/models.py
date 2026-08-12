@@ -564,6 +564,17 @@ class Timesheet(models.Model):
     insured_hours = models.DecimalField(max_digits=8, decimal_places=2, db_default=0)
     norm_hours = models.DecimalField(max_digits=8, decimal_places=2)
     hours = models.JSONField(db_default={})  # {regular: 176, sick: 20, ...}
+    # Сдельная величина за месяц (D032): число доставок либо фиксированная сумма.
+    # Что именно — решает правило `work_measure` у группы сотрудника, а не эта
+    # колонка: у группы способ ровно один, и две колонки означали бы два ответа
+    # на один вопрос, которые однажды разъедутся. У почасовой группы величина не
+    # читается расчётом вовсе.
+    #
+    # По дням не раскладывается, в отличие от часов (D011): у дня своей сдельной
+    # величины нет — за месячным числом доставок не стоит ни одной настоящей
+    # даты, и раскладка выдумала бы их. Придёт подневный источник из Dodo IS —
+    # придёт вместе со своими датами.
+    piece_value = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
     deduction = models.DecimalField(max_digits=14, decimal_places=2, db_default=0)
     # Выплата наличными — не особый случай, а канал: в таблице партнёра это
     # столбец «ISPLATA U KES». Отсюда берётся `payslips.to_cash`.

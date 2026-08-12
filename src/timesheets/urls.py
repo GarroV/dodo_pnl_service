@@ -11,6 +11,9 @@ from . import views
 urlpatterns = [
     path("<uuid:period_id>/", views.grid, name="timesheets"),
     path("<uuid:period_id>/cell/", views.cell, name="timesheet-cell"),
+    # Сдельная величина — свой адрес, а не род ячейки скрытым полем у записи
+    # часов (T075): это другая величина с другими правилами.
+    path("<uuid:period_id>/piece/", views.piece, name="timesheet-piece"),
     path("<uuid:period_id>/import/", views.import_table, name="timesheet-import"),
     # Закрытие и открытие — разные адреса, а не значение поля в общей форме:
     # два действия с разными последствиями не должны отличаться содержимым

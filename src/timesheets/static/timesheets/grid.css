@@ -85,6 +85,20 @@ table.grid td.insured .hint {
   color: var(--warn);
 }
 
+/* Сдельная величина (T075): у сдельной группы платит она, а не часы. Подпись
+   способа стоит рядом со значением — 120 доставок и 120 динаров это разные
+   деньги, и по голому числу их не отличить. */
+table.grid td.piece { position: relative; }
+table.grid td.piece .hint,
+table.grid td.num .hint {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+/* Часы сдельной строки ведут для учёта времени, но денег они не дают. Пометка
+   тихая: это не ошибка, а другой способ считать. */
+table.grid td.cellbox.unpaid input.cell { color: var(--muted); }
+
 /* Незаполненная ячейка не должна выглядеть как ноль: она пустая. */
 table.grid input.cell::placeholder { color: var(--line); }
 

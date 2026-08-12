@@ -50,6 +50,11 @@ class Timesheet:
     deduction: Decimal = D(0)       # obustava
     cash_payout: Decimal = D(0)
     manual_correction: Decimal | None = None  # ручная правка, если движок не покрывает случай
+    # Сдельная величина за месяц (D032). Что именно она означает — количество
+    # единиц или сумму, — решает правило `work_measure` у группы, а не это поле:
+    # у группы способ один, и второе поле означало бы два ответа на один вопрос.
+    # У почасовой группы величина не читается вовсе.
+    piece_value: Decimal = D(0)
 
     def get(self, kind: str) -> Decimal:
         return d(self.hours.get(kind, 0))
@@ -83,6 +88,27 @@ def insured_base(hours: dict, hour_types: dict) -> Decimal:
          if (cfg or {}).get("insured", True)),
         D(0),
     )
+
+
+# --------------------------------------------------------------------------
+# Чем меряется работа группы (D032, ответ владельца на Q011)
+# --------------------------------------------------------------------------
+#
+# Часы — не единственная мера: курьеру могут платить за доставки или фиксированной
+# суммой, и какой из способов у партнёра настоящий, бухгалтер ещё не сказал.
+# Поэтому способ — правило (`groups.<код>.work_measure`), а не ветка в коде, и
+# живёт оно там же, где схема расчёта и регистр учёта группы.
+#
+# Разделение с «схемой расчёта» намеренное: схема отвечает на «как из нето
+# получить бруто и взносы», мера — на «из чего берётся само нето». Свести их в
+# одно значило бы заводить схему на каждое сочетание.
+
+HOURS = "hours"
+
+
+def work_measure(group: dict | None) -> str:
+    """Мера работы группы. Пусто — часы: так работали до появления правила."""
+    return (group or {}).get("work_measure") or HOURS
 
 
 def uses_insured_hours(scheme: dict) -> bool:
@@ -213,6 +239,53 @@ class PayrollEngine:
             )
             total += amount
         return total
+
+    def measure_of(self, e: Employee) -> str:
+        """Чем меряется работа этого человека — по правилу его группы."""
+        return work_measure(self.groups.get(e.group))
+
+    def accrue_piecework(self, slip: Payslip, ts: Timesheet, measure: str) -> Decimal:
+        """Начисление сдельной работы: количество × ставка либо сама сумма.
+
+        Что означает величина в табеле, знает правило: `pay_per_unit`. При
+        `true` ставка сотрудника читается как цена единицы, а не часа — второго
+        поля под «цену доставки» намеренно нет: цена работы у человека одна, и
+        две означали бы два ответа на вопрос, сколько он стоит.
+        """
+        cfg = (self.p.get("work_measures") or {}).get(measure)
+        if cfg is None:
+            # Опечатка в правиле не должна оборачиваться тихим расчётом по
+            # часам: правило заведено, в списке видно, а деньги пришли бы мимо
+            # него. Отказ ловит `payrun.calc.check_measures` и называет людей.
+            raise ValueError(f"неизвестная мера работы: {measure}")
+
+        e = slip.employee
+        quantity = d(ts.piece_value)
+        per_unit = bool(cfg.get("pay_per_unit"))
+        rate = self.hourly_rate(e) if per_unit else None
+        amount = quantity * rate if per_unit else quantity
+        title = cfg.get("title") or measure
+
+        slip.add(
+            code=f"piecework.{measure}",
+            title=title,
+            amount=amount,
+            ledger=self.ledger_of(e),
+            step=self.step(
+                f"piecework.{measure}", title, amount,
+                # Путь — туда, где сделан ВЫБОР способа: именно его партнёр
+                # переопределяет и именно его версию надо показать в следе.
+                # Само `pay_per_unit` при этом в входах, чтобы объяснение
+                # читалось целиком, а не по двум местам.
+                rule_path=f"groups.{e.group}.work_measure",
+                inputs={
+                    "measure": measure, "quantity": quantity,
+                    "pay_per_unit": per_unit, "rate": rate,
+                    "base_rate": d(e.base_rate), "coefficient": d(e.coefficient),
+                },
+            ),
+        )
+        return amount
 
     def minimum_guarantee(self, slip: Payslip, ts: Timesheet) -> Decimal:
         """
@@ -436,12 +509,23 @@ class PayrollEngine:
         slip = Payslip(employee=e)
         scheme = self.schemes[e.scheme]
 
-        # для полставки норма часов по умолчанию — половина месячной,
-        # но фактически отработанное всегда важнее (увольнение, приём в середине месяца)
-        if scheme.get("worked_hours_source") == "half_of_norm" and not ts.hours.get("regular"):
-            ts.hours["regular"] = ts.norm_hours / 2
+        measure = self.measure_of(e)
 
-        earned = self.accrue_hours(slip, ts)
+        if measure == HOURS:
+            # для полставки норма часов по умолчанию — половина месячной,
+            # но фактически отработанное всегда важнее (увольнение, приём в середине месяца)
+            if scheme.get("worked_hours_source") == "half_of_norm" and not ts.hours.get("regular"):
+                ts.hours["regular"] = ts.norm_hours / 2
+
+            earned = self.accrue_hours(slip, ts)
+        else:
+            earned = self.accrue_piecework(slip, ts, measure)
+            # Часы у сдельной группы денег не дают. Молчать об этом нельзя:
+            # человек видит в табеле 168 часов и ждёт за них начисления.
+            if any(d(value) != 0 for value in ts.hours.values()):
+                slip.notes.append(
+                    "часы не оплачены: работа этой группы меряется сдельно"
+                )
 
         if ts.manual_correction is not None:
             # если бухгалтер поставил правку руками — уважаем ее и помечаем.

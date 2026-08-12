@@ -267,7 +267,7 @@ def test_grid_marks_row_where_base_diverges_from_hours(client):
         Row.objects.filter(pk=row.pk).update(insured_hours=row.insured_hours)
 
 
-def test_cell_answer_refreshes_base_on_screen(client):
+def test_cell_answer_refreshes_base_on_screen(client, period_restored):
     """После правки часов новая база приезжает на экран, а не остаётся старой."""
     from core.models import Timesheet as Row
 
@@ -357,7 +357,7 @@ def test_calculation_ignores_base_where_scheme_does_not_use_it(web_env):
 # =============================================================================
 
 
-def test_calculation_survives_materialization(web_env):
+def test_calculation_survives_materialization(web_env, period_restored):
     """Перевод всех строк на дни не двигает ни одной суммы.
 
     Проверка ровно того, чем можно испортить принятую вторую очередь: раскладка
@@ -403,6 +403,11 @@ def _component_totals(payrun_id) -> dict:
 # =============================================================================
 # 3. Экран
 # =============================================================================
+# Каждый тест, который пишет в табель с экрана, берёт `period_restored`
+# (`conftest.py`): база `web_env` одна на весь прогон, и оставленное здесь
+# число двигает контрольные суммы у всех, кто считает период после. Пока
+# возврата не было, прогон держался на случайности — `test_timesheet_import.py`
+# сортируется по имени раньше этого файла и успевал посчитать до порчи.
 
 
 def grid_url(client) -> str:
@@ -436,7 +441,7 @@ def grid_url_anonymous(client) -> str:
     return url
 
 
-def test_cell_saves_and_survives_reload(client):
+def test_cell_saves_and_survives_reload(client, period_restored):
     """Ввёл, ушёл со страницы, вернулся — число на месте."""
     login_as(client, "director")
     url = grid_url(client)
@@ -454,7 +459,7 @@ def test_cell_saves_and_survives_reload(client):
     assert 'value="111.25"' in again
 
 
-def test_cell_accepts_comma(client):
+def test_cell_accepts_comma(client, period_restored):
     """«8,5» — то, что наберёт человек с русской или сербской раскладкой."""
     login_as(client, "director")
     url = grid_url(client)
@@ -506,7 +511,7 @@ def test_grid_explains_missing_rules_instead_of_500(client):
         RulePreset.objects.update(valid_from=date(2026, 1, 1))
 
 
-def test_cell_explains_missing_rules_instead_of_500(client):
+def test_cell_explains_missing_rules_instead_of_500(client, period_restored):
     """Тот же отказ, но на записи ячейки, а не на открытии страницы (T073).
 
     Сценарий узкий и оттого незаметный: страница открылась, когда правила ещё
@@ -543,7 +548,7 @@ def test_cell_explains_missing_rules_instead_of_500(client):
     assert Decimal(str(stored.get(kind, 0))) == Decimal("12.00")
 
 
-def test_refused_cell_answers_with_value_from_base(client):
+def test_refused_cell_answers_with_value_from_base(client, period_restored):
     """Отказ возвращает то, что осталось в базе: экран не показывает непринятое.
 
     Без этого в поле оставался введённый мусор, и человек видел на экране

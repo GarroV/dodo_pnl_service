@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-12 21:33+0000\n"
+"POT-Creation-Date: 2026-08-12 22:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -24,6 +24,10 @@ msgstr "There is no timesheet at all for this period — nothing to calculate. E
 #, python-format
 msgid "в правилах страны нет схем расчёта: %(schemes)s. Поправьте группу сотрудников или пресет."
 msgstr "The country rules have no calculation schemes: %(schemes)s. Fix the employee group or the preset."
+
+#, python-format
+msgid "в правилах страны нет способов измерения работы: %(measures)s. Поправьте настройку группы или пресет."
+msgstr "The country rules have no work measures: %(measures)s. Fix the group setting or the preset."
 
 #, python-format
 msgid "база для взносов не сходится с часами табеля: %(count)s чел. По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы верным. Проверьте колонку «База взносов» в табеле."
@@ -246,6 +250,13 @@ msgstr "\"%(value)s\" is not a number of hours"
 msgid "часы задаются с точностью до сотой"
 msgstr "hours are entered to the nearest hundredth"
 
+msgid "отрицательной сдельной величины не бывает"
+msgstr "piece value cannot be negative"
+
+#, python-format
+msgid "больше %(limit)s за месяц не бывает — проверьте, не лишний ли ноль"
+msgstr "there cannot be more than %(limit)s per month — check for an extra zero"
+
 #, python-format
 msgid "типа часов «%(kind)s» нет в правилах страны"
 msgstr "hour type \"%(kind)s\" is not in the country rules"
@@ -361,6 +372,12 @@ msgstr "no connection to server"
 msgid "Правило не подтверждено бухгалтером"
 msgstr "Rule not confirmed by accountant"
 
+msgid "Чем меряется работа группы, задано правилом; у почасовых групп величины нет"
+msgstr "How the group's work is measured is set by the rule; hourly groups have no value"
+
+msgid "Сдельно"
+msgstr "Piecework"
+
 msgid "Вход расчёта наравне с часами: по ней считаются взносы и бруто"
 msgstr "Calculation input on par with hours: contributions and gross are calculated from it"
 
@@ -369,6 +386,12 @@ msgstr "Contribution base"
 
 msgid "Норма"
 msgstr "Standard"
+
+msgid "Эти часы не оплачиваются: работа группы меряется сдельно"
+msgstr "These hours are not paid: the group's work is measured by piecework"
+
+msgid "Работа этой группы меряется часами"
+msgstr "This group's work is measured by hours"
 
 msgid ""
 "Стрелки — переход между ячейками, Enter — вниз, Tab — вправо. Каждая ячейка\n"

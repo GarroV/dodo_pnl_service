@@ -44,8 +44,8 @@ from .spread import calendar_working_days, spread
 
 __all__ = [
     "CellRefused", "RowInput", "daily_totals", "hour_types", "insured_base",
-    "materialize", "parse_hours", "row_differs", "set_cell", "store_row",
-    "timesheet_for",
+    "materialize", "parse_hours", "parse_piece", "row_differs", "set_cell",
+    "set_piece", "store_row", "timesheet_for",
 ]
 
 # Часы с двумя знаками — как в колонке. Больше не принимаем не из вредности:
@@ -93,6 +93,53 @@ def parse_hours(raw: str) -> Decimal:
     if value != value.quantize(CENT):
         raise CellRefused(_("часы задаются с точностью до сотой"))
     return value.quantize(CENT)
+
+
+# Верхняя граница сдельной величины — та же защита от опечатки в порядке, что у
+# часов, и по той же причине она не бизнес-правило: сколько доставок бывает в
+# месяце и какой бывает фиксированная выплата, знает партнёр, а не продукт.
+# Миллион отсекает лишний ноль, но не отсекает настоящую сумму в динарах.
+MAX_PIECE = Decimal("1000000")
+
+
+def parse_piece(raw: str) -> Decimal:
+    """Строка из поля ввода → сдельная величина. Разбор тот же, что у часов.
+
+    Намеренно та же функция, а не своя: запятая вместо точки, лишний пробел и
+    мусор вместо числа ведут себя одинаково в обеих колонках. Отличается только
+    проверка границ — она ниже, в `set_piece`.
+    """
+    return parse_hours(raw)
+
+
+def check_piece(value: Decimal) -> None:
+    if value < 0:
+        raise CellRefused(_("отрицательной сдельной величины не бывает"))
+    if value > MAX_PIECE:
+        raise CellRefused(
+            _("больше %(limit)s за месяц не бывает — проверьте, не лишний ли ноль")
+            % {"limit": f"{MAX_PIECE:.0f}"}
+        )
+
+
+@transaction.atomic
+def set_piece(*, timesheet: Timesheet, value: Decimal) -> Decimal:
+    """Записать сдельную величину строки табеля (T075). Возвращает записанное.
+
+    По дням не раскладывается, в отличие от часов: за месячным числом доставок
+    настоящих дат нет, и ровная раскладка выдумала бы их (см. комментарий у
+    колонки `timesheets.piece_value`). Инвариант «итог равен сумме дней»
+    касается часов и этой величины не касается вовсе.
+
+    База для взносов здесь не пересчитывается ни при каких условиях: она
+    считается из **часов**, входящих в базу по правилам страны, а сдельная
+    величина часами не является. Связь, которую бережёт `set_cell`, сдельная
+    правка не рвёт и не создаёт.
+    """
+    check_piece(value)
+    Timesheet.objects.filter(pk=timesheet.pk).update(piece_value=value)
+    timesheet.piece_value = value
+    return value
 
 
 def check_cell(hour_type: str, hours: Decimal, known: dict[str, dict]) -> None:
@@ -360,6 +407,7 @@ def timesheet_for(employee_id: UUID, period: date) -> EngineTimesheet:
     hours = totals or {k: d(v) for k, v in (row.hours or {}).items()}
     return EngineTimesheet(
         hours={k: d(v) for k, v in hours.items()},
+        piece_value=d(row.piece_value),
         insured_hours=d(row.insured_hours),
         norm_hours=d(row.norm_hours),
         deduction=d(row.deduction),
