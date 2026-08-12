@@ -169,6 +169,17 @@
             {% if column.unverified %}<span class="hint warn" title="{% translate "Правило не подтверждено бухгалтером" %}">?</span>{% endif %}
           </th>
         {% endfor %}
+        {% comment %}
+        Колонка сдельной величины показывается, только когда на экране есть хоть
+        одна сдельная строка (T075, D032). Пустая колонка на каждом табеле мира
+        приглашала бы вводить в неё там, где её никто не спрашивает.
+
+        Итога по столбцу у неё нет намеренно: у одного партнёра рядом могут
+        стоять доставки и фиксированные суммы, и их сумма не означала бы ничего.
+        {% endcomment %}
+        {% if grid.has_piecework %}
+          <th class="num" title="{% translate "Чем меряется работа группы, задано правилом; у почасовых групп величины нет" %}">{% translate "Сдельно" %}</th>
+        {% endif %}
         <th class="num">{% translate "Итого" %}</th>
         {% comment %}
         База для взносов — только на просмотр: придумывать её от часов нельзя,
@@ -200,8 +211,15 @@
             печатать, а отказ приходит уже после набора. Проверку в `cell` это
             не отменяет — точку могли закрыть после того, как страница открыта.
             {% endcomment %}
+            {% comment %}
+            У сдельной строки часы остаются в табеле (их ведут для учёта
+            времени), но денег не дают: платит сдельная величина. Молчать об
+            этом нельзя — человек, набравший 168 часов, ждёт за них начисления.
+            Поэтому ячейка помечена и объясняет себя.
+            {% endcomment %}
             {% if can_edit and not row.closed %}
-            <td class="cellbox">
+            <td class="cellbox {% if row.piecework %}unpaid{% endif %}"
+                title="{% if row.piecework %}{% translate "Эти часы не оплачиваются: работа группы меряется сдельно" %}{% endif %}">
               <input class="cell" type="text" inputmode="decimal" name="hours"
                      value="{{ row.cells|get:column.code|cell_value }}"
                      data-row="{{ row.timesheet_id }}" data-kind="{{ column.code }}"
@@ -220,6 +238,36 @@
             <td class="num">{{ row.cells|get:column.code|hours }}</td>
             {% endif %}
           {% endfor %}
+          {% if grid.has_piecework %}
+            {% comment %}
+            Сдельная величина: у сдельной строки — поле ввода, у почасовой —
+            прочерк. Прочерк, а не пустая ячейка: пустая читалась бы как «не
+            заполнено», то есть как приглашение заполнить, а этой группе
+            величину не задают вовсе.
+
+            Рядом подпись способа из правил страны («Доставки», «Фиксированная
+            выплата»): без неё в столбике стоит голое число, а 120 доставок и
+            120 динаров — разные деньги.
+            {% endcomment %}
+            {% if not row.piecework %}
+              <td class="num muted" title="{% translate "Работа этой группы меряется часами" %}">—</td>
+            {% elif can_edit and not row.closed %}
+            <td class="cellbox piece">
+              <input class="cell" type="text" inputmode="decimal" name="piece"
+                     value="{{ row.piece_value|cell_value }}"
+                     data-row="{{ row.timesheet_id }}" data-field="piece"
+                     data-url="{% url 'timesheet-piece' period.id %}"
+                     hx-post="{% url 'timesheet-piece' period.id %}"
+                     hx-trigger="change"
+                     hx-swap="none"
+                     hx-vals='{"row": "{{ row.timesheet_id }}"}'
+                     aria-label="{{ row.employee }} — {{ row.measure_title }}">
+              <span class="hint">{{ row.measure_title }}</span>
+            </td>
+            {% else %}
+            <td class="num">{{ row.piece_value|hours }} <span class="hint">{{ row.measure_title }}</span></td>
+            {% endif %}
+          {% endif %}
           <td class="num strong" id="row-total-{{ row.timesheet_id }}">{{ row.total|hours }}</td>
           {% include "timesheets/_insured_cell.html" with row=row oob=False %}
           <td class="num muted">{{ row.norm_hours|hours }}</td>
@@ -232,6 +280,8 @@
         {% for column in grid.columns %}
           <td class="num" id="col-total-{{ column.code }}">{{ grid.column_totals|get:column.code|hours }}</td>
         {% endfor %}
+        {# Сдельную величину по столбцу не суммируют — см. заголовок колонки. #}
+        {% if grid.has_piecework %}<td></td>{% endif %}
         <td class="num strong" id="grand-total">{{ grid.total|hours }}</td>
         <td></td><td></td>
       </tr>

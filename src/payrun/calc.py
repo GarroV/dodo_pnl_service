@@ -47,7 +47,16 @@ from django.utils.translation import gettext as _
 
 from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, PayslipTotals, Tenant
 from core.models import Timesheet as TimesheetRow
-from payroll import Employee, PayrollEngine, Timesheet, d, insured_base, uses_insured_hours
+from payroll import (
+    HOURS,
+    Employee,
+    PayrollEngine,
+    Timesheet,
+    d,
+    insured_base,
+    uses_insured_hours,
+    work_measure,
+)
 
 from . import retro
 from .errors import LedgerAccessDenied, PayrunRefused
@@ -55,7 +64,10 @@ from .freezing import frozen_payslip_ids
 from .lifecycle import mark_calculated, refuse_if_approved
 from .rules import select_rules
 
-__all__ = ["CalcOutcome", "LedgerAccessDenied", "PayrunRefused", "calculate_period", "compute"]
+__all__ = [
+    "CalcOutcome", "LedgerAccessDenied", "PayrunRefused", "calculate_period", "compute",
+    "terms_in_force",
+]
 
 CENT = Decimal("0.01")
 
@@ -103,16 +115,21 @@ class CalcOutcome:
     carried: int = 0
 
 
-def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
-    """Табели периода вместе с действующими условиями найма.
+def terms_in_force(tenant_id: UUID, period: date) -> dict[UUID, EmploymentTerm]:
+    """Условия найма, действующие в этом месяце, по сотрудникам.
 
     Условия версионируются, поэтому берётся версия, действующая **в этом
     месяце**: правка ставки будущим числом не должна менять закрытый расчёт.
+
+    Отдельной функцией, а не строчками внутри сбора случаев: то же самое нужно
+    экрану табеля — он показывает сдельную величину тем, у кого группа считается
+    сдельно (T075), а группа человека записана здесь. Две копии правила «какая
+    версия действует» разъехались бы молча, и экран показывал бы одно, а расчёт
+    считал другое.
     """
-    end = month_end(period)
     terms: dict[UUID, EmploymentTerm] = {}
     for term in (
-        EmploymentTerm.objects.filter(tenant_id=tenant_id, valid_from__lte=end)
+        EmploymentTerm.objects.filter(tenant_id=tenant_id, valid_from__lte=month_end(period))
         .exclude(valid_to__lte=period)
         .select_related("group")
         .order_by("valid_from")
@@ -120,6 +137,12 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
         # order_by возрастающий, поэтому последняя запись побеждает — это и есть
         # «самая поздняя версия, начавшая действовать не позже конца месяца».
         terms[term.employee_id] = term
+    return terms
+
+
+def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
+    """Табели периода вместе с действующими условиями найма."""
+    terms = terms_in_force(tenant_id, period)
 
     cases: list[Case] = []
     missing: list[str] = []
@@ -165,6 +188,10 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
                         None if sheet.manual_correction is None
                         else d(sheet.manual_correction)
                     ),
+                    # Сдельная величина (T075). Читает её только тот, у кого
+                    # группа считается сдельно; у остальных она лежит нулём и
+                    # ни на что не влияет.
+                    piece_value=d(sheet.piece_value),
                 ),
             )
         )
@@ -193,6 +220,37 @@ def check_schemes(cases: list[Case], preset: dict) -> None:
               "Поправьте группу сотрудников или пресет.")
             % {"schemes": ", ".join(unknown)},
             details=[c.external_id for c in cases if c.employee.scheme in unknown],
+        )
+
+
+def check_measures(cases: list[Case], rules) -> None:
+    """Мера работы, которой нет в правилах страны, — отказ с именами (T075).
+
+    Опечатка в `work_measure` не должна оборачиваться расчётом по часам: правило
+    заведено, в списке правил видно, а деньги пришли бы мимо него — ровно тот
+    правдоподобно неверный расчёт, которого в этом продукте быть не должно.
+    Проверяется так же, как схема расчёта: до счёта, с именами людей, а не
+    `ValueError` из движка на середине.
+    """
+    unknown: dict[str, list[str]] = {}
+    for case in cases:
+        preset = rules.preset(group_id=case.group_id, employee_id=case.employee_id)
+        measure = work_measure((preset.get("groups") or {}).get(case.employee.group))
+        # Часы объявлять не нужно: это умолчание, работавшее до появления
+        # правила вовсе. Иначе пресет страны, загруженный раньше T075, отказал
+        # бы считать всех до единого — правило, которое ничего не выбирает, не
+        # должно требовать записи о себе.
+        if measure == HOURS:
+            continue
+        if measure not in (preset.get("work_measures") or {}):
+            unknown.setdefault(measure, []).append(case.external_id)
+
+    if unknown:
+        raise PayrunRefused(
+            _("в правилах страны нет способов измерения работы: %(measures)s. "
+              "Поправьте настройку группы или пресет.")
+            % {"measures": ", ".join(sorted(unknown))},
+            details=sorted(x for names in unknown.values() for x in names),
         )
 
 
@@ -317,6 +375,7 @@ def compute(tenant_id: UUID, period: date, reporter=None):
     rules = select_rules(tenant_id, tenant.country_code, period)
     cases = collect_cases(tenant_id, period)
     check_schemes(cases, rules.base)
+    check_measures(cases, rules)
     check_insured_base(cases, rules)
     return rules, _calculate_all(rules, cases, reporter)
 
