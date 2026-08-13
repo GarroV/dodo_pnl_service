@@ -117,8 +117,8 @@ msgstr ""
 "For this partner, backdated corrections are handled by recalculation: reopen the period\n"
 "    with a reason and calculate it again."
 
-msgid "Расхождений с сегодняшними данными нет: переносить нечего. Возможно, разницу уже перенесли — посмотрите период-получатель."
-msgstr "There are no discrepancies with today's data: there is nothing to carry over. The difference may have already been carried over — check the receiving period."
+msgid "Расхождений с сегодняшними данными в доступном вам срезе нет: переносить нечего. Возможно, разницу уже перенесли — посмотрите период-получатель."
+msgstr "There are no discrepancies with today's data in the slice available to you: there is nothing to carry over. The difference may have already been carried over — check the receiving period."
 
 msgid "Перенос разницы делается только из закрытого месяца. Этот период ещё не утверждён — правьте данные и пересчитывайте его как обычно."
 msgstr "Carrying over the difference is only done from a closed month. This period has not been approved yet — edit the data and recalculate it as usual."

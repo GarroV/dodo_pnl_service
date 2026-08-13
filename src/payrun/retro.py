@@ -32,6 +32,20 @@
 **Регистр** удерживается сам: разница считается покомпонентно, а регистр —
 свойство компонента, а не человека. Правка, задевшая надбавку в официальном и
 часы в дополнительном, даёт две строки в двух регистрах, и они не складываются.
+
+**Сравниваются только сопоставимые величины — срез роли со срезом роли** (T085).
+Хранимое отдаёт база, и отдаёт она его в срезе роли; свежий расчёт движок
+считает целиком, потому что считает он деньги, а не видимость. Вычесть одно из
+другого — значит получить в остатке ровно то, чего роли не видно: бухгалтеру
+показывали чужие фамилии, суммы и названия регистров и при этом утверждали, что
+закрытый месяц разошёлся, хотя не менялось ничего. Поэтому `visible_ledgers`
+здесь обязательный аргумент, а не удобство: у вопроса «а что месяц дал бы
+сегодня» нет ответа вообще, пока не сказано, кто спрашивает.
+
+Фильтр стоит **в этом модуле, а не только в политиках базы**. Политики срежут
+хранимое и без него, но свежий расчёт мимо них, а тот же код зовут и владельцем
+схемы (тесты, обслуживание) — там политики не действуют вовсе. Одно место, где
+срез задаётся явно, честнее двух половин гарантии.
 """
 from __future__ import annotations
 
@@ -46,7 +60,7 @@ from django.utils.translation import gettext_noop
 
 from core.models import PayComponent, Payrun, RetroAdjustment, Tenant
 
-from .errors import LedgerAccessDenied, PayrunRefused
+from .errors import PayrunRefused
 
 __all__ = [
     "DELTA", "RECALCULATE", "Drift", "Line", "adjustments_for", "drift",
@@ -67,9 +81,13 @@ WRONG_MODE_REFUSAL = gettext_noop(
     "Перенос разницы для него выключен настройкой."
 )
 
+# «В доступном вам срезе» — не оговорка ради осторожности, а точность: роль
+# видит часть ведомости, и утверждать за неё, что не разошлось **ничего**,
+# продукт не вправе (T085). Про существование остального при этом не сказано
+# ни слова — срез роли она знает и так.
 NOTHING_REFUSAL = gettext_noop(
-    "Расхождений с сегодняшними данными нет: переносить нечего. "
-    "Возможно, разницу уже перенесли — посмотрите период-получатель."
+    "Расхождений с сегодняшними данными в доступном вам срезе нет: переносить "
+    "нечего. Возможно, разницу уже перенесли — посмотрите период-получатель."
 )
 
 NOT_APPROVED_REFUSAL = gettext_noop(
@@ -158,7 +176,7 @@ class Drift:
         return sorted({line.ledger for line in self.lines})
 
 
-def _stored(tenant_id: UUID, period: date) -> dict:
+def _stored(tenant_id: UUID, period: date, seen: set[str]) -> dict:
     """Что закрытый месяц хранит **своего**, без перенесённого в него извне.
 
     Разницы, приехавшие в этот месяц из ещё более ранних (`retro_source_period`
@@ -170,6 +188,7 @@ def _stored(tenant_id: UUID, period: date) -> dict:
         tenant_id=tenant_id,
         payslip__payrun__period=period,
         retro_source_period__isnull=True,
+        ledger__in=sorted(seen),
     ).select_related("payslip__employee"):
         key = (item.payslip.employee_id, item.code, item.ledger)
         body = rows.setdefault(key, {
@@ -184,19 +203,25 @@ def _stored(tenant_id: UUID, period: date) -> dict:
     return rows
 
 
-def _posted(tenant_id: UUID, period: date) -> dict:
+def _posted(tenant_id: UUID, period: date, seen: set[str]) -> dict:
     """Что из этого месяца уже перенесено вперёд и не отменено."""
     rows: dict = {}
     for item in RetroAdjustment.objects.filter(
-        tenant_id=tenant_id, source_period=period, cancelled_at__isnull=True
+        tenant_id=tenant_id, source_period=period, cancelled_at__isnull=True,
+        ledger__in=sorted(seen),
     ):
         key = (item.employee_id, item.code, item.ledger)
         rows[key] = rows.get(key, Decimal(0)) + item.amount
     return rows
 
 
-def _fresh(tenant_id: UUID, period: date) -> tuple[dict, str]:
-    """Что месяц дал бы сегодня. Ничего не записывает — см. `calc.compute`."""
+def _fresh(tenant_id: UUID, period: date, seen: set[str]) -> tuple[dict, str]:
+    """Что месяц дал бы сегодня **в этом срезе**. Ничего не записывает.
+
+    Движок считает месяц целиком: видимость регистров — не его дело, он считает
+    деньги. Срез накладывается здесь, иначе сравнивать было бы нечего с чем
+    (см. заголовок модуля).
+    """
     # Импорт внутри: `calc` зовёт этот модуль, и на уровне файла вышел бы круг.
     from .calc import compute, money
 
@@ -208,6 +233,8 @@ def _fresh(tenant_id: UUID, period: date) -> tuple[dict, str]:
     rows: dict = {}
     for case, slip in slips:
         for component in slip.components:
+            if component.ledger not in seen:
+                continue
             key = (case.employee_id, component.code, component.ledger)
             body = rows.setdefault(key, {
                 "amount": Decimal(0),
@@ -242,18 +269,25 @@ def _frozen_employees(tenant_id: UUID, period: date) -> set:
     )
 
 
-def drift(tenant_id: UUID, period: date) -> Drift:
+def drift(tenant_id: UUID, period: date, *, visible_ledgers) -> Drift:
     """Чем сегодняшние данные расходятся с тем, что хранит закрытый месяц.
+
+    Ответ даётся **в срезе спрашивающего**: `visible_ledgers` обязателен, и
+    пустой список — это пустой ответ, а не «показать всё» (T085).
 
     Ничего не записывает. Это принципиально: вопрос задают **утверждённому**
     периоду, а он обязан остаться прежним до копейки.
     """
-    fresh, error = _fresh(tenant_id, period)
+    seen = set(visible_ledgers or [])
+    if not seen:
+        return Drift()
+
+    fresh, error = _fresh(tenant_id, period, seen)
     if error:
         return Drift(error=error)
 
-    stored = _stored(tenant_id, period)
-    posted = _posted(tenant_id, period)
+    stored = _stored(tenant_id, period, seen)
+    posted = _posted(tenant_id, period, seen)
     frozen = _frozen_employees(tenant_id, period)
 
     lines: list[Line] = []
@@ -318,6 +352,14 @@ def post(*, tenant_id: UUID, source: date, actor_id, visible_ledgers) -> tuple[d
     Возвращает месяц-получатель и то, что перенесено. Ничего не записывает в
     источник — по построению: перенос это `insert` в свою таблицу, и ни одного
     оператора по данным закрытого месяца здесь нет.
+
+    **Переносится ровно свой срез** (T085). Прежде здесь стоял отказ «разница
+    попадает в регистры учёта, недоступные вашей роли» с их перечислением — то
+    есть сам запрет был сообщением о существовании чужого регистра и о том, что
+    у этого партнёра в нём есть данные (D023). Теперь роль уносит видимое ей, а
+    невидимое остаётся тому, кому оно видно: политика `retro_adjustments`
+    отвергла бы чужую строку и без объяснения, но объяснять больше нечего —
+    строки такой не возникает.
     """
     payrun = Payrun.objects.filter(tenant_id=tenant_id, period=source).first()
     if payrun is None or payrun.status != "approved":
@@ -326,22 +368,11 @@ def post(*, tenant_id: UUID, source: date, actor_id, visible_ledgers) -> tuple[d
     if mode(tenant_id) != DELTA:
         raise PayrunRefused(_(WRONG_MODE_REFUSAL))
 
-    found = drift(tenant_id, source)
+    found = drift(tenant_id, source, visible_ledgers=visible_ledgers)
     if found.error:
         raise PayrunRefused(found.error)
     if not found:
         raise PayrunRefused(_(NOTHING_REFUSAL))
-
-    hidden = [name for name in found.ledgers if name not in set(visible_ledgers or [])]
-    if hidden:
-        # Тот же порядок, что у расчёта: объясняет приложение, отвергает база.
-        # Без этого человек получил бы ошибку политики на строке чужого регистра.
-        refusal = LedgerAccessDenied(
-            _("Разница за этот месяц попадает в регистры учёта, недоступные вашей "
-              "роли. Перенести её может тот, кто видит их все.")
-        )
-        refusal.ledgers = hidden
-        raise refusal
 
     target = next_open_period(tenant_id, source)
     with transaction.atomic():
