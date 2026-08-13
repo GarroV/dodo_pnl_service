@@ -20,3 +20,11 @@ if settings.DEMO_MODE:
 
 # Последним: пустой префикс приложения `web` перехватывает всё остальное.
 urlpatterns.append(path("", include("web.urls")))
+
+# Страницы отказов — свои, а не каркаса Django (T099, issue #82). Django ищет
+# их по этим именам именно в модуле корневых маршрутов, поэтому они здесь, а не
+# в настройках. Разбор, что показывается и что намеренно не показывается, —
+# в `web/errors.py`.
+handler404 = "web.errors.page_not_found"
+handler403 = "web.errors.permission_denied"
+handler500 = "web.errors.server_error"

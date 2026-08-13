@@ -11,9 +11,14 @@
  *
  *     google-chrome --headless=new --remote-debugging-port=9339 \
  *         --user-data-dir=/tmp/chrome-smoke-rep &
- *     APP=http://127.0.0.1:8056 node tools/smoke_reports_sheet.mjs
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку,
+ * а `COMPOSE_PROJECT_NAME` обязателен: без него сброс ушёл бы на чужой стенд.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8056 \\
+ *         node tools/smoke_reports_sheet.mjs
  */
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8056";
 
@@ -23,13 +28,24 @@ const ROLES = [
   { code: "director", rows: 60, total: "1 951 806,13", ledgers: ["Официальный", "Дополнительный", "Внутренний"] },
   { code: "accountant", rows: 33, total: "464 752,41", ledgers: ["Официальный"] },
   { code: "manager", rows: 24, total: "891 373,32", ledgers: ["Официальный", "Дополнительный"] },
-  { code: "admin", rows: 33, total: "464 752,41", ledgers: ["Официальный"] },
+  // Администратор сети видит все три регистра (T089): справочники и правила
+  // ведёт он один, и с одним официальным регистром он не видел бы карточки
+  // курьеров и кухни — то есть менять ставку было бы некому. Ожидание здесь
+  // отстало от сида на две задачи и делало смоук красным при исправном
+  // продукте — ровно тот шум, ради которого написан договор в `cdp.mjs`.
+  { code: "admin", rows: 60, total: "1 951 806,13",
+    ledgers: ["Официальный", "Дополнительный", "Внутренний"] },
 ];
 
 const ALL_LEDGERS = ["Официальный", "Дополнительный", "Внутренний"];
 
 const { evalIn, goto, send, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 
 const money = (text) => Number(text.replace(/[  ]/g, "").replace(",", "."));
 

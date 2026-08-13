@@ -11,16 +11,19 @@
  * живом стенде не воспроизвести: 35 человек считаются быстрее, чем успевает
  * моргнуть полоса. Служба останавливается и возвращается на место в конце.
  *
- *     COMPOSE_PROJECT_NAME=dodo-pnl-pr3 node tools/smoke_payrun_background.mjs
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку,
+ * а `COMPOSE_PROJECT_NAME` обязателен: без него сброс ушёл бы на чужой стенд.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> node tools/smoke_payrun_background.mjs
  *
  * Перед запуском:
  *     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
  *         --remote-debugging-port=9339 --user-data-dir=/tmp/chrome-smoke &
  */
-import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, onCleanup, service, sql, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8053";
 const SHOTS = process.env.SMOKE_SHOTS || "/tmp";
@@ -29,17 +32,18 @@ const WORKER = process.env.SMOKE_WORKER_SERVICE || "worker";
 const { evalIn, goto, send, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
 
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const compose = (...args) =>
-  execFileSync("docker", ["compose", ...args], { encoding: "utf8" }).trim();
-
-const sql = (query) =>
-  execFileSync(
-    "docker",
-    ["compose", "exec", "-T", "db", "psql", "-U", "app", "-d", "dodo_pnl", "-tAc", query],
-    { encoding: "utf8" },
-  ).trim();
+// Рабочий процесс очереди этот смоук намеренно останавливает — на этом стоит
+// половина проверок. Поднять его обратно обязана уборка, а не последняя строка
+// сценария: смоук, упавший в середине, оставлял стенд без очереди, и все
+// следующие смоуки краснели на «расчёт не начался» при исправном продукте.
+onCleanup("рабочий процесс очереди поднят", () => service("start", WORKER));
 
 /** Снимок экрана — чтобы полосу можно было увидеть глазами, а не по разметке. */
 async function shot(name) {
@@ -85,7 +89,7 @@ await send("Emulation.setDeviceMetricsOverride", {
 });
 
 // --- 0. Известное состояние: очередь погашена, расчётов нет ------------------
-compose("stop", WORKER);
+service("stop", WORKER);
 // Историю очереди чистим тоже: она копится между прогонами, и счёт задач стал
 // бы «сколько раз гоняли смоук», а не «сколько задач в этом прогоне».
 sql(
@@ -118,7 +122,7 @@ check(
 
 // --- 2. Живой рабочий процесс подхватывает и досчитывает ---------------------
 // Страницу не трогаем: она обязана узнать об окончании сама.
-compose("start", WORKER);
+service("start", WORKER);
 const stages = new Set();
 const finished = await (async () => {
   for (let i = 0; i < 200; i++) {
@@ -165,7 +169,7 @@ for (const [who, rows, total] of [
 }
 
 // --- 4. Очередь погасили: продукт объясняет, а не делает вид -----------------
-compose("stop", WORKER);
+service("stop", WORKER);
 await login("director");
 await goto(APP + periodHref);
 check("директор запускает расчёт заново", await clickByText("button", "Посчитать период"));
@@ -204,7 +208,7 @@ check(
 // Это та самая идемпотентность, но проверенная на живом стенде, а не в тесте.
 {
   const slips = sql("select count(*) from payslips");
-  compose("start", WORKER);
+  service("start", WORKER);
   const drained = await (async () => {
     for (let i = 0; i < 60; i++) {
       if (sql("select count(*) from django_q_ormq") === "0") return true;

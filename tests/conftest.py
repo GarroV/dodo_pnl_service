@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
+from psycopg.conninfo import make_conninfo
 
 from payroll import PayrollEngine, load_preset
 from payroll.importers import read_plata
@@ -69,6 +70,60 @@ MANAGE_PY = ROOT / "manage.py"
 
 ADMIN_DSN = os.environ.get("DODO_TEST_ADMIN_DSN", "postgresql:///postgres")
 
+
+def test_db_name(suffix: str) -> str:
+    """Имя временной базы прогона. Одно место, потому что имён два потребителя.
+
+    Базу заводит `temp_database`, а адрес той же базы нужен настройке Django
+    **до** первой фикстуры (см. ниже). Два места, где это имя собирается
+    строкой, разъехались бы молча: Django ходил бы в одну базу, а миграции
+    накатывались бы в другую.
+    """
+    return f"dodo_pnl_test_{suffix}_{os.getpid()}"
+
+
+# Адрес базы веб-тестов известен заранее — он зависит только от номера процесса.
+WEB_DSN = make_conninfo(ADMIN_DSN, dbname=test_db_name("web"))
+
+
+def _configure_django() -> None:
+    """Настроить Django один раз, при сборе тестов, а не побочным эффектом.
+
+    Раньше это делала фикстура `web_env`, и работало оно только потому, что
+    веб-тесты собираются раньше «чистых». Файл, где базы нет вовсе, но код зовёт
+    `gettext` (сверка, пороги расхождений), запущенный **в одиночку** падал
+    шестью проверками с `ImproperlyConfigured: Requested setting USE_I18N` —
+    issue #79. Настройка, приезжающая из чужой фикстуры, и есть зависимость от
+    порядка сбора: сегодня она красит исправный код, завтра молча выключает
+    проверку.
+
+    Адрес базы подставляется тот же, что заведёт `web_env`: имя временной базы
+    зависит только от номера процесса и потому известно заранее (см.
+    `test_db_name`). Иначе настройки Django замёрзли бы на адресе из окружения
+    разработчика — то есть веб-тесты пошли бы в его рабочую базу.
+
+    Подключения здесь не открывается: `django.setup()` только читает настройки
+    и поднимает приложения. Нет Postgres — «чистые» тесты по-прежнему идут,
+    а тесты схемы по-прежнему скипаются.
+    """
+    import django
+
+    os.environ["DATABASE_URL"] = WEB_DSN
+    os.environ.setdefault("SECRET_KEY", "test-only-not-a-secret")
+    os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
+    # Рабочего процесса очереди в прогоне тестов нет, поэтому стенд настроен
+    # как стенд без очереди: расчёт считается прямо в запросе (T024). Это не
+    # обход фонового пути, а его выключатель — тот самый, которым продукт
+    # переводится в синхронный режим на площадке без рабочего процесса.
+    # Сам фоновый путь проверяется в `test_payrun_jobs.py`: там задача
+    # запускается напрямую, а постановка в очередь — под
+    # `override_settings(PAYRUN_BACKGROUND=True)`.
+    os.environ["PAYRUN_BACKGROUND"] = "0"
+    django.setup()
+
+
+_configure_django()
+
 # Фиксированные id: в ассертах читаемее, чем случайные uuid
 T1 = "11111111-1111-1111-1111-111111111111"       # тенант Сербия
 T2 = "11111111-1111-1111-1111-111111111112"       # второй партнёр, для проверки изоляции
@@ -130,7 +185,7 @@ def temp_database(suffix: str):
     except psycopg.OperationalError as exc:
         pytest.skip(f"нет доступного Postgres по {ADMIN_DSN}: {exc}")
 
-    dbname = f"dodo_pnl_test_{suffix}_{os.getpid()}"
+    dbname = test_db_name(suffix)
     with admin:
         admin.execute(f'drop database if exists "{dbname}"')
         admin.execute(f'create database "{dbname}"')
@@ -297,22 +352,14 @@ def web_env():
     with temp_database("web") as dsn:
         run_manage(dsn, "seed_dev")
 
-        os.environ["DATABASE_URL"] = dsn
-        os.environ.setdefault("SECRET_KEY", "test-only-not-a-secret")
-        os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
-        # Рабочего процесса очереди в прогоне тестов нет, поэтому стенд настроен
-        # как стенд без очереди: расчёт считается прямо в запросе (T024). Это не
-        # обход фонового пути, а его выключатель — тот самый, которым продукт
-        # переводится в синхронный режим на площадке без рабочего процесса.
-        # Сам фоновый путь проверяется в `test_payrun_jobs.py`: там задача
-        # запускается напрямую, а постановка в очередь — под
-        # `override_settings(PAYRUN_BACKGROUND=True)`.
-        os.environ["PAYRUN_BACKGROUND"] = "0"
+        # Django уже настроен на этот самый адрес — при импорте `conftest`, а не
+        # здесь (см. `_configure_django`). Проверяем, а не предполагаем: если
+        # имя базы разъедется, веб-тесты пошли бы в чужую базу и рассказали бы
+        # об этом не «настройка разъехалась», а красными числами приёмки.
+        assert dsn == WEB_DSN, f"Django настроен на {WEB_DSN}, а база заведена {dsn}"
 
-        import django
         from django.test.utils import setup_test_environment, teardown_test_environment
 
-        django.setup()
         setup_test_environment()
         try:
             yield dsn
