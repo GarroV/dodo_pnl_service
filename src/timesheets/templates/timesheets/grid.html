@@ -78,7 +78,16 @@
       <span class="unit-code">{{ unit.code }}</span>
       <span class="hint">{% blocktranslate with unit_count=unit.rows %}{{ unit_count }} чел.{% endblocktranslate %}</span>
       {% if unit.closed %}
-        {% with closed_at=unit.closed_at|date:"d.m.Y H:i" %}<span class="unit-state closed">{% blocktranslate %}часы закрыты {{ closed_at }}{% endblocktranslate %}</span>{% endwith %}
+        {% comment %}
+        Дата+время закрытия точки — формат языка страницы, а не жёсткий русский
+        (T103). `DATETIME_FORMAT`, а не `SHORT_DATETIME_FORMAT`: рядом на той же
+        странице период показывает `calculated_at` без фильтра (см.
+        web/period.html) — Django локализует datetime сам через полный
+        `DATETIME_FORMAT`, и вторая дата не должна выглядеть третьим вариантом.
+        `unit.closed_at` — datetime в UTC (models.py), фильтр `date` сам
+        переводит его в текущий часовой пояс перед форматированием.
+        {% endcomment %}
+        {% with closed_at=unit.closed_at|date:"DATETIME_FORMAT" %}<span class="unit-state closed">{% blocktranslate %}часы закрыты {{ closed_at }}{% endblocktranslate %}</span>{% endwith %}
         {% translate "Открыть заново" as reopen_label %}
         {% url 'timesheet-reopen' period.id as reopen_unit_url %}
         {% include "web/components/action.html" with allowed=can_close url=reopen_unit_url label=reopen_label button_class="secondary" hidden_name="unit" hidden_value=unit.unit_id denied="" note="" inline=True reason_name="" primary=False %}
