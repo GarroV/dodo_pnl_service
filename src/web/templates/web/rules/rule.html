@@ -1,0 +1,82 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Одно правило: что действует сейчас, что было раньше и новая версия с даты.
+
+История стоит между действующим значением и формой намеренно — тем же порядком
+и по той же причине, что в карточке сотрудника: человек, собравшийся менять
+правило, сначала видит, что было и с какого числа. Без этого «действует с»
+набирается наугад.
+
+Значение вводится тем видом поля, какого оно типа сейчас: список — там, где
+допустимое перечислено самими правилами страны (мера работы, схема расчёта),
+«да/нет» — у выключателя, обычное поле — у остального. Свободный ввод там, где
+набор ограничен, означает опечатку, которая меняет деньги молча.
+
+Кнопки «удалить версию» нет: правило не отменяют задним числом, его заводят
+заново с новой датой. Иначе исчезнувшая версия унесла бы с собой объяснение
+того, почему закрытый месяц посчитан именно так.
+{% endcomment %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К правилам" %}</a></p>
+<h1>{{ heading }}</h1>
+
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+{% if error %}
+{% translate "Не сохранено." as not_saved %}
+{% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
+{% endif %}
+
+<p class="sub">{% blocktranslate with value=value origin=origin %}Сейчас действует: {{ value }} — {{ origin }}{% endblocktranslate %}{% if since %} ({% blocktranslate with day=since %}с {{ day }}{% endblocktranslate %}){% endif %}</p>
+
+<h2>{% translate "Версии настройки партнёра" %}</h2>
+{% if versions %}
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Действует с" %}</th>
+      <th>{% translate "По" %}</th>
+      <th>{% translate "Значение" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for version in versions %}
+    <tr>
+      <td>{{ version.from }}</td>
+      <td>{{ version.to }}</td>
+      <td class="num">{{ version.value }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% else %}
+{% translate "Партнёр это правило не менял." as never_changed %}
+{% notice "empty" title=never_changed %}{% translate "Значение приходит из правил страны. Первая же версия ниже станет настройкой партнёра — с той даты, которую вы укажете." %}{% endnotice %}
+{% endif %}
+
+<h2>{% translate "Новая версия правила" %}</h2>
+<p class="note">{% translate "Прежняя версия закрывается днём начала новой и остаётся в истории. Ничего не изменилось — версия не заводится." %}</p>
+<form class="card" method="post">{% csrf_token %}
+  <p class="field">
+    {% translate "Действует с" as from_label %}
+    {% translate "С этой даты расчёт берёт новое значение. Месяцы до неё считаются по-прежнему." as from_help %}
+    {% include "web/components/field.html" with id="valid_from" name="valid_from" label=from_label value=default_from required=True type="date" help=from_help %}
+  </p>
+  <p class="field">
+    {% translate "Значение" as value_label %}
+    {% if options %}
+      {% include "web/components/select.html" with id="value" name="value" label=value_label options=options required=True %}
+    {% elif kind == "bool" %}
+      {% include "web/components/select.html" with id="value" name="value" label=value_label options=bool_options required=True %}
+    {% elif kind == "number" %}
+      {% include "web/components/field.html" with id="value" name="value" label=value_label value=value required=True inputmode="decimal" %}
+    {% elif kind == "list" %}
+      {% translate "Через запятую." as list_help %}
+      {% include "web/components/field.html" with id="value" name="value" label=value_label value=value help=list_help %}
+    {% else %}
+      {% include "web/components/field.html" with id="value" name="value" label=value_label value=value required=True %}
+    {% endif %}
+  </p>
+  <button type="submit" class="primary">{% translate "Завести версию" %}</button>
+</form>
+{% endblock %}

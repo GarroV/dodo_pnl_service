@@ -12,13 +12,24 @@
 значением: два источника одного `id` — верный способ развязать подпись и ввод
 молча.
 
-Виды: text, number, date, month, select. Незнакомый вид рисуется обычным полем —
-это осознанно: молча пропущенное поле человек не заметит, а лишнее текстовое
-увидит сразу.
+Виды: text, number, date, month, select, note. Незнакомый вид рисуется обычным
+полем — это осознанно: молча пропущенное поле человек не заметит, а лишнее
+текстовое увидит сразу.
+
+`note` — значение без ввода: так показывается то, что человек вправе видеть, но
+не вправе менять (способ работы группы без права `rules.manage`). Не
+`readonly`-поле: поле, которое не принимает ввод, всё равно приглашает в себя
+щёлкнуть и печатать — то же решение, что в ячейках закрытой точки в табеле.
+Молча поле не исчезает никогда: под значением стоит объяснение, почему правки
+нет (T072).
 {% endcomment %}{% load i18n %}
 {% for field in fields %}
 <p class="field">
-  {% if field.kind == "select" %}
+  {% if field.kind == "note" %}
+    <span class="label">{{ field.label }}</span>
+    <span>{{ field.value }}</span>
+    {% if field.help %}<span class="note">{{ field.help }}</span>{% endif %}
+  {% elif field.kind == "select" %}
     {% include "web/components/select.html" with id=field.name name=field.name label=field.label options=field.options required=field.required empty_label=field.empty_label empty_selected=field.empty_selected help=field.help %}
   {% elif field.kind == "number" %}
     {% include "web/components/field.html" with id=field.name name=field.name label=field.label value=field.value required=field.required help=field.help type="text" inputmode="decimal" %}

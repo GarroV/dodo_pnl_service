@@ -24,7 +24,7 @@
 """
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required
@@ -42,7 +42,7 @@ from core.models import (
     Unit,
 )
 
-from . import directory, permissions
+from . import directory, permissions, rules
 from .format import hours, ledger_title
 from .i18n import month_title
 from .principal import get_current_principal
@@ -72,18 +72,8 @@ def _who(request):
 
 
 def _country_of(who) -> str:
-    """Страна партнёра — ключ производственного календаря.
-
-    Читается запросом, а не хранится в `Principal`: тот описан контрактом блока
-    `auth`, и дописывать в него поле ради одного экрана значило бы править чужой
-    контракт. Выборка идёт под теми же политиками — чужой тенант отсюда не виден.
-    """
-    from core.models import Tenant
-
-    return (
-        Tenant.objects.filter(pk=who.tenant_id).values_list("country_code", flat=True).first()
-        or ""
-    )
+    """Страна партнёра. Сам запрос — в `web/directory.py`: спрашивает его не только этот экран."""
+    return directory.country_of(who.tenant_id)
 
 
 def _effective_ledger(term) -> str:
@@ -543,12 +533,54 @@ def _employee_context(request, who, person: Employee, *, notice: str, error: str
 
 # --- группы, точки, юрлица ----------------------------------------------------
 
+# Путь правила, которым задан способ работы группы (D032). Один на продукт:
+# экран группы и экран правил обязаны править одно и то же, а собранный в двух
+# местах путь разъехался бы молча — и правка на одном экране не была бы видна на
+# другом.
+WORK_MEASURE_PATH = "groups.%s.work_measure"
+
+
+def _preset_now(who):
+    """Правила партнёра, действующие сегодня. Нет правил страны — None.
+
+    Сегодня, а не на дату периода: справочник ведут «сейчас», и способ работы
+    показывается тот, по которому считается ближайший месяц. Дата новой версии
+    при этом спрашивается отдельно — см. форму группы.
+    """
+    from core.rules import PresetNotFound, load_rules_at
+
+    try:
+        return load_rules_at(who.tenant_id, _country_of(who), date.today()).base
+    except PresetNotFound:
+        return None
+
+
+def _measure_of(preset, code: str) -> str:
+    """Чем меряется работа группы по действующим правилам.
+
+    Тем же способом, каким её берут табель и расчёт (`payroll.work_measure`):
+    пусто и отсутствие узла означают часы. Своя ветка здесь дала бы третье
+    прочтение одного правила.
+    """
+    from payroll import work_measure
+
+    if preset is None:
+        return "hours"
+    return work_measure(((preset.get("groups") or {}).get(code)) or {})
+
+
+def _measure_title(preset, measure: str) -> str:
+    if preset is None:
+        return measure
+    return ((preset.get("work_measures") or {}).get(measure) or {}).get("title") or measure
+
 
 @login_required
 def groups(request):
     who, denied = _guard(request)
     if denied is not None:
         return denied
+    preset = _preset_now(who)
     rows = [
         {
             "url": reverse("directory-group", args=[group.id]),
@@ -557,6 +589,11 @@ def groups(request):
                 {"text": group.title},
                 {"text": group.scheme},
                 {"text": ledger_title(group.ledger)},
+                # Способ работы стоит в списке, а не только в карточке (D032):
+                # у одного партнёра рядом живут почасовая кухня и сдельные
+                # курьеры, и «чем меряют работу» — первое, что спрашивают у
+                # справочника групп, а не подробность второго экрана.
+                {"text": _measure_title(preset, _measure_of(preset, group.code))},
             ],
         }
         for group in _visible_groups(who).order_by("title")
@@ -572,6 +609,7 @@ def groups(request):
         "columns": [
             {"label": _("Код")}, {"label": _("Название")},
             {"label": _("Схема расчёта")}, {"label": _("Регистр учёта")},
+            {"label": _("Чем меряется работа")},
         ],
         "rows": rows,
         "empty": _("Групп нет."),
@@ -592,6 +630,7 @@ def group(request, group_id=None):
             # же довод, что у карточки сотрудника (D023).
             raise Http404("группа не найдена")
 
+    preset = _preset_now(who)
     error, status = "", 200
     if request.method == "POST":
         try:
@@ -612,11 +651,19 @@ def group(request, group_id=None):
                 item = EmployeeGroup(tenant_id=who.tenant_id)
             item.code, item.title, item.scheme, item.ledger = code, title, scheme, ledger
             item.save()
+            _save_measure(request, who, item, preset)
             return redirect(reverse("directory-groups"))
         except BadInput as bad:
             error = bad.message
+        except rules.RuleInputRefused as bad:
+            error, status = bad.message, bad.http_status
+        except permissions.PermissionRefused as refusal:
+            error, status = refusal.message, refusal.http_status
         except directory.DirectoryRefused as refusal:
             error, status = refusal.message, refusal.http_status
+        # Правила могли измениться этим же запросом: форма ниже обязана
+        # показывать базу, а не то, что было до сохранения.
+        preset = _preset_now(who)
 
     return render(request, "web/directory/form.html", {
         "heading": item.title if item else _("Новая группа"),
@@ -640,8 +687,94 @@ def group(request, group_id=None):
                  if code in who.visible_ledgers],
                 item.ledger if item else "official", required=True,
             ),
+            *_measure_fields(who, item, preset),
         ],
     }, status=status)
+
+
+def _measure_fields(who, item, preset) -> list[dict]:
+    """Способ работы группы: выбор с датой — или объяснение, почему его нет (D032, T091).
+
+    Почему поле стоит здесь, а не только на экране правил. Способ работы —
+    свойство группы в глазах человека («курьерам платим за доставки»), и искать
+    его в списке из ста тридцати правил он не станет. Хранится он при этом
+    правилом, а не колонкой: правило версионируется по дате, и смена способа не
+    переписывает уже посчитанный месяц. Оба экрана поэтому пишут **одной и той
+    же** функцией `rules.save_override` — второй путь записи разъехался бы с
+    первым на первой правке.
+
+    Право спрашивается своё — `rules.manage`, а не `directory.manage`: это
+    правка правила, и партнёр вправе развести ведение справочников и ведение
+    правил по разным людям. У кого права нет — читает значение и объяснение,
+    а не видит пропавшее поле (T072).
+
+    У новой группы полей нет вовсе: правило адресуется кодом группы, а код ещё
+    не сохранён — предлагать выбор, который некуда записать, значило бы обещать
+    несделанное. Сказано об этом словами, а не молчанием.
+    """
+    if preset is None:
+        return []
+    if item is None or not item.pk:
+        return [{
+            "kind": "note", "name": "work_measure", "label": _("Чем меряется работа"),
+            "value": _("Задаётся после сохранения группы: правило адресуется её кодом."),
+        }]
+
+    measure = _measure_of(preset, item.code)
+    if not permissions.has(who, permissions.RULES_MANAGE):
+        return [{
+            "kind": "note", "name": "work_measure", "label": _("Чем меряется работа"),
+            "value": _measure_title(preset, measure),
+            "help": permissions.explain(who, permissions.RULES_MANAGE),
+        }]
+
+    return [
+        _select(
+            "work_measure", _("Чем меряется работа"),
+            rules.choices_for(preset, WORK_MEASURE_PATH % item.code),
+            measure, required=True,
+            help=_("Правило страны, а не колонка справочника: у смены способа "
+                   "есть дата, и закрытый месяц от неё не двигается."),
+        ),
+        {"kind": "date", "name": "measure_from", "label": _("Способ действует с"),
+         "value": "",
+         "help": _("Нужна только при смене способа. Пусто — берётся первый день, "
+                   "который не задевает утверждённый месяц.")},
+    ]
+
+
+def _save_measure(request, who, item, preset) -> None:
+    """Записать способ работы группы, если его поменяли.
+
+    Не поменяли — не пишем ничего и даты не спрашиваем: требовать дату у того,
+    кто правил название группы, значило бы отказывать на пустом месте.
+    """
+    if preset is None or not request.POST.get("work_measure"):
+        return
+    wanted = _choice(
+        request, "work_measure", _("Чем меряется работа"),
+        [code for code, _title in rules.choices_for(preset, WORK_MEASURE_PATH % item.code)],
+    )
+    if wanted == _measure_of(preset, item.code):
+        return
+
+    permissions.check(who, permissions.RULES_MANAGE)
+    valid_from = _date(request, "measure_from", _("Способ действует с")) or _first_free_day(who)
+    rules.save_override(
+        who.tenant_id, WORK_MEASURE_PATH % item.code, wanted,
+        valid_from=valid_from, actor_id=who.user_id,
+    )
+
+
+def _first_free_day(who) -> date:
+    """Первый день, который не задевает утверждённый месяц.
+
+    Умолчание именно такое, а не «сегодня»: сегодня может лежать внутри
+    закрытого месяца, и человек получал бы отказ, ничего не сделав неправильно.
+    """
+    edge = directory.closed_through(who.tenant_id)
+    today = date.today()
+    return today if edge is None else max(today, edge + timedelta(days=1))
 
 
 @login_required

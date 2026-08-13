@@ -1,0 +1,62 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Правила расчёта как настройки: что действует, откуда взялось и с какого числа.
+
+Разделы и порядок — из тела правил страны, а не из списка в разметке: новая
+страна не должна требовать правки интерфейса, и раздел, которого шаблон не
+знает, обязан показаться своим ключом, а не пропасть.
+
+У каждого значения написано, кто его положил. Без этого столбик выглядит как
+настройки продукта, тогда как половина из них — правила страны, которые партнёр
+не менял; человек, увидевший «0,701», должен понимать, что это не он.
+
+Дата — не украшение. Пресет собирается на число, и одно и то же правило в июне
+и в августе может быть разным. Поэтому дата стоит формой сверху и уезжает в
+ссылку каждой строки: открыв правило, человек продолжает смотреть на тот же
+день, а не проваливается в «сегодня».
+{% endcomment %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<h1>{{ heading }}</h1>
+<p class="sub">{% blocktranslate %}Страна поставляется готовым набором правил. Партнёр меняет только отличия — новой версией с датой: закрытый месяц от этого не двигается, потому что расчёт берёт версию, действовавшую в считаемом месяце.{% endblocktranslate %}</p>
+
+<form class="search" method="get">
+  {% translate "Действующие на" as on_label %}
+  {% include "web/components/field.html" with id="on" name="on" label=on_label value=on_date type="date" %}
+  <button type="submit">{% translate "Показать" %}</button>
+</form>
+
+{% if closed_through %}
+<p class="note">{% blocktranslate with edge=closed_through|date:"Y-m-d" %}Зарплата утверждена по {{ edge }} включительно: правило можно завести только с более поздней даты либо открыв месяц заново с причиной.{% endblocktranslate %}</p>
+{% endif %}
+
+{% if sections %}
+{% if preset_code %}<p class="note">{% blocktranslate with code=preset_code country=country %}Набор правил: {{ code }} ({{ country }}){% endblocktranslate %}</p>{% endif %}
+{% for section in sections %}
+<h2>{{ section.title }}</h2>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Правило" %}</th>
+      <th>{% translate "Значение" %}</th>
+      <th>{% translate "Откуда" %}</th>
+      <th>{% translate "Действует с" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in section.rows %}
+    <tr>
+      <td>{% if row.url %}<a href="{{ row.url }}">{{ row.path }}</a>{% else %}{{ row.path }}{% endif %}</td>
+      <td class="num">{{ row.value }}</td>
+      <td>{{ row.origin }}</td>
+      <td>{{ row.since|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% endfor %}
+{% else %}
+{% translate "Правил расчёта для этой страны на эту дату в базе нет." as no_rules %}
+{% notice "empty" title=no_rules %}{% blocktranslate %}Первичная загрузка страны делается командой load_presets — до неё считать нечем, и показывать здесь тоже нечего.{% endblocktranslate %}{% endnotice %}
+{% endif %}
+{% endblock %}

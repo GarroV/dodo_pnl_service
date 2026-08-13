@@ -1,7 +1,7 @@
 """Маршруты интерфейса."""
 from django.urls import path
 
-from . import directory_views, reports_views, views
+from . import directory_views, reports_views, rules_views, views
 
 urlpatterns = [
     path("", views.index, name="index"),
@@ -97,6 +97,17 @@ urlpatterns = [
         directory_views.legal_entity,
         name="directory-legal-entity",
     ),
+    # Правила расчёта (T090). Отдельный префикс, а не раздел справочников:
+    # право другое (`rules.manage`), и партнёр вправе развести ведение
+    # справочников и ведение правил по разным людям.
+    #
+    # Правило адресуется своим путём через точку — тем самым, которым его знают
+    # и база (`rule_overrides.path`), и след расчёта. Придумывать ему второй
+    # ключ значило бы завести второе имя одному и тому же: в следе человек
+    # видит `groups.couriers.work_measure`, и по этой строке он должен попадать
+    # на страницу правила, а не искать её глазами.
+    path("rules/", rules_views.index, name="rules"),
+    path("rules/<str:path>/", rules_views.rule, name="rule"),
     # Месяц календаря адресуется самим месяцем, а не uuid: строка одна на
     # страну и месяц, и `2026-06` в адресе читается человеком, в отличие от
     # случайного ключа.
