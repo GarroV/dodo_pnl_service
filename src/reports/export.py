@@ -109,6 +109,16 @@ def _save(book) -> bytes:
     return stream.getvalue()
 
 
+def _named(column, component_title) -> str:
+    """Заголовок колонки на языке файла (T092).
+
+    Тот же вопрос, что на экране: в `pay_components.title` лежит подпись,
+    замороженная расчётом, а файл выгружает человек, который читает на своём
+    языке. Подставляет её вызывающий — здесь, как и с регистрами, только показ.
+    """
+    return component_title(column.code, column.title) if component_title else column.title
+
+
 def _titled(title: str, view: SheetSlice, ledger_title) -> str:
     """Шапка документа. Разрез назван, если он выбран, — файл обязан сказать,
     что он не про весь расчёт, иначе его прочитают как полный."""
@@ -121,7 +131,7 @@ def _titled(title: str, view: SheetSlice, ledger_title) -> str:
 
 
 def payout(view: SheetSlice, *, tenant_id=None, period=None, title="",
-           ledger_title=str) -> tuple[bytes, str]:
+           ledger_title=str, component_title=None) -> tuple[bytes, str]:
     """Ведомость к выплате: ровно то, что человек видит на экране, файлом."""
     book = openpyxl.Workbook()
     ws = book.active
@@ -131,7 +141,7 @@ def payout(view: SheetSlice, *, tenant_id=None, period=None, title="",
     _head(ws, _("Ведомость к выплате · %(sub)s") % {"sub": _titled(title, view, ledger_title)}, 4)
     _headers(ws, (
         [_("№"), _("Сотрудник"), _("Точка"), _("Регистр")]
-        + [column.title for column in columns]
+        + [_named(column, component_title) for column in columns]
         + [_("Итого"), _("Примечание")]
     ))
 
@@ -214,7 +224,8 @@ def collect_taxes(tenant_id: UUID, period: date, articles: dict[str, str]) -> li
 
 
 def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
-        ledger_title=str, articles=None, taxes=None) -> tuple[bytes, str]:
+        ledger_title=str, articles=None, taxes=None,
+        component_title=None) -> tuple[bytes, str]:
     """Строки для P&L: начисления и налоги раздельно, по статье и точке.
 
     Итоговой строки в файле нет намеренно: это заготовка строк для сборки P&L,
@@ -246,7 +257,8 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
             amount = row.amounts.get(column.code)
             if not amount:
                 continue
-            key = (article, row.unit, row.ledger, column.code, column.title)
+            key = (article, row.unit, row.ledger, column.code,
+                   _named(column, component_title))
             accruals[key] = accruals.get(key, Decimal(0)) + amount
 
     for (article, unit, ledger, _code, column_title), amount in sorted(accruals.items()):
@@ -267,7 +279,7 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
 
 
 def partner(view: SheetSlice, *, tenant_id=None, period=None, title="",
-            ledger_title=str) -> tuple[bytes, str]:
+            ledger_title=str, component_title=None) -> tuple[bytes, str]:
     """Тот же расчёт, разложенный так, как привык читать бухгалтер партнёра.
 
     Привычное здесь — две вещи: **лист на точку** (в его таблице лист на точку
@@ -279,7 +291,10 @@ def partner(view: SheetSlice, *, tenant_id=None, period=None, title="",
     book.remove(book.active)
 
     columns = view.sheet.columns
-    headers = [PARTNER_HEADERS.get(column.code, column.title) for column in columns]
+    headers = [
+        PARTNER_HEADERS.get(column.code) or _named(column, component_title)
+        for column in columns
+    ]
 
     units = sorted({row.unit for row in view.sheet.rows})
     for unit in units or [""]:

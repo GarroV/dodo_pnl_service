@@ -206,10 +206,16 @@
 {% if retro_drift %}
 <section class="retro">
   <h2>{% translate "Данные этого месяца изменились после утверждения" %}</h2>
+  {% comment %}
+  Две фразы, а не одна с подставленным куском (T093). Русское «У этого партнёра
+  X» переводится по-английски только целиком: подставленный кусок «the difference
+  is carried over» давал предложение без сказуемого — «This partner the difference
+  is carried over to the current period». Собирать предложение из кусков вправе
+  только тот язык, на котором его написали.
+  {% endcomment %}
   <p class="note">
-    {% blocktranslate with total=retro_total employees=retro_drift.employees mode=retro_mode_title %}Расхождение с тем, что хранит закрытый месяц: <strong>{{ total }}</strong>
-    по {{ employees }} чел. У этого партнёра
-    {{ mode }}.{% endblocktranslate %}
+    {% blocktranslate with total=retro_total employees=retro_drift.employees %}Расхождение с тем, что хранит закрытый месяц: <strong>{{ total }}</strong> по {{ employees }} чел.{% endblocktranslate %}
+    {% if retro_mode == "delta" %}{% translate "У этого партнёра разница переносится в текущий период." %}{% else %}{% translate "У этого партнёра период открывается заново и пересчитывается." %}{% endif %}
   </p>
   <table class="retro-lines">
     <thead>

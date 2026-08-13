@@ -34,7 +34,7 @@ from reports.trace import TraceNotFound, build_trace
 from reports.variance import ThresholdsMissing, build_variance
 
 from . import auth, onboarding, permissions
-from .format import cut_title, hours, ledger_title, money
+from .format import cut_title, hours, ledger_title, money, percent, threshold
 from .labels import labeller
 from .i18n import month_title
 from .principal import get_current_principal
@@ -389,8 +389,10 @@ def period_page(
             # --- правки задним числом (T026) ---
             # Что партнёр делает при расхождении, сказано словами: настройка,
             # молча меняющая поведение денег, — худший вид настройки.
+            # Способ правок задним числом уходит на страницу кодом, а не
+            # готовой подписью: фразу про него страница собирает целиком, а не
+            # вставкой куска в чужое предложение (T093).
             "retro_mode": retro_mode,
-            "retro_mode_title": titled(retro.MODE_TITLES, retro_mode),
             "retro_drift": found,
             "retro_error": found.error,
             "retro_total": money(found.total) if found else "",
@@ -974,18 +976,6 @@ def payslip_trace(request, payslip_id):
 # --- расхождения с прошлым месяцем (T030) ------------------------------------
 
 
-def percent(value) -> str:
-    """«+12,4 %» либо прочерк, если росло с нуля: процента у этого нет."""
-    if value is None:
-        return EMPTY_PERCENT
-    quantized = Decimal(value).quantize(Decimal("0.1"))
-    sign = "+" if quantized > 0 else ""
-    return f"{sign}{quantized}".replace(".", ",") + " %"
-
-
-EMPTY_PERCENT = "—"
-
-
 def signed(value: Decimal) -> str:
     """Отклонение со знаком: «сколько прибавилось» читается только со знаком."""
     shown = money(value)
@@ -1005,9 +995,10 @@ def variance_line(line, label=None) -> dict:
         "delta": signed(line.delta),
         "percent": percent(line.percent),
         "grew": line.delta > 0,
-        "threshold": (
-            f"{line.threshold.percent:g} % и {money(line.threshold.absolute)}"
-        ),
+        # Порог собирается целой фразой с переводом, а не склейкой: союз «и»
+        # здесь несёт смысл (превышены оба порога, а не любой), и на английской
+        # странице он оставался русским (T093).
+        "threshold": threshold(line.threshold.percent, line.threshold.absolute),
     }
 
 
