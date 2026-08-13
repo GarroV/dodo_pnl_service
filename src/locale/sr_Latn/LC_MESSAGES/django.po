@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-13 20:54+0000\n"
+"POT-Creation-Date: 2026-08-13 21:30+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -202,22 +202,6 @@ msgstr "U pravilima zemlje nisu podešeni pragovi odstupanja. Izveštaj bez njih
 msgid "Часы точки %(unit)s за %(month)s закрыты. Чтобы их править, точку нужно открыть заново."
 msgstr "Sati objekta %(unit)s za %(month)s su zatvoreni. Da biste ih izmenili, objekat treba ponovo otvoriti."
 
-#, python-format
-msgid "%(who)s: отрицательные часы (%(kinds)s)"
-msgstr "%(who)s: negativni sati (%(kinds)s)"
-
-#, python-format
-msgid "%(who)s: в файле нет ни одного часа — строка табеля будет пустой"
-msgstr "%(who)s: u fajlu nema nijednog sata — red evidencije sati će biti prazan"
-
-#, python-format
-msgid "%(who)s: %(total)s ч при норме %(norm)s ч"
-msgstr "%(who)s: %(total)s h pri normi od %(norm)s h"
-
-#, python-format
-msgid "%(who)s: уволен %(date)s, а в файле %(total)s ч за этот месяц"
-msgstr "%(who)s: otpušten %(date)s, a u fajlu je %(total)s h za ovaj mesec"
-
 msgid "такого сотрудника нет в справочнике партнёра"
 msgstr "ovaj zaposleni ne postoji u partnerovom imeniku"
 
@@ -261,12 +245,37 @@ msgid "ручную правку нельзя записать без следа
 msgstr "ručna izmena se ne može sačuvati bez traga: potreban je autor i razlog"
 
 #, python-format
+msgid "%(who)s: отрицательные часы (%(kinds)s)"
+msgstr "%(who)s: negativni sati (%(kinds)s)"
+
+#, python-format
+msgid "%(who)s: ни одного часа за этот месяц — строка табеля пустая"
+msgstr "%(who)s: nijedan sat ovog meseca — red evidencije je prazan"
+
+#, python-format
+msgid "%(who)s: %(total)s ч при норме %(norm)s ч"
+msgstr "%(who)s: %(total)s h pri normi od %(norm)s h"
+
+#, python-format
+msgid "%(who)s: уволен %(date)s, а часов за этот месяц %(total)s"
+msgstr "%(who)s: otpušten %(date)s, a ima %(total)s sati ovog meseca"
+
+msgid "Стоит посмотреть до расчёта"
+msgstr "Vredi pogledati pre obračuna"
+
+msgid "Ни одно из этих чисел не ошибка само по себе — но незамеченными они и становятся неверной зарплатой. Сохранению они не мешают."
+msgstr "Nijedan od ovih brojeva sam po sebi nije greška — ali neprimećeni upravo tako postaju pogrešna zarada. Ne sprečavaju čuvanje reda."
+
+#, python-format
 msgid "По часам табеля в базу для взносов входит %(declared)s ч, а записано %(recorded)s ч. Пока числа не сойдутся, период не считается."
 msgstr "Prema satima iz evidencije sati, u osnovicu doprinosa treba da uđe %(declared)s h, a upisano je %(recorded)s h. Dok se brojevi ne poklope, period se ne obračunava."
 
 #, python-format
 msgid "по часам %(declared)s"
 msgstr "po satima: %(declared)s"
+
+msgid "проверьте"
+msgstr "proverite"
 
 #, python-format
 msgid "Табель · %(title)s"

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-13 20:54+0000\n"
+"POT-Creation-Date: 2026-08-13 21:30+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -202,22 +202,6 @@ msgstr "The country rules have no variance thresholds set. A report without them
 msgid "Часы точки %(unit)s за %(month)s закрыты. Чтобы их править, точку нужно открыть заново."
 msgstr "Hours for unit %(unit)s for %(month)s are closed. To edit them, the unit needs to be reopened."
 
-#, python-format
-msgid "%(who)s: отрицательные часы (%(kinds)s)"
-msgstr "%(who)s: negative hours (%(kinds)s)"
-
-#, python-format
-msgid "%(who)s: в файле нет ни одного часа — строка табеля будет пустой"
-msgstr "%(who)s: the file has no hours at all — the timesheet row will be empty"
-
-#, python-format
-msgid "%(who)s: %(total)s ч при норме %(norm)s ч"
-msgstr "%(who)s: %(total)s h against a standard of %(norm)s h"
-
-#, python-format
-msgid "%(who)s: уволен %(date)s, а в файле %(total)s ч за этот месяц"
-msgstr "%(who)s: terminated on %(date)s, but the file shows %(total)s h for this month"
-
 msgid "такого сотрудника нет в справочнике партнёра"
 msgstr "this employee is not in the partner's directory"
 
@@ -261,12 +245,37 @@ msgid "ручную правку нельзя записать без следа
 msgstr "a manual edit cannot be saved without a trace: an author and a reason are required"
 
 #, python-format
+msgid "%(who)s: отрицательные часы (%(kinds)s)"
+msgstr "%(who)s: negative hours (%(kinds)s)"
+
+#, python-format
+msgid "%(who)s: ни одного часа за этот месяц — строка табеля пустая"
+msgstr "%(who)s: not a single hour this month — the timesheet row is empty"
+
+#, python-format
+msgid "%(who)s: %(total)s ч при норме %(norm)s ч"
+msgstr "%(who)s: %(total)s h against a standard of %(norm)s h"
+
+#, python-format
+msgid "%(who)s: уволен %(date)s, а часов за этот месяц %(total)s"
+msgstr "%(who)s: dismissed on %(date)s, yet has %(total)s hours this month"
+
+msgid "Стоит посмотреть до расчёта"
+msgstr "Worth a look before the calculation"
+
+msgid "Ни одно из этих чисел не ошибка само по себе — но незамеченными они и становятся неверной зарплатой. Сохранению они не мешают."
+msgstr "None of these numbers is an error by itself — but unnoticed is exactly how they turn into wrong pay. They do not stop the row from being saved."
+
+#, python-format
 msgid "По часам табеля в базу для взносов входит %(declared)s ч, а записано %(recorded)s ч. Пока числа не сойдутся, период не считается."
 msgstr "By timesheet hours, %(declared)s h should go into the contribution base, but %(recorded)s h were recorded. Until the numbers match, the period cannot be calculated."
 
 #, python-format
 msgid "по часам %(declared)s"
 msgstr "by hours: %(declared)s"
+
+msgid "проверьте"
+msgstr "check"
 
 #, python-format
 msgid "Табель · %(title)s"

@@ -1,0 +1,22 @@
+{
+  "%(who)s: ни одного часа за этот месяц — строка табеля пустая": {
+    "en": "%(who)s: not a single hour this month — the timesheet row is empty",
+    "sr": "%(who)s: nijedan sat ovog meseca — red evidencije je prazan"
+  },
+  "%(who)s: уволен %(date)s, а часов за этот месяц %(total)s": {
+    "en": "%(who)s: dismissed on %(date)s, yet has %(total)s hours this month",
+    "sr": "%(who)s: otpušten %(date)s, a ima %(total)s sati ovog meseca"
+  },
+  "Стоит посмотреть до расчёта": {
+    "en": "Worth a look before the calculation",
+    "sr": "Vredi pogledati pre obračuna"
+  },
+  "Ни одно из этих чисел не ошибка само по себе — но незамеченными они и становятся неверной зарплатой. Сохранению они не мешают.": {
+    "en": "None of these numbers is an error by itself — but unnoticed is exactly how they turn into wrong pay. They do not stop the row from being saved.",
+    "sr": "Nijedan od ovih brojeva sam po sebi nije greška — ali neprimećeni upravo tako postaju pogrešna zarada. Ne sprečavaju čuvanje reda."
+  },
+  "проверьте": {
+    "en": "check",
+    "sr": "proverite"
+  }
+}

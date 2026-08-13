@@ -21,6 +21,7 @@ from payroll import HOURS, insured_base, work_measure
 from payrun.calc import terms_in_force
 from payrun.rules import select_rules
 
+from . import suspicion
 from .closing import open_closures
 from .store import country_of
 
@@ -62,6 +63,19 @@ class Row:
     measure: str = HOURS
     measure_title: str = ""
     piece_value: Decimal = Decimal("0")
+    # Подозрительные числа строки (T118). Считаются здесь, а не в шаблоне:
+    # правило общее с загрузкой файла (`timesheets/suspicion.py`), и разметка
+    # его знать не должна.
+    hints: list = field(default_factory=list)
+
+    @property
+    def suspicious(self) -> bool:
+        return bool(self.hints)
+
+    @property
+    def hint_text(self) -> str:
+        """Все подсказки строки одной фразой — для подписи и подсказки мыши."""
+        return " · ".join(hint.text for hint in self.hints)
 
     @property
     def piecework(self) -> bool:
@@ -95,6 +109,11 @@ class Grid:
         там, где её никто не спрашивает.
         """
         return any(row.piecework for row in self.rows)
+
+    @property
+    def suspicious_rows(self) -> list:
+        """Строки, о которых стоит сказать вслух, — в порядке самой сетки."""
+        return [row for row in self.rows if row.suspicious]
 
     @property
     def column_totals(self) -> dict[str, Decimal]:
@@ -182,10 +201,11 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
     for sheet in visible_rows(tenant_id, period, unit_ids):
         stored = sheet.hours or {}
         measure, measure_title = measure_of(rules, terms.get(sheet.employee_id))
+        name = f"{sheet.employee.last_name} {sheet.employee.first_name}".strip()
         rows.append(
             Row(
                 timesheet_id=sheet.id,
-                employee=f"{sheet.employee.last_name} {sheet.employee.first_name}".strip(),
+                employee=name,
                 external_id=sheet.employee.external_id,
                 unit=sheet.unit.code if sheet.unit else "",
                 norm_hours=sheet.norm_hours,
@@ -200,6 +220,19 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                 measure=measure,
                 measure_title=measure_title,
                 piece_value=Decimal(str(sheet.piece_value)),
+                # Подсказки считаются по тем же числам, что показаны в строке, и
+                # тем же правилом, каким их считает загрузка файла (T118).
+                # Показанные типы часов при этом не фильтруются: тип, которого
+                # нет в правилах страны, на экран не попадает, но отрицательные
+                # часы в нём — та же опечатка, и молчать о ней нельзя.
+                hints=suspicion.hints(
+                    who=name,
+                    hours=stored,
+                    norm_hours=sheet.norm_hours,
+                    dismissed_at=sheet.employee.dismissed_at,
+                    period=period,
+                    piecework=measure != HOURS,
+                ),
             )
         )
     return Grid(columns=columns, rows=rows)
