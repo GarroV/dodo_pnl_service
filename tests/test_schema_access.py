@@ -22,6 +22,7 @@ from conftest import (
     as_app_user,
     pay_component,
 )
+from domain_probe import fill_empty_tables
 
 TENANT_TABLES = [
     "legal_entities", "units", "roles", "memberships", "pnl_items",
@@ -165,8 +166,33 @@ def test_queue_tables_are_closed_by_privileges(db):
 
 
 def test_no_domain_table_returns_rows_without_context(db):
-    """Гарантия наружу: без контекста пусто везде, а не только там, где смотрели."""
+    """Гарантия наружу: без контекста пусто везде, а не только там, где смотрели.
+
+    Перед счётом в каждую пустую таблицу кладётся пробная строка, и это не
+    придирка к чистоте. Пустая таблица отдаёт ноль строк при любой политике —
+    и с настоящей, и с `using (true)`, и без политики вовсе, — то есть
+    проверенной она только выглядит. Ровно так ослабленная политика на
+    `payrun_jobs` не покраснела ни одним тестом (issue #63). Таблица, куда
+    строку положить не удалось, считается **непроверенной** и валит прогон по
+    имени: пропускать её молча — значит вернуть ту же слепоту списком
+    исключений.
+    """
     tables = domain_tables(db)
+    failures = fill_empty_tables(db, tables)
+    assert not failures, (
+        "в эти таблицы не удалось положить пробную строку, поэтому политика на "
+        "них НЕ проверена: "
+        + "; ".join(f"{table} — {reason}" for table, reason in sorted(failures.items()))
+        + ". Допишите значение по смыслу в MEANINGFUL_VALUES (tests/domain_probe.py) "
+        "или заведите строку в _seed (tests/conftest.py)"
+    )
+
+    empty = [
+        table for table in tables
+        if db.execute(f"select count(*) from {table}").fetchone()[0] == 0
+    ]
+    assert empty == [], f"пустая таблица политику не проверяет: {empty}"
+
     with as_app_user(db, None) as conn:
         leaking = [
             table
@@ -174,6 +200,29 @@ def test_no_domain_table_returns_rows_without_context(db):
             if conn.execute(f"select count(*) from {table}").fetchone()[0] > 0
         ]
     assert leaking == [], f"без контекста видны строки: {leaking}"
+
+
+def test_the_check_sees_an_empty_table_that_leaks(db):
+    """Дыра, ради которой всё это писалось: таблица без политики и без строк.
+
+    До починки (issue #63) такая таблица проезжала перебор молча: строк нет —
+    считать нечего. Теперь проверка сама кладёт в неё строку и обязана упасть.
+    Отличие от соседнего `test_schema_wide_checks_catch_an_unprotected_table` в
+    одном слове: там таблица создаётся **со строкой**, и потому её ловила даже
+    прежняя проверка. Здесь — пустая, и это тот самый случай, который проезжал.
+    """
+    db.execute("create table leaky_empty (tenant_id uuid, note text)")
+    db.execute("grant select, insert on leaky_empty to app_user")
+    assert "leaky_empty" in domain_tables(db)
+    assert db.execute("select count(*) from leaky_empty").fetchone()[0] == 0
+
+    with pytest.raises(AssertionError) as refusal:
+        test_no_domain_table_returns_rows_without_context(db)
+    # Причина падения проверяется дословно: «упало» тут можно получить тремя
+    # разными способами, и два из них означали бы, что дыру мы так и не видим —
+    # проверка споткнулась о собственный наполнитель.
+    assert "без контекста видны строки" in str(refusal.value), str(refusal.value)
+    assert "leaky_empty" in str(refusal.value)
 
 
 # --- Доменные типы -----------------------------------------------------------
