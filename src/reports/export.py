@@ -59,6 +59,13 @@ PARTNER_HEADERS = {
     "deduction": "OBUSTAVA",
 }
 PARTNER_TOTAL = "UKUPNO ZA ISPLATU"
+# Первые две колонки «Вида бухгалтера». Вынесены в константы не ради порядка:
+# по ним сверка **узнаёт свою же выгрузку**, когда человек приносит её обратно
+# (T119, `reports.own_export`). Заголовки не переводятся намеренно — они и в
+# таблице партнёра стоят на сербской латинице, и опознание формата не должно
+# зависеть от языка, на котором файл выгрузили.
+PARTNER_NUMBER = "R.br."
+PARTNER_NAME = "IME I PREZIME"
 
 MONEY = "#,##0.00"
 
@@ -328,7 +335,10 @@ def partner(view: SheetSlice, *, tenant_id=None, period=None, title="",
     for unit in units or [""]:
         ws = book.create_sheet(unit or "Bez objekta")
         _head(ws, f"{_titled(title, view, ledger_title)} · {unit}", 4)
-        _headers(ws, ["R.br.", "IME I PREZIME", _("Регистр")] + headers + [PARTNER_TOTAL])
+        _headers(
+            ws,
+            [PARTNER_NUMBER, PARTNER_NAME, _("Регистр")] + headers + [PARTNER_TOTAL],
+        )
 
         rows = [row for row in view.sheet.rows if row.unit == unit]
         for number, row in enumerate(rows, start=1):

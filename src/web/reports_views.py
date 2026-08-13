@@ -50,7 +50,13 @@ FIELD_TITLES = {
 # ответ, который человек должен прочитать.
 CAUSE_TITLES = {
     "insured": gettext_noop("Часы для взносов"),
-    "rate": gettext_noop("Ставка за час"),
+    # «Базовая ставка», а не «ставка за час» (issue #75). Сверяется
+    # `employees.base_rate`, и у сдельной группы это цена доставки, а не часа —
+    # ровно та же неправда, что след уже пережил на своём экране (T081).
+    # Признака `pay_per_unit` у причины под рукой нет: она строится по паре «что
+    # в файле / что в расчёте», без правил группы. Название, верное при любом
+    # способе оплаты, — единственное, которое здесь можно написать честно.
+    "rate": gettext_noop("Базовая ставка"),
     "coefficient": gettext_noop("Коэффициент"),
     "meal": gettext_noop("Топли оброк и регрес"),
 }
@@ -140,6 +146,10 @@ def _line_view(line, hour_titles) -> dict:
         # бы в «Разошлось», где у неё не показывается ни одного числа — то есть
         # без имени и с подписью про расхождение правила расчёта.
         "compared": line.compared,
+        # Сказал ли файл хоть что-то о входах (T119). У нашей собственной
+        # выгрузки входов нет вовсе, и подпись «входы сошлись» под её строками
+        # была бы утверждением о том, чего никто не сравнивал.
+        "stated_inputs": line.stated_inputs,
         "matched": line.matched,
         "rounding_only": line.rounding_only,
         "amounts": amounts,
@@ -170,6 +180,11 @@ def _report(request, period, *, result=None, error=None, status=200):
                           and not line["matched"] and not line["rounding_only"]],
             "rounding_lines": [line for line in lines if line["rounding_only"]],
             "inputs_lines": [line for line in lines if not line["compared"]],
+            # Говорил ли файл о входах хоть по одной такой строке: от этого
+            # зависит, вправе ли раздел обещать, что входы сверены (T119).
+            "inputs_stated": any(
+                line["stated_inputs"] for line in lines if not line["compared"]
+            ),
             "matched_lines": [line for line in lines if line["matched"]],
             "totals": {
                 "expected": money(result.total_expected) if result else "",
@@ -181,6 +196,10 @@ def _report(request, period, *, result=None, error=None, status=200):
                 # читается как совпадение, хотя не сравнивалось ничего, и
                 # именно так сверка соврала бы роли со скрытыми итогами.
                 "any": bool(result and any(line.compared for line in result.lines)),
+                # Почему не сравнивалось (T120). Код называет ядро: разметка
+                # знает только, что сумм нет, и одна фраза на все случаи
+                # объясняла ноль доступом, которого хватало.
+                "reason": result.nothing_compared if result else "",
             },
         },
         status=status,

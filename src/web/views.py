@@ -34,7 +34,7 @@ from reports.trace import TraceNotFound, build_trace
 from reports.variance import ThresholdsMissing, build_variance
 
 from . import auth, onboarding, permissions, runslice
-from .format import cut_title, hours, ledger_title, money, percent, threshold
+from .format import cut_title, exact, hours, ledger_title, money, percent, threshold
 from .i18n import month_title
 from .labels import labeller
 from .principal import get_current_principal
@@ -857,6 +857,14 @@ PIECE_TITLES = {
     "quantity": gettext_noop("количество"),
 }
 
+# Тот же случай на шаге взносов (T116, issue #72). `rate` здесь — ставка
+# взносов (0,4505 по временному договору), и подпись «ставка за час» посреди
+# объяснения денег читается как ставка человека: рядом стоит `бруто`, и
+# перемножить их «часовой ставкой» невозможно даже в уме.
+CONTRIBUTION_TITLES = {
+    "rate": gettext_noop("ставка взносов"),
+}
+
 # Фиксированная выплата: в табель вводят саму сумму, а не количество чего-то.
 # Ставки при этом нет вовсе — не «ставка None», а нет (см. `input_pairs`).
 FIXED_PAYOUT_TITLES = {
@@ -885,6 +893,65 @@ LEVEL_TITLES = {
 # прыгали от шага к шагу.
 INPUT_ORDER = ["hours", "quantity", "rate", "pay_percent", "floor", "amount_per_norm"]
 
+# Что за величина стоит за входом — и, значит, как её показывать (T116).
+#
+# Это не про красоту. Ставка часа 421,085, коэффициент 1,135 и множитель нето →
+# бруто 0,701, показанные деньгами, дают на экране 421,08, 1,14 и 0,70 — и ни
+# один шаг следа не повторяется на калькуляторе. Экран при этом не выглядит
+# неточным: он даёт уверенно неверные основания ровно там, где обязан объяснять.
+#
+# Умолчание у незнакомого ключа — `exact`, «показать как есть»: лишние знаки
+# некрасивы, округлённая ставка неверна, и ошибаться здесь можно только в
+# первую сторону. Что список полон, следит тест
+# `test_every_input_the_engine_produces_has_a_declared_kind` — он снимает
+# ключи с самого движка, а не сверяется с памятью.
+MONEY, HOURS, EXACT = "money", "hours", "exact"
+INPUT_KINDS = {
+    # деньги — суммы, которые человек видит в ведомости и в банке
+    "amount": MONEY,
+    "amount_per_norm": MONEY,
+    "base": MONEY,
+    "contributions": MONEY,
+    "credit": MONEY,
+    "gross": MONEY,
+    "half_tax_free": MONEY,
+    "min_contribution_base": MONEY,
+    "net": MONEY,
+    "tax": MONEY,
+    "tax_free_monthly": MONEY,
+    "withheld": MONEY,
+    # часы и дни — свой формат, без разделителя тысяч
+    "hours": HOURS,
+    "hours_per_day": HOURS,
+    "insured_hours": HOURS,
+    "norm_days": HOURS,
+    "norm_hours": HOURS,
+    "reference_norm_hours": HOURS,
+    "worked_days": HOURS,
+    "worked_hours": HOURS,
+    # ставки, коэффициенты, доли и счётчики — не деньги
+    "base_rate": EXACT,
+    "coefficient": EXACT,
+    "combined_contributions": EXACT,
+    "employee_contributions": EXACT,
+    "employer_contributions": EXACT,
+    "floor": EXACT,
+    "hours_divisor": EXACT,
+    "income_tax": EXACT,
+    "net_factor": EXACT,
+    "pay_percent": EXACT,
+    "quantity": EXACT,
+    "rate": EXACT,
+    "share": EXACT,
+    # словами, не числом: разбираются раньше, чем дело доходит до формата
+    "hour_types": EXACT,
+    "measure": EXACT,
+    "method": EXACT,
+    "pay_per_unit": EXACT,
+    "prorate_by": EXACT,
+    "rate_key": EXACT,
+}
+
 
 def titled(titles: dict, code: str, fallback: str = "") -> str:
     """Подпись из словаря на языке страницы; незнакомый код — как есть (T017).
@@ -911,6 +978,12 @@ def input_title(name: str, values: dict) -> str:
     """
     per_unit = values.get("pay_per_unit")
     special = PIECE_TITLES if per_unit is True else FIXED_PAYOUT_TITLES if per_unit is False else {}
+    # `rate_key` («какая ставка») бывает только у шага взносов: движок кладёт
+    # его рядом с самой ставкой (`payroll.engine.contributions`, метод
+    # `flat_rate`). Спрашивается сосед, а не код шага, по той же причине, что
+    # у сдельной группы: смысл величины задаёт правило, которое её применило.
+    if not special and "rate_key" in values:
+        special = CONTRIBUTION_TITLES
     if name in special:
         return gettext(special[name])
     return titled(INPUT_TITLES, name)
@@ -929,6 +1002,10 @@ def input_value(name: str, value) -> str:
     Формат при этом остаётся форматом своего вида: часы внутри раскладки
     печатаются как часы. Иначе рядом на одной строке стояли бы `20,00` и `20`,
     и сверять след с табелем пришлось бы с догадкой.
+
+    Деньгами показывается только то, что деньги (`INPUT_KINDS`). Ставка,
+    коэффициент и множитель, округлённые до копеек, ломают ровно то, ради чего
+    экран написан: по ним сумма не повторяется на калькуляторе (T116).
     """
     if name == "pay_per_unit":
         # Признак правила словами: «True» посреди денег читается как отладка.
@@ -943,7 +1020,10 @@ def input_value(name: str, value) -> str:
     if isinstance(value, list):
         return ", ".join(input_value(name, item) for item in value)
     if isinstance(value, Decimal):
-        return hours(value) if name.endswith(("hours", "days")) else money(value)
+        kind = INPUT_KINDS.get(name, EXACT)
+        if kind == HOURS:
+            return hours(value)
+        return money(value) if kind == MONEY else exact(value)
     return str(value)
 
 
