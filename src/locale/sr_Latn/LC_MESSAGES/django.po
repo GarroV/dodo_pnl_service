@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-13 21:11+0000\n"
+"POT-Creation-Date: 2026-08-13 21:29+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -174,9 +174,7 @@ msgstr "Isplaćeno"
 msgid ""
 "Период утверждён: расчёт и его данные заморожены. Чтобы пересчитать, период "
 "нужно сначала открыть заново."
-msgstr ""
-"Period je odobren: obračun i njegovi podaci su zamrznuti. Da biste ga ponovo "
-"obračunali, prvo ponovo otvorite period."
+msgstr "Period je odobren: obračun i njegovi podaci su zamrznuti. Da biste ga ponovo obračunali, prvo ponovo otvorite period."
 
 #: src/payrun/lifecycle.py:50
 msgid ""
@@ -214,10 +212,7 @@ msgid ""
 "У этого партнёра правки задним числом ведутся пересчётом, а не переносом: "
 "закрытый период открывается заново с указанием причины и считается снова. "
 "Перенос разницы для него выключен настройкой."
-msgstr ""
-"Kod ovog partnera se izmene unazad rade ponovnim obračunom, a ne prenosom: "
-"zatvoreni period se ponovo otvara uz navođenje razloga i ponovo se "
-"obračunava. Prenos razlike je za njega isključen podešavanjem."
+msgstr "Kod ovog partnera se izmene unazad rade ponovnim obračunom, a ne prenosom: zatvoreni period se ponovo otvara uz navođenje razloga i ponovo se obračunava. Prenos razlike je za njega isključen podešavanjem."
 
 #: src/payrun/retro.py:89
 msgid ""
@@ -782,44 +777,39 @@ msgstr "Fajl nije moguće pročitati kao Excel radnu svesku: %(reason)s"
 msgid ""
 "Месяц %(month)s закрыт, и текущий месяц %(current)s тоже — расход записать "
 "некуда. Откройте месяц заново с причиной."
-msgstr ""
+msgstr "Mesec %(month)s je zatvoren, a i tekući mesec %(current)s — nema gde da se upiše trošak. Ponovo otvorite mesec sa razlogom."
 
 #: src/web/cash.py:168
-#, fuzzy
-#| msgid "точка не найдена"
 msgid "Точка не найдена."
-msgstr "objekat nije pronađen"
+msgstr "Objekat nije pronađen."
 
-#: src/web/cash.py:252
+#: src/web/cash.py:257
 msgid "Месяц закрылся, пока расход вносили. Откройте форму заново."
-msgstr ""
+msgstr "Mesec je zatvoren dok je trošak unošen. Otvorite formu ponovo."
 
-#: src/web/cash.py:280
+#: src/web/cash.py:285
 msgid ""
 "Форма устарела или испорчена. Откройте её заново и внесите расход ещё раз."
-msgstr ""
+msgstr "Forma je zastarela ili oštećena. Otvorite je ponovo i unesite trošak još jednom."
 
 #: src/web/cash_views.py:52
 msgid ""
 "Вас ещё не завели ни к одному партнёру, поэтому вносить расход некуда. "
 "Попросите администратора сети добавить вас."
-msgstr ""
+msgstr "Još niste dodati ni jednom partneru, pa nema gde da se unese trošak. Zamolite administratora mreže da vas doda."
 
 #: src/web/cash_views.py:82 src/web/cash_views.py:185
-#, fuzzy
-#| msgid "Что со входами"
 msgid "Дата расхода"
-msgstr "Šta je sa ulazima"
+msgstr "Datum troška"
 
 #: src/web/cash_views.py:85
-#, fuzzy, python-format
-#| msgid "«%(label)s»: такого варианта нет."
+#, python-format
 msgid "«%(label)s»: расход на ноль не вносится."
-msgstr "„%(label)s“: takva opcija ne postoji."
+msgstr "„%(label)s“: trošak sa iznosom nula se ne unosi."
 
 #: src/web/cash_views.py:89 src/web/cash_views.py:209
 msgid "Комментарий"
-msgstr ""
+msgstr "Komentar"
 
 #: src/web/cash_views.py:111 src/web/cash_views.py:147
 #: src/web/directory_views.py:207 src/web/directory_views.py:215
@@ -831,23 +821,19 @@ msgstr "Polje „%(label)s“ je obavezno."
 
 #: src/web/cash_views.py:111 src/web/cash_views.py:115
 #: src/web/cash_views.py:192
-#, fuzzy
-#| msgid "Статья P&L"
 msgid "Статья расхода"
-msgstr "Stavka P&L-a"
+msgstr "Stavka troška"
 
 #: src/web/cash_views.py:117
-#, fuzzy
-#| msgid "Страница не найдена"
 msgid "Статья не найдена."
-msgstr "Stranica nije pronađena"
+msgstr "Stavka troška nije pronađena."
 
 #: src/web/cash_views.py:121
 #, python-format
 msgid ""
 "Статья «%(title)s» на %(date)s не действует: выберите другую или поправьте "
 "её в справочнике."
-msgstr ""
+msgstr "Stavka troška „%(title)s“ nije važeća na %(date)s: izaberite drugu ili je ispravite u imeniku."
 
 #: src/web/cash_views.py:133 src/web/directory_views.py:263
 #, python-format
@@ -866,33 +852,33 @@ msgstr "Knjiga"
 msgid ""
 "Когда деньги вышли из кассы. Месяц уже закрыт — расход ляжет в текущий, а "
 "эта дата останется при нём."
-msgstr ""
+msgstr "Kada je novac izašao iz kase. Ako je mesec već zatvoren, trošak upada u tekući mesec, a ovaj datum ostaje uz njega."
 
 #: src/web/cash_views.py:198
 msgid ""
 "Статьи ведёт администратор сети. Нужной нет — попросите завести: выдумывать "
 "название на месте нельзя, иначе одна трата назовётся по-разному."
-msgstr ""
+msgstr "Stavke troškova održava administrator mreže. Ako nedostaje ona koja vam treba, zamolite ga da je doda — nije dozvoljeno smišljati naziv u hodu, jer bi se isti trošak svaki put zvao drugačije."
 
 #: src/web/cash_views.py:211
 msgid "Зачем потратили. Через месяц это единственное, по чему строку узнают."
-msgstr ""
+msgstr "Zašto je potrošeno. Za mesec dana to je jedino po čemu će se red prepoznati."
 
 #: src/web/cash_views.py:237
 msgid "Ваша точка. Расход пойдёт на неё."
-msgstr ""
+msgstr "Vaš objekat. Trošak će biti knjižen na njega."
 
 #: src/web/cash_views.py:260
 #, python-format
 msgid "Расход записан в месяц %(month)s."
-msgstr ""
+msgstr "Trošak je zapisan za %(month)s."
 
 #: src/web/cash_views.py:262
 #, python-format
 msgid ""
 "Месяц %(closed)s закрыт, поэтому расход записан в %(month)s — с исходной "
 "датой и не сдвинув закрытый месяц."
-msgstr ""
+msgstr "Mesec %(closed)s je zatvoren, zato je trošak zapisan za %(month)s — sa originalnim datumom i bez pomeranja zatvorenog meseca."
 
 #: src/web/directory.py:125
 #, python-format
@@ -971,11 +957,11 @@ msgstr "Sa kim radi računovodstvo: naziv i poreski broj"
 
 #: src/web/directory_views.py:164 src/web/expense_items_views.py:131
 msgid "Статьи расходов"
-msgstr ""
+msgstr "Stavke troškova"
 
 #: src/web/directory_views.py:165
 msgid "Чем называют траты и в какую строку P&L они попадают"
-msgstr ""
+msgstr "Kako se troškovi nazivaju i u koji red P&L-a spadaju"
 
 #: src/web/directory_views.py:172 src/web/directory_views.py:980
 #: src/web/rules.py:79
@@ -1392,83 +1378,65 @@ msgstr ""
 
 #: src/web/expense_items_views.py:91
 msgid "Нужно хотя бы одно название статьи — без него её не выбрать глазами."
-msgstr ""
+msgstr "Potreban je bar jedan naziv stavke — bez njega se ne može prepoznati očima."
 
 #: src/web/expense_items_views.py:104
-#, fuzzy
-#| msgid "Посчитать период"
 msgid "статья расходов"
-msgstr "Obračunaj period"
+msgstr "stavka troška"
 
 #: src/web/expense_items_views.py:132
 msgid "Чем называют траты и в какую строку P&L они попадают."
-msgstr ""
+msgstr "Kako se troškovi nazivaju i u koji red P&L-a spadaju."
 
 #: src/web/expense_items_views.py:134
-#, fuzzy
-#| msgid "Завести точку"
 msgid "Завести статью"
-msgstr "Dodaj objekat"
+msgstr "Dodaj stavku troška"
 
 #: src/web/expense_items_views.py:136 src/web/expense_items_views.py:170
 #: src/web/expense_items_views.py:215
-#, fuzzy
-#| msgid "Строки для P&L"
 msgid "Строка P&L"
-msgstr "Redovi za P&L"
+msgstr "P&L red"
 
 #: src/web/expense_items_views.py:143
-#, fuzzy
-#| msgid "Сотрудников нет."
 msgid "Статей расходов нет."
-msgstr "Nema zaposlenih."
+msgstr "Nema stavki troškova."
 
 #: src/web/expense_items_views.py:145
 msgid ""
 "Справочник поставляется пустым намеренно: список статей придёт с файла "
 "бухгалтера, а не выдумывается здесь — иначе одна и та же трата называлась бы "
 "по-разному у нас и у неё."
-msgstr ""
+msgstr "Imenik se isporučuje prazan namerno: spisak stavki će stići iz fajla računovođe, a ne izmišljati se ovde — inače bi se isti trošak kod nas i kod nje zvao drugačije."
 
 #: src/web/expense_items_views.py:174
-#, fuzzy
-#| msgid "Дата закрытия раньше даты открытия."
 msgid "Дата закрытия раньше или равна дате начала действия."
-msgstr "Datum zatvaranja je pre datuma otvaranja."
+msgstr "Datum zatvaranja je pre datuma početka ili je isti kao on."
 
 #: src/web/expense_items_views.py:179
 msgid "строка P&L статьи расходов"
-msgstr ""
+msgstr "P&L red stavke troška"
 
 #: src/web/expense_items_views.py:199
-#, fuzzy
-#| msgid "Новая точка"
 msgid "Новая статья"
-msgstr "Novi objekat"
+msgstr "Nova stavka troška"
 
 #: src/web/expense_items_views.py:201
 msgid "← К статьям расходов"
-msgstr ""
+msgstr "← Na stavke troškova"
 
 #: src/web/expense_items_views.py:207
 msgid "По нему статья сходится с файлом бухгалтера при загрузке."
-msgstr ""
+msgstr "Po njemu se stavka poklapa sa fajlom računovođe pri uvozu."
 
 #: src/web/expense_items_views.py:210
-#, fuzzy, python-format
-#| msgid "Название"
+#, python-format
 msgid "Название (%(language)s)"
-msgstr "Naziv"
+msgstr "Naziv (%(language)s)"
 
 #: src/web/expense_items_views.py:230
-#, fuzzy
-#| msgid ""
-#| "Точка закрывается датой, а не удалением: закрытые месяцы ссылаются на неё."
 msgid ""
 "Статья закрывается датой, а не удалением: закрытые месяцы на неё ссылаются."
-msgstr ""
-"Objekat se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na "
-"njega."
+msgstr "Stavka troška se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na nju."
 
 #: src/web/format.py:45
 msgid "Официальный"
@@ -1712,34 +1680,26 @@ msgstr "Periodi"
 #: src/web/templates/web/cash/expense.html:19
 #: src/web/templates/web/cash/expense.html:21
 #: src/web/templates/web/components/header.html:51
-#, fuzzy
-#| msgid "Завести юрлицо"
 msgid "Внести расход"
-msgstr "Dodaj pravno lice"
+msgstr "Unesi trošak"
 
 #: src/web/templates/web/cash/expense.html:22
 msgid ""
 "Наличные из кассы точки: что потратили, сколько и на что. Расход попадёт в "
-"P&amp;L строкой своей статьи."
-msgstr ""
+"P&L строкой своей статьи."
+msgstr "Gotovina iz kase objekta: šta je potrošeno, koliko i na šta. Trošak ulazi u P&L kao red svoje stavke."
 
 #: src/web/templates/web/cash/expense.html:25
-#, fuzzy
-#| msgid "Записей"
 msgid "Записано."
-msgstr "Zapisa"
+msgstr "Zapisano."
 
 #: src/web/templates/web/cash/expense.html:30
-#, fuzzy
-#| msgid "не задано"
 msgid "Не записано."
-msgstr "nije podešeno"
+msgstr "Nije zapisano."
 
 #: src/web/templates/web/cash/expense.html:37
-#, fuzzy
-#| msgid "Посчитать период"
 msgid "Записать расход"
-msgstr "Obračunaj period"
+msgstr "Sačuvaj trošak"
 
 #: src/web/templates/web/components/diff_table.html:21
 msgid "В таблице"

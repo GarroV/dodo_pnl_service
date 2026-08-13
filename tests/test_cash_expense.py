@@ -155,6 +155,29 @@ def test_the_manager_records_an_expense_for_his_own_unit(
         client.post("/logout/")
 
 
+def test_the_stored_title_does_not_depend_on_the_page_language(
+    client, sql, item, units, facts_removed,  # noqa: F811
+):
+    """Название в самом факте одно и то же, кем бы расход ни вносили.
+
+    Иначе одна статья попадала бы в данные то «Вода», то «Voda» — в зависимости
+    от языка вносившего, — и в отчёте это выглядело бы двумя разными строками.
+    Читателю название всё равно показывается на его языке: статья при факте есть.
+    """
+    login_as(client, "manager")
+    client.cookies["django_language"] = "en"
+    try:
+        key = entry_key()
+        assert client.post(URL, payload(item, units, entry_key=key)).status_code == 302
+        stored = sql.execute(
+            "select title from facts where dedup_key = %s", (f"manual:cash:{key}",)
+        ).fetchone()[0]
+        assert stored == "Вода", stored
+    finally:
+        client.cookies.pop("django_language", None)
+        client.post("/logout/")
+
+
 @pytest.mark.parametrize("role", ["accountant", "director"])
 def test_the_accountant_and_the_director_record_for_any_unit(
     client, sql, item, units, facts_removed, role,  # noqa: F811
@@ -330,6 +353,18 @@ def test_an_expense_dated_in_a_closed_month_lands_beside_it(
             f"расход за закрытый месяц лёг в период {period}, а не в текущий"
         )
         assert june_total(sql) == before, "закрытый месяц сдвинулся"
+
+        # И правка этой записи тоже идёт заменой, а не переписыванием строки:
+        # старая помечается заменённой, новая встаёт рядом, а закрытый месяц
+        # по-прежнему не двигается. Переписать строку на месте здесь и нельзя —
+        # `facts_guard` не даст тронуть ни одну строку закрытого периода.
+        assert client.post(
+            URL, payload(item, units, amount="800.00", entry_key=second)
+        ).status_code == 302
+        rows = facts_of(sql, second)
+        assert [row[8] for row in rows] == [1, 2], f"замены не произошло: {rows}"
+        assert rows[0][9] is not None and rows[1][9] is None
+        assert june_total(sql) == before, "замена сдвинула закрытый месяц"
 
         # Человеку об этом сказано словами, а не молча: он ввёл июньскую дату и
         # обязан узнать, в каком месяце расход оказался. Месяцы сверяются тем же
