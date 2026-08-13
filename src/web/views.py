@@ -26,7 +26,7 @@ from django.utils.translation import gettext, gettext_noop
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
-from core.models import Calendar, Payrun, Payslip, Period, Timesheet
+from core.models import Calendar, Payrun, Payslip, Period, Tenant, Timesheet
 from payrun import freezing, jobs, lifecycle, retro
 from payrun.errors import PayrunRefused
 from reports.sheet import build_slice
@@ -35,6 +35,7 @@ from reports.variance import ThresholdsMissing, build_variance
 
 from . import auth, onboarding, permissions
 from .format import cut_title, hours, ledger_title, money
+from .labels import labeller
 from .i18n import month_title
 from .principal import get_current_principal
 
@@ -173,6 +174,10 @@ def period_page(
         period.tenant_id, period.period, request.GET.get("ledger", "")
     )
     sheet = view.sheet
+    # Подпись компонента заморожена в момент расчёта и говорит на языке правил.
+    # Чтобы колонка говорила на языке читателя, она берётся заново по коду — из
+    # правил ТОГО ЖЕ периода (T092, разбор в `web/labels.py`).
+    label = labeller(period.tenant_id, period.tenant.country_code, period.period)
     seen_payslips: set = set()
     timesheets = Timesheet.objects.filter(tenant=period.tenant, period=period.period)
     payrun = Payrun.objects.filter(tenant=period.tenant, period=period.period).first()
@@ -259,7 +264,7 @@ def period_page(
             "title": month_title(period.period),
             "status": status_title(period.status),
             "sheet": {
-                "columns": [column.title for column in sheet.columns],
+                "columns": [label(column.code, column.title) for column in sheet.columns],
                 "rows": [
                     {
                         "employee": row.employee,
@@ -396,7 +401,7 @@ def period_page(
             "retro_lines": [
                 {
                     "employee": line.employee,
-                    "title": line.title,
+                    "title": label(line.code, line.title),
                     "ledger": ledger_title(line.ledger),
                     "amount": money(line.amount),
                 }
@@ -866,11 +871,17 @@ def input_pairs(values: dict) -> list[dict]:
     ]
 
 
-def trace_step(step) -> dict:
-    """Шаг для показа. Расхождение с сохранённым не прячется, а называется."""
+def trace_step(step, label=None) -> dict:
+    """Шаг для показа. Расхождение с сохранённым не прячется, а называется.
+
+    `label` переводит подпись компонента на язык страницы (T092): в следе стоят
+    те же названия, что в колонках ведомости, и разойтись им нельзя — человек
+    приходит сюда прямо из ячейки и ищет глазами то же слово.
+    """
+    named = label(step.code, step.title) if label else (step.title or step.code)
     return {
         "code": step.code,
-        "title": step.title or step.code,
+        "title": named or step.code,
         "amount": money(step.amount),
         "ledger": ledger_title(step.ledger) if step.ledger else "",
         "inputs": input_pairs(step.inputs),
@@ -916,6 +927,13 @@ def payslip_trace(request, payslip_id):
         # адресов узнаётся, что строка есть и просто не видна.
         raise Http404("строка ведомости не найдена") from missing
 
+    # Подписи компонентов — на языке страницы, по правилам того же периода
+    # (T092). Правил на этот месяц нет — остаются сохранённые слова.
+    country = Tenant.objects.filter(id=who.tenant_id).values_list(
+        "country_code", flat=True
+    ).first() or ""
+    label = labeller(who.tenant_id, country, view.period)
+
     return render(
         request,
         "web/trace.html",
@@ -925,14 +943,17 @@ def payslip_trace(request, payslip_id):
             "title": month_title(view.period) if view.period else "",
             "back_url": period_url_for(view.period, who.tenant_id, view.cut),
             "cut_title": cut_title(view.cut) if view.cut else "",
-            "steps": [trace_step(step) for step in view.steps],
+            "steps": [trace_step(step, label) for step in view.steps],
+            # У производного шага подпись своя, продуктовая («Взносы», «Налог»):
+            # это не компонент правил, а вывод расчёта, и переводится он
+            # словарём продукта, а не подписями партнёра.
             "derived": [
                 {**trace_step(step), "title": titled(DERIVED_TITLES, step.kind, step.title)}
                 for step in view.derived
             ],
             "carried": [
                 {
-                    "title": line.title,
+                    "title": label(line.code, line.title),
                     "amount": money(line.amount),
                     "ledger": ledger_title(line.ledger),
                     "source": retro.month_title(line.source_period),
@@ -971,14 +992,14 @@ def signed(value: Decimal) -> str:
     return f"+{shown}" if value > 0 else shown
 
 
-def variance_line(line) -> dict:
+def variance_line(line, label=None) -> dict:
     """Строка отчёта. Порог показан рядом: по нему видно, почему строка здесь."""
     return {
         "employee": line.employee,
         "unit": line.unit,
         "ledger": ledger_title(line.ledger),
         "code": line.code,
-        "title": line.title,
+        "title": label(line.code, line.title) if label else line.title,
         "previous": money(line.previous),
         "current": money(line.current),
         "delta": signed(line.delta),
@@ -1017,6 +1038,10 @@ def period_variance(request, period_id):
             status=409,
         )
 
+    # Один поход за правилами на всю страницу: тридцать строк — это тридцать
+    # одинаковых запросов, если спрашивать на каждую (T092).
+    label = labeller(period.tenant_id, period.tenant.country_code, period.period)
+
     return render(
         request,
         "web/variance.html",
@@ -1034,7 +1059,7 @@ def period_variance(request, period_id):
                 for code in ([""] + report.cuts if report.cuts else [])
             ],
             "cut_title": cut_title(report.cut) if report.cut else "",
-            "lines": [variance_line(line) for line in report.lines],
+            "lines": [variance_line(line, label) for line in report.lines],
             "total_delta": signed(report.total_delta),
             "employees": report.employees,
             "compared": report.compared,

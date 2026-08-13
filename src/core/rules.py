@@ -26,7 +26,7 @@ from payroll.presets import (
     Preset,
     build_preset,
     list_presets,
-    load_preset,
+    load_preset_body,
     preset_valid_from,
     to_jsonable,
 )
@@ -52,6 +52,10 @@ class RuleSet:
     code: str
     base: Preset
     scoped: dict[tuple[str, UUID], list] = field(default_factory=dict)
+    # Язык, к которому свёрнуты подписи правил (T092). Хранится, потому что
+    # досборка пресета для человека накладывает переопределения ЗАНОВО, и
+    # многоязычная подпись партнёра осталась бы в нём словарём.
+    language: str = ""
 
     def preset(self, *, group_id: UUID | None = None, employee_id: UUID | None = None) -> Preset:
         """Правила, действующие для конкретного человека.
@@ -68,7 +72,8 @@ class RuleSet:
         if not any(rows for _level, rows in levels):
             return self.base
         return build_preset(self.base, base=self.base.base,
-                            levels=[("base", _replay_of(self.base)), *levels])
+                            levels=[("base", _replay_of(self.base)), *levels],
+                            language=self.language or None)
 
 
 def _replay_of(preset: Preset):
@@ -88,8 +93,27 @@ def _in_force(queryset, on_date: date):
     return queryset.filter(valid_from__lte=on_date).exclude(valid_to__lte=on_date)
 
 
-def load_rules_at(tenant_id: UUID, country_code: str, on_date: date) -> RuleSet:
-    """Правила тенанта на дату: тело пресета страны плюс его переопределения."""
+def ui_language() -> str:
+    """Язык, на котором сейчас рисуется страница.
+
+    Подписи правил сворачиваются к нему (T092). Спрашивается здесь, а не
+    передаётся вызывающим: читателей правил много (табель, сверка, расчёт,
+    справочники), и забыть передать язык в одном из них означало бы получить
+    ровно один экран, оставшийся русским, — то есть тот же дефект, только реже.
+    """
+    from django.utils.translation import get_language
+
+    return get_language() or ""
+
+
+def load_rules_at(tenant_id: UUID, country_code: str, on_date: date,
+                  *, language: str | None = None) -> RuleSet:
+    """Правила тенанта на дату: тело пресета страны плюс его переопределения.
+
+    Подписи свёрнуты к языку страницы. Само правило от языка не зависит ничем:
+    сворачиваются только `title`, ставки и условия остаются побайтово теми же —
+    иначе расчёт зависел бы от того, на каком языке его запустили.
+    """
     preset_row = (
         _in_force(RulePreset.objects.filter(country_code__iexact=country_code), on_date)
         .order_by("-valid_from")
@@ -130,8 +154,10 @@ def load_rules_at(tenant_id: UUID, country_code: str, on_date: date) -> RuleSet:
                 )
             by_scope.setdefault((level, row.scope_id), []).append(_override_level(row))
 
-    base = build_preset(preset_row.body, base=country_origin, levels=levels)
-    return RuleSet(code=preset_row.code, base=base, scoped=by_scope)
+    chosen = language if language is not None else ui_language()
+    base = build_preset(preset_row.body, base=country_origin, levels=levels,
+                        language=chosen or None)
+    return RuleSet(code=preset_row.code, base=base, scoped=by_scope, language=chosen)
 
 
 def _override_level(row: RuleOverride):
@@ -140,13 +166,14 @@ def _override_level(row: RuleOverride):
 
 
 def load_preset_at(tenant_id: UUID, country_code: str, on_date: date, *,
-                   group_id: UUID | None = None, employee_id: UUID | None = None) -> Preset:
+                   group_id: UUID | None = None, employee_id: UUID | None = None,
+                   language: str | None = None) -> Preset:
     """Пресет, действующий у тенанта на дату (контракт блока `core`).
 
     Необязательные `group_id` и `employee_id` добавляют два последних слоя:
     без них возвращается общая часть — страна плюс партнёр.
     """
-    rules = load_rules_at(tenant_id, country_code, on_date)
+    rules = load_rules_at(tenant_id, country_code, on_date, language=language)
     return rules.preset(group_id=group_id, employee_id=employee_id)
 
 
@@ -159,7 +186,10 @@ def import_presets(codes: list[str] | None = None) -> list[str]:
     """
     loaded = []
     for code in codes or list_presets():
-        body = load_preset(code)
+        # Тело как в файле — со всеми языками подписей (T092). Свёрнутое здесь
+        # оставило бы партнёра навсегда на одном языке: база и есть источник
+        # правил после первичной загрузки, второго шанса положить языки нет.
+        body = load_preset_body(code)
         RulePreset.objects.update_or_create(
             code=body.get("preset", code),
             valid_from=preset_valid_from(body),
