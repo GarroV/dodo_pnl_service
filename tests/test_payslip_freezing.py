@@ -300,16 +300,38 @@ def test_releasing_needs_the_same_right(disputed, db):
         ).fetchone()[0] is None
 
 
-def test_the_accountant_may_freeze_a_row(db):
-    """Бухгалтер собирает месяц, поэтому морозить спорную строку вправе он тоже."""
+def test_the_accountant_does_not_freeze_a_row_although_the_right_is_there(db):
+    """Право `payslip.freeze` у бухгалтера есть, а заморозки нет — и это не спор.
+
+    Изменено в T101. Прежде тест утверждал обратное: «бухгалтер собирает месяц,
+    поэтому морозить спорную строку вправе он тоже». Довод не выдержал разбора —
+    заморозка относится к строке ведомости **целиком**, а бухгалтеру отдан не
+    весь её расчёт: строку внутреннего регистра он помечал спорной, не видя в
+    ней ни одного числа, и тем самым менял то, что доедет до следующего месяца
+    (T026 исключает спорную строку из переноса разницы).
+
+    Условие сделано свойством **роли**, а не строки, по доводу T071: разрешение,
+    зависящее от содержимого строки, само называет людей — по тому, на какой
+    строке ответ меняется. Поэтому отказ здесь одинаков и для официальной строки
+    тоже; проверки на это — в `test_freeze_hidden_rows.py`.
+
+    Месяц бухгалтер утверждает по-прежнему: спорная строка его не держит, в
+    этом вся T027.
+    """
     payrun_id = payrun_in(db, "calculated")
     payslip = make_payslip(db, payrun_id, "freeze-accountant")
 
     with as_app_user(db, USER_ACCOUNTANT) as conn:
-        freeze(conn, payslip, actor=USER_ACCOUNTANT)
+        error = rejected(
+            conn,
+            """insert into payslip_freezes (tenant_id, payslip_id, reason, frozen_by)
+               values (%s, %s, %s, %s)""",
+            (T1, payslip, REASON, USER_ACCOUNTANT),
+        )
+        assert "row-level security" in str(error)
         assert conn.execute(
             "select count(*) from payslip_freezes where payslip_id = %s", (payslip,)
-        ).fetchone()[0] == 1
+        ).fetchone()[0] == 0
 
 
 def test_a_freeze_of_an_invisible_row_is_invisible(disputed, db):
@@ -596,9 +618,18 @@ def test_a_role_without_the_right_sees_no_button_but_an_explanation(client, clea
 
 
 def test_freezing_without_the_right_is_refused_past_the_interface(client, clean_payruns):
+    """Отказ по праву — администратором сети, а не управляющим (изменено в T101).
+
+    У маршрута теперь два условия, и первым отвечает условие роли: морозить
+    вправе тот, кому отдан весь расчёт строки. Управляющий его не проходит и
+    получает `404`, неотличимую от несуществующей строки, — то есть проверял бы
+    уже не право. Администратор сети видит все три регистра, а права
+    `payslip.freeze` у него нет: на нём условие права и остаётся видно
+    отдельно от условия регистров.
+    """
     calculated_period(client, clean_payruns)
     payslip_id, _ = any_payslip(clean_payruns)
-    login_as(client, "manager")
+    login_as(client, "admin")
 
     response = client.post(freeze_url(payslip_id), {"reason": REASON}, follow=True)
     assert response.status_code == 403
