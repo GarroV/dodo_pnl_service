@@ -17,7 +17,18 @@ from decimal import Decimal
 
 import pytest
 
-from conftest import body, login_as, period_url, wipe_payruns
+from conftest import (
+    T1,
+    USER_ACCOUNTANT,
+    USER_DIRECTOR,
+    USER_MANAGER,
+    as_app_user,
+    body,
+    login_as,
+    pay_component,
+    period_url,
+    wipe_payruns,
+)
 
 # Надбавка страны: 1500 за полную норму. На ней проверяется хранение, потому что
 # она одна и та же у всех и её легко подменить одним переопределением.
@@ -152,3 +163,88 @@ def test_the_page_says_the_trace_is_the_stored_one(
     assert "пересобран" not in html, (
         "экран говорит о пересборке, хотя показывает сохранённый след"
     )
+
+
+def test_no_row_of_a_fresh_calculation_disagrees_with_its_own_trace(
+    client, web_env, june_calculated_and_approved
+):
+    """Две записи одного расчёта обязаны сходиться на каждой строке, а не на первой.
+
+    Сохранённый шаг сверяется с сохранённой суммой по паре «код + регистр».
+    Пара, встретившаяся дважды, сложилась бы в одну сумму и разошлась бы с
+    каждым из своих шагов — то есть «не сходится» у всех подряд сразу после
+    расчёта. Проверяется на всех строках, потому что ловится это только так.
+    """
+    for user in ("director", "accountant", "manager"):
+        for url in trace_urls(client, user):
+            html = body(client.get(url))
+            assert "не сходится" not in html, f"свежий расчёт разошёлся со своим следом: {url}"
+
+
+# --- D023 на новой поверхности: ни строк, ни следа ---------------------------
+# Хранимый след — это сумма, правило и человек в одной строке базы. Проверяется
+# **ролью приложения**: владелец таблиц и суперпользователь обходят RLS, и
+# политику можно написать неправильно, получив зелёный прогон.
+
+
+def step_of(conn, ledger: str | None, *, code: str, amount: str = "1000.00") -> str:
+    """Сохранённый шаг нужного регистра рядом с его компонентом."""
+    component = pay_component(conn, ledger=ledger or "official", amount=amount, code=code)
+    payslip_id = conn.execute(
+        "select payslip_id from pay_components where id = %s", (component,)
+    ).fetchone()[0]
+    return conn.execute(
+        """insert into payslip_steps
+               (tenant_id, payslip_id, position, code, title, applied_value, ledger, kind)
+           values (%s, %s, 0, %s, 'Часы', %s, %s, %s) returning id""",
+        (T1, payslip_id, code, amount, ledger, "net" if ledger else "gross"),
+    ).fetchone()[0]
+
+
+def test_a_stored_step_of_an_invisible_ledger_is_invisible(db):
+    """Шаг чужого регистра не виден роли — ни числом, ни фактом существования."""
+    step_of(db, "official", code="official.one")
+    step_of(db, "internal", code="internal.one", amount="200.00")
+
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        seen = conn.execute("select ledger, applied_value from payslip_steps").fetchall()
+    assert [(ledger, value) for ledger, value in seen] == [("official", 1000)]
+
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        count = conn.execute("select count(*) from payslip_steps").fetchone()[0]
+    assert count == 2, "материал теста собран не про тот случай: директор видит не всё"
+
+
+def test_the_ledger_check_is_meaningful(db):
+    """Страховка от фиктивной зелени: без политики проверка выше обязана краснеть.
+
+    Владельцем схемы (без `set role app_user`) видно оба шага. Если бы тест выше
+    случайно ходил не ролью приложения, он был бы зелёным при любой политике.
+    """
+    step_of(db, "official", code="official.one")
+    step_of(db, "internal", code="internal.one", amount="200.00")
+    assert db.execute("select count(*) from payslip_steps").fetchone()[0] == 2
+
+
+def test_a_derived_step_is_closed_by_role_not_by_row(db):
+    """Производные величины видит тот, кому видны все регистры (T071).
+
+    Условие роли, а не строки — в этом вся суть. Была бы политика по содержимому
+    строки, наличие или отсутствие бруто само стало бы поимённым списком тех, у
+    кого есть выплаты в закрытом регистре: ровно та утечка, которую закрыла
+    миграция 0023.
+    """
+    step_of(db, None, code="gross")
+
+    for user in (USER_ACCOUNTANT, USER_MANAGER):
+        with as_app_user(db, user) as conn:
+            seen = conn.execute(
+                "select count(*) from payslip_steps where ledger is null"
+            ).fetchone()[0]
+        assert seen == 0, f"{user} видит производную величину, а видит не все регистры"
+
+    with as_app_user(db, USER_DIRECTOR) as conn:
+        seen = conn.execute(
+            "select count(*) from payslip_steps where ledger is null"
+        ).fetchone()[0]
+    assert seen == 1, "директор видит все регистры, а производной величины не видит"
