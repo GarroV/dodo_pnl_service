@@ -750,6 +750,163 @@ def test_the_transfer_from_the_page_leaves_the_closed_month_alone(client, web_en
 
 
 # =============================================================================
+# 3a. Расхождение считается в срезе роли, а не «база минус свежий расчёт» (T085)
+# =============================================================================
+#
+# Что было. `drift` сравнивал сохранённое (его отдаёт база **в срезе роли**) со
+# свежим расчётом (он считается движком **целиком**, мимо видимости регистров).
+# Разница двух несопоставимых величин равна ровно объёму невидимых роли строк,
+# поэтому бухгалтеру показывали чужие фамилии, суммы и названия регистров — и
+# при этом утверждали, что закрытый месяц разошёлся, хотя не менялось ничего.
+#
+# Проверяется обеими половинами сразу: в срезе не менялось — блока нет вовсе;
+# в срезе менялось — блок есть и показывает **только** свой срез. Без второй
+# половины первая доказывалась бы выключенной проверкой.
+
+
+def role_ledgers(code: str) -> list[str]:
+    """Регистры роли — из сида, а не списком в тесте.
+
+    Список наизусть разошёлся бы с сидом молча, и тест проверял бы память
+    автора вместо продукта.
+    """
+    from web.auth import DEV_USERS
+
+    return list(DEV_USERS[code].ledgers)
+
+
+def as_role(code: str):
+    """Смотреть на данные глазами роли — ролью `app_user`, как ходит продукт.
+
+    Владелец схемы политики обходит, поэтому «в срезе роли» можно проверить
+    только под контекстом пользователя: именно так уже прожил незамеченным один
+    дефект видимости регистров.
+    """
+    from web.auth import DEV_USERS
+    from web.dbcontext import db_context
+
+    return db_context(DEV_USERS[code].user_id)
+
+
+@pytest.mark.parametrize("role", ["director", "accountant", "manager"])
+def test_a_month_that_did_not_change_has_no_drift_at_all(web_env, june_approved, role):
+    """Ничего не правили — расхождения нет ни у одной роли.
+
+    Ровно тот случай, на котором дефект и виден: у директора блока не было
+    никогда, а бухгалтеру и управляющему показывали «расхождение» размером в
+    невидимую им часть ведомости.
+    """
+    from payrun import retro
+
+    with as_role(role):
+        found = retro.drift(
+            june_approved.id, date(2026, 6, 1), visible_ledgers=role_ledgers(role)
+        )
+
+    assert not found.error, found.error
+    assert found.lines == [], f"{role}: расхождение там, где ничего не менялось"
+
+
+def test_the_accountant_sees_exactly_the_official_part_of_the_drift(web_env, june_approved):
+    """Правка задела все регистры — бухгалтер видит свой и ровно его.
+
+    Сумма сверяется с официальной частью расхождения директора: «показали не
+    всё» проверяется равенством, а не тем, что чужих слов на экране нет.
+    """
+    from payrun import retro
+
+    bump_rates("2")
+
+    with as_role("accountant"):
+        mine = retro.drift(
+            june_approved.id, date(2026, 6, 1), visible_ledgers=role_ledgers("accountant")
+        )
+    with as_role("director"):
+        whole = retro.drift(
+            june_approved.id, date(2026, 6, 1), visible_ledgers=role_ledgers("director")
+        )
+
+    assert mine.lines, "правка ставок обязана задеть и официальный регистр"
+    assert {line.ledger for line in mine.lines} == {"official"}
+    assert {line.ledger for line in whole.lines} > {"official"}, (
+        "у директора расхождение шире одного регистра — иначе сравнивать нечего"
+    )
+
+    official_of_whole = sum(
+        (line.amount for line in whole.lines if line.ledger == "official"), Decimal(0)
+    )
+    assert mine.total == official_of_whole
+    assert mine.total != whole.total
+
+
+def test_the_page_of_an_unchanged_month_shows_no_drift_to_anyone(
+    client, web_env, june_approved
+):
+    """Экран, ролью `app_user`: блока расхождений нет ни у кого."""
+    for role in ("director", "accountant", "manager"):
+        login_as(client, role)
+        html = body(client.get(page_of(client, date(2026, 6, 1), june_approved)))
+        assert "изменились после утверждения" not in html, (
+            f"{role}: страница утверждает расхождение там, где ничего не менялось"
+        )
+
+
+def test_the_page_shows_the_accountant_only_his_own_slice(client, web_env, june_approved):
+    """Правка была — блок есть, и в нём ни одной чужой строки.
+
+    Чужого регистра не должно быть ни строкой, ни словом (D023): проверяется и
+    отсутствие названий, и совпадение итога с официальной частью.
+    """
+    from payrun import retro
+    from web.format import money
+
+    bump_rates("2")
+    login_as(client, "accountant")
+    html = body(client.get(page_of(client, date(2026, 6, 1), june_approved)))
+
+    assert "изменились после утверждения" in html, "своё расхождение показать обязаны"
+    assert "Дополнительный" not in html
+    assert "Внутренний" not in html
+
+    with as_role("accountant"):
+        mine = retro.drift(
+            june_approved.id, date(2026, 6, 1), visible_ledgers=role_ledgers("accountant")
+        )
+    assert money(mine.total) in html, "на экране не та сумма, что даёт срез роли"
+
+
+def test_the_transfer_moves_only_what_the_role_can_see(web_env, june_approved):
+    """Перенос уносит свой срез и не отказывается из-за чужого.
+
+    Прежнее поведение — отказ «разница попадает в регистры, недоступные вашей
+    роли» с их перечислением — само было сообщением о существовании чужого
+    регистра. Теперь роль переносит своё, а чужое остаётся тому, кто его видит.
+    """
+    from core.models import RetroAdjustment
+    from payrun import retro
+
+    bump_rates("2")
+    target, moved = retro.post(
+        tenant_id=june_approved.id, source=date(2026, 6, 1), actor_id=None,
+        visible_ledgers=["official"],
+    )
+
+    assert target == date(2026, 7, 1)
+    assert {line.ledger for line in moved.lines} == {"official"}
+    assert set(
+        RetroAdjustment.objects.filter(source_period=date(2026, 6, 1))
+        .values_list("ledger", flat=True)
+    ) == {"official"}
+
+    # Чужая часть никуда не делась: её перенесёт тот, кому она видна.
+    rest = retro.drift(
+        june_approved.id, date(2026, 6, 1),
+        visible_ledgers=["official", "supplementary", "internal"],
+    )
+    assert {line.ledger for line in rest.lines} == {"supplementary", "internal"}
+
+
+# =============================================================================
 # 4. Обслуживание: база с перенесённой разницей должна перезаливаться
 # =============================================================================
 

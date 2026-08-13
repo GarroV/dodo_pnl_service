@@ -230,7 +230,16 @@ def period_page(
     # пересчитывают, а не переносят. Считать теневой расчёт на каждой странице
     # подряд было бы и дорого, и бессмысленно.
     retro_mode = retro.mode(period.tenant_id)
-    found = retro.drift(period.tenant_id, period.period) if frozen else retro.Drift()
+    # Расхождение спрашивается **в срезе роли** (T085): свежий расчёт движок
+    # считает целиком, и разница «свежее минус хранимое» без этого равнялась бы
+    # ровно тому, чего человеку не видно.
+    found = (
+        retro.drift(
+            period.tenant_id, period.period,
+            visible_ledgers=who.visible_ledgers if who else [],
+        )
+        if frozen else retro.Drift()
+    )
     retro_denied = permissions.explain(who, permissions.RETRO_POST) if found else ""
     # Разница за этот месяц уже лежит в утверждённом периоде — откат отсюда
     # означал бы заплатить дважды, и база его отвергнет (T026). Кнопки поэтому
