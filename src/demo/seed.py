@@ -55,64 +55,17 @@ PNL_ITEMS = [
     ("total", "Result", "subtotal", 90),
 ]
 
-# Названия групп по-английски. Сами группы приезжают из пресета страны — оттуда
-# же, откуда их берёт движок, — но заголовки в пресете русские, а демо всегда
-# англоязычное (правило владельца). Переопределяется только подпись: схема
-# расчёта и регистр учёта берутся из пресета как есть, иначе демо считало бы не
-# по тем правилам, по которым считает продукт.
-GROUP_TITLES = {
-    "office": "Office",
-    "management": "Unit managers",
-    "kitchen": "Kitchen and counter",
-    "doughmaker": "Dough maker",
-    "couriers": "Couriers",
-    "temporary": "Temporary contracts",
-}
-
-# Английские подписи правил страны. Кладутся в базу переопределениями на уровне
-# партнёра — тем же механизмом, которым партнёр меняет любую другую величину
-# (`rule_overrides`, путь + значение + дата начала действия).
+# Язык демо. Правило владельца: демо всегда англоязычное, независимо от языка
+# продукта. Отсюда и берутся английские подписи правил — из самого пресета
+# страны, который с T092 несёт все языки продукта сразу.
 #
-# Почему именно так, а не правкой пресета или словарём в коде демо. Подпись
-# компонента попадает в `pay_components.title` в момент расчёта: то, что видно в
-# ведомости, следе и отчёте расхождений, — это слова, действовавшие тогда, когда
-# месяц считали. Значит, английские подписи обязаны быть в **правилах**, и
-# положить их надо до расчёта. Пресет страны при этом остаётся русским: он общий
-# для всех партнёров Сербии, а англоязычен только демо-стенд.
-#
-# Границы у переопределения открыты слева: `valid_from` раньше первого месяца
-# демо, `valid_to` пусто. Иначе закрытый месяц однажды объяснялся бы словами,
-# которых в нём не было.
-RULE_TITLES = {
-    "hour_types.regular.title": "Worked hours",
-    "hour_types.holiday.title": "Public holiday",
-    "hour_types.vacation.title": "Annual leave",
-    "hour_types.sick.title": "Sick leave",
-    "hour_types.night.title": "Night hours",
-    "hour_types.overtime.title": "Overtime",
-    "allowances.meal_and_vacation_bonus.title": "Meal and vacation allowance",
-    # Две подписи, которые до этого были зашиты в движке: он читает их из
-    # правил с прежним русским умолчанием, чтобы демо могло их перевести (см.
-    # payroll/engine.py).
-    "minimum_guarantee.title": "Minimum wage top-up",
-    "manual_correction.title": "Manual correction",
-    "schemes.standard.title": "Full calculation",
-    "schemes.half_time.title": "Half time",
-    "schemes.half_time_min_base.title": "Half time, contributions from minimum base",
-    "schemes.temporary.title": "Temporary contract",
-    "schemes.direct.title": "Direct payout, no gross-up",
-    "groups.office.title": "Office",
-    "groups.management.title": "Unit managers",
-    "groups.kitchen.title": "Kitchen and counter",
-    "groups.doughmaker.title": "Dough maker",
-    "groups.couriers.title": "Couriers",
-    "groups.temporary.title": "Temporary contracts",
-}
-
-# С какой даты действуют английские подписи. Раньше самого раннего месяца демо:
-# правило, начавшее действовать в середине стенда, показало бы часть месяцев
-# по-русски.
-TITLES_FROM = date(2020, 1, 1)
+# Раньше здесь лежал словарь из двадцати английских подписей, который клался в
+# базу переопределениями партнёра. Он больше не нужен и удалён намеренно: это
+# была вторая правда рядом с пресетом, и расходиться они начали бы молча —
+# поменянная подпись в пресете просто не доехала бы до демо. А главное, словарь
+# **маскировал дефект**: демо выглядело английским даже тогда, когда сам продукт
+# показывал колонки по-русски, и полтора месяца никто этого не видел.
+DEMO_LANGUAGE = "en"
 
 # Роли демо. Коды те же, что у продукта, — на них стоят политики базы и права;
 # по-английски здесь только подписи. Набор регистров и точка повторяют роли
@@ -181,7 +134,6 @@ def seed_demo(*, log=None) -> dict:
         wipe()
         import_presets()
         tenant = _org()
-        _english_titles(tenant)
         items = _pnl_items()
         groups = _groups(tenant, items)
         _roles_and_users(tenant)
@@ -301,20 +253,6 @@ def _org() -> models.Tenant:
     return tenant
 
 
-def _english_titles(tenant) -> None:
-    """Английские подписи правил — переопределениями на уровне партнёра.
-
-    Ставится до расчёта: подпись попадает в строку ведомости в момент счёта, и
-    положенная позже она не догонит уже посчитанные месяцы.
-    """
-    for path, title in RULE_TITLES.items():
-        models.RuleOverride.objects.create(
-            id=det_id("rule_override", path), tenant=tenant,
-            scope_type="tenant", scope_id=None,
-            path=path, value=title, valid_from=TITLES_FROM,
-        )
-
-
 def _pnl_items() -> dict[str, models.PnlItem]:
     items = {}
     for code, title, kind, order in PNL_ITEMS:
@@ -335,12 +273,15 @@ def _groups(tenant, items: dict) -> dict[str, models.EmployeeGroup]:
     """
     from payroll import load_preset
 
-    preset = load_preset(PRESET_CODE)
+    # Пресет читается на языке демо: подписи групп ложатся в базу английскими
+    # оттуда же, откуда движок берёт схему и регистр (T092). Второго списка
+    # названий в этом файле больше нет.
+    preset = load_preset(PRESET_CODE, DEMO_LANGUAGE)
     groups = {}
     for code, body in preset["groups"].items():
         groups[code] = models.EmployeeGroup.objects.create(
             id=det_id("group", code), tenant=tenant, code=code,
-            title=GROUP_TITLES.get(code, code),
+            title=body.get("title") or code,
             scheme=body.get("scheme", "standard"),
             ledger=body.get("ledger", "official"),
             pnl_item=items["labour_cost"],

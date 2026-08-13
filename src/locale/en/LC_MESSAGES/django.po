@@ -1967,3 +1967,15 @@ msgstr "← To the rules"
 
 msgid "Зарплата утверждена по %(edge)s включительно: дата раньше этого дня переписала бы закрытый месяц, и правка будет отклонена."
 msgstr "Payroll is approved through %(edge)s inclusive: a date before that day would rewrite the closed month, and the change will be refused."
+msgid "%(percent)s и %(amount)s"
+msgstr "%(percent)s and %(amount)s"
+
+#, python-format
+msgid "Расхождение с тем, что хранит закрытый месяц: <strong>%(total)s</strong> по %(employees)s чел."
+msgstr "Discrepancy with what the closed month has on record: <strong>%(total)s</strong> for %(employees)s people."
+
+msgid "У этого партнёра разница переносится в текущий период."
+msgstr "For this partner, the difference is carried over to the current period."
+
+msgid "У этого партнёра период открывается заново и пересчитывается."
+msgstr "For this partner, the period is reopened and recalculated."

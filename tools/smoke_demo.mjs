@@ -198,11 +198,15 @@ if (downloaded.length === 1) {
   await goto(`${APP}${june}reconcile/`);
   check("страница сверки открылась", (await text()).length > 0);
   check("файл выбран в поле", await chooseFile("input[type=file][name=table]", file));
+  // Подписи здесь английские, и это не оговорка: демо всегда англоязычное
+  // (правило владельца, UI_LANGUAGE=en). Русские подписи в этом файле были
+  // остатком от времён, когда интерфейс переводов ещё не имел, — и смоук
+  // краснел на исправном демо, потому что искал кнопку, которой там не бывает.
   check(
     "нажата кнопка сверки",
     await clickBy(
-      `[...document.querySelectorAll("button")].find(x => x.textContent.trim() === "Сверить")`,
-      "Сверить",
+      `[...document.querySelectorAll("button")].find(x => x.textContent.trim() === "Reconcile")`,
+      "Reconcile",
     ),
   );
   await sleep(2500);
@@ -210,7 +214,7 @@ if (downloaded.length === 1) {
   const summary = await evalIn(`
     (() => {
       const table = [...document.querySelectorAll("table.sheet")]
-        .find(t => t.textContent.includes("Итог сверки"));
+        .find(t => t.textContent.includes("Reconciliation result"));
       if (!table) return null;
       const out = {};
       for (const tr of table.querySelectorAll("tbody tr")) {
@@ -221,19 +225,19 @@ if (downloaded.length === 1) {
   `);
   check("сверка ответила сводкой", Boolean(summary), JSON.stringify(summary));
   if (summary) {
-    check("большая часть строк сошлась", summary["Сошлось до копейки"] >= 20,
-      String(summary["Сошлось до копейки"]));
-    check("одно расхождение показано", summary["Разошлось"] >= 1,
-      String(summary["Разошлось"]));
+    check("большая часть строк сошлась", summary["Matched to the cent"] >= 20,
+      String(summary["Matched to the cent"]));
+    check("одно расхождение показано", summary["Off"] >= 1,
+      String(summary["Off"]));
     check("копеечное расхождение показано отдельно",
-      summary["Разошлось на копейки (округление)"] >= 1,
-      String(summary["Разошлось на копейки (округление)"]));
+      summary["Off by cents (rounding)"] >= 1,
+      String(summary["Off by cents (rounding)"]));
     check("человек, оставшийся только в файле, показан",
-      summary["Есть в таблице, нет в расчёте"] >= 1,
-      String(summary["Есть в таблице, нет в расчёте"]));
+      summary["In the table, not in the calculation"] >= 1,
+      String(summary["In the table, not in the calculation"]));
     check("курьеров в таблице бухгалтера нет — и это видно",
-      summary["Есть в расчёте, нет в таблице"] >= 4,
-      String(summary["Есть в расчёте, нет в таблице"]));
+      summary["In the calculation, not in the table"] >= 4,
+      String(summary["In the calculation, not in the table"]));
   }
 }
 

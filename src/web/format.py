@@ -83,6 +83,40 @@ def hours(value: Decimal | int | float | None) -> str:
     return f"{whole}{decimal}{fraction}"
 
 
+EMPTY_PERCENT = "—"
+
+
+def percent(value: Decimal | int | float | None) -> str:
+    """«+12,4 %» либо прочерк, если росло с нуля: процента у этого нет.
+
+    Разделитель — тот же, что у денег (T093). Раньше здесь стояла запятая
+    жёстко, и на английской странице получалась таблица, где процент написан
+    по-русски («-9,1 %»), а деньги рядом по-английски («84,840.00»). Два
+    разделителя дробной части на одной странице читаются как две разные
+    системы счисления — а это одни и те же числа.
+    """
+    if value is None:
+        return EMPTY_PERCENT
+    _thousands, decimal = separators()
+    quantized = Decimal(value).quantize(Decimal("0.1"))
+    sign = "+" if quantized > 0 else ""
+    return f"{sign}{quantized}".replace(".", decimal) + " %"
+
+
+# Порог отклонения: превышены должны быть **оба** — и процент, и сумма. Союз
+# здесь несёт смысл («и», не «или»), поэтому он переводится, а не склеивается
+# f-строкой: на английской странице стояло русское «и» (T093).
+THRESHOLD_PAIR = _("%(percent)s и %(amount)s")
+
+
+def threshold(percent_value, amount_value) -> str:
+    """Порог словами: «5 % и 2 000,00». Числа форматируются по языку страницы."""
+    return str(THRESHOLD_PAIR) % {
+        "percent": f"{percent_value:g} %",
+        "amount": money(amount_value),
+    }
+
+
 def money(value: Decimal | int | float | None) -> str:
     """Сумма с двумя знаками: `1 234,50`. Пустое значение — прочерк, не ноль."""
     if value is None:

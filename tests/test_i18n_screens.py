@@ -17,12 +17,19 @@
 именно потому, что перевода не нашлось.
 
 **Данные партнёра исключаются, и список исключений берётся из базы.** Имена
-людей, названия точек и партнёров, подписи типов часов, компонентов, схем и
-групп из пресета страны — настройка партнёра, а не слова продукта; переводить
-их значило бы решать за бухгалтера, как называется его же «Топли оброк».
+людей, названия точек и партнёров — настройка партнёра, а не слова продукта;
+переводить их значило бы решать за бухгалтера, как зовут его сотрудника.
 Собирать этот список руками нельзя: он мгновенно превратился бы в место, куда
 удобно спрятать непереведённую строку продукта. Поэтому он вычитывается из тех
 же таблиц, из которых страница берёт данные.
+
+**Подписи правил исключаются только на своём языке (T092).** Раньше сюда
+попадали подписи типов часов, компонентов, схем и групп целиком — как «данные
+партнёра». В эту щель и утекли колонки ведомости и табеля: они оставались
+русскими на всех трёх языках, а проверка молчала, потому что сама же их и
+разрешила. Подпись правила действительно данные — но данные, обязанные нести
+все языки продукта. Поэтому разрешается ровно та подпись, которая объявлена для
+проверяемого языка; русская подпись на английской странице — снова дефект.
 """
 from __future__ import annotations
 
@@ -51,7 +58,7 @@ COMMENT = re.compile(r"<!--.*?-->", re.S)
 STYLE = re.compile(r"<style\b.*?</style>", re.S | re.I)
 
 
-def data_terms(dsn: str) -> set[str]:
+def data_terms(dsn: str, language: str = "") -> set[str]:
     """Слова, которые продукт показывает, но переводить не вправе.
 
     Читается из базы, а не из списка в тесте, — см. модульную строку. Берём
@@ -73,11 +80,31 @@ def data_terms(dsn: str) -> set[str]:
         # строка P&L «LC / Тестомейкер» — куском внутри чужой фразы.
         terms.update(part for part in re.split(r"[\s/·,()]+", value) if part)
 
+    def add_title(value) -> None:
+        """Подпись правила: разрешена та, что объявлена для проверяемого языка.
+
+        Многоязычная подпись (T092) отдаёт ровно одно значение — на языке
+        страницы. Подпись, написанную одной строкой, разрешаем как есть: партнёр
+        вправе вести учёт на одном языке, и требовать от него перевода продукт
+        не может. Полноту подписей самого пресета страны проверяет
+        `tests/test_rule_titles.py` — здесь проверяется экран.
+        """
+        if isinstance(value, str):
+            add(value)
+            return
+        if isinstance(value, dict):
+            wanted = language.lower().replace("_", "-")
+            for code, text in value.items():
+                if str(code).lower().replace("_", "-") == wanted:
+                    add(text)
+
     def walk(node) -> None:
         """Все подписи пресета: их состав у каждой страны свой, перечислять нельзя."""
         if isinstance(node, dict):
             for key, value in node.items():
-                if key in ("title", "pnl_line") and isinstance(value, str):
+                if key == "title":
+                    add_title(value)
+                elif key == "pnl_line" and isinstance(value, str):
                     add(value)
                 else:
                     walk(value)
@@ -95,11 +122,6 @@ def data_terms(dsn: str) -> set[str]:
             "select title from employee_groups",
             "select title from legal_entities",
             "select title from rule_presets",
-            # Подписи компонентов выплаты. Их пишет расчёт по правилам страны, и
-            # на экран они приезжают из базы как есть — та же природа, что у
-            # названий типов часов. Соседние тесты кладут сюда свои («Часы»), и
-            # без этой строки проверка ловила бы их вместо дефекта.
-            "select distinct title from pay_components",
             # Имена людей, вошедших в продукт. У учёток сида имя совпадает
             # с названием роли по-русски — но это по-прежнему имя человека
             # в базе, а не подпись продукта: подпись роли рядом с ним
@@ -174,23 +196,32 @@ def test_no_russian_left_on_the_screens(client, web_env, screens, language):
     непереведённых строк на экранах нет». Всё, что здесь падает, человек увидел
     бы своими глазами на английской или сербской странице.
     """
-    allowed = data_terms(web_env)
+    from django.test.utils import override_settings
+
+    allowed = data_terms(web_env, language)
     client.cookies["django_language"] = language
 
     problems: list[str] = []
-    for role in ROLES:
-        login_as(client, role)
-        for url in screens:
-            response = client.get(url)
-            # 403 и 404 — законные ответы: не всякий экран открыт всякой роли.
-            # Их текст проверяется тоже: отказ человек читает так же, как
-            # страницу, и русский отказ на английской странице — тот же дефект.
-            if response.status_code >= 500:
-                problems.append(f"{language} {role} {url}: {response.status_code}")
-                continue
-            for piece in foreign_words(body(response), allowed):
-                problems.append(f"{language} {role} {url}: {piece}")
-        client.post("/logout/")
+    # Страницы смотрятся так, как их видит человек у партнёра, а не разработчик:
+    # с `DEBUG=1` Django на 404 подставляет свою техническую страницу с текстом
+    # исключения («строка ведомости не найдена»), и проверка ловила бы служебное
+    # сообщение вместо экрана продукта. Сообщения исключений — для журнала и для
+    # разработчика, они и остаются на языке исходника.
+    with override_settings(DEBUG=False):
+        for role in ROLES:
+            login_as(client, role)
+            for url in screens:
+                response = client.get(url)
+                # 403 и 404 — законные ответы: не всякий экран открыт всякой
+                # роли. Их текст проверяется тоже: отказ человек читает так же,
+                # как страницу, и русский отказ на английской странице — тот же
+                # дефект.
+                if response.status_code >= 500:
+                    problems.append(f"{language} {role} {url}: {response.status_code}")
+                    continue
+                for piece in foreign_words(body(response), allowed):
+                    problems.append(f"{language} {role} {url}: {piece}")
+            client.post("/logout/")
 
     assert not problems, (
         f"русский текст на страницах языка {language} "
@@ -207,7 +238,7 @@ def test_the_entrance_is_translated_too(client, web_env, language):
     видит его первым.
     """
     client.cookies["django_language"] = language
-    problems = foreign_words(body(client.get("/login/")), data_terms(web_env))
+    problems = foreign_words(body(client.get("/login/")), data_terms(web_env, language))
     assert not problems, f"{language}: вход по-русски:\n" + "\n".join(problems)
 
 

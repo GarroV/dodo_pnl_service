@@ -1967,3 +1967,15 @@ msgstr "← Na pravila"
 
 msgid "Зарплата утверждена по %(edge)s включительно: дата раньше этого дня переписала бы закрытый месяц, и правка будет отклонена."
 msgstr "Plata je odobrena zaključno sa %(edge)s: datum pre tog dana bi prepisao zatvoreni mesec, i izmena će biti odbijena."
+msgid "%(percent)s и %(amount)s"
+msgstr "%(percent)s i %(amount)s"
+
+#, python-format
+msgid "Расхождение с тем, что хранит закрытый месяц: <strong>%(total)s</strong> по %(employees)s чел."
+msgstr "Razlika u odnosu na ono što čuva zatvoreni mesec: <strong>%(total)s</strong> za %(employees)s zaposlenih."
+
+msgid "У этого партнёра разница переносится в текущий период."
+msgstr "Kod ovog partnera razlika se prenosi u tekući period."
+
+msgid "У этого партнёра период открывается заново и пересчитывается."
+msgstr "Kod ovog partnera period se ponovo otvara i preračunava."

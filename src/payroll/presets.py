@@ -29,6 +29,87 @@ PRESETS_DIR = Path(__file__).parent / "presets"
 # «каждый следующий уровень переопределяет предыдущий».
 LEVELS = ("country", "tenant", "group", "employee")
 
+# --- многоязычные подписи (T092) ---------------------------------------------
+#
+# Подпись правила — данные партнёра, а не строка интерфейса: состава видов часов
+# код не знает, и страна, заведённая завтра, добавит свой вид обычным
+# переопределением, а не релизом. Значит, переводит подписи не gettext, а сами
+# правила: `title` несёт либо строку (партнёр на одном языке), либо отображение
+# «язык → текст». Полный разбор — в журнале блока `web`, T092.
+#
+# Свёртка живёт здесь, а не на стороне Django, потому что подпись доезжает до
+# движка (`title=cfg["title"]` в `engine.py`), а движок обязан оставаться чистым
+# Python. Язык поэтому приходит параметром: ни `get_language()`, ни настроек тут
+# нет и быть не может.
+TITLE_KEY = "title"
+
+# Язык, на котором написан продукт и его пресеты, если пресет не сказал иного.
+DEFAULT_LANGUAGE = "ru"
+
+
+def language_key(code: str) -> str:
+    """Код языка в одном написании: `sr_Latn`, `SR-LATN` и `sr-latn` — одно и то же.
+
+    Django отдаёт код по-разному в разных местах (каталог переводов зовётся
+    `sr_Latn`, `get_language()` возвращает `sr-latn`), и подпись не должна
+    теряться на разнице в написании — потерялась бы она молча, пустой колонкой.
+    """
+    return str(code).strip().lower().replace("_", "-")
+
+
+def preset_language(body: dict[str, Any]) -> str:
+    """Язык, на котором написан пресет. Он же — запасной для всех подписей."""
+    return language_key(body.get("language") or DEFAULT_LANGUAGE)
+
+
+def pick_title(title: Any, language: str, fallback: str) -> Any:
+    """Подпись на нужном языке. Пусто не возвращается никогда.
+
+    Порядок отката объявлен, а не случаен: точный язык → язык самого пресета →
+    первое непустое значение. Последнее — не «как повезёт», а «лучше чужой язык,
+    чем колонка без названия»: пустая подпись читается как поломка расчёта.
+    """
+    if not isinstance(title, dict):
+        return title
+    by_code = {language_key(code): value for code, value in title.items()}
+    for wanted in (language_key(language), fallback):
+        value = by_code.get(wanted)
+        # Пустая строка — это забытый перевод, а не ответ: на экране её не
+        # отличить от отсутствующей подписи, а чинится она иначе.
+        if isinstance(value, str) and value.strip():
+            return value
+    for value in by_code.values():
+        if isinstance(value, str) and value.strip():
+            return value
+    return ""
+
+
+def localize(body: dict[str, Any], language: str | None = None) -> dict[str, Any]:
+    """Свернуть многоязычные подписи тела пресета к одному языку.
+
+    Трогаются только ключи `title`. Остальные отображения остаются как есть, и
+    это не мелочь: значение правила само бывает словарём (`calendar`,
+    `allowance_prorate`), и свернуть его к языку значило бы потерять расчёт.
+    """
+    fallback = preset_language(body)
+    wanted = language_key(language or fallback)
+
+    def walk(node: Any) -> Any:
+        if isinstance(node, dict):
+            return {
+                key: (
+                    pick_title(value, wanted, fallback)
+                    if key == TITLE_KEY
+                    else walk(value)
+                )
+                for key, value in node.items()
+            }
+        if isinstance(node, list):
+            return [walk(item) for item in node]
+        return node
+
+    return walk(body)
+
 
 @dataclass(frozen=True)
 class Origin:
@@ -82,12 +163,30 @@ class Preset(dict):
 
 
 @cache
-def load_preset(code: str) -> Preset:
+def load_preset_body(code: str) -> Preset:
+    """Тело пресета как в файле — с многоязычными подписями, без свёртки.
+
+    Нужно ровно двум: первичной загрузке страны в базу (`core.rules.import_presets`
+    кладёт в `rule_presets.body` все языки сразу — свёрнутое тело оставило бы
+    партнёра навсегда на одном) и проверкам полноты подписей.
+    """
     path = PRESETS_DIR / f"{code}.yaml"
     if not path.exists():
         available = ", ".join(list_presets()) or "нет ни одного"
         raise FileNotFoundError(f"пресет '{code}' не найден. Доступны: {available}")
     return Preset(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+
+@cache
+def load_preset(code: str, language: str | None = None) -> Preset:
+    """Пресет, готовый к расчёту: подписи уже свёрнуты к одному языку.
+
+    Умолчание — язык самого пресета. Движок кладёт подпись в ведомость и про
+    языки ничего не знает; многоязычная подпись, доехавшая до него, легла бы в
+    базу словарём, и увидели бы это уже на экране.
+    """
+    body = load_preset_body(code)
+    return Preset(localize(dict(body), language), base=body.base, origin=dict(body.origin))
 
 
 def list_presets() -> list[str]:
@@ -151,12 +250,17 @@ def apply_overrides(preset: dict[str, Any], overrides: dict[str, Any]) -> dict[s
     return result
 
 
-def build_preset(body: dict[str, Any], *, base: Origin = FILE_ORIGIN, levels=()) -> Preset:
+def build_preset(body: dict[str, Any], *, base: Origin = FILE_ORIGIN, levels=(),
+                 language: str | None = None) -> Preset:
     """Собрать пресет из тела и уровней переопределения.
 
     `levels` — последовательность `(level, [(path, value, origin), ...])` в
     порядке возрастания силы. Порядок задаёт вызывающий, а не сортировка внутри:
     он же отвечает за то, откуда взялись строки.
+
+    `language` — язык, к которому сворачиваются подписи (T092). Свёртка идёт
+    **после** наложения слоёв, а не до: переопределение партнёра тоже бывает
+    многоязычным, и свёрнутое раньше времени тело потеряло бы его языки.
     """
     result = copy.deepcopy(to_jsonable(body))
     origin: dict[str, Origin] = {}
@@ -168,5 +272,5 @@ def build_preset(body: dict[str, Any], *, base: Origin = FILE_ORIGIN, levels=())
             for known in [k for k in origin if k.startswith(path + ".")]:
                 del origin[known]
             origin[path] = where
-    return Preset(result, base=base, origin=origin)
+    return Preset(localize(result, language), base=base, origin=origin)
 

@@ -23,6 +23,7 @@ from reports.reconcile import reconcile
 from reports.sheet import build_slice
 
 from .format import ledger_title, money
+from .labels import labeller
 from .views import find_period, month_title
 
 __all__ = ["period_export", "period_reconcile"]
@@ -245,6 +246,12 @@ def period_export(request, period_id, kind):
     book, name = build(
         view, tenant_id=period.tenant_id, period=period.period,
         title=month_title(period.period), ledger_title=ledger_title,
+        # Колонки файла названы на языке страницы — тем же способом, что на
+        # экране (T092): выгрузка обязана читаться так же, как то, из чего её
+        # сделали.
+        component_title=labeller(
+            period.tenant_id, period.tenant.country_code, period.period
+        ),
     )
 
     response = HttpResponse(

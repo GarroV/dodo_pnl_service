@@ -375,7 +375,10 @@ def compute(tenant_id: UUID, period: date, reporter=None):
         raise PayrunRefused(_("партнёр недоступен"))
 
     reporter.say(_("Собираем табели и условия найма"))
-    rules = select_rules(tenant_id, tenant.country_code, period)
+    # Язык подписей — тот, на котором написаны правила, а не язык страницы
+    # (T092): подпись компонента замерзает в ведомости, и она должна быть
+    # свойством правил, а не человека, нажавшего «посчитать».
+    rules = select_rules(tenant_id, tenant.country_code, period, language="")
     cases = collect_cases(tenant_id, period)
     check_schemes(cases, rules.base)
     check_measures(cases, rules)

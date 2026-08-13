@@ -143,11 +143,14 @@ def test_manual_correction_has_an_author_and_a_reason(conn):
 
 
 def test_nothing_a_visitor_sees_is_written_in_russian(conn):
-    """Демо всегда англоязычное — включая подписи, приехавшие из правил.
+    """Демо всегда англоязычное — во всём, что лежит в базе строкой.
 
-    Подпись компонента попадает в ведомость в момент расчёта: русское слово
-    здесь означало бы, что демо считали по правилам без английских
-    переопределений, и увидели бы это только глазами на показе.
+    Подписи компонентов выплаты сюда **не входят намеренно** (T092). В
+    `pay_components.title` лежит подпись, замороженная расчётом на языке правил;
+    посетителю она не показывается — колонка называется по правилам на языке
+    страницы. Проверять здесь русское слово значило бы требовать от записи в
+    базе того, чем она не является, и это требование однажды починили бы, сломав
+    объяснение закрытого месяца. Что видит посетитель, проверяет тест ниже.
     """
     seen: list[str] = []
     for sql in (
@@ -156,7 +159,6 @@ def test_nothing_a_visitor_sees_is_written_in_russian(conn):
         "select title from units",
         "select title from employee_groups",
         "select title from roles",
-        "select distinct title from pay_components",
         "select first_name from employees",
         "select last_name from employees",
         "select correction_reason from timesheets where correction_reason is not null",
@@ -165,6 +167,31 @@ def test_nothing_a_visitor_sees_is_written_in_russian(conn):
 
     russian = sorted({text for text in seen if CYRILLIC.search(text)})
     assert not russian, f"по-русски в демо: {russian}"
+
+
+def test_the_columns_a_visitor_sees_are_english(demo_db):
+    """Колонки ведомости демо названы по-английски — тем же путём, что у партнёра.
+
+    Спрашивается ровно то, что подставит страница: подписи компонентов на языке
+    демо (`UI_LANGUAGE=en`). До T092 демо держало свой список английских подписей
+    и выглядело англоязычным даже тогда, когда продукт показывал колонки
+    по-русски. Список убран, и эта проверка — то, что стоит на его месте.
+    """
+    result = report(demo_db, """
+import json
+from datetime import date
+from django.utils import translation
+from core.models import Tenant
+from web.labels import component_titles
+t = Tenant.objects.get(code="demo")
+with translation.override("en"):
+    titles = component_titles(t.id, t.country_code, date(2026, 6, 1))
+print(json.dumps(titles, ensure_ascii=False))
+""")
+    assert result, "подписей компонентов нет вовсе — колонки останутся без названий"
+    russian = sorted(v for v in result.values() if CYRILLIC.search(v))
+    assert not russian, f"колонки демо по-русски: {russian}"
+    assert result.get("hours.regular") == "Worked hours", result.get("hours.regular")
 
 
 # --- отчёты, ради которых стенд и наполняли ------------------------------------

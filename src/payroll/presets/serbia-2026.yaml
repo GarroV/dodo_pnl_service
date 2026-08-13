@@ -4,6 +4,10 @@
 
 preset: serbia-2026
 country: RS
+# Язык, на котором написан пресет: к нему откатываются подписи, у которых
+# нужного языка нет (T092). Объявлен явно — иначе страна, написанная сразу
+# по-сербски, молча откатывалась бы к русскому.
+language: ru
 currency: RSD
 valid_from: 2026-01-01
 
@@ -29,18 +33,45 @@ rates:
 # counts_as_worked — участвует ли в пропорции топли оброка
 # insured — входит ли в базу для взносов
 hour_types:
-  regular:   { title: "Отработанные",  pay_percent: 1.00, counts_as_worked: true,  insured: true }
-  holiday:   { title: "Праздничные",   pay_percent: 1.10, counts_as_worked: false, insured: true }
-  vacation:  { title: "Отпуск",        pay_percent: 1.00, counts_as_worked: false, insured: true }
-  sick:      { title: "Больничный",    pay_percent: 0.65, counts_as_worked: false, insured: true }
+  regular:
+    title: { ru: "Отработанные", en: "Worked hours", sr-latn: "Radni sati" }
+    pay_percent: 1.00
+    counts_as_worked: true
+    insured: true
+  holiday:
+    title: { ru: "Праздничные", en: "Public holiday", sr-latn: "Praznični sati" }
+    pay_percent: 1.10
+    counts_as_worked: false
+    insured: true
+  vacation:
+    title: { ru: "Отпуск", en: "Annual leave", sr-latn: "Godišnji odmor" }
+    pay_percent: 1.00
+    counts_as_worked: false
+    insured: true
+  sick:
+    title: { ru: "Больничный", en: "Sick leave", sr-latn: "Bolovanje" }
+    pay_percent: 0.65
+    counts_as_worked: false
+    insured: true
   # заготовки, в июне не встречались — уточнить у бухгалтера
-  night:     { title: "Ночные",        pay_percent: 1.26, counts_as_worked: true,  insured: true, status: unverified }
-  overtime:  { title: "Переработка",   pay_percent: 1.26, counts_as_worked: true,  insured: true, status: unverified }
+  night:
+    title: { ru: "Ночные", en: "Night hours", sr-latn: "Noćni rad" }
+    pay_percent: 1.26
+    counts_as_worked: true
+    insured: true
+    status: unverified
+  overtime:
+    title: { ru: "Переработка", en: "Overtime", sr-latn: "Prekovremeni rad" }
+    pay_percent: 1.26
+    counts_as_worked: true
+    insured: true
+    status: unverified
 
 # --- Надбавки ---
 allowances:
   meal_and_vacation_bonus:
-    title: "Топли оброк и регрес"   # компенсация питания + отпускное пособие
+    # компенсация питания + отпускное пособие
+    title: { ru: "Топли оброк и регрес", en: "Meal and vacation allowance", sr-latn: "Topli obrok i regres" }
     amount_per_norm: 1500.00
     prorate_by: worked_days         # за рабочий ДЕНЬ, не за час
     ledger: official
@@ -54,12 +85,21 @@ allowances:
 # Если начисление за час оказалось ниже гарантированного уровня, доплачиваем разницу.
 # В таблице это столбец "korekcija do minimalca", вносится вручную.
 minimum_guarantee:
+  # Подпись обязана быть здесь, а не в движке: это колонка ведомости, и
+  # переводится она вместе с остальными правилами (T092).
+  title: { ru: "Доплата до минимума", en: "Minimum wage top-up", sr-latn: "Korekcija do minimalca" }
   enabled: true
   base: min_hourly_rate         # ВАРИАНТ 1: доводим до минималки страны
   # base: personal_rate         # ВАРИАНТ 2: доводим до личной ставки сотрудника
   # Различить по данным июня нельзя: единственный случай пришелся на сотрудника
   # с коэффициентом 1.0, где оба варианта дают одно число. Вопрос бухгалтеру.
   applies_to: [sick]            # какие типы часов вызывают доплату — уточнить
+
+# --- Правка руками ---
+# Не правило расчёта, а ввод бухгалтера. В правилах живёт только подпись — по
+# той же причине, что у доплаты до минимума: это колонка ведомости.
+manual_correction:
+  title: { ru: "Ручная корректировка", en: "Manual correction", sr-latn: "Ručna korekcija" }
 
 # --- Чем меряется работа (D032, ответ владельца на Q011) ---
 # У большинства работа меряется часами: их вводят в табель, и из них движок
@@ -76,12 +116,12 @@ minimum_guarantee:
 #   false — саму сумму к начислению. Ставка не применяется вовсе.
 work_measures:
   hours:
-    title: "По часам"
+    title: { ru: "По часам", en: "By hours", sr-latn: "Po satima" }
   deliveries:
-    title: "Доставки"
+    title: { ru: "Доставки", en: "Deliveries", sr-latn: "Dostave" }
     pay_per_unit: true
   fixed_amount:
-    title: "Фиксированная выплата"
+    title: { ru: "Фиксированная выплата", en: "Fixed payout", sr-latn: "Fiksna isplata" }
     pay_per_unit: false
 
 # --- Схемы расчета ---
@@ -89,7 +129,7 @@ work_measures:
 schemes:
 
   standard:
-    title: "Полный расчет"
+    title: { ru: "Полный расчет", en: "Full calculation", sr-latn: "Puni obračun" }
     hours_per_day: 8
     worked_hours_source: input
     gross_up:
@@ -100,7 +140,7 @@ schemes:
       # взносы = бруто × employer_contributions + (бруто − нето)
 
   half_time:
-    title: "Полставки"
+    title: { ru: "Полставки", en: "Half time", sr-latn: "Pola radnog vremena" }
     hours_per_day: 4
     worked_hours_source: half_of_norm
     # ВНИМАНИЕ: в этом листе таблицы обед считают по часам, а в листе
@@ -114,7 +154,7 @@ schemes:
       method: employer_plus_withheld
 
   half_time_min_base:
-    title: "Полставки со взносами от минимальной базы"
+    title: { ru: "Полставки со взносами от минимальной базы", en: "Half time, contributions from minimum base", sr-latn: "Pola radnog vremena, doprinosi od minimalne osnovice" }
     hours_per_day: 4
     worked_hours_source: input
     gross_up:
@@ -129,7 +169,7 @@ schemes:
       # взносы = минбаза × доля × combined_contributions
 
   temporary:
-    title: "Временные работы"
+    title: { ru: "Временные работы", en: "Temporary contract", sr-latn: "Privremeni i povremeni poslovi" }
     hours_per_day: 8
     worked_hours_source: input
     allowances: []                # топли оброк не платится
@@ -141,7 +181,7 @@ schemes:
       rate_key: temporary_contract
 
   direct:
-    title: "Прямая выплата без пересчета"
+    title: { ru: "Прямая выплата без пересчета", en: "Direct payout, no gross-up", sr-latn: "Direktna isplata bez preračuna" }
     hours_per_day: 8
     worked_hours_source: input
     allowances: []                # топли оброк — часть официальной зарплаты
@@ -172,12 +212,37 @@ schemes:
 # переопределением по пути `groups.couriers.work_measure` с датой начала
 # действия.
 groups:
-  office:      { title: "Офис",              scheme: standard, ledger: official, pnl_line: "Расходы на управление" }
-  management:  { title: "Управляющие",       scheme: standard, ledger: official, pnl_line: "LC / GMC" }
-  kitchen:     { title: "Кухня и касса",     scheme: standard, ledger: supplementary,  pnl_line: "LC / КС" }
-  doughmaker:  { title: "Тестомейкер",       scheme: standard, ledger: supplementary,  pnl_line: "LC / Тестомейкер" }
-  couriers:    { title: "Курьеры",           scheme: direct,   ledger: internal, pnl_line: "LC / DC", work_measure: hours }
-  temporary:   { title: "Временные работы",  scheme: temporary, ledger: official, pnl_line: "LC / КС" }
+  office:
+    title: { ru: "Офис", en: "Office", sr-latn: "Kancelarija" }
+    scheme: standard
+    ledger: official
+    pnl_line: "Расходы на управление"
+  management:
+    title: { ru: "Управляющие", en: "Unit managers", sr-latn: "Menadžeri objekata" }
+    scheme: standard
+    ledger: official
+    pnl_line: "LC / GMC"
+  kitchen:
+    title: { ru: "Кухня и касса", en: "Kitchen and counter", sr-latn: "Kuhinja i kasa" }
+    scheme: standard
+    ledger: supplementary
+    pnl_line: "LC / КС"
+  doughmaker:
+    title: { ru: "Тестомейкер", en: "Dough maker", sr-latn: "Majstor za testo" }
+    scheme: standard
+    ledger: supplementary
+    pnl_line: "LC / Тестомейкер"
+  couriers:
+    title: { ru: "Курьеры", en: "Couriers", sr-latn: "Kuriri" }
+    scheme: direct
+    ledger: internal
+    pnl_line: "LC / DC"
+    work_measure: hours
+  temporary:
+    title: { ru: "Временные работы", en: "Temporary contracts", sr-latn: "Privremeni poslovi" }
+    scheme: temporary
+    ledger: official
+    pnl_line: "LC / КС"
 
 # --- Производственный календарь ---
 calendar:
