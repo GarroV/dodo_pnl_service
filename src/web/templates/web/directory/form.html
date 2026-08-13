@@ -16,6 +16,17 @@
 {% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
 {% endif %}
 
+{% comment %}
+Сообщение о том, что случилось после сохранения (T111): правка правила
+разнесения запускает пересчёт, и его итог — включая пропущенные закрытые
+месяцы — человек обязан прочитать словами. Молчаливый пропуск читается как
+«пересчитано».
+{% endcomment %}
+{% if notice %}
+{% translate "Сохранено." as saved %}
+{% notice "ok" title=saved %}{{ notice }}{% endnotice %}
+{% endif %}
+
 <form class="card" method="post">{% csrf_token %}
   {% include "web/directory/fields.html" with fields=fields %}
   <button type="submit" class="primary">{{ submit_label }}</button>

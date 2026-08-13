@@ -79,24 +79,43 @@ def _save(request, who) -> str:
     готовой фразой, — фразу в адресе не перевести и подставить в неё можно что
     угодно.
     """
+    entered = parse_expense(request, who)
+    entry_key = cash.parse_entry_key(request.POST.get("entry_key", ""))
+
+    recorded = cash.record_expense(who, entry_key=entry_key, **entered)
+    landed = reverse("expense-new") + f"?saved={recorded.landing.period:%Y-%m}"
+    if recorded.landing.moved_from is not None:
+        landed += f"&from={recorded.landing.moved_from:%Y-%m}"
+    if entered["unit_id"] is None:
+        # Расход на всю сеть разносится сразу, а не ждёт кнопки: человек,
+        # внёсший аренду офиса, должен увидеть ответ «разошлось на три точки»
+        # в тот же миг, а не узнать через месяц, что сумма висела нераспределённой.
+        state, spread = cash.spread_now(recorded.fact_id)
+        landed += f"&{state}={spread}"
+    return landed
+
+
+def parse_expense(request, who) -> dict:
+    """Разобрать форму расхода — одинаково для внесения и для правки.
+
+    Одной функцией, а не двумя похожими: правила «статья обязана действовать на
+    дату», «ноль не вносится» и «точку отвергает база» одни и те же, а две копии
+    разъехались бы на первой правке — и разъехались бы молча, потому что каждая
+    по отдельности осталась бы верной.
+    """
     on = _date(request, "date", _("Дата расхода"), required=True)
     amount = _number(request, "amount", _("Сумма"))
     if amount == 0:
         raise BadInput(_("«%(label)s»: расход на ноль не вносится.") % {"label": _("Сумма")})
 
-    item = _item(request, who, on)
-    ledger = _ledger(request, who)
-    note = _text(request, "note", _("Комментарий"), required=False)
-    entry_key = cash.parse_entry_key(request.POST.get("entry_key", ""))
-
-    recorded = cash.record_expense(
-        who, on=on, amount=amount, item=item, unit_id=_unit(request, who),
-        ledger=ledger, note=note, entry_key=entry_key,
-    )
-    landed = reverse("expense-new") + f"?saved={recorded.landing.period:%Y-%m}"
-    if recorded.landing.moved_from is not None:
-        landed += f"&from={recorded.landing.moved_from:%Y-%m}"
-    return landed
+    return {
+        "on": on,
+        "amount": amount,
+        "item": _item(request, who, on),
+        "unit_id": _unit(request, who),
+        "ledger": _ledger(request, who),
+        "note": _text(request, "note", _("Комментарий"), required=False),
+    }
 
 
 def _item(request, who, on: date):
@@ -141,6 +160,10 @@ def _unit(request, who):
     как есть: чужую точку отвергнет политика, а не эта функция (D014).
     """
     raw = (request.POST.get("unit") or "").strip()
+    if raw == cash.NETWORK_UNIT:
+        # Расход юрлица целиком: аренда офиса, реклама на сеть. Точки у него нет
+        # не по недосмотру — её выбирает правило разнесения (T111).
+        return None
     if not raw and len(who.unit_ids) == 1:
         return who.unit_ids[0]
     if not raw:
@@ -175,43 +198,53 @@ def _ledger(request, who) -> str:
 
 
 def _context(request, who, entered, *, error: str) -> dict:
-    today = date.today()
-    on = _entered_date(entered) or today
     return {
         "error": error,
         "notice": _notice(request),
         "entry_key": cash.new_entry_key(),
-        "fields": [
-            {"kind": "date", "name": "date", "label": _("Дата расхода"), "required": True,
-             "value": entered.get("date") or today.isoformat(),
-             "help": _("Когда деньги вышли из кассы. Месяц уже закрыт — расход "
-                       "ляжет в текущий, а эта дата останется при нём.")},
-            {"kind": "number", "name": "amount", "label": _("Сумма"), "required": True,
-             "value": entered.get("amount", "")},
-            _select(
-                "item", _("Статья расхода"),
-                [
-                    (item.id, cash.item_title(item.titles))
-                    for item in cash.items_on(who.tenant_id, on)
-                ],
-                entered.get("item"), required=True,
-                help=_("Статьи ведёт администратор сети. Нужной нет — попросите завести: "
-                       "выдумывать название на месте нельзя, иначе одна трата "
-                       "назовётся по-разному."),
-            ),
-            *_unit_field(who, entered),
-            _select(
-                "ledger", _("Регистр учёта"),
-                [(code, ledger_title(code)) for code in LEDGER_CODES
-                 if code in who.visible_ledgers],
-                entered.get("ledger") or "official", required=True,
-            ),
-            {"kind": "text", "name": "note", "label": _("Комментарий"),
-             "value": entered.get("note", ""),
-             "help": _("Зачем потратили. Через месяц это единственное, по чему "
-                       "строку узнают.")},
-        ],
+        "fields": expense_fields(who, entered),
     }
+
+
+def expense_fields(who, entered) -> list[dict]:
+    """Поля формы расхода — одни и те же на внесении и на правке (T110).
+
+    Список статей берётся на дату расхода: статья, заведённая в августе, не
+    объясняет июньскую трату, и предлагать её было бы обещанием, которое
+    отвергнет разбор ввода.
+    """
+    today = date.today()
+    on = _entered_date(entered) or today
+    return [
+        {"kind": "date", "name": "date", "label": _("Дата расхода"), "required": True,
+         "value": entered.get("date") or today.isoformat(),
+         "help": _("Когда деньги вышли из кассы. Месяц уже закрыт — расход "
+                   "ляжет в текущий, а эта дата останется при нём.")},
+        {"kind": "number", "name": "amount", "label": _("Сумма"), "required": True,
+         "value": entered.get("amount", "")},
+        _select(
+            "item", _("Статья расхода"),
+            [
+                (item.id, cash.item_title(item.titles))
+                for item in cash.items_on(who.tenant_id, on)
+            ],
+            entered.get("item"), required=True,
+            help=_("Статьи ведёт администратор сети. Нужной нет — попросите завести: "
+                   "выдумывать название на месте нельзя, иначе одна трата "
+                   "назовётся по-разному."),
+        ),
+        *_unit_field(who, entered),
+        _select(
+            "ledger", _("Регистр учёта"),
+            [(code, ledger_title(code)) for code in LEDGER_CODES
+             if code in who.visible_ledgers],
+            entered.get("ledger") or "official", required=True,
+        ),
+        {"kind": "text", "name": "note", "label": _("Комментарий"),
+         "value": entered.get("note", ""),
+         "help": _("Зачем потратили. Через месяц это единственное, по чему "
+                   "строку узнают.")},
+    ]
 
 
 def _entered_date(entered) -> date | None:
@@ -224,24 +257,26 @@ def _entered_date(entered) -> date | None:
 
 
 def _unit_field(who, entered) -> list[dict]:
-    """Точка: выбор — тому, у кого их несколько; надпись — тому, у кого одна.
+    """Точка: свои точки плюс «вся сеть».
 
-    Надпись, а не поле с одним вариантом: поле приглашает выбрать, а выбирать
-    нечего. И не скрытое поле — скрытое выглядело бы как защита, которой оно не
-    является: точку всё равно отвергает база.
+    Список — удобство, а не защита: точку всё равно отвергает база (D014).
+    Вариант «вся сеть» есть у всех, и это не недосмотр: расход без точки —
+    законное состояние схемы (`pending`), его видит весь тенант, и запретить его
+    роли значило бы завести правило доступа в разметке, где его никто не
+    проверит. Разнести такой расход по чужим точкам роль всё равно не сможет —
+    откажет политика, и человеку об этом скажут словами (T111).
     """
-    if len(who.unit_ids) == 1:
-        code = Unit.objects.filter(pk=who.unit_ids[0]).values_list("code", flat=True).first()
-        return [{
-            "kind": "note", "name": "unit", "label": _("Точка"), "value": code or "",
-            "help": _("Ваша точка. Расход пойдёт на неё."),
-        }]
     units = Unit.objects.order_by("code")
     if who.unit_ids:
         units = units.filter(pk__in=who.unit_ids)
+    rows = [*units.values_list("id", "code"), (cash.NETWORK_UNIT, _("Вся сеть"))]
+    # Тому, у кого точка одна, она же и подставляется: выбирать ему почти не из
+    # чего, а требовать выбор было бы лишним шагом.
+    chosen = entered.get("unit") or (who.unit_ids[0] if len(who.unit_ids) == 1 else "")
     return [_select(
-        "unit", _("Точка"), units.values_list("id", "code"),
-        entered.get("unit"), required=True,
+        "unit", _("Точка"), rows, chosen, required=True,
+        help=_("«Вся сеть» — расход юрлица целиком (аренда офиса, реклама): "
+               "он разойдётся по точкам правилом статьи."),
     )]
 
 
@@ -257,11 +292,40 @@ def _notice(request) -> str:
         return ""
     moved = _month_or_none(request.GET.get("from"))
     if moved is None:
-        return _("Расход записан в месяц %(month)s.") % {"month": month_title(saved)}
+        landed = _("Расход записан в месяц %(month)s.") % {"month": month_title(saved)}
+        return landed + _spread(request)
     return _(
         "Месяц %(closed)s закрыт, поэтому расход записан в %(month)s — "
         "с исходной датой и не сдвинув закрытый месяц."
-    ) % {"closed": month_title(moved), "month": month_title(saved)}
+    ) % {"closed": month_title(moved), "month": month_title(saved)} + _spread(request)
+
+
+def _spread(request) -> str:
+    """Что стало с расходом на всю сеть: разошёлся, ждёт правила или не нам разносить.
+
+    Три ответа, и ни один не молчит. «Ждёт» — самый важный: сумма без точки не
+    попадает в разрез по точкам, и человек обязан узнать об этом сразу, а не при
+    сборке P&L, когда сходиться уже поздно.
+    """
+    from django.urls import reverse
+
+    waiting = _(
+        " Точки у расхода нет, поэтому он ждёт разнесения — и виден в списке "
+        "нераспределённых: %(url)s"
+    ) % {"url": reverse("expenses-unallocated")}
+
+    if request.GET.get("split"):
+        return _(
+            " Расход разнесён по точкам правилом статьи: строк — %(count)s."
+        ) % {"count": request.GET["split"]}
+    if "refused" in request.GET:
+        return _(
+            " Разнести его по точкам может тот, кто ведёт все точки: строки "
+            "разнесения ложатся и на чужие точки."
+        ) + waiting
+    if "waiting" in request.GET:
+        return _(" Правила разнесения у статьи нет.") + waiting
+    return ""
 
 
 def _month_or_none(raw: str | None) -> date | None:

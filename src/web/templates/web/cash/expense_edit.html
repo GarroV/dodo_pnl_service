@@ -1,0 +1,49 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Карточка расхода: правка и удаление (T110).
+
+Форма — та же, что у внесения (`web/directory/fields.html` и те же поля из
+`cash_views.expense_fields`): одно и то же поле не должно вести себя по-разному
+на соседних экранах.
+
+**Про закрытый месяц сказано до правки, а не после.** Человек, открывший строку
+закрытого месяца, обязан узнать, что его правка ляжет в текущий месяц сторно и
+новой строкой, — до того как наберёт новую сумму, а не в виде сюрприза после
+сохранения.
+
+**Удаление — отдельной формой и только POST.** Это запись, а не переход: по
+ссылке из истории браузера или предзагрузчиком она случиться не должна.
+
+**У заменённой строки правки нет вовсе.** Не спрятанная кнопка, а сказанная
+причина: править надо ту версию, которая действует.
+{% endcomment %}
+{% block title %}{% translate "Расход" %}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К расходам" %}</a></p>
+<h1>{% translate "Расход" %}</h1>
+
+{% if error %}
+{% translate "Не записано." as not_saved %}
+{% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
+{% endif %}
+
+{% if closed_notice %}
+{% translate "Месяц закрыт." as closed %}
+{% notice "empty" title=closed %}{{ closed_notice }}{% endnotice %}
+{% endif %}
+
+{% if editable %}
+<form class="card" method="post">{% csrf_token %}
+  {% include "web/directory/fields.html" with fields=fields %}
+  <button type="submit" class="primary">{% translate "Сохранить" %}</button>
+</form>
+
+<form class="card" method="post" action="{{ delete_url }}">{% csrf_token %}
+  <p class="note">{% translate "Удалённый расход не стирается: строка останется в списке помеченной, а из итога выйдет." %}</p>
+  <button type="submit">{% translate "Удалить расход" %}</button>
+</form>
+{% else %}
+{% translate "Строка больше не действует." as gone %}
+{% notice "empty" title=gone %}{% translate "Эта версия записи заменена: правьте ту, которая действует сейчас." %}{% endnotice %}
+{% endif %}
+{% endblock %}

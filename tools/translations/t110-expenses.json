@@ -1,0 +1,118 @@
+{
+  "Месяц закрылся, пока расход удаляли. Откройте список заново.": {
+    "en": "The month was closed while the expense was being deleted. Reopen the list and try again.",
+    "sr": "Mesec je zatvoren dok je trošak brisan. Otvorite listu ponovo."
+  },
+  "Вас ещё не завели ни к одному партнёру, поэтому расходов у вас нет. Попросите администратора сети добавить вас.": {
+    "en": "You have not been added to any partner yet, so you have no expenses. Ask the network administrator to add you.",
+    "sr": "Još niste dodati ni jednom partneru, pa nemate troškove. Zamolite administratora mreže da vas doda."
+  },
+  "Конец периода раньше начала: поправьте даты.": {
+    "en": "The end of the period is before its start: fix the dates.",
+    "sr": "Kraj perioda je pre početka: ispravite datume."
+  },
+  "С даты": {
+    "en": "From date",
+    "sr": "Od datuma"
+  },
+  "По дату": {
+    "en": "To date",
+    "sr": "Do datuma"
+  },
+  "Вся сеть": {
+    "en": "Entire network",
+    "sr": "Cela mreža"
+  },
+  "удалён": {
+    "en": "Removed",
+    "sr": "Uklonjen"
+  },
+  "заменён": {
+    "en": "Replaced",
+    "sr": "Zamenjen"
+  },
+  "сторно": {
+    "en": "Storno",
+    "sr": "Storno"
+  },
+  "исправление": {
+    "en": "Correction",
+    "sr": "Ispravka"
+  },
+  "Все точки": {
+    "en": "All units",
+    "sr": "Svi objekti"
+  },
+  "Все статьи": {
+    "en": "All items",
+    "sr": "Sve stavke"
+  },
+  "Месяц %(closed)s закрыт: строку в нём не изменить. Правка ляжет в %(month)s двумя строками — сторно этой записи и новая, — а закрытый месяц не сдвинется ни на копейку.": {
+    "en": "Month %(closed)s is closed: its row cannot be changed there. The edit will land in %(month)s as two rows — a storno of this record and a new one — and the closed month will not move by a cent.",
+    "sr": "Mesec %(closed)s je zatvoren: red u njemu se ne može izmeniti. Izmena upada u %(month)s kao dva reda — storno ovog zapisa i novi — a zatvoreni mesec se neće pomeriti ni za paru."
+  },
+  "Эта строка уже заменена: правьте ту, что действует.": {
+    "en": "This row has already been replaced: edit the one in effect.",
+    "sr": "Ovaj red je već zamenjen: uredite onaj koji je važeći."
+  },
+  "Расход": {
+    "en": "Expense",
+    "sr": "Trošak"
+  },
+  "← К расходам": {
+    "en": "← To the expenses",
+    "sr": "← Na troškove"
+  },
+  "Месяц закрыт.": {
+    "en": "Month closed.",
+    "sr": "Mesec zatvoren."
+  },
+  "Удалённый расход не стирается: строка останется в списке помеченной, а из итога выйдет.": {
+    "en": "A deleted expense is not wiped: the row stays in the list, marked, and drops out of the total.",
+    "sr": "Obrisan trošak nije izbrisan bez traga: red ostaje u listi, obeležen, i izlazi iz ukupnog iznosa."
+  },
+  "Удалить расход": {
+    "en": "Delete expense",
+    "sr": "Obriši trošak"
+  },
+  "Строка больше не действует.": {
+    "en": "The row is no longer in effect.",
+    "sr": "Red više nije važeći."
+  },
+  "Эта версия записи заменена: правьте ту, которая действует сейчас.": {
+    "en": "This version of the record has been replaced: edit the one in effect now.",
+    "sr": "Ova verzija zapisa je zamenjena: uredite onu koja je trenutno važeća."
+  },
+  "Расходы": {
+    "en": "Expenses",
+    "sr": "Troškovi"
+  },
+  "Наличные из кассы: что потратили и на что. Итог внизу — сумма показанных действующих строк, её и сверяют с кассой.": {
+    "en": "Cash from the till: what was spent and on what. The total below is the sum of the active rows shown — that is what gets checked against the till.",
+    "sr": "Gotovina iz kase: šta je potrošeno i na šta. Zbir ispod je zbir prikazanih važećih redova — baš se on poredi sa kasom."
+  },
+  "Не показано.": {
+    "en": "Not shown.",
+    "sr": "Nije prikazano."
+  },
+  "Дата": {
+    "en": "Date",
+    "sr": "Datum"
+  },
+  "Статья": {
+    "en": "Item",
+    "sr": "Stavka"
+  },
+  "учтён в %(month)s": {
+    "en": "accounted for %(month)s",
+    "sr": "obračunato za %(month)s"
+  },
+  "Расходов нет.": {
+    "en": "No expenses.",
+    "sr": "Nema troškova."
+  },
+  "За выбранный период и по выбранному отбору расходов не найдено.": {
+    "en": "No expenses found for the selected period and filters.",
+    "sr": "Za izabrani period i izabrane filtere nije pronađen nijedan trošak."
+  }
+}

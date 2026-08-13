@@ -208,13 +208,19 @@ def read_po(path: Path) -> list[dict]:
             if line.startswith(name):
                 field = name
                 line = line[len(name):].strip()
-                if line.startswith("msgstr["):
+                # `msgstr[0]`, `msgstr[1]` — формы множественного числа. Номер
+                # формы срезается ЗДЕСЬ, после имени поля: до этой правки
+                # проверка искала `msgstr[` уже в остатке строки (`[0] "…"`),
+                # не находила его и выбрасывала текст перевода. Формы
+                # множественного числа получались пустыми **всегда**,
+                # независимо от содержимого каталога, — то есть проверка на
+                # пустой перевод их не проверяла, а проверка «переведено ли
+                # всё» краснела на корректном переводе (issue #101). Первый
+                # `msgid_plural` появился только в T110, поэтому дефект дожил
+                # до сих пор незамеченным.
+                if line.startswith("["):
                     line = line.split("]", 1)[1].strip()
                 break
-        else:
-            if line.startswith("msgstr["):
-                field = "msgstr"
-                line = line.split("]", 1)[1].strip()
         if field and line.startswith('"'):
             current[field].append(unescape(line))
     if current["msgid"] or current["msgstr"]:
@@ -234,6 +240,31 @@ def catalog(language: str) -> list[dict]:
     assert path.exists(), f"нет каталога {path.relative_to(ROOT)}"
     # Первая запись с пустым msgid — служебная шапка, а не строка интерфейса.
     return [item for item in read_po(path) if item["msgid"]]
+
+
+def test_the_catalog_reader_understands_plural_forms(tmp_path):
+    """Проверка самой проверки: формы множественного числа обязаны читаться.
+
+    Разбор `msgstr[0]` был сломан так, что перевод формы **всегда** получался
+    пустым (issue #101). Из-за этого проверка «нет пустых переводов» на таких
+    строках не проверяла ничего, а проверка «каталог покрывает код» краснела на
+    правильно переведённом каталоге. Молчаливо неверная проверка хуже
+    отсутствующей: она красит зелёным то, чего не смотрела.
+    """
+    catalog_file = tmp_path / "django.po"
+    catalog_file.write_text(
+        'msgid "Итого по %(counter)s строке"\n'
+        'msgid_plural "Итого по %(counter)s строкам"\n'
+        'msgstr[0] "Total for %(counter)s row"\n'
+        'msgstr[1] "Total for %(counter)s rows"\n',
+        encoding="utf-8",
+    )
+    entries = read_po(catalog_file)
+    assert len(entries) == 1, entries
+    assert entries[0]["msgid"] == "Итого по %(counter)s строке"
+    assert "Total for %(counter)s row" in entries[0]["msgstr"], (
+        "перевод формы множественного числа потерян при разборе каталога"
+    )
 
 
 @pytest.mark.parametrize("language", sorted(TRANSLATED))
