@@ -149,8 +149,16 @@ await goto(APP + "/expenses/new/");
 check("в шапке есть путь к внесению расхода",
   await evalIn(`!!document.querySelector('nav a[href="/expenses/new/"]')`));
 check("управляющему показана его точка", (await text()).includes("NS1"));
-check("выбора точки управляющему не предлагают",
-  !(await evalIn(`!!document.querySelector('select[name=unit]')`)));
+// С T111 у поля точки есть второй вариант — «вся сеть» (расход юрлица
+// целиком), поэтому у управляющего это список, а не надпись. Чужих точек в
+// нём по-прежнему нет, и это здесь и проверяется.
+check("управляющему предлагают только его точку и всю сеть", await evalIn(`
+  (() => {
+    const options = [...document.querySelectorAll('[name=unit] option')]
+      .map(o => o.textContent.trim());
+    return options.length === 2 && options.includes("NS1") && !options.includes("BG1");
+  })()
+`));
 check("внутренний регистр управляющему не предлагают", !(await evalIn(`
   [...document.querySelectorAll('[name=ledger] option')].some(o => o.value === "internal")
 `)));

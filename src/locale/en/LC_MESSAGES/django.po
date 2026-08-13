@@ -2323,3 +2323,262 @@ msgid ""
 "Схему расчёта и регистр группы это не касается: версий по датам у них нет\n"
 "  вовсе, и такая правка задним числом по-прежнему отклоняется."
 msgstr "This does not apply to a group's calculation scheme and ledger: they have no dated versions at all, so a backdated edit of them is still rejected."
+
+msgid "Поровну между точками"
+msgstr "Equally between units"
+
+msgid "Пропорционально выручке"
+msgstr "Proportionally to revenue"
+
+msgid "На одну точку"
+msgstr "To one unit"
+
+msgid "Спрашивать каждый раз"
+msgstr "Ask every time"
+
+msgid "Разнесение"
+msgstr "Allocation"
+
+#, python-format
+msgid "Для разнесения «%(method)s» нужно выбрать точку."
+msgstr "For the \"%(method)s\" allocation, a unit must be chosen."
+
+msgid "правило разнесения статьи расходов"
+msgstr "expense item's allocation rule"
+
+#, python-format
+msgid ""
+"Правило уже действует с %(from)s: новая версия не может начинаться раньше. "
+"Возьмите дату позже."
+msgstr "The rule is already in effect from %(from)s: a new version cannot start earlier. Pick a later date."
+
+#, python-format
+msgid ""
+"Правило действует с %(from)s: убрать его можно только более поздней датой."
+msgstr "The rule has been in effect since %(from)s: it can only be removed with a later date."
+
+msgid "Месяц закрылся, пока расход удаляли. Откройте список заново."
+msgstr "The month was closed while the expense was being deleted. Reopen the list and try again."
+
+msgid "Вся сеть"
+msgstr "Entire network"
+
+msgid ""
+"«Вся сеть» — расход юрлица целиком (аренда офиса, реклама): он разойдётся по "
+"точкам правилом статьи."
+msgstr "\"Entire network\" — an expense for the whole legal entity (office rent, advertising): it will be spread across units by the item's rule."
+
+#, python-format
+msgid ""
+" Точки у расхода нет, поэтому он ждёт разнесения — и виден в списке "
+"нераспределённых: %(url)s"
+msgstr " The expense has no unit, so it is waiting for allocation — and is visible in the unallocated list: %(url)s"
+
+#, python-format
+msgid " Расход разнесён по точкам правилом статьи: строк — %(count)s."
+msgstr " The expense was allocated across units by the item's rule: rows — %(count)s."
+
+msgid ""
+" Разнести его по точкам может тот, кто ведёт все точки: строки разнесения "
+"ложатся и на чужие точки."
+msgstr " Only someone who manages every unit can allocate it across units: allocation rows land on other people's units too."
+
+msgid " Правила разнесения у статьи нет."
+msgstr " The item has no allocation rule."
+
+msgid "Точка разнесения"
+msgstr "Allocation unit"
+
+msgid "Правило действует с"
+msgstr "Rule in effect from"
+
+msgid "Разнесение расхода без точки"
+msgstr "Allocation of an expense without a unit"
+
+msgid "Правила нет — расход будет ждать"
+msgstr "No rule — the expense will wait"
+
+msgid ""
+"Как разложить по точкам расход, внесённый на всю сеть (аренда офиса, "
+"реклама). Без правила он остаётся в списке нераспределённых и в разрез по "
+"точкам не попадает."
+msgstr "How to spread across units an expense entered for the entire network (office rent, advertising). Without a rule it stays in the unallocated list and never reaches the per-unit breakdown."
+
+msgid "Не выбрана"
+msgstr "Not chosen"
+
+msgid "Нужна только для разнесения на одну точку."
+msgstr "Needed only for allocation to one unit."
+
+msgid "Регистр учёта правила"
+msgstr "Rule's ledger"
+
+msgid ""
+"У одной статьи законно по правилу на регистр: одна и та же трата бывает и "
+"официальной, и из кассы."
+msgstr "One item may legitimately have a rule per ledger: the same expense can be both official and from the till."
+
+msgid ""
+"Смена правила — новая версия с этой даты, а не правка прежней: закрытые "
+"месяцы обязаны считаться тем правилом, которым были посчитаны."
+msgstr "Changing the rule is a new version from this date, not an edit of the old one: closed months must be calculated by the rule they were actually calculated with."
+
+msgid "Версии правила"
+msgstr "Rule versions"
+
+#, python-format
+msgid "%(method)s%(unit)s, %(ledger)s, с %(from)s%(to)s"
+msgstr "%(method)s%(unit)s, %(ledger)s, from %(from)s%(to)s"
+
+#, python-format
+msgid " по %(date)s"
+msgstr " to %(date)s"
+
+msgid "По ним видно, каким правилом посчитан закрытый месяц."
+msgstr "They show which rule was used to calculate a closed month."
+
+msgid ""
+"Вас ещё не завели ни к одному партнёру, поэтому расходов у вас нет. "
+"Попросите администратора сети добавить вас."
+msgstr "You have not been added to any partner yet, so you have no expenses. Ask the network administrator to add you."
+
+msgid "Конец периода раньше начала: поправьте даты."
+msgstr "The end of the period is before its start: fix the dates."
+
+msgid "С даты"
+msgstr "From date"
+
+msgid "По дату"
+msgstr "To date"
+
+msgid "удалён"
+msgstr "Removed"
+
+msgid "заменён"
+msgstr "Replaced"
+
+msgid "сторно"
+msgstr "Storno"
+
+msgid "исправление"
+msgstr "Correction"
+
+msgid "Все точки"
+msgstr "All units"
+
+msgid "Все статьи"
+msgstr "All items"
+
+msgid "Пересчёт прошёл: менять было нечего, ни одна строка не тронута."
+msgstr "Recalculation completed: there was nothing to change, not a single row was touched."
+
+#, python-format
+msgid "Пересчёт прошёл: строк изменено — %(count)s."
+msgstr "Recalculation completed: rows changed — %(count)s."
+
+#, python-format
+msgid ""
+"Закрытые месяцы не пересчитывались: %(months)s. Чтобы пересчитать их, месяц "
+"придётся открыть заново с причиной."
+msgstr "Closed months were not recalculated: %(months)s. To recalculate them, the month must be reopened with a reason."
+
+#, python-format
+msgid ""
+"Эти месяцы не пересчитаны: %(months)s — разносит расходы по точкам тот, кто "
+"ведёт все точки партнёра."
+msgstr "These months were not recalculated: %(months)s — expenses are allocated across units by whoever manages all of the partner's units."
+
+#, python-format
+msgid ""
+"Месяц %(closed)s закрыт: строку в нём не изменить. Правка ляжет в %(month)s "
+"двумя строками — сторно этой записи и новая, — а закрытый месяц не сдвинется "
+"ни на копейку."
+msgstr "Month %(closed)s is closed: its row cannot be changed there. The edit will land in %(month)s as two rows — a storno of this record and a new one — and the closed month will not move by a cent."
+
+msgid "Эта строка уже заменена: правьте ту, что действует."
+msgstr "This row has already been replaced: edit the one in effect."
+
+msgid "Расход"
+msgstr "Expense"
+
+msgid "← К расходам"
+msgstr "← To the expenses"
+
+msgid "Месяц закрыт."
+msgstr "Month closed."
+
+msgid ""
+"Удалённый расход не стирается: строка останется в списке помеченной, а из "
+"итога выйдет."
+msgstr "A deleted expense is not wiped: the row stays in the list, marked, and drops out of the total."
+
+msgid "Удалить расход"
+msgstr "Delete expense"
+
+msgid "Строка больше не действует."
+msgstr "The row is no longer in effect."
+
+msgid "Эта версия записи заменена: правьте ту, которая действует сейчас."
+msgstr "This version of the record has been replaced: edit the one in effect now."
+
+msgid "Расходы"
+msgstr "Expenses"
+
+msgid ""
+"Наличные из кассы: что потратили и на что. Итог внизу — сумма показанных "
+"действующих строк, её и сверяют с кассой."
+msgstr "Cash from the till: what was spent and on what. The total below is the sum of the active rows shown — that is what gets checked against the till."
+
+msgid "Не показано."
+msgstr "Not shown."
+
+msgid "Дата"
+msgstr "Date"
+
+msgid "Статья"
+msgstr "Item"
+
+#, python-format
+msgid "учтён в %(month)s"
+msgstr "accounted for %(month)s"
+
+#, python-format
+msgid "Итого по %(counter)s строке"
+msgid_plural "Итого по %(counter)s строкам"
+msgstr[0] "Total for %(counter)s row"
+msgstr[1] "Total for %(counter)s rows"
+
+msgid "Расходов нет."
+msgstr "No expenses."
+
+msgid "За выбранный период и по выбранному отбору расходов не найдено."
+msgstr "No expenses found for the selected period and filters."
+
+msgid "Нераспределённое"
+msgstr "Unallocated"
+
+msgid ""
+"Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по "
+"сети, но её нет ни на одной точке."
+msgstr "Expenses without a unit: they are waiting for an allocation rule. While they wait, the amount exists for the network but is on none of the units."
+
+msgid "Пересчёт разнесения."
+msgstr "Recalculation of the allocation."
+
+msgid "Разнести по правилам"
+msgstr "Allocate by the rules"
+
+msgid "Что это"
+msgstr "What this is"
+
+msgid "Итого ждёт разнесения"
+msgstr "Total waiting for allocation"
+
+msgid "Нераспределённого нет."
+msgstr "Nothing unallocated."
+
+msgid "Все расходы лежат на точках: закрывать месяц ничто не держит."
+msgstr "All expenses are sitting on units: nothing is holding up closing the month."
+
+msgid "Сохранено."
+msgstr "Saved."

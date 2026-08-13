@@ -38,11 +38,20 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from core.models import ExpenseItem, PnlItem
+from core.models import ExpenseItem, PnlItem, Unit
 
-from . import directory
+from . import allocation, cash, directory
 from .cash import item_title
-from .directory_views import BadInput, _choice, _date, _guard, _text
+from .directory_views import (
+    LEDGER_CODES,
+    BadInput,
+    _choice,
+    _date,
+    _guard,
+    _select,
+    _text,
+)
+from .format import ledger_title
 
 # Разбор ввода берётся у соседнего справочника целиком, а не переписывается
 # здесь: правила у всех шести экранов одни («поле обязательно», «дата пишется
@@ -207,15 +216,16 @@ def expense_item(request, item_id=None):
             item.code, item.titles, item.pnl_item_id = code, titles, pnl_item_id
             item.valid_from, item.valid_to = valid_from, valid_to
             item.save()
-            # Сказать после правки, а не промолчать: человек выбрал дату внутри
-            # утверждённого месяца, и он должен узнать, что месяц ею не
-            # переписан, — иначе он решит, что переписан. Признак едет
-            # параметром адреса, как у соседнего экрана сотрудника (T121):
-            # своего механизма сообщений в продукте нет, и заводить его ради
-            # одной фразы значило бы поставить второй способ делать то же самое.
-            return redirect(
-                reverse("directory-expense-items") + ("?retro=1" if touches_closed else "")
-            )
+            # Куда уходит человек, решает `_after_save`: правка правила
+            # разнесения запускает пересчёт, и его итог показывается на карточке
+            # (T111). К этому добавляется признак `retro=1`, если дата задела
+            # утверждённый месяц (T121): промолчать тут нельзя — человек решит,
+            # что месяц переписан. Своего механизма сообщений в продукте нет,
+            # поэтому признак едет параметром адреса, как у экрана сотрудника.
+            target = _after_save(request, who, item)
+            if touches_closed:
+                target += ("&" if "?" in target else "?") + "retro=1"
+            return redirect(target)
         except BadInput as bad:
             # Свой статус, а не умолчание 200: контракт задачи прямо требует
             # 400 на пустой ввод и неверный выбор, а не только на отказ по
@@ -227,6 +237,7 @@ def expense_item(request, item_id=None):
             error, status = refusal.message, refusal.http_status
 
     return render(request, "web/directory/form.html", {
+        "notice": _rule_notice(request, who),
         "heading": item_title(item.titles) if item else _("Новая статья"),
         "back_url": reverse("directory-expense-items"),
         "back_label": _("← К статьям расходов"),
@@ -260,5 +271,138 @@ def expense_item(request, item_id=None):
              "value": item.valid_to.isoformat() if item and item.valid_to else "",
              "help": _("Статья закрывается датой, а не удалением: "
                        "закрытые месяцы на неё ссылаются.")},
+            *_rule_fields(request, who, item),
         ],
     }, status=status)
+
+
+# --- правило разнесения (T111) ------------------------------------------------
+#
+# Правило живёт в карточке статьи, а не отдельным разделом, потому что человек
+# думает о нём именно так: «аренда офиса разносится поровну». Заводить под это
+# седьмой справочник значило бы развести по двум экранам одно решение.
+
+
+def _rule_ledger(request, who) -> str:
+    """Регистр правила. Умолчание — официальный, выбор — из видимых роли (D023)."""
+    raw = (request.POST.get("alloc_ledger") or "").strip()
+    if not raw:
+        return "official"
+    return _choice(
+        request, "alloc_ledger", _("Регистр учёта"),
+        [code for code in LEDGER_CODES if code in who.visible_ledgers],
+    )
+
+
+def _after_save(request, who, item) -> str:
+    """Сохранить правило разнесения и увести человека обратно в список.
+
+    Пересчёт идёт сразу же: правило, которое поменяли и не применили, — это
+    правило, о котором человек думает, что оно работает. Закрытые месяцы
+    пересчёт пропускает и называет вслух — числа уезжают в адрес, потому что
+    готовую фразу в адресе не перевести.
+    """
+    ledger = _rule_ledger(request, who)
+    method = (request.POST.get("alloc_method") or "").strip()
+    unit_id = _choice(
+        request, "alloc_unit", _("Точка разнесения"),
+        list(Unit.objects.values_list("id", flat=True)), required=False,
+    )
+    valid_from = _date(request, "alloc_from", _("Правило действует с"), required=False)
+
+    changed = allocation.save_rule(
+        who, item, ledger=ledger, method=method, unit_id=unit_id,
+        valid_from=valid_from or item.valid_from,
+    )
+    if not changed:
+        return reverse("directory-expense-items")
+
+    from .expenses_views import spread_query
+
+    spread = cash.reallocate(who.tenant_id, cash.periods_waiting(who.tenant_id))
+    return reverse("directory-expense-item", args=[item.id]) + spread_query(spread)
+
+
+def _rule_notice(request, who) -> str:
+    """Что сказать после сохранения: итог пересчёта и судьба закрытого месяца.
+
+    Итог пересчёта — теми же словами, что на экране нераспределённого: один и
+    тот же пересчёт не должен объясняться по-разному. Рядом — фраза о закрытом
+    месяце, если дата правки его задела (T121): два разных последствия одной
+    кнопки, и человек должен прочитать оба, а не то из них, которое случилось
+    последним.
+    """
+    from .expenses_views import _spread_notice
+
+    parts = [_spread_notice(request)]
+    if request.GET.get("retro") == "1":
+        parts.append(directory.closed_month_notice(who.tenant_id))
+    return " ".join(filter(None, parts))
+
+
+def _rule_fields(request, who, item) -> list[dict]:
+    """Поля правила разнесения и его история."""
+    ledger = (request.POST.get("alloc_ledger") or "official") if request.method == "POST" \
+        else "official"
+    current = allocation.current_rule(item, ledger) if item is not None else None
+    units = Unit.objects.order_by("code")
+    return [
+        _select(
+            "alloc_method", _("Разнесение расхода без точки"),
+            [(code, allocation.method_title(code)) for code in allocation.METHODS],
+            (request.POST.get("alloc_method") if request.method == "POST"
+             else (current.method if current else "")),
+            required=False,
+            empty_label=_("Правила нет — расход будет ждать"),
+            help=_("Как разложить по точкам расход, внесённый на всю сеть "
+                   "(аренда офиса, реклама). Без правила он остаётся в списке "
+                   "нераспределённых и в разрез по точкам не попадает."),
+        ),
+        _select(
+            "alloc_unit", _("Точка разнесения"),
+            units.values_list("id", "code"),
+            (request.POST.get("alloc_unit") if request.method == "POST"
+             else (current.unit_id if current else "")),
+            required=False, empty_label=_("Не выбрана"),
+            help=_("Нужна только для разнесения на одну точку."),
+        ),
+        _select(
+            "alloc_ledger", _("Регистр учёта правила"),
+            [(code, ledger_title(code)) for code in LEDGER_CODES
+             if code in who.visible_ledgers],
+            ledger, required=False,
+            help=_("У одной статьи законно по правилу на регистр: одна и та же "
+                   "трата бывает и официальной, и из кассы."),
+        ),
+        {"kind": "date", "name": "alloc_from", "label": _("Правило действует с"),
+         "value": (current.valid_from.isoformat() if current
+                   else (item.valid_from.isoformat() if item else "")),
+         "help": _("Смена правила — новая версия с этой даты, а не правка "
+                   "прежней: закрытые месяцы обязаны считаться тем правилом, "
+                   "которым были посчитаны.")},
+        *_rule_history(item),
+    ]
+
+
+def _rule_history(item) -> list[dict]:
+    """Прошлые версии правила — надписью, а не полем: их не правят, их читают."""
+    if item is None:
+        return []
+    rules = allocation.rules_of(item)
+    if not rules:
+        return []
+    return [{
+        "kind": "note", "name": "alloc_history", "label": _("Версии правила"),
+        "value": "; ".join(
+            _("%(method)s%(unit)s, %(ledger)s, с %(from)s%(to)s") % {
+                "method": allocation.method_title(rule.method),
+                "unit": f" ({rule.unit.code})" if rule.unit_id else "",
+                "ledger": ledger_title(rule.ledger),
+                "from": rule.valid_from.isoformat(),
+                "to": _(" по %(date)s") % {"date": rule.valid_to.isoformat()}
+                      if rule.valid_to else "",
+            }
+            for rule in rules
+        ),
+        "help": _("По ним видно, каким правилом посчитан закрытый месяц."),
+    }]

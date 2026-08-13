@@ -367,12 +367,29 @@ class Counterparty(models.Model):
 
 
 class AllocationRule(models.Model):
-    """Как разносить расход по точкам. Версионируется: закрытый период не ломаем."""
+    """Как разносить расход по точкам. Версионируется: закрытый период не ломаем.
+
+    **Ключей два, заполнен ровно один** (`allocation_rules_one_key`, миграция
+    `0233`). Контрагент — ключ фактуры поставщика: она приходит на юрлицо
+    целиком, статью в ней никто не выбирал. Статья расходов — ключ ручного
+    расхода из кассы: контрагента у него нет и взяться ему неоткуда, а «аренда
+    офиса» и «реклама на сеть» разносятся по-разному, и знает об этом именно
+    статья. Обе разновидности живут одной таблицей: правило — это метод, точка
+    для `fixed_unit`, регистр и период действия, и две таблицы означали бы две
+    копии версионирования по датам.
+    """
 
     id = uuid_pk()
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
     counterparty = models.ForeignKey(
-        Counterparty, on_delete=models.CASCADE, db_column="counterparty_id"
+        Counterparty, on_delete=models.CASCADE, db_column="counterparty_id",
+        null=True, blank=True,
+    )
+    # Второй ключ правила. `PROTECT`: статья не удаляется вовсе (закрывается
+    # датой), но правило, оставшееся без статьи, разносило бы неизвестно что.
+    expense_item = models.ForeignKey(
+        "ExpenseItem", on_delete=models.PROTECT, db_column="expense_item_id",
+        null=True, blank=True,
     )
     pnl_item = models.ForeignKey(PnlItem, on_delete=models.PROTECT, db_column="pnl_item_id")
     method = EnumField(db_type_name=ALLOCATION_METHOD)
@@ -417,6 +434,29 @@ class AllocationRule(models.Model):
                     ("ledger", RangeOperators.EQUAL),
                     (validity_range(), RangeOperators.OVERLAPS),
                 ],
+            ),
+            # То же самое для второго ключа. Одним ограничением это не
+            # выражается: `=` сравнивает null с null как «не совпало», поэтому
+            # правила по статье не мешали бы друг другу вовсе, а правила по
+            # контрагенту — друг другу мешают. Ровно один ключ у правила
+            # заполнен, поэтому каждое ограничение работает на своей половине.
+            ExclusionConstraint(
+                name="allocation_rules_item_no_overlap",
+                expressions=[
+                    ("tenant", RangeOperators.EQUAL),
+                    ("expense_item", RangeOperators.EQUAL),
+                    ("ledger", RangeOperators.EQUAL),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
+            ),
+            # Ровно один ключ: правило без ключа не найдётся никогда, правило с
+            # двумя ключами нашлось бы дважды и разнесло бы факт по спорному.
+            models.CheckConstraint(
+                condition=(
+                    models.Q(counterparty__isnull=True, expense_item__isnull=False)
+                    | models.Q(counterparty__isnull=False, expense_item__isnull=True)
+                ),
+                name="allocation_rules_one_key",
             ),
         ]
 

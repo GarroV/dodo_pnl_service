@@ -1,0 +1,74 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Список расходов с итогом (T110).
+
+**Итог берётся из представления одним числом и считается по тем же строкам,
+что показаны.** Складывать суммы в шаблоне нельзя: шаблон не знает, какие
+строки заменены, а вторая выборка в представлении разошлась бы с таблицей
+молча. Поэтому здесь только показ.
+
+**У строки есть машиночитаемая сумма и состояние.** Не украшение: по ним
+приёмка сверяет, что итог — это сумма именно показанных строк, а не соседняя
+выборка. Значения те же самые, что в ячейках рядом: они приходят из одного
+словаря строки, и разъехаться им негде.
+
+**Заменённые и удалённые строки остаются в таблице.** Они помечены состоянием и
+в итог не входят: расход, исчезнувший бесследно, через месяц не проверить
+ничем.
+{% endcomment %}
+{% block title %}{% translate "Расходы" %}{% endblock %}
+{% block content %}
+<h1>{% translate "Расходы" %}</h1>
+<p class="sub">{% translate "Наличные из кассы: что потратили и на что. Итог внизу — сумма показанных действующих строк, её и сверяют с кассой." %}</p>
+
+{% if error %}
+{% translate "Не показано." as failed %}
+{% notice "alert" title=failed %}{{ error }}{% endnotice %}
+{% endif %}
+
+<p><a class="btn" href="{{ add_url }}">{% translate "Внести расход" %}</a></p>
+
+<form class="search" method="get">
+  {% include "web/directory/fields.html" with fields=filters %}
+  <button type="submit">{% translate "Показать" %}</button>
+</form>
+
+{% if rows %}
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Дата" %}</th>
+      <th>{% translate "Точка" %}</th>
+      <th>{% translate "Статья" %}</th>
+      <th class="num">{% translate "Сумма" %}</th>
+      <th>{% translate "Регистр" %}</th>
+      <th>{% translate "Комментарий" %}</th>
+      <th>{% translate "Состояние" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr data-amount="{{ row.amount_raw }}" data-state="{{ row.state }}" data-fact="{{ row.id }}">
+      <td><a href="{{ row.url }}">{{ row.date }}</a></td>
+      <td>{{ row.unit }}</td>
+      <td>{{ row.item }}</td>
+      <td class="num">{{ row.amount_text }}</td>
+      <td>{{ row.ledger }}</td>
+      <td>{{ row.note }}</td>
+      <td>{{ row.state_title }}{% if row.landed_in %} <span class="note">{% blocktranslate with month=row.landed_in %}учтён в {{ month }}{% endblocktranslate %}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr data-total="{{ total_raw }}">
+      <th colspan="3">{% blocktranslate count counter=counted %}Итого по {{ counter }} строке{% plural %}Итого по {{ counter }} строкам{% endblocktranslate %}</th>
+      <th class="num">{{ total_text }}</th>
+      <th colspan="3"></th>
+    </tr>
+  </tfoot>
+</table>{% endscroll %}
+{% else %}
+{% translate "Расходов нет." as empty %}
+{% notice "empty" title=empty %}<span data-total="{{ total_raw }}">{% translate "За выбранный период и по выбранному отбору расходов не найдено." %}</span>{% endnotice %}
+{% endif %}
+{% endblock %}

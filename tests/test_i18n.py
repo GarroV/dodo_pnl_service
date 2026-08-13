@@ -186,47 +186,69 @@ def unescape(literal: str) -> str:
 
 
 def read_po(path: Path) -> list[dict]:
-    """Записи каталога: msgid, msgstr и пометка fuzzy. Без внешних библиотек."""
+    """Записи каталога: msgid, формы перевода и пометка fuzzy. Без библиотек.
+
+    Формы множественного числа (`msgstr[0]`, `msgstr[1]`, …) читаются **по
+    отдельности**, и это не педантизм, а условие того, чтобы обе проверки
+    каталога говорили правду:
+
+    * «нет пустых переводов» обязана смотреть каждую форму: пустая вторая форма
+      — это непереведённая строка, которую человек увидит по-русски на числе 2;
+    * «`.mo` собран из нынешнего `.po`» сверяется с `gettext(msgid)`, а тот
+      отдаёт **одну** форму — ту, что соответствует единственному числу. Склейка
+      всех форм в одну строку не совпала бы с ней никогда, то есть проверка
+      краснела бы на любом правильном переводе.
+
+    Оба дефекта жили здесь до T110 незамеченными: `msgid_plural` в каталоге не
+    было ни одного (issue #101).
+    """
     entries: list[dict] = []
-    current: dict = {"msgid": [], "msgstr": [], "fuzzy": False}
-    field = None
+    current: dict = _blank_entry()
+    sink: list | None = None
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if line.startswith("#,") and "fuzzy" in line:
             current["fuzzy"] = True
             continue
         if line.startswith("#") or not line:
-            if not line and (current["msgid"] or current["msgstr"]):
+            if not line and (current["msgid"] or current["forms"]):
                 entries.append(current)
-                current = {"msgid": [], "msgstr": [], "fuzzy": False}
-                field = None
+                current = _blank_entry()
+                sink = None
             continue
         if line.startswith("msgid_plural"):
-            field = "msgstr"  # множественные формы проверяем как один текст
+            # Ключ записи — единственное число: множественный msgid нужен только
+            # сборке каталога, а проверкам он ничего не добавляет.
+            sink = None
             continue
-        for name in ("msgid", "msgstr"):
-            if line.startswith(name):
-                field = name
-                line = line[len(name):].strip()
-                if line.startswith("msgstr["):
-                    line = line.split("]", 1)[1].strip()
-                break
-        else:
-            if line.startswith("msgstr["):
-                field = "msgstr"
+        if line.startswith("msgid"):
+            sink = current["msgid"]
+            line = line[len("msgid"):].strip()
+        elif line.startswith("msgstr"):
+            line = line[len("msgstr"):].strip()
+            if line.startswith("["):
                 line = line.split("]", 1)[1].strip()
-        if field and line.startswith('"'):
-            current[field].append(unescape(line))
-    if current["msgid"] or current["msgstr"]:
+            current["forms"].append([])
+            sink = current["forms"][-1]
+        if sink is not None and line.startswith('"'):
+            sink.append(unescape(line))
+    if current["msgid"] or current["forms"]:
         entries.append(current)
     return [
         {
             "msgid": "".join(item["msgid"]),
-            "msgstr": "".join(item["msgstr"]),
+            # Перевод единственного числа: с ним сверяется собранный каталог.
+            "msgstr": "".join(item["forms"][0]) if item["forms"] else "",
+            # Все формы: по ним видно непереведённую вторую форму.
+            "forms": ["".join(form) for form in item["forms"]],
             "fuzzy": item["fuzzy"],
         }
         for item in entries
     ]
+
+
+def _blank_entry() -> dict:
+    return {"msgid": [], "forms": [], "fuzzy": False}
 
 
 def catalog(language: str) -> list[dict]:
@@ -234,6 +256,31 @@ def catalog(language: str) -> list[dict]:
     assert path.exists(), f"нет каталога {path.relative_to(ROOT)}"
     # Первая запись с пустым msgid — служебная шапка, а не строка интерфейса.
     return [item for item in read_po(path) if item["msgid"]]
+
+
+def test_the_catalog_reader_understands_plural_forms(tmp_path):
+    """Проверка самой проверки: формы множественного числа обязаны читаться.
+
+    Разбор `msgstr[0]` был сломан так, что перевод формы **всегда** получался
+    пустым (issue #101). Из-за этого проверка «нет пустых переводов» на таких
+    строках не проверяла ничего, а проверка «каталог покрывает код» краснела на
+    правильно переведённом каталоге. Молчаливо неверная проверка хуже
+    отсутствующей: она красит зелёным то, чего не смотрела.
+    """
+    catalog_file = tmp_path / "django.po"
+    catalog_file.write_text(
+        'msgid "Итого по %(counter)s строке"\n'
+        'msgid_plural "Итого по %(counter)s строкам"\n'
+        'msgstr[0] "Total for %(counter)s row"\n'
+        'msgstr[1] "Total for %(counter)s rows"\n',
+        encoding="utf-8",
+    )
+    entries = read_po(catalog_file)
+    assert len(entries) == 1, entries
+    assert entries[0]["msgid"] == "Итого по %(counter)s строке"
+    assert "Total for %(counter)s row" in entries[0]["msgstr"], (
+        "перевод формы множественного числа потерян при разборе каталога"
+    )
 
 
 @pytest.mark.parametrize("language", sorted(TRANSLATED))
@@ -245,7 +292,10 @@ def test_catalog_has_no_empty_or_fuzzy_translations(language):
     missing = [
         item["msgid"]
         for item in catalog(language)
-        if not item["msgstr"].strip() or item["fuzzy"]
+        # Каждая форма отдельно: пустая вторая форма — это строка, которую
+        # человек увидит по-русски на числе 2, а по первой форме этого не видно.
+        if item["fuzzy"] or not item["forms"]
+        or any(not form.strip() for form in item["forms"])
     ]
     assert not missing, f"{language}: без перевода {len(missing)}:\n" + "\n".join(missing)
 

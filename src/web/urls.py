@@ -5,6 +5,7 @@ from . import (
     cash_views,
     directory_views,
     expense_items_views,
+    expenses_views,
     reports_views,
     rules_views,
     views,
@@ -126,9 +127,26 @@ urlpatterns = [
     # внесение первичных данных, а не ведение словаря, и делают это все роли,
     # кроме администратора сети, — у которого как раз справочники и есть.
     #
-    # Списка расходов здесь пока нет намеренно: он задача T110, и заводить
-    # адрес под ненаписанный экран значило бы обещать несделанное.
+    # Список расходов (T110) стоит первым: с него начинается работа со своими
+    # тратами, а внесение — действие на нём. Постоянные адреса (`new/`) идут
+    # раньше адреса по номеру записи, иначе `new` разбирался бы как номер.
+    path("expenses/", expenses_views.expenses, name="expenses"),
     path("expenses/new/", cash_views.cash_expense, name="expense-new"),
+    # Нераспределённое (T111): суммы без точки и пересчёт разнесения. Постоянный
+    # адрес, поэтому стоит раньше адреса по номеру записи.
+    path(
+        "expenses/unallocated/",
+        expenses_views.unallocated,
+        name="expenses-unallocated",
+    ),
+    # Карточка расхода: правка и удаление. Удаление — своим адресом и только
+    # POST: это запись, и по ссылке из истории браузера случиться не должна.
+    path("expenses/<uuid:fact_id>/", expenses_views.expense, name="expense"),
+    path(
+        "expenses/<uuid:fact_id>/delete/",
+        expenses_views.expense_delete,
+        name="expense-delete",
+    ),
     # Правила расчёта (T090). Отдельный префикс, а не раздел справочников:
     # право другое (`rules.manage`), и партнёр вправе развести ведение
     # справочников и ведение правил по разным людям.

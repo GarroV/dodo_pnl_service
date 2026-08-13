@@ -1,0 +1,60 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Нераспределённые суммы (T111).
+
+Экран отвечает на один вопрос: что мешает закрыть месяц. Строки здесь —
+расходы без точки, которые ждут правила разнесения; пока они ждут, сумма есть в
+P&L по сети, но её нет ни на одной точке.
+
+**Пересчёт — кнопкой и только POST.** Он пишет строки, и по ссылке из истории
+браузера случиться не должен. Итог пересчёта приезжает числами в адресе, а не
+готовой фразой: фразу в адресе не перевести и подставить в неё можно что угодно.
+{% endcomment %}
+{% block title %}{% translate "Нераспределённое" %}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К расходам" %}</a></p>
+<h1>{% translate "Нераспределённое" %}</h1>
+<p class="sub">{% translate "Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по сети, но её нет ни на одной точке." %}</p>
+
+{% if notice %}
+{% translate "Пересчёт разнесения." as done %}
+{% notice "ok" title=done %}{{ notice }}{% endnotice %}
+{% endif %}
+
+<form method="post">{% csrf_token %}
+  <button type="submit" class="primary">{% translate "Разнести по правилам" %}</button>
+</form>
+
+{% if rows %}
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Месяц" %}</th>
+      <th>{% translate "Что это" %}</th>
+      <th class="num">{% translate "Сумма" %}</th>
+      <th>{% translate "Откуда" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr data-amount="{{ row.amount_raw }}" data-fact="{{ row.id }}">
+      <td><a href="{{ row.url }}">{{ row.period }}</a></td>
+      <td>{{ row.title }}</td>
+      <td class="num">{{ row.amount_text }}</td>
+      <td>{{ row.source }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr data-total="{{ total_raw }}">
+      <th colspan="2">{% translate "Итого ждёт разнесения" %}</th>
+      <th class="num">{{ total_text }}</th>
+      <th></th>
+    </tr>
+  </tfoot>
+</table>{% endscroll %}
+{% else %}
+{% translate "Нераспределённого нет." as empty %}
+{% notice "empty" title=empty %}{% translate "Все расходы лежат на точках: закрывать месяц ничто не держит." %}{% endnotice %}
+{% endif %}
+{% endblock %}

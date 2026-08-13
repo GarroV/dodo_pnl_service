@@ -319,11 +319,17 @@ class Command(BaseCommand):
         # Удалять их можно только **после** отката утверждённых расчётов выше:
         # факт закрытого месяца не даёт удалить триггер `facts_guard`, и
         # действует он в том числе на владельца схемы.
+        # Правила разнесения идут раньше статей по той же причине: с T111 у
+        # правила есть ключ-статья, и ссылка эта `PROTECT` — правило,
+        # оставшееся без статьи, разносило бы неизвестно что. Порядок здесь и
+        # есть единственная защита от `ProtectedError`: Django исполняет каскад
+        # в Python и сам ничего не переставляет.
         for model in (
-            models.Fact, models.SourceDocument, models.FactBatch, models.ExpenseItem,
+            models.Fact, models.SourceDocument, models.FactBatch,
+            models.AllocationRule, models.ExpenseItem,
             models.PayComponent, models.Payslip, models.Payrun, models.Timesheet,
             models.EmploymentTerm, models.Employee, models.EmployeeGroup,
-            models.Membership, models.Role, models.Period, models.AllocationRule,
+            models.Membership, models.Role, models.Period,
             models.Counterparty, models.Unit, models.LegalEntity,
         ):
             model.objects.filter(tenant__in=tenants).delete()

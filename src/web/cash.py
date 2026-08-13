@@ -112,7 +112,7 @@ def items_on(tenant_id, moment: date):
     )
 
 
-def _month_is_closed(tenant_id, period: date) -> bool:
+def month_is_closed(tenant_id, period: date) -> bool:
     return Period.objects.filter(
         tenant_id=tenant_id, period=period, status="closed"
     ).exists()
@@ -135,11 +135,11 @@ def landing_for(tenant_id, on: date) -> Landing:
     он относится.
     """
     wanted = on.replace(day=1)
-    if not _month_is_closed(tenant_id, wanted):
+    if not month_is_closed(tenant_id, wanted):
         return Landing(period=wanted, moved_from=None)
 
     current = date.today().replace(day=1)
-    if _month_is_closed(tenant_id, current):
+    if month_is_closed(tenant_id, current):
         raise CashRefused(
             _(
                 "Месяц %(month)s закрыт, и текущий месяц %(current)s тоже — "
@@ -193,7 +193,11 @@ def record_expense(
         # Дата расхода остаётся при факте всегда, даже когда период учёта уехал
         # в текущий месяц: именно она отвечает на вопрос «когда это было».
         "doc_date": on.isoformat(),
-        "unit_id": str(unit_id),
+        # Точки нет — расход внесён на всю сеть и ждёт разнесения правилом
+        # (T111). Это не «точка неизвестна по недосмотру»: `pending` и есть
+        # состояние «сумма есть, точка ещё не решена», и в P&L она считается —
+        # просто без разреза по точкам, пока правило не разнесёт.
+        "unit_id": str(unit_id) if unit_id else None,
         "pnl_item_id": str(item.pnl_item_id),
         "expense_item_id": str(item.id),
         "ledger": ledger,
@@ -212,7 +216,7 @@ def record_expense(
         "channel": CASH_CHANNEL,
         "source": MANUAL_SOURCE,
         "dedup_key": DEDUP_PREFIX + entry_key,
-        "allocation": "direct",
+        "allocation": "direct" if unit_id else "pending",
     }
     payload = {name: value for name, value in payload.items() if value is not None}
 
@@ -257,6 +261,265 @@ def _upsert(payload: dict) -> tuple[str, str]:
                 _("Месяц закрылся, пока расход вносили. Откройте форму заново.")
             ) from refusal
         raise
+
+
+# Приставки исправлений. Правка и удаление расхода **закрытого** месяца не могут
+# тронуть исходную строку вовсе (`facts_guard` не даёт ни изменить её, ни
+# удалить), поэтому исправление ложится в текущий месяц двумя строками: сторно
+# исходной суммы и новая запись. Ключи выводятся из ключа исходной записи, а не
+# случайные: повторная отправка той же правки не должна давать второе сторно.
+STORNO_SUFFIX = "#storno"
+FIX_SUFFIX = "#fix"
+
+
+def entry_key_of(fact) -> str:
+    """Ключ записи, из которого сделан `dedup_key` факта."""
+    key = fact.dedup_key
+    return key[len(DEDUP_PREFIX):] if key.startswith(DEDUP_PREFIX) else key
+
+
+def is_correction(fact) -> str:
+    """Чем строка является: сторно, исправлением или обычным расходом."""
+    if fact.dedup_key.endswith(STORNO_SUFFIX):
+        return "storno"
+    if fact.dedup_key.endswith(FIX_SUFFIX):
+        return "fix"
+    return ""
+
+
+def revise_expense(
+    who,
+    fact,
+    *,
+    on: date,
+    amount,
+    item: ExpenseItem,
+    unit_id,
+    ledger: str,
+    note: str,
+) -> Recorded:
+    """Правка расхода.
+
+    **Открытый месяц — заменой версии.** Тот же ключ записи уходит в
+    `upsert_fact`, старая строка помечается заменённой, новая встаёт рядом.
+    Ровно то же самое делает повторная отправка формы внесения, и делать это
+    вторым способом здесь было бы нечем.
+
+    **Закрытый месяц — сторно и новая строка в текущем.** Строку закрытого
+    месяца не переписать физически: `facts_guard` отвергает и `update`, и
+    `delete`, в том числе суперпользователю. Отказать вместо этого значило бы
+    оставить бухгалтера с неверным числом навсегда, а тихо переписать закрытое —
+    сделать июнь сегодня и июнь через полгода разными числами (D020). Поэтому
+    исходная строка остаётся нетронутой, а в текущий месяц ложатся две: сторно
+    на её сумму и исправленная запись.
+
+    **Почему сторно с новой строкой, а не одна дельта.** Правка меняет не только
+    сумму: у расхода могут поменяться статья, точка и регистр. Одна строка на
+    разницу была бы верной только при правке суммы, а в остальных случаях
+    ставила бы деньги не в ту статью — молча. Пара «минус старое, плюс новое»
+    верна всегда, и по ней видно, что именно исправили.
+    """
+    key = entry_key_of(fact)
+    if not month_is_closed(who.tenant_id, fact.period):
+        return record_expense(
+            who, on=on, amount=amount, item=item, unit_id=unit_id,
+            ledger=ledger, note=note, entry_key=key,
+        )
+
+    storno_expense(who, fact)
+    return record_expense(
+        who, on=on, amount=amount, item=item, unit_id=unit_id,
+        ledger=ledger, note=note, entry_key=key + FIX_SUFFIX,
+    )
+
+
+def remove_expense(who, fact) -> Recorded | None:
+    """Удаление расхода.
+
+    **Открытый месяц — пометкой, а не `delete`.** Строка остаётся в истории и
+    видна в списке как удалённая: деньги, пропавшие без следа, — худший исход
+    для учёта, и «я же вносил» через месяц не проверить ничем.
+
+    **Закрытый месяц — сторно в текущем.** По тому же доводу, что и правка:
+    тронуть строку закрытого месяца нельзя, а оставить расход, которого не было,
+    тоже нельзя.
+
+    Возвращает записанное сторно или `None`, если строка просто помечена.
+    """
+    if month_is_closed(who.tenant_id, fact.period):
+        return storno_expense(who, fact)
+
+    try:
+        with transaction.atomic(), connection.cursor() as cursor:
+            cursor.execute("select supersede_fact(%s)", [str(fact.id)])
+    except DatabaseError as refusal:
+        state = getattr(getattr(refusal, "__cause__", None), "sqlstate", "") or ""
+        if state == "P0001":
+            raise CashRefused(
+                _("Месяц закрылся, пока расход удаляли. Откройте список заново.")
+            ) from refusal
+        raise
+    return None
+
+
+def storno_expense(who, fact) -> Recorded:
+    """Сторно строки: та же запись с обратным знаком в текущем месяце.
+
+    Копируется сама строка, а не собирается заново из статьи: сторно обязано
+    отменять ровно то, что записано, — включая название позиции, снятое в день
+    внесения. Дата документа остаётся исходной: деньги вышли из кассы тогда, и
+    сверка кассы считает по ней.
+    """
+    landing = landing_for(who.tenant_id, fact.doc_date or fact.period)
+    payload = {
+        "tenant_id": str(who.tenant_id),
+        "period": landing.period.isoformat(),
+        "doc_date": (fact.doc_date or fact.period).isoformat(),
+        "unit_id": str(fact.unit_id) if fact.unit_id else None,
+        "pnl_item_id": str(fact.pnl_item_id),
+        "expense_item_id": str(fact.expense_item_id) if fact.expense_item_id else None,
+        "ledger": fact.ledger,
+        "amount": str(-fact.amount),
+        "title": fact.title,
+        "note": fact.note or None,
+        "channel": CASH_CHANNEL,
+        "source": MANUAL_SOURCE,
+        "dedup_key": fact.dedup_key + STORNO_SUFFIX,
+        # Сторно расхода без точки — такой же ожидающий разнесения факт, как и
+        # он сам: разнести его обязано то же правило, иначе минус повиснет на
+        # сети, а плюс останется на точках.
+        "allocation": "direct" if fact.unit_id else "pending",
+    }
+    payload = {name: value for name, value in payload.items() if value is not None}
+    fact_id, action = _upsert(payload)
+    return Recorded(fact_id=str(fact_id), action=action, landing=landing)
+
+
+# --- разнесение по точкам (T111) ----------------------------------------------
+#
+# Механизм целиком живёт в схеме (`allocation_plan`, `allocate_fact`,
+# `reallocate_period` — миграции `0230_facts` и `0233`). Здесь только то, чем он
+# оборачивается для человека: кто вправе его запустить, что считать «ничего не
+# изменилось» и как называется месяц, который пересчитать нельзя.
+
+# Значение поля «точка» для расхода на всю сеть. Слово, а не пустая строка:
+# пустое поле означает «не выбрал», и молча превратить его в «на всю сеть»
+# значило бы разнести по точкам расход, который человек просто не дозаполнил.
+NETWORK_UNIT = "network"
+
+
+def allocate(fact_id) -> int | None:
+    """Разнести ожидающий факт прямо сейчас. Возвращает число строк или None.
+
+    `None` — «разносить не вправе»: строки разнесения ложатся на **чужие** точки,
+    и роль, ограниченную своей точкой, туда не пускает политика `unit_visibility`
+    (D014). Это не ошибка ввода и не потеря данных: расход записан и ждёт
+    разнесения тем, кто ведёт все точки. Человеку об этом сказано словами.
+    """
+    try:
+        with transaction.atomic(), connection.cursor() as cursor:
+            cursor.execute("select allocate_fact(%s)", [str(fact_id)])
+            written = cursor.fetchone()[0]
+            # Ключи Django отложенные, то есть проверяются на коммите — за
+            # пределами этой точки сохранения. Тот же довод, что в `_upsert`.
+            cursor.execute("set constraints all immediate")
+            return written
+    except DatabaseError as refusal:
+        state = getattr(getattr(refusal, "__cause__", None), "sqlstate", "") or ""
+        if state == "42501":
+            return None
+        raise
+
+
+def spread_now(fact_id) -> tuple[str, int]:
+    """Разнести только что записанный расход и сказать, чем кончилось.
+
+    Три ответа: `split` — разошёлся (и на сколько строк), `waiting` — правила
+    нет и факт ждёт, `refused` — разносить его вправе не этот человек. Отдельный
+    ответ для «уже разнесён» не нужен: повторная отправка той же формы ничего не
+    меняет (`unchanged`), а разнесение у факта уже есть — и число строк
+    считается по детям, а не по нулю, который вернула бы функция базы.
+    """
+    from core.models import Fact
+
+    written = allocate(fact_id)
+    if written is None:
+        return ("refused", 0)
+    if written > 0:
+        return ("split", written)
+    children = Fact.objects.filter(
+        parent_fact_id=fact_id, superseded_at__isnull=True
+    ).count()
+    return ("split", children) if children else ("waiting", 0)
+
+
+def periods_waiting(tenant_id) -> list[date]:
+    """Месяцы, в которых есть что разносить: ожидающие факты и уже разнесённые.
+
+    Разнесённые входят намеренно: пересчёт нужен и тогда, когда правило
+    поменялось, — иначе «Разнести» чинило бы только новое и молча оставляло
+    старое посчитанным по отменённому правилу.
+    """
+    from core.models import Fact
+
+    return sorted(
+        set(
+            Fact.objects.filter(
+                tenant_id=tenant_id, superseded_at__isnull=True,
+                allocation__in=("pending", "split"),
+            ).values_list("period", flat=True)
+        )
+    )
+
+
+@dataclass(frozen=True)
+class Spread:
+    """Итог пересчёта: сколько строк изменилось и какие месяцы не тронуты.
+
+    Пропущенные разведены по причинам намеренно: «месяц закрыт» и «разносить
+    вправе не вы» человек чинит по-разному, и общая формулировка «не
+    пересчитано» отправила бы его открывать закрытый месяц там, где надо было
+    позвать бухгалтера.
+    """
+
+    changed: int
+    skipped: list[date]
+    refused: list[date]
+
+
+def reallocate(tenant_id, periods: list[date]) -> Spread:
+    """Пересчитать разнесение за месяцы. Закрытые пропускаются и называются.
+
+    Закрытый месяц не пересчитывается вовсе (D020): июнь сегодня и июнь через
+    полгода обязаны давать одно и то же число. `reallocate_period` отвергает его
+    сама — здесь отказ ловится и превращается в список пропущенных месяцев,
+    потому что молчаливый пропуск читается как «пересчитано».
+    """
+    changed, skipped, refused = 0, [], []
+    for period in periods:
+        if month_is_closed(tenant_id, period):
+            skipped.append(period)
+            continue
+        try:
+            with transaction.atomic(), connection.cursor() as cursor:
+                cursor.execute(
+                    "select reallocate_period(%s, %s)", [str(tenant_id), period]
+                )
+                changed += cursor.fetchone()[0]
+                cursor.execute("set constraints all immediate")
+        except DatabaseError as denial:
+            state = getattr(getattr(denial, "__cause__", None), "sqlstate", "") or ""
+            if state == "P0001":
+                # Месяц закрылся между проверкой и пересчётом.
+                skipped.append(period)
+                continue
+            if state == "42501":
+                # Разносит тот, кто ведёт все точки: план строится по списку
+                # точек, а он у ограниченной роли короче (см. миграцию 0233).
+                refused.append(period)
+                continue
+            raise
+    return Spread(changed=changed, skipped=skipped, refused=refused)
 
 
 def new_entry_key() -> str:
