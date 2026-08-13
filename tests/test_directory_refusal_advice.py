@@ -26,14 +26,13 @@ from datetime import date
 import pytest
 
 from conftest import body, login_as
-
 from test_directory import approve_june, payruns_restored, sql  # noqa: F401
 
 # Дата, которой человек не вводил. Ровно она и вылезала на экран.
 MADE_UP_DATE = "0001-01-01"
 
 
-def official_group(sql):
+def official_group(sql):  # noqa: F811  — имя фикстуры pytest, не переопределение
     return sql.execute(
         "select id, code, title, scheme, ledger from employee_groups "
         "where ledger = 'official' and tenant_id in "

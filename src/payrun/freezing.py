@@ -14,12 +14,22 @@
 Чего здесь нет: заморозка **не трогает табель**. Замороженная строка означает
 «не пересчитывать этого человека», а не «не править его часы» — правка входных
 данных задним числом это T026, и запрет на неё здесь решил бы её за неё.
+
+**Кто вправе морозить — два независимых условия** (T101). Право
+`payslip.freeze` — раз; отданный роли **весь** расчёт строки, то есть все
+регистры учёта, — два. Второе появилось потому, что заморозка относится к
+строке целиком: роль с одним официальным регистром помечала спорной строку,
+ни одного числа которой ей не показывают, и делала это молча. Условие — свойство
+роли, а не строки (`rows_are_freezable`), и это не осторожность, а
+необходимость: разрешение, зависящее от содержимого строки, само называет
+людей — по тому, на какой строке ответ меняется.
 """
 from __future__ import annotations
 
 from datetime import date
 from uuid import UUID
 
+from django.db import connection
 from django.utils.timezone import now
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_noop
@@ -30,7 +40,7 @@ from .errors import PayrunRefused, ReasonRequired
 
 __all__ = [
     "FROZEN_REFUSAL", "REASON_REFUSAL", "active_freezes", "freeze",
-    "frozen_payslip_ids", "refuse_if_frozen", "release",
+    "frozen_payslip_ids", "refuse_if_frozen", "release", "rows_are_freezable",
 ]
 
 REASON_REFUSAL = gettext_noop(
@@ -47,6 +57,27 @@ APPROVED_REFUSAL = gettext_noop(
     "Период утверждён: замораживать в нём нечего — заморожен весь расчёт. "
     "Чтобы менять расчёт, период нужно сначала открыть заново."
 )
+
+
+def rows_are_freezable(tenant_id: UUID) -> bool:
+    """Вправе ли эта роль морозить строки ведомости вообще (T101).
+
+    Свойство **роли**, а не строки: морозит тот, кому база отдаёт весь расчёт
+    строки, то есть кому видны все регистры учёта. Довод — тот же, что у
+    видимости итогов (T071): пока разрешение зависит от содержимого строки,
+    отсутствие разрешения само называет людей. Ответ «эту морожу, а эту нет»
+    и есть поимённый список тех, у кого есть выплаты в скрытом регистре.
+
+    Спрашивается **та самая функция, на которой стоит политика**
+    (`app_sees_every_ledger`), а не разбор `visible_ledgers` в Python: вторая
+    правда о видимости рядом с первой однажды разойдётся с ней молча (D014).
+    Гарантию держит база — политики `payslip_freeze_whole_run_*` миграции
+    `0210`; здесь только ответ на вопрос «показывать ли человеку кнопку и как
+    отвечать маршруту».
+    """
+    with connection.cursor() as cursor:
+        cursor.execute("select app_sees_every_ledger(%s)", [tenant_id])
+        return bool(cursor.fetchone()[0])
 
 
 def active_freezes(tenant_id: UUID, period: date) -> dict[UUID, PayslipFreeze]:

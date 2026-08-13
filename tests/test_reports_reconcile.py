@@ -211,8 +211,15 @@ def test_a_row_present_only_in_the_run_is_still_named_missing_from_the_file():
     Файл он загрузил сам и видит его весь: «в таблице такой строки нет» —
     проверенное утверждение, а не догадка. Смягчить его заодно с T095 значило
     бы потерять факт ради единообразия.
+
+    `whole_run_visible=True` — потому что проверяется **формулировка** факта, а
+    не право его произносить. Право проверяется отдельно, в
+    `test_reconcile_hidden_names.py`: без флага список пуст у кого угодно (T100).
     """
-    absent = only(compare([], {"k": run_line(name="PETAR PETROVIC")}).only_in_run)
+    absent = only(
+        compare([], {"k": run_line(name="PETAR PETROVIC")}, whole_run_visible=True)
+        .only_in_run
+    )
 
     assert "нет" in absent.why, f"факт о загруженном файле размыт: {absent.why!r}"
 
@@ -271,7 +278,12 @@ def test_a_row_without_totals_still_gets_its_inputs_compared():
 
 
 def test_a_row_present_only_in_the_run_is_named_too():
-    result = compare([], {"ANA ANIC": run_line("ANA ANIC")})
+    """Роли, которой отдан весь расчёт, разность по-прежнему называется.
+
+    Флаг здесь обязателен: с T100 умолчание закрытое, и без него список пуст —
+    см. `test_reconcile_hidden_names.py`.
+    """
+    result = compare([], {"ANA ANIC": run_line("ANA ANIC")}, whole_run_visible=True)
 
     assert only(result.only_in_run).name == "ANA ANIC"
     assert not result.lines

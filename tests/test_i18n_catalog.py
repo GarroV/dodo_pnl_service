@@ -40,7 +40,7 @@ from pathlib import Path
 
 import pytest
 
-from test_i18n import ROOT, TRANSLATED, read_po, catalog
+from test_i18n import ROOT, TRANSLATED, catalog, read_po
 
 # --- 1. один перевод у двух разных оригиналов --------------------------------
 

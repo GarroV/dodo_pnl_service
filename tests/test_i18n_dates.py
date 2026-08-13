@@ -60,7 +60,10 @@ def test_no_hardcoded_russian_date_format_in_src():
         for lineno, line in enumerate(text.splitlines(), start=1):
             if RUSSIAN_HARDCODED_DATE.search(line):
                 hits.append(f"{path.relative_to(root.parent)}:{lineno}: {line.strip()}")
-    assert not hits, "жёсткий русский формат даты в коде, показываемом человеку:\n" + "\n".join(hits)
+    assert not hits, (
+        "жёсткий русский формат даты в коде, показываемом человеку:\n"
+        + "\n".join(hits)
+    )
 
 
 # =============================================================================
@@ -125,7 +128,8 @@ def test_grid_closed_at_is_english_on_the_english_page(client, clean_closures):
     # DATETIME_FORMAT английской локали Django — "N j, Y, P", например
     # "Aug. 13, 2026, 3:10 p.m." (ровно то, что уже показывает `calculated_at`
     # на странице периода) — сверяем форму, а не точное время закрытия.
-    assert re.search(r"[A-Za-z]{3}\.?\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s*[ap]\.m\.", closed_text), (
+    ENGLISH_STAMP = r"[A-Za-z]{3}\.?\s+\d{1,2},\s+\d{4},\s+\d{1,2}:\d{2}\s*[ap]\.m\."
+    assert re.search(ENGLISH_STAMP, closed_text), (
         f"дата закрытия не похожа на английский DATETIME_FORMAT: {closed_text!r}"
     )
 
@@ -162,8 +166,9 @@ def _tenant_id():
 
 
 def _import_with_language(language: str):
-    from conftest import PLATA_SAMPLE
     from django.utils import translation
+
+    from conftest import PLATA_SAMPLE
     from timesheets.importer import import_partner_table
 
     with translation.override(language):

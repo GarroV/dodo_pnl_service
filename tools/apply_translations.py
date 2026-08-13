@@ -113,12 +113,15 @@ def apply(po: Path, table: dict[str, str]) -> tuple[int, list[str]]:
                 old.append(lines[index])
                 index += 1
 
-        def keep_markers() -> None:
+        # Позиция и список пометок связываются значением, а не замыканием:
+        # иначе обе вложенные функции читали бы состояние ПОСЛЕДНЕЙ итерации
+        # цикла, а вызываются они внутри своей (ruff B023).
+        def keep_markers(out=out, marker_at=marker_at, markers=markers) -> None:
             """Вернуть пометки на место: текст остался чужим, признать его своим
             нельзя. Из `#, fuzzy, python-format` при этом сохраняется всё."""
             out[marker_at:marker_at] = markers
 
-        def drop_markers() -> None:
+        def drop_markers(out=out, marker_at=marker_at, markers=markers) -> None:
             """Текст заменён — пометки уходят. `#| msgid` выбрасывается целиком:
             он про прежний ключ. Прочие флаги остаются, `fuzzy` из них вынут."""
             kept = []
