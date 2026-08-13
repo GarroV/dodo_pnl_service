@@ -143,8 +143,12 @@ I_TRANSFER = "b1111111-0000-0000-0000-000000000007"
 CP_EPS = "c1111111-0000-0000-0000-000000000001"   # поставщик электричества
 CP_METRO = "c1111111-0000-0000-0000-000000000002"
 USER_DIRECTOR = "d1111111-0000-0000-0000-000000000001"    # видит все регистры и точки
-USER_ACCOUNTANT = "d1111111-0000-0000-0000-000000000002"  # только белый регистр
-USER_MANAGER = "d1111111-0000-0000-0000-000000000003"     # только точка NS1
+USER_ACCOUNTANT = "d1111111-0000-0000-0000-000000000002"  # все регистры (D036)
+# Роль с НЕПОЛНЫМ набором регистров в фикстуре ровно одна — управляющий: он
+# видит официальный и дополнительный, но не внутренний (D031). После D036 все
+# проверки видимости регистров стоят на нём, а не на бухгалтере: набор
+# бухгалтера полон, и отказ ему нельзя было бы отличить от отсутствия защиты.
+USER_MANAGER = "d1111111-0000-0000-0000-000000000003"     # точка NS1, без внутреннего
 USER_ADMIN = "d1111111-0000-0000-0000-000000000004"       # видит всё, данных не правит
 USER_OTHER = "d1111111-0000-0000-0000-00000000000f"       # второй тенант
 JUNE = "2026-06-01"
@@ -296,7 +300,8 @@ def _seed(conn) -> None:
         """insert into roles (id, tenant_id, code, title, visible_ledgers, permissions) values
                (%s, %s,   'director',   'Оперативный директор',
                    '{official,supplementary,internal}', %s),
-               (%s, %s,   'accountant', 'Бухгалтер',            '{official}', %s),
+               (%s, %s,   'accountant', 'Бухгалтер',
+                   '{official,supplementary,internal}', %s),
                (%s, %s,   'manager',    'Управляющий точки',    '{official,supplementary}', %s),
                (%s, %s,   'admin',      'Администратор сети',
                    '{official,supplementary,internal}', %s),
@@ -496,6 +501,61 @@ def wipe_payruns(dsn: str) -> None:
         conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")
         conn.execute(f"delete from payruns where tenant_id in {tenants}")
+
+
+@contextmanager
+def narrowed_ledgers(dsn: str, code: str, ledgers: list[str]):
+    """Временно сузить набор регистров роли в базе — и вернуть его обратно.
+
+    **Зачем это понадобилось.** До D036 в продукте была роль, у которой право
+    считать период есть, а набор регистров неполный (бухгалтер), — и на ней
+    держались проверки того, что база не даёт записать строку скрытого от роли
+    регистра. После D036 такой роли в сиде нет: у бухгалтера и директора набор
+    полон, а у управляющего неполон, но права `payrun.calculate` у него нет —
+    его отказ пришёл бы от прав, а не от регистров, и проверка стала бы зелёной
+    не по своей причине.
+
+    Удалить проверки было нельзя: механизм видимости остаётся на месте и будет
+    сужаться дальше, «там где надо» (D036). Поэтому условие создаётся явно —
+    роли на время теста оставляют неполный набор, ровно как это сделает партнёр
+    через экран ролей.
+
+    Правка идёт владельцем схемы (политики на него не действуют) и всегда
+    откатывается: набор регистров роли — общее состояние базы, оставленный
+    сузённым он молча испортил бы числа соседним тестам.
+    """
+    import psycopg
+
+    with psycopg.connect(dsn, autocommit=True) as conn:
+        row = conn.execute(
+            "select visible_ledgers from roles where code = %s and tenant_id is not null",
+            (code,),
+        ).fetchone()
+        assert row is not None, f"роли {code} нет в базе — сужать нечего"
+        # Тип `ledger` на этом соединении не зарегистрирован (регистрирует его
+        # драйвер приложения, `core/db_types.py`), поэтому массив приезжает
+        # строкой `{official,...}`. Разбираем явно: `list()` от строки дал бы
+        # список букв, и восстановление молча положило бы мусор.
+        before = (
+            row[0] if isinstance(row[0], list)
+            else [part for part in row[0].strip("{}").split(",") if part]
+        )
+        conn.execute(
+            # Через text[]: список строк уезжает в базу неизвестным типом, и
+            # прямой каст к `ledger[]` Postgres понимает как каст к скаляру.
+            "update roles set visible_ledgers = %s::text[]::ledger[]"
+            " where code = %s and tenant_id is not null",
+            (list(ledgers), code),
+        )
+    try:
+        yield
+    finally:
+        with psycopg.connect(dsn, autocommit=True) as conn:
+            conn.execute(
+                "update roles set visible_ledgers = %s::text[]::ledger[]"
+                " where code = %s and tenant_id is not null",
+                (before, code),
+            )
 
 
 @contextmanager

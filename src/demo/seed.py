@@ -80,7 +80,10 @@ ROLES = [
         ],
     ),
     (
-        "accountant", "Accountant", ["official"], None,
+        # Все три регистра, как у директора (D036): бухгалтер и оперативный
+        # директор равны. Демо обязано показывать то же, что получит партнёр, —
+        # иначе сценарий сверки у бухгалтера упирается в пустую выгрузку.
+        "accountant", "Accountant", ALL_LEDGERS, None,
         [
             "timesheet.edit", "payrun.calculate", "period.approve",
             "payslip.freeze", "retro.post",
