@@ -179,6 +179,44 @@ def test_a_row_the_run_did_not_give_us_carries_no_numbers_of_ours():
     assert "PETAR PETROVIC" not in {line.name for line in result.lines}
 
 
+def test_a_row_the_run_did_not_give_us_is_not_called_missing():
+    """T095: «не видно» не выдаётся за «не существует».
+
+    Ответ базы одинаков для строки, которой в расчёте нет, и для строки, чей
+    человек роли не виден: различить их снаружи нельзя намеренно. Значит и
+    сказать «такой строки нет» сверка не вправе — это утверждение о базе,
+    которого она не проверяла. Управляющий читал его про 16 человек, которые в
+    расчёте есть, и получалось, что бухгалтер принёс лишних людей.
+
+    Тест держит границу с двух сторон: формулировка не отрицает строку и не
+    называет, где она на самом деле лежит (D023).
+    """
+    absent = only(compare([file_row(name="PETAR PETROVIC")], {}).only_in_file)
+
+    assert "нет" not in absent.why, (
+        f"сверка отрицает строку, которой не проверяла: {absent.why!r}"
+    )
+    assert "вам" in absent.why or "ваш" in absent.why, (
+        f"формулировка не говорит, чей срез имеется в виду: {absent.why!r}"
+    )
+    for word in ("official", "supplementary", "internal", "регистр", "точк"):
+        assert word not in absent.why.lower(), (
+            f"формулировка называет то, чего роли не видно: {absent.why!r}"
+        )
+
+
+def test_a_row_present_only_in_the_run_is_still_named_missing_from_the_file():
+    """Обратная сторона видна человеку целиком, и мягчить её нечем.
+
+    Файл он загрузил сам и видит его весь: «в таблице такой строки нет» —
+    проверенное утверждение, а не догадка. Смягчить его заодно с T095 значило
+    бы потерять факт ради единообразия.
+    """
+    absent = only(compare([], {"k": run_line(name="PETAR PETROVIC")}).only_in_run)
+
+    assert "нет" in absent.why, f"факт о загруженном файле размыт: {absent.why!r}"
+
+
 def test_a_row_without_totals_is_never_called_a_match():
     """Главная ловушка задачи: пустое `all()` даёт истину.
 

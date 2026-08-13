@@ -472,6 +472,48 @@ def test_the_accountant_never_meets_another_ledger_on_the_trace(client, calculat
             assert name not in html, f"на следе бухгалтера есть слово «{name}»: {url}"
 
 
+def test_the_trace_always_says_which_cut_it_shows(client, calculated_june):
+    """T096: подпись разреза не исчезает от подобранного чужого `?ledger=`.
+
+    Разрез, которого роли не видно, `_chosen_cut` честно сводит ко «всем
+    видимым» — не отказом и не пустой страницей: и то и другое было бы ответом
+    на вопрос «а есть ли такой регистр». Но подпись при этом ставилась только у
+    выбранного разреза, и на чужом параметре экран показывал срез, не говоря
+    какой. Переключателя разрезов на следе нет, и подпись — единственное, что
+    об этом сообщает.
+
+    Проверяется обоими концами: на своём разрезе подпись называет его, на чужом
+    и без параметра — «все видимые», и ни в одном случае не называет чужого
+    регистра (D023).
+    """
+    login_as(client, "accountant")
+    url, _total = sheet_rows(client, "accountant")[0]
+    base = url.split("?")[0]
+
+    plain = body(client.get(base))
+    mine = body(client.get(base + "?ledger=official"))
+    theirs = body(client.get(base + "?ledger=internal"))
+
+    assert "разрез: Официальный" in mine
+    for html, what in ((plain, "без параметра"), (theirs, "с чужим разрезом")):
+        assert "разрез:" in html, f"след {what} не говорит, какой срез показывает"
+        assert "разрез: Все регистры" in html, (
+            f"след {what} назвал разрез иначе, чем переключатель ведомости"
+        )
+        # Проверяются названия, а не код из адреса: код человек подставил сам,
+        # и он честно возвращается в ссылках переключателя языка. Сообщением
+        # продукта было бы название — его нет ни при каком параметре.
+        for name in ("Внутренний", "Дополнительный"):
+            assert name not in html, f"след {what} назвал «{name}»"
+
+    # И ответ на подобранный чужой разрез неотличим от ответа без него: иначе
+    # перебором параметров узнаётся, какие регистры вообще существуют.
+    csrf = re.compile(r'name="csrfmiddlewaretoken" value="[^"]+"')
+    assert csrf.sub("", theirs.replace("?ledger=internal", "")) == csrf.sub("", plain), (
+        "след с чужим разрезом отличается от следа без разреза"
+    )
+
+
 def test_the_trace_of_a_foreign_row_is_indistinguishable_from_a_missing_one(
     client, calculated_june
 ):

@@ -62,7 +62,7 @@
         <td class="num {% if result.mismatched %}strong{% else %}muted{% endif %}">{{ result.mismatched }}</td></tr>
     <tr><td>{% translate "Сверены только входы — деньги не сравнивались" %}</td>
         <td class="num {% if result.inputs_only %}strong{% else %}muted{% endif %}">{{ result.inputs_only }}</td></tr>
-    <tr><td>{% translate "Есть в таблице, нет в расчёте" %}</td>
+    <tr><td>{% translate "Есть в таблице, нет в вашей части расчёта" %}</td>
         <td class="num {% if result.only_in_file %}strong{% else %}muted{% endif %}">{{ result.only_in_file|length }}</td></tr>
     <tr><td>{% translate "Есть в расчёте, нет в таблице" %}</td>
         <td class="num {% if result.only_in_run %}strong{% else %}muted{% endif %}">{{ result.only_in_run|length }}</td></tr>
@@ -139,10 +139,13 @@
 {% endif %}
 
 {% if result.only_in_file %}
-<h2>{% translate "Есть в таблице, нет в расчёте" %}</h2>
+<h2>{% translate "Есть в таблице, нет в вашей части расчёта" %}</h2>
 <p class="sub">
-  {% blocktranslate %}По этим строкам сверять нечего: расчёта за этот период по ним нет. Ни одного
-  числа с нашей стороны здесь не показано — сравнивать не с чем.{% endblocktranslate %}
+  {% blocktranslate %}По этим строкам сверять нечего: в расчёт, отданный вам, они не входят. Это
+  <strong>не значит</strong>, что расчёта по ним не было: сверка показывает
+  ровно то, что база показывает вам, и отличить «строки нет вовсе» от «строка
+  вам не видна» она не может. Ни одного числа с нашей стороны здесь не
+  показано — сравнивать не с чем.{% endblocktranslate %}
 </p>
 <table class="sheet">
   <thead><tr><th>{% translate "Лист" %}</th><th>{% translate "Кто" %}</th><th>{% translate "Почему" %}</th></tr></thead>

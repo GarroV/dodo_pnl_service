@@ -110,6 +110,29 @@ def test_login_page_is_open_to_anonymous(client):
     assert 'name="password"' in text
 
 
+def test_the_login_page_names_no_ledger_to_anonymous(client):
+    """T096: страница входа не рассказывает непредставившемуся об устройстве учёта.
+
+    Панель быстрого входа перечисляла в колонке «Видит регистры», кто какие
+    регистры учёта видит — то есть до входа сообщала, что регистров три и как
+    они называются. На площадке ярлык выключен, но здесь он включён, и
+    названия утекали любому, кто открыл страницу.
+
+    Заодно проверяется и точка: она стояла в той же таблице по тому же поводу.
+    Ролям названия и регистров, и точек показываются **после** входа — на своих
+    экранах, где видно ровно то, что видно этой роли.
+    """
+    text = body(client.get("/login/"))
+
+    assert "войти" in text, "панель быстрого входа выключена — тест проверяет не то"
+    for word in (
+        "official", "supplementary", "internal",
+        "Официальный", "Дополнительный", "Внутренний",
+        "BG1", "NS1", "NS2",
+    ):
+        assert word not in text, f"страница входа называет анониму «{word}»"
+
+
 def test_right_password_lets_in(client, seed_password):
     response = login_real(client, "director", seed_password)
     assert response.status_code == 302, body(response)

@@ -214,8 +214,42 @@ def test_a_ledger_cut_narrows_both_sides_the_same_way():
 
     assert {line.ledger for line in whole.lines} == {"official", "supplementary"}
     assert {line.ledger for line in cut.lines} == {"official"}
-    assert cut.total_delta == Decimal("8000")
-    assert whole.total_delta == Decimal("16000")
+    assert cut.total_up == Decimal("8000")
+    assert whole.total_up == Decimal("16000")
+
+
+def test_growth_and_decline_are_summed_apart():
+    """T096: взаимно погасившиеся отклонения не складываются в «всё сошлось».
+
+    Отчёт показывал алгебраическую сумму отклонений одним числом. У четырёх
+    расхождений выше порога, где прибавка одному равна убавке другому, в
+    подвале стояло «Итого отклонений · 4 чел. — 0,00»: над списком настоящих
+    расхождений — число, которое читается как «сошлось». Ровно то
+    правдоподобно-неверное, что здесь запрещено, только арифметикой.
+
+    Рост и снижение поэтому считаются врозь: у обоих есть смысл поодиночке, а
+    у их суммы его нет ни при каких данных.
+    """
+    from reports.variance import compare
+
+    previous = cells(
+        ("Иванов", "official", "hours.regular", "50000"),
+        ("Петров", "official", "hours.regular", "50000"),
+    )
+    current = cells(
+        ("Иванов", "official", "hours.regular", "58000"),
+        ("Петров", "official", "hours.regular", "42000"),
+    )
+    report = compare(current, previous, thresholds=THRESHOLDS)
+
+    assert len(report.lines) == 2, "оба отклонения выше порога и должны быть найдены"
+    assert report.total_up == Decimal("8000")
+    assert report.total_down == Decimal("-8000")
+    assert report.grew == 1 and report.fell == 1
+    assert not hasattr(report, "total_delta"), (
+        "алгебраическая сумма отклонений вернулась: её нельзя показать так, "
+        "чтобы она не читалась как итог"
+    )
 
 
 def test_the_report_counts_what_it_compared_not_only_what_it_found():
@@ -388,16 +422,24 @@ def test_the_accountant_is_never_told_about_other_ledgers(client, june_and_plant
 
 
 def test_the_report_of_each_role_matches_what_that_role_sees(client, june_and_planted_may):
-    """Итог отклонений роли равен сумме её же строк — не маскировка на выводе."""
+    """Итоги роли равны сумме её же строк — не маскировка на выводе.
+
+    Итогов два, рост и снижение врозь (T096), и сходиться обязаны оба: один
+    показанный итог не поймал бы перепутанные местами половины.
+    """
     for user in ("director", "accountant", "manager"):
         login_as(client, user)
         html = body(client.get(variance_url(client)))
         rows = report_rows(html)
-        match = re.search(r'<td class="num total">([^<]+)</td>', html)
-        assert match, f"{user}: в отчёте нет итога отклонений"
-        shown = Decimal(match.group(1).replace(" ", "").replace(",", "."))
-        assert sum((row[2] for row in rows), Decimal(0)) == shown, (
-            f"{user}: строки дают одно, итог другое"
+        found = re.findall(r'<td class="num total">([^<]+)</td>', html)
+        assert len(found) == 2, f"{user}: в отчёте не два итога, а {len(found)}"
+        up, down = (Decimal(v.replace(" ", "").replace(",", ".")) for v in found)
+
+        assert sum((row[2] for row in rows if row[2] > 0), Decimal(0)) == up, (
+            f"{user}: выросшие строки дают одно, итог роста другое"
+        )
+        assert sum((row[2] for row in rows if row[2] < 0), Decimal(0)) == down, (
+            f"{user}: снизившиеся строки дают одно, итог снижения другое"
         )
 
 
