@@ -1980,3 +1980,42 @@ msgstr "For this partner, the difference is carried over to the current period."
 
 msgid "У этого партнёра период открывается заново и пересчитывается."
 msgstr "For this partner, the period is reopened and recalculated."
+
+msgid "Страница не найдена"
+msgstr "Page not found"
+
+msgid "Здесь ничего нет"
+msgstr "There is nothing here"
+
+msgid "Проверьте адрес: возможно, в нём опечатка или страница больше не открывается."
+msgstr "Check the address: it may have a typo, or the page is no longer available."
+
+msgid "К списку периодов"
+msgstr "To the list of periods"
+
+msgid "Доступ закрыт"
+msgstr "Access closed"
+
+msgid "Это вам не открыто."
+msgstr "This is not open to you."
+
+msgid "Если работа требует этого раздела, попросите доступ у того, кто ведёт учётки."
+msgstr "If your work needs this section, ask for access from whoever manages the accounts."
+
+msgid "Страница устарела"
+msgstr "The page is out of date"
+
+msgid "Действие не выполнено."
+msgstr "The action was not performed."
+
+msgid "Откройте страницу заново и повторите — так бывает, если вкладка была открыта долго или вы входили в другом окне."
+msgstr "Open the page again and try once more — this happens if the tab stayed open for a long time or you signed in in another window."
+
+msgid "Что-то сломалось"
+msgstr "Something broke"
+
+msgid "Что-то сломалось на нашей стороне"
+msgstr "Something broke on our side"
+
+msgid "Мы записали это в журнал. Попробуйте ещё раз через минуту, а если повторится — скажите тому, кто ведёт сервис."
+msgstr "We have written it to the log. Try again in a minute, and if it repeats, tell whoever runs the service."

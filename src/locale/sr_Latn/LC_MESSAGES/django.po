@@ -1980,3 +1980,42 @@ msgstr "Kod ovog partnera razlika se prenosi u tekući period."
 
 msgid "У этого партнёра период открывается заново и пересчитывается."
 msgstr "Kod ovog partnera period se ponovo otvara i preračunava."
+
+msgid "Страница не найдена"
+msgstr "Stranica nije pronađena"
+
+msgid "Здесь ничего нет"
+msgstr "Ovde nema ničega"
+
+msgid "Проверьте адрес: возможно, в нём опечатка или страница больше не открывается."
+msgstr "Proverite adresu: možda ima greške u kucanju ili se stranica više ne otvara."
+
+msgid "К списку периодов"
+msgstr "Na spisak perioda"
+
+msgid "Доступ закрыт"
+msgstr "Pristup zatvoren"
+
+msgid "Это вам не открыто."
+msgstr "Ovo vam nije otvoreno."
+
+msgid "Если работа требует этого раздела, попросите доступ у того, кто ведёт учётки."
+msgstr "Ako vam je za rad potreban ovaj odeljak, zatražite pristup od onoga ko vodi naloge."
+
+msgid "Страница устарела"
+msgstr "Stranica je zastarela"
+
+msgid "Действие не выполнено."
+msgstr "Radnja nije izvršena."
+
+msgid "Откройте страницу заново и повторите — так бывает, если вкладка была открыта долго или вы входили в другом окне."
+msgstr "Otvorite stranicu ponovo i pokušajte opet — to se dešava ako je kartica bila dugo otvorena ili ste se prijavili u drugom prozoru."
+
+msgid "Что-то сломалось"
+msgstr "Nešto se pokvarilo"
+
+msgid "Что-то сломалось на нашей стороне"
+msgstr "Nešto se pokvarilo na našoj strani"
+
+msgid "Мы записали это в журнал. Попробуйте ещё раз через минуту, а если повторится — скажите тому, кто ведёт сервис."
+msgstr "Zabeležili smo to u dnevnik. Pokušajte ponovo za minut, a ako se ponovi — javite onome ko vodi servis."
