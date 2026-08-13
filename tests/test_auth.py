@@ -41,7 +41,12 @@ ROLE_LEDGERS = {
     "director": {"official", "supplementary", "internal"},
     "accountant": {"official"},
     "manager": {"official", "supplementary"},
-    "admin": {"official"},
+    # Все три, а не один официальный (T089). Справочники и правила ведёт
+    # администратор и только он, и с одним регистром это давало не
+    # разграничение, а тупик: карточек курьеров и кухни он не видел вовсе, то
+    # есть поменять им ставку не мог ни один пользователь продукта. Довод
+    # записан у роли в `seed_dev`, тот же, что в D033.
+    "admin": {"official", "supplementary", "internal"},
 }
 
 
