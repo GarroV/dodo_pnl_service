@@ -64,8 +64,18 @@
         <td class="num {% if result.inputs_only %}strong{% else %}muted{% endif %}">{{ result.inputs_only }}</td></tr>
     <tr><td>{% translate "Есть в таблице, нет в вашей части расчёта" %}</td>
         <td class="num {% if result.only_in_file %}strong{% else %}muted{% endif %}">{{ result.only_in_file|length }}</td></tr>
+    {% comment %}
+    Строка про расчёт целиком (T100). У роли, которой расчёт отдан не весь,
+    здесь стоит слово, а не число: ноль тоже утверждение — «в расчёте нет
+    никого сверх вашей таблицы», — и проверить его роль не может. Строка при
+    этом остаётся на месте: исчезнувшая читается как «проверено, всё чисто».
+    {% endcomment %}
     <tr><td>{% translate "Есть в расчёте, нет в таблице" %}</td>
-        <td class="num {% if result.only_in_run %}strong{% else %}muted{% endif %}">{{ result.only_in_run|length }}</td></tr>
+        {% if result.whole_run_visible %}
+        <td class="num {% if result.only_in_run %}strong{% else %}muted{% endif %}">{{ result.only_in_run|length }}</td>
+        {% else %}
+        <td class="num muted">{% translate "не проверялось" %}</td>
+        {% endif %}</tr>
   </tbody>
   <tfoot>
     {% if totals.any %}
@@ -86,6 +96,22 @@
 
 {% if result.clean %}
 <p class="note">{% translate "Всё сошлось до копейки, и файл прочитан целиком." %}</p>
+{% endif %}
+
+{% if not result.whole_run_visible %}
+{% comment %}
+Объяснение стоит рядом с тем словом, которое оно объясняет, — сразу под сводкой,
+а не там, где раньше был раздел. Про регистры сказано в общем виде, «расчёт
+периода отдаётся вашей роли не весь»: это свойство её собственной роли, а не
+сообщение о том, что у кого-то есть выплаты в другом регистре (D023).
+{% endcomment %}
+<p class="sub">
+  {% blocktranslate %}<strong>Кого расчёт посчитал сверх вашей таблицы — не проверялось.</strong>
+  Расчёт периода отдаётся вашей роли не весь, поэтому сказать, чего в
+  принесённом файле не хватает, сверка не может: она сравнила бы вашу таблицу с
+  той частью, которую видит сама, и назвала бы это фактом о расчёте. Всё
+  остальное выше сверено полностью — по каждой строке вашего файла.{% endblocktranslate %}
+</p>
 {% endif %}
 
 {% if off_lines %}
@@ -157,7 +183,12 @@
 </table>
 {% endif %}
 
-{% if result.only_in_run %}
+{% comment %}
+Флаг спрошен прямо, а не выведен из пустого списка. Пустой список и «сказать
+нечего» — разные вещи (T100), и разметка, которая их не различает, однажды
+покажет раздел, стоит ядру начать наполнять список по другому поводу.
+{% endcomment %}
+{% if result.whole_run_visible and result.only_in_run %}
 <h2>{% translate "Есть в расчёте, нет в таблице" %}</h2>
 <table class="sheet">
   <thead><tr><th>{% translate "Кто" %}</th><th>{% translate "Почему" %}</th></tr></thead>
