@@ -2020,3 +2020,24 @@ msgstr "Zabeležili smo to u dnevnik. Pokušajte ponovo za minut, a ako se ponov
 
 msgid "%(what)s нельзя изменить: зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
 msgstr "%(what)s se ne može promeniti: plata za %(month)s je već odobrena, a ovo podešavanje nema verzije po datumima — izmena bi retroaktivno prepisala zatvoreni mesec. Podesite ono što vam treba pojedinačnom zaposlenom u uslovima zaposlenja: tamo izmena važi od datuma. Ili ponovo otvorite mesec uz obrazloženje."
+
+
+msgid "Заморозка строки вам недоступна: она относится к строке ведомости целиком, а расчёт строки отдаётся вашей роли не весь. Спорную строку заморозит тот, кто ведёт месяц полностью. Утверждению периода это не мешает."
+msgstr "Zamrzavanje reda vam nije dostupno: odnosi se na red obračunskog lista u celini, a obračun tog reda vašoj ulozi nije ustupljen u celini. Sporni red zamrzava onaj ko vodi mesec u celini. Odobravanju perioda to ne smeta."
+
+msgid "не проверялось"
+msgstr "nije provereno"
+
+msgid ""
+"<strong>Кого расчёт посчитал сверх вашей таблицы — не проверялось.</strong>\n"
+"  Расчёт периода отдаётся вашей роли не весь, поэтому сказать, чего в\n"
+"  принесённом файле не хватает, сверка не может: она сравнила бы вашу таблицу с\n"
+"  той частью, которую видит сама, и назвала бы это фактом о расчёте. Всё\n"
+"  остальное выше сверено полностью — по каждой строке вашего файла."
+msgstr ""
+"<strong>Koga je obračun obuhvatio van vaše tabele — nije provereno.</strong>\n"
+"Obračun perioda vašoj ulozi nije ustupljen u celini, pa provera ne može da kaže\n"
+"šta nedostaje u donetom fajlu: uporedila bi vašu tabelu sa delom koji sama vidi\n"
+"i to nazvala činjenicom o obračunu. Sve ostalo iznad provereno je u celini —\n"
+"za svaki red vašeg fajla."
+

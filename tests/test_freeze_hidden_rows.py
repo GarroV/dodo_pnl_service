@@ -250,11 +250,30 @@ def hidden_payslip(period: str = JUNE) -> str:
     return str(row[0])
 
 
-def shape(response) -> tuple:
-    """Ответ целиком: код, тело и заголовки. Оракул прячется в любом из трёх."""
+CSRF_TOKEN = re.compile(rb'name="csrfmiddlewaretoken" value="[^"]*"')
+
+
+def shape(response, url: str) -> tuple:
+    """Ответ целиком: код, тело и заголовки. Оракул прячется в любом из трёх.
+
+    Из тела вычёркиваются ровно две вещи, и обе — не каналы утечки:
+
+    * **токен формы**. С T099 человеческая страница «не найдено» рисует общую
+      шапку, а в ней формы с `csrfmiddlewaretoken`; Django выдаёт его новой
+      маскировкой на каждый ответ. То есть побайтово не совпадут даже два
+      ответа на **один и тот же** запрос — сравнивать без этого нечего.
+    * **сам запрошенный адрес**. Форма выбора языка кладёт текущий путь в
+      `next`, чтобы вернуть человека туда, откуда он пришёл. Это строка,
+      которую прислал сам клиент: она различается на любых двух разных
+      адресах, включая два несуществующих, и о существовании строки не
+      говорит ничего.
+
+    Всё остальное сравнивается как есть: оракул прячется именно в мелочах.
+    """
+    body = CSRF_TOKEN.sub(b'name="csrfmiddlewaretoken" value="TOKEN"', response.content)
     return (
         response.status_code,
-        response.content,
+        body.replace(url.encode(), b"<REQUESTED-URL>"),
         sorted((k, v) for k, v in response.items() if k.lower() != "date"),
     )
 
@@ -281,17 +300,15 @@ def test_the_route_answers_a_hidden_row_exactly_as_a_random_id(
 ):
     """Оракул существования проверяется буквально, а не «оба не 302»."""
     login_as(client, user)
-    hidden = production_404(
-        client, f"/payslips/{hidden_payslip()}/{action}/", {"reason": "спор"}
-    )
-    nothing = production_404(
-        client, f"/payslips/{RANDOM_ID}/{action}/", {"reason": "спор"}
-    )
+    hidden_url = f"/payslips/{hidden_payslip()}/{action}/"
+    nothing_url = f"/payslips/{RANDOM_ID}/{action}/"
+    hidden = production_404(client, hidden_url, {"reason": "спор"})
+    nothing = production_404(client, nothing_url, {"reason": "спор"})
 
     assert hidden.status_code == 404, (
         f"{action}: по невидимой строке ответ {hidden.status_code}, а не 404"
     )
-    assert shape(hidden) == shape(nothing), (
+    assert shape(hidden, hidden_url) == shape(nothing, nothing_url), (
         f"{action}: ответы по существующей и несуществующей строке различимы"
     )
 
@@ -310,9 +327,11 @@ def test_the_route_answers_a_visible_row_the_same_way_too(client, calculated_jun
         )
         visible = str(cursor.fetchone()[0])
 
-    own = production_404(client, f"/payslips/{visible}/freeze/", {"reason": "спор"})
-    nothing = production_404(client, f"/payslips/{RANDOM_ID}/freeze/", {"reason": "спор"})
-    assert shape(own) == shape(nothing)
+    own_url = f"/payslips/{visible}/freeze/"
+    nothing_url = f"/payslips/{RANDOM_ID}/freeze/"
+    own = production_404(client, own_url, {"reason": "спор"})
+    nothing = production_404(client, nothing_url, {"reason": "спор"})
+    assert shape(own, own_url) == shape(nothing, nothing_url)
 
 
 def test_nothing_was_written_by_all_those_attempts(client, calculated_june):
