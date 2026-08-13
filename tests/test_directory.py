@@ -15,6 +15,12 @@
 закрытого расчёта остаются байт в байт прежними **и** расчёт, собранный заново
 на июнь, берёт по-прежнему июньскую версию условий.
 
+Правку **с датой внутри** закрытого месяца справочник принимает (T121, D020):
+закрытый месяц от неё не двигается, а разница едет вперёд помеченной строкой.
+Этот путь целиком — в `test_retro_from_screen.py`; здесь остались правки,
+которые закрытого месяца не касаются, и запрет на то, у чего версий по датам
+нет вовсе (схема и регистр группы).
+
 **Регистр, которого роль не видит, не называется даже в справочнике** (D023).
 Группа несёт регистр учёта, и её строка называет его словом. Разграничение,
 которое держится на том, в какой раздел человек не заглянул, — не разграничение.
@@ -407,34 +413,6 @@ def test_a_directory_edit_does_not_move_a_closed_period(
     )
 
 
-def test_a_version_inside_a_closed_month_is_refused(
-    client, sql, web_env, terms_restored, payruns_restored,
-):
-    """Дату внутри утверждённого месяца экран не принимает и объясняет почему."""
-    approve_june(client, web_env)
-    client.post("/logout/")
-    _, employee_id, _from, _to, rate, _group = victim(sql)
-    before = rows_of(
-        sql,
-        "select id, valid_from, valid_to, base_rate from employment_terms "
-        "where employee_id = %s order by valid_from",
-        (employee_id,),
-    )
-
-    login_as(client, "admin")
-    answer = post_new_version(client, sql, employee_id, valid_from="2026-06-15", rate="777.0000")
-    assert answer.status_code == 409, answer.status_code
-    html = body(answer)
-    assert "2026-06" in html, "отказ не назвал месяц, из-за которого отказано"
-    assert rows_of(
-        sql,
-        "select id, valid_from, valid_to, base_rate from employment_terms "
-        "where employee_id = %s order by valid_from",
-        (employee_id,),
-    ) == before, "отказ отказал, но что-то всё-таки записал"
-    client.post("/logout/")
-
-
 def test_the_group_scheme_is_frozen_while_a_month_is_closed(client, sql, web_env, payruns_restored):
     """Схема расчёта группы версий не имеет — значит при закрытом месяце не правится.
 
@@ -469,21 +447,6 @@ def test_the_group_scheme_is_frozen_while_a_month_is_closed(client, sql, web_env
             (title, scheme, group_id),
         )
         client.post("/logout/")
-
-
-def test_the_calendar_of_a_closed_month_is_refused(client, sql, web_env, payruns_restored):
-    """Норма часов закрытого месяца — то же правило задним числом, что и ставка."""
-    approve_june(client, web_env)
-    client.post("/logout/")
-    login_as(client, "admin")
-    answer = client.post("/directory/calendar/2026-06/", {
-        "norm_hours": "100", "working_days": "12",
-    })
-    assert answer.status_code == 409, answer.status_code
-    assert sql.execute(
-        "select norm_hours from calendars where country_code = 'RS' and period = '2026-06-01'"
-    ).fetchone()[0] == Decimal("176.00")
-    client.post("/logout/")
 
 
 # --- регистры учёта (D023) ----------------------------------------------------

@@ -2271,3 +2271,53 @@ msgstr ""
 "  Upoređeno je ono što ne zavisi od knjige: sati, stopa, koeficijent. "
 "Odstupanje\n"
 "  najviše leži baš tu."
+
+#, python-format
+msgid "%(who)s: ни одного часа за этот месяц — строка табеля пустая"
+msgstr "%(who)s: nijedan sat ovog meseca — red evidencije je prazan"
+
+#, python-format
+msgid "%(who)s: уволен %(date)s, а часов за этот месяц %(total)s"
+msgstr "%(who)s: otpušten %(date)s, a ima %(total)s sati ovog meseca"
+
+msgid "Стоит посмотреть до расчёта"
+msgstr "Vredi pogledati pre obračuna"
+
+msgid "Ни одно из этих чисел не ошибка само по себе — но незамеченными они и становятся неверной зарплатой. Сохранению они не мешают."
+msgstr "Nijedan od ovih brojeva sam po sebi nije greška — ali neprimećeni upravo tako postaju pogrešna zarada. Ne sprečavaju čuvanje reda."
+
+msgid "проверьте"
+msgstr "proverite"
+
+msgid "Сопоставлено, но не загружено"
+msgstr "Upareno, ali nije učitano"
+
+msgid "Не загружено: человек найден, а строка не записана"
+msgstr "Nije učitano: osoba je pronađena, ali red nije upisan"
+
+msgid "Этих людей продукт узнал, но записывать было некуда — причина у каждой строки своя."
+msgstr "Ove osobe su prepoznate, ali red nije imao gde da se upiše — razlog stoji uz svaki red."
+
+msgid "Этих людей в справочнике партнёра нет — неизвестно, о ком строка."
+msgstr "Ovih osoba nema u šifarniku partnera — ne zna se na koga se red odnosi."
+
+#, python-format
+msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: если она изменит его числа, разница ляжет помеченной строкой в ближайший неутверждённый месяц — перенести её можно на странице закрытого."
+msgstr "Zarada je odobrena zaključno sa %(edge)s. Izmena sa ranijim datumom se prihvata, ali ne prepisuje zatvoreni mesec: ako promeni njegove brojeve, razlika ulazi označenom stavkom u prvi neodobreni mesec — prenesite je na stranici zatvorenog meseca."
+
+#, python-format
+msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
+msgstr "Zarada je odobrena zaključno sa %(edge)s. Izmena sa ranijim datumom se prihvata, ali ne prepisuje zatvoreni mesec: kod ovog partnera se razlika primenjuje ponovnim obračunom — otvorite mesec ponovo uz razlog i obračunajte ga opet."
+
+#, python-format
+msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним до копейки: если правка изменила его числа, разница видна на странице этого месяца и переносится оттуда помеченной строкой в ближайший неутверждённый."
+msgstr "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mesec je ostao isti do dinara: ako je izmena promenila njegove brojeve, razlika se vidi na stranici tog meseca i odatle se prenosi označenom stavkom u prvi neodobreni mesec."
+
+#, python-format
+msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
+msgstr "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mesec je ostao isti: kod ovog partnera se razlika primenjuje ponovnim obračunom — otvorite mesec ponovo uz razlog i obračunajte ga opet."
+
+msgid ""
+"Схему расчёта и регистр группы это не касается: версий по датам у них нет\n"
+"  вовсе, и такая правка задним числом по-прежнему отклоняется."
+msgstr "Ovo se ne odnosi na šemu obračuna i registar grupe: one uopšte nemaju verzije po datumima, pa se takva izmena unazad i dalje odbija."

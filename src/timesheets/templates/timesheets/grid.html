@@ -124,6 +124,13 @@
 </form>
 {% endif %}
 
+{% comment %}
+Подозрительные числа (T118): часов больше нормы, строка без часов, отрицательные.
+Спека просит эту подсказку на обоих путях ввода, а была она только у загрузки
+файла. Правило общее — `timesheets/suspicion.py`, показ здесь.
+{% endcomment %}
+{% include "timesheets/_hints.html" with grid=grid oob=False %}
+
 {% if not grid.rows %}
   {% comment %}
   Пустое состояние объясняет следующий шаг, а не сообщает о пустоте (T077).
@@ -277,7 +284,7 @@
             <td class="num">{{ row.piece_value|hours }} <span class="hint">{{ row.measure_title }}</span></td>
             {% endif %}
           {% endif %}
-          <td class="num strong" id="row-total-{{ row.timesheet_id }}">{{ row.total|hours }}</td>
+          {% include "timesheets/_row_total.html" with row=row oob=False %}
           {% include "timesheets/_insured_cell.html" with row=row oob=False %}
           <td class="num muted">{{ row.norm_hours|hours }}</td>
         </tr>

@@ -199,10 +199,11 @@ def cell(request, period_id):
         "timesheets/_totals.html",
         {
             "grid": table,
-            "row_id": str(row.id),
-            "row_total": changed.total if changed else 0,
-            # Строка целиком нужна ответу ради базы для взносов: правка часов
-            # могла её сдвинуть (см. `_insured_cell.html`).
+            # Строка целиком, а не её итог числом: ответу нужны и база для
+            # взносов (`_insured_cell.html`), и подсказка о подозрительных
+            # числах (`_row_total.html`, T118) — обе считаются по строке.
+            # Строка тут всегда есть: её только что вернул тот же `visible_rows`,
+            # из которого построена сетка.
             "row": changed,
         },
     )

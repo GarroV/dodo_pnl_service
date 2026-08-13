@@ -166,6 +166,99 @@ const beaconValue = await evalIn(`
 `);
 check("закрытие страницы прямо из поля не теряет часы", beaconValue === "77.25", beaconValue);
 
+// --- подсказка о подозрительных числах (T118) --------------------------------
+// Спека просит её на обоих путях ввода, а была она только у загрузки файла:
+// 400 часов при норме 176 сетка принимала молча. Проверяется живьём именно то,
+// чего не доказать разбором разметки: подсказка появляется БЕЗ перезагрузки, в
+// тот момент, когда человек ушёл с ячейки, и сохранить она не мешает.
+
+/** Что показывает строка про себя: имя, итог, норма, и есть ли пометка. */
+const rowFacts = () => evalIn(`
+  (() => {
+    const input = [...document.querySelectorAll('input.cell')]
+      .find(i => i.dataset.row === ${JSON.stringify(cellInfo.row)}
+              && i.dataset.kind === ${JSON.stringify(cellInfo.kind)});
+    const tr = input.closest("tr");
+    const cells = [...tr.children];
+    return {
+      who: cells[0].textContent.trim(),
+      total: (document.getElementById("row-total-" + input.dataset.row).textContent || "")
+        .replace(/[^0-9,]/g, ""),
+      norm: cells[cells.length - 1].textContent.trim(),
+      marked: !!tr.querySelector("td.suspect"),
+      value: input.value,
+      summary: document.getElementById("grid-hints").textContent.replace(/\\s+/g, " ").trim(),
+    };
+  })()
+`);
+
+// Строку возвращаем к её исходному значению: проверки выше уже набирали в неё
+// числа, и «до правки подсказки не было» иначе проверялось бы на строке, уже
+// испорченной этим же смоуком.
+await evalIn(`
+  (() => {
+    const input = [...document.querySelectorAll('input.cell')]
+      .find(i => i.dataset.row === ${JSON.stringify(cellInfo.row)}
+              && i.dataset.kind === ${JSON.stringify(cellInfo.kind)});
+    input.value = ${JSON.stringify(cellInfo.before)};
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  })()
+`);
+await new Promise((r) => setTimeout(r, 900));
+
+// Сид сам по себе содержит подозрительные строки (например, 253 ч при норме 176
+// после правок выше), поэтому «подсказок нет вовсе» проверять нечестно —
+// проверяется, что нет подсказки про ЭТУ строку.
+const before = await rowFacts();
+check("до подозрительного числа про эту строку не сказано ничего",
+      !before.summary.includes(before.who) && !before.marked,
+      before.who + " | " + before.summary.slice(0, 160));
+
+await evalIn(`
+  (() => {
+    const input = [...document.querySelectorAll('input.cell')]
+      .find(i => i.dataset.row === ${JSON.stringify(cellInfo.row)}
+              && i.dataset.kind === ${JSON.stringify(cellInfo.kind)});
+    input.focus();
+    input.select();
+  })()
+`);
+await key("Backspace", "Backspace", 8);
+await type("400");
+await key("Enter", "Enter", 13);
+await new Promise((r) => setTimeout(r, 1200));
+
+// Фраза собирается из чисел, которые видно в самой строке: так проверяется не
+// «где-то есть слово норма», а что подсказка говорит про ЭТИ числа.
+const hinted = await rowFacts();
+const sentence = `${hinted.who}: ${hinted.total} ч при норме ${hinted.norm} ч`;
+check("подсказка появилась без перезагрузки и говорит про эти числа",
+      hinted.summary.includes(sentence), sentence + " ||| " + hinted.summary.slice(0, 200));
+check("строка помечена в самой сетке", hinted.marked);
+check("подсказка не помешала сохранить", hinted.value === "400.00", hinted.value);
+
+await goto(APP + gridHref);
+const reloaded = await rowFacts();
+check("и переживает перезагрузку страницы",
+      reloaded.summary.includes(sentence) && reloaded.marked,
+      reloaded.summary.slice(0, 200));
+
+// Вернуть значение: смоук за собой не оставляет ни чисел, ни подсказок.
+await evalIn(`
+  (() => {
+    const input = [...document.querySelectorAll('input.cell')]
+      .find(i => i.dataset.row === ${JSON.stringify(cellInfo.row)}
+              && i.dataset.kind === ${JSON.stringify(cellInfo.kind)});
+    input.value = ${JSON.stringify(cellInfo.before)};
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  })()
+`);
+await new Promise((r) => setTimeout(r, 900));
+const restored = await rowFacts();
+check("значение строки возвращено, пометка снята",
+      !restored.marked && !restored.summary.includes(restored.who),
+      restored.value + " | " + restored.summary.slice(0, 160));
+
 // --- отказ на мусор ----------------------------------------------------------
 
 await evalIn(`

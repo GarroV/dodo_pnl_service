@@ -105,8 +105,20 @@ def _no_rules_notice(request, who, on_date, *, heading):
         "on_date": on_date.isoformat(),
         "country": directory.country_of(who.tenant_id),
         "sections": [],
-        "closed_through": directory.closed_through(who.tenant_id),
+        "closed_note": directory.closed_month_warning(who.tenant_id),
+        "notice": _carried_notice(request, who),
     })
+
+
+def _carried_notice(request, who) -> str:
+    """Слова о том, что версия задела утверждённый месяц (T121).
+
+    Признак приезжает адресом, а не готовой фразой: фраза в адресе не
+    переводится и подставляется кем угодно.
+    """
+    if request.GET.get("retro") != "1":
+        return ""
+    return directory.closed_month_notice(who.tenant_id)
 
 
 @login_required
@@ -145,7 +157,8 @@ def index(request):
             }
             for section in rules.sections(preset, hidden=hidden)
         ],
-        "closed_through": directory.closed_through(who.tenant_id),
+        "closed_note": directory.closed_month_warning(who.tenant_id),
+        "notice": _carried_notice(request, who),
     })
 
 
@@ -195,7 +208,15 @@ def rule(request, path: str):
             if not change.changed:
                 notice = _("Ничего не изменилось — новая версия не заведена.")
             else:
-                return redirect(f"{reverse('rules')}?on={on_date.isoformat()}")
+                # Версия с датой внутри утверждённого месяца заводится (T121):
+                # закрытый месяц не переписывается, разница едет вперёд. Но
+                # молча этого не делаем — признак уезжает адресом, и список
+                # правил объясняет случившееся словами.
+                carried = directory.touches_closed_month(who.tenant_id, valid_from)
+                return redirect(
+                    f"{reverse('rules')}?on={on_date.isoformat()}"
+                    + ("&retro=1" if carried else "")
+                )
         except rules.RuleInputRefused as bad:
             error, status = bad.message, bad.http_status
         except directory.DirectoryRefused as refusal:
@@ -234,7 +255,7 @@ def rule(request, path: str):
             }
             for row in rules.versions(who.tenant_id, path)
         ],
-        "closed_through": directory.closed_through(who.tenant_id),
+        "closed_note": directory.closed_month_warning(who.tenant_id),
     }, status=status)
 
 

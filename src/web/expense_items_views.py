@@ -15,6 +15,11 @@
 её на своём. Список языков берётся из `settings.LANGUAGES`, а не переписывается
 здесь вторым списком — второй список разошёлся бы с настройками молча.
 
+**Даты статьи версионируются, привязка к строке P&L — нет.** Поэтому правка с
+датой внутри утверждённого месяца проходит и сопровождается словами о том, что
+закрытый месяц ею не переписывается (D020, общее правило продукта с T121), а
+смена строки P&L отвергается: её датой не отодвинуть.
+
 **Привязка к строке P&L не версионируется.** У статьи одна строка на всю
 историю, и любая её смена задевает уже утверждённый месяц — не потому, что
 дату выбрали неудачно, а потому что даты у привязки нет вовсе. Отказ поэтому
@@ -93,19 +98,27 @@ def _titles_from_post(request) -> dict:
     return titles
 
 
-def _refuse_if_dates_touch_closed_month(tenant_id, item, valid_from: date, valid_to) -> None:
-    """Отказать, если новая или изменённая дата задевает утверждённый месяц.
+def _dates_touch_closed_month(tenant_id, item, valid_from: date, valid_to) -> bool:
+    """Задевает ли новая или изменённая дата утверждённый месяц.
 
-    Проверяются именно изменения, а не даты как таковые: у существующей статьи,
-    уже закрытой датой внутри давно утверждённого месяца, повторная проверка на
-    каждой правке названия отказывала бы там, где ничего не меняется, — а
-    правка одних названий обязана проходить (T108).
+    Проверяются именно **изменения**, а не даты как таковые: у существующей
+    статьи, давно начавшей действовать внутри утверждённого месяца, проверка на
+    каждой правке названия срабатывала бы там, где ничего не меняется, — а
+    правка одних названий обязана проходить молча (T108).
+
+    Раньше здесь стоял отказ. Он снят при сведении веток с T121, и это не
+    послабление, а приведение к общему правилу продукта: у статьи даты
+    **версионируются** (`valid_from`, `valid_to`), а правку с датой продукт
+    принимает и говорит человеку, что будет с закрытым месяцем (D020). Отказ
+    остался ровно там, где версий нет вовсе, — на привязке к строке P&L: её
+    смену датой не отодвинуть, поэтому она и отвергается.
     """
-    what = _("статья расходов")
-    if item is None or item.valid_from != valid_from:
-        directory.refuse_if_touches_closed_month(tenant_id, valid_from, what)
+    what_changed = item is None or item.valid_from != valid_from
+    if what_changed and directory.touches_closed_month(tenant_id, valid_from):
+        return True
     if valid_to is not None and (item is None or item.valid_to != valid_to):
-        directory.refuse_if_touches_closed_month(tenant_id, valid_to, what)
+        return directory.touches_closed_month(tenant_id, valid_to)
+    return False
 
 
 @login_required
@@ -127,7 +140,15 @@ def expense_items(request):
         }
         for item in ExpenseItem.objects.select_related("pnl_item").order_by("code")
     ]
+    # Правка задела утверждённый месяц (см. форму ниже): человеку говорится, что
+    # закрытый месяц ею не переписан и где искать разницу. Признак приезжает
+    # параметром адреса — своего механизма сообщений в продукте нет.
+    notice = (
+        directory.closed_month_notice(who.tenant_id)
+        if request.GET.get("retro") == "1" else ""
+    )
     return render(request, "web/directory/list.html", {
+        "notice": notice,
         "heading": _("Статьи расходов"),
         "about": _("Чем называют траты и в какую строку P&L они попадают."),
         "add_url": reverse("directory-expense-item-new"),
@@ -173,7 +194,9 @@ def expense_item(request, item_id=None):
             if valid_to and valid_to <= valid_from:
                 raise BadInput(_("Дата закрытия раньше или равна дате начала действия."))
 
-            _refuse_if_dates_touch_closed_month(who.tenant_id, item, valid_from, valid_to)
+            touches_closed = _dates_touch_closed_month(
+                who.tenant_id, item, valid_from, valid_to,
+            )
             if item is not None and item.pnl_item_id != pnl_item_id:
                 directory.refuse_if_unversioned_touches_closed_month(
                     who.tenant_id, _("строка P&L статьи расходов"),
@@ -184,7 +207,15 @@ def expense_item(request, item_id=None):
             item.code, item.titles, item.pnl_item_id = code, titles, pnl_item_id
             item.valid_from, item.valid_to = valid_from, valid_to
             item.save()
-            return redirect(reverse("directory-expense-items"))
+            # Сказать после правки, а не промолчать: человек выбрал дату внутри
+            # утверждённого месяца, и он должен узнать, что месяц ею не
+            # переписан, — иначе он решит, что переписан. Признак едет
+            # параметром адреса, как у соседнего экрана сотрудника (T121):
+            # своего механизма сообщений в продукте нет, и заводить его ради
+            # одной фразы значило бы поставить второй способ делать то же самое.
+            return redirect(
+                reverse("directory-expense-items") + ("?retro=1" if touches_closed else "")
+            )
         except BadInput as bad:
             # Свой статус, а не умолчание 200: контракт задачи прямо требует
             # 400 на пустой ввод и неверный выбор, а не только на отказ по

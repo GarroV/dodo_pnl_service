@@ -18,6 +18,7 @@ import re
 import pytest
 
 from conftest import body, login_as
+from core.models import ExpenseItem
 from test_directory import approve_june, payruns_restored, sql  # noqa: F401
 
 LIST_URL = "/directory/expense-items/"
@@ -188,10 +189,20 @@ def test_the_item_is_edited_from_the_screen(client, sql, items_removed):  # noqa
 # --- закрытый месяц -----------------------------------------------------------
 
 
-def test_a_new_item_cannot_start_inside_a_closed_month(
+def test_a_new_item_may_start_inside_a_closed_month_but_says_so(
     client, sql, web_env, items_removed, payruns_restored,  # noqa: F811
 ):
-    """Статья, начавшая действовать внутри утверждённого месяца, меняет его задним числом."""
+    """Дата внутри утверждённого месяца проходит — и продукт говорит, что будет.
+
+    Так было не всегда: до T121 здесь стоял отказ. Правило продукта сменилось не
+    у статей расходов, а везде (D020): правку **с датой** продукт принимает, а
+    закрытый месяц ею не переписывает. У статьи даты версионируются, поэтому
+    она подчиняется общему правилу; отказ остался ровно там, где версий нет
+    вовсе, — на привязке к строке P&L (проверка ниже).
+
+    Молчаливое согласие тут было бы хуже отказа: человек выбрал дату внутри
+    закрытого месяца и обязан узнать, что месяц ею не переписан.
+    """
     approve_june(client, web_env)
     client.post("/logout/")
 
@@ -199,10 +210,13 @@ def test_a_new_item_cannot_start_inside_a_closed_month(
     try:
         answer = client.post(NEW_URL, form(
             "late", pnl_item=expense_line(sql), valid_from="2026-06-10",
-        ))
-        assert answer.status_code == 409, answer.status_code
+        ), follow=True)
+        assert answer.status_code == 200, answer.status_code
+        assert ExpenseItem.objects.filter(code="late").exists(), "статья не завелась"
         html = body(answer)
-        assert "2026-06" in html, "отказ не назвал месяц, из-за которого отказано"
+        assert "2026-06" in html, (
+            "продукт промолчал о закрытом месяце — человек решит, что месяц переписан"
+        )
     finally:
         client.post("/logout/")
 

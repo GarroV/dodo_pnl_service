@@ -19,8 +19,11 @@
 админку нет вовсе у того, кому она запрещена: экран не предлагает того, что сам
 же отвергнет (T072).
 
-**Правки, задевающие закрытый месяц, отклоняются с объяснением** — правило и его
-«почему» лежат в `web/directory.py`, здесь только показ отказа.
+**Правка с датой внутри закрытого месяца проходит, и продукт объясняет, что при
+этом произошло** (T121, D020): закрытый месяц остаётся прежним, разница едет
+вперёд помеченной строкой. Отказ остался только у того, у чего версий по датам
+нет вовсе, — схемы и регистра группы. Правило и его «почему» лежат в
+`web/directory.py`, здесь показ слов и отказа.
 """
 from __future__ import annotations
 
@@ -184,7 +187,10 @@ def index(request):
     return render(
         request,
         "web/directory/index.html",
-        {"sections": _sections(who), "closed_through": directory.closed_through(who.tenant_id)},
+        {
+            "sections": _sections(who),
+            "closed_note": directory.closed_month_warning(who.tenant_id),
+        },
     )
 
 
@@ -404,17 +410,19 @@ def employee(request, employee_id):
     status = 200
     if request.method == "POST":
         try:
+            carried = ""
             if request.POST.get("what") == "person":
                 _save_person(request, person)
                 saved = "person"
             else:
-                saved = _save_terms(request, who, person)
+                saved, carried = _save_terms(request, who, person)
             # Перенаправление после записи: обновление страницы не сохраняет
             # второй раз. Что именно случилось, уезжает в адрес кодом, а не
             # готовой фразой: фраза в адресе не переводится и подставляется
             # кем угодно.
             return redirect(
-                reverse("directory-employee", args=[person.id]) + f"?saved={saved}"
+                reverse("directory-employee", args=[person.id])
+                + f"?saved={saved}{carried}"
             )
         except BadInput as bad:
             error = bad.message
@@ -422,6 +430,11 @@ def employee(request, employee_id):
             error, status = refusal.message, refusal.http_status
 
     notice = _saved_notices().get(request.GET.get("saved", ""), "")
+    if request.GET.get("retro") == "1":
+        # Версия завелась с датой внутри утверждённого месяца (T121). Одной
+        # фразой «версия заведена» тут не обойтись: человек обязан узнать, что
+        # закрытый месяц остался прежним и где искать разницу.
+        notice = " ".join(filter(None, [notice, directory.closed_month_notice(who.tenant_id)]))
 
     return render(request, "web/directory/employee.html", _employee_context(
         request, who, person, notice=notice, error=error,
@@ -441,8 +454,12 @@ def _save_person(request, person: Employee) -> None:
     ])
 
 
-def _save_terms(request, who, person: Employee) -> str:
-    """Новая версия условий найма. Возвращает код того, что случилось.
+def _save_terms(request, who, person: Employee) -> tuple[str, str]:
+    """Новая версия условий найма. Возвращает код случившегося и хвост адреса.
+
+    Хвост — признак того, что версия задела утверждённый месяц (T121): о таком
+    продукт обязан сказать словами, а не молча завести версию, после которой
+    закрытый месяц и сегодняшние данные расходятся.
 
     Правило и его «почему» — в `web/directory.py`.
     """
@@ -463,7 +480,10 @@ def _save_terms(request, who, person: Employee) -> str:
     change = directory.save_terms(
         who.tenant_id, person.id, valid_from=valid_from, wanted=wanted,
     )
-    return "same" if not change.changed else "terms"
+    if not change.changed:
+        return "same", ""
+    carried = directory.touches_closed_month(who.tenant_id, valid_from)
+    return "terms", ("&retro=1" if carried else "")
 
 
 def _employee_context(request, who, person: Employee, *, notice: str, error: str) -> dict:
@@ -480,6 +500,7 @@ def _employee_context(request, who, person: Employee, *, notice: str, error: str
         "notice": notice,
         "error": error,
         "closed_through": edge,
+        "closed_note": directory.closed_month_warning(who.tenant_id),
         "person_fields": [
             {"kind": "text", "name": "last_name", "label": _("Фамилия"),
              "value": person.last_name, "required": True},
@@ -683,6 +704,11 @@ def group(request, group_id=None):
         "back_url": reverse("directory-groups"),
         "back_label": _("← К группам"),
         "error": error,
+        # У формы есть поле даты («способ действует с»), и правка с датой внутри
+        # утверждённого месяца проходит (T121). Сказать об этом надо здесь же:
+        # человек не обязан помнить, что часть этой формы версионируется, а
+        # часть — нет.
+        "closed_note": directory.closed_month_warning(who.tenant_id),
         "submit_label": _("Сохранить"),
         "fields": [
             {"kind": "text", "name": "code", "label": _("Код"), "required": True,
@@ -994,6 +1020,13 @@ def calendar(request):
             "Пока месяца нет в календаре, норма часов на его странице — прочерк, "
             "и недоработку считать не от чего."
         ),
+        # Правка задела утверждённый месяц: сказать, что с ним стало и где
+        # искать разницу (T121). Признак приезжает адресом, а не готовой
+        # фразой: фраза в адресе не переводится и подставляется кем угодно.
+        "notice": (
+            directory.closed_month_notice(who.tenant_id)
+            if request.GET.get("retro") == "1" else ""
+        ),
     })
 
 
@@ -1017,17 +1050,18 @@ def calendar_month(request, month=None):
             wanted = period or _month_or_new(request)
             norm = _number(request, "norm_hours", _("Норма часов"))
             days = _number(request, "working_days", _("Рабочих дней"))
-            # Норма часов закрытого месяца — то же правило задним числом, что и
-            # ставка: пересчёт после правки дал бы другие числа, чем ведомость,
-            # уже выданная людям.
-            directory.refuse_if_touches_closed_month(
-                who.tenant_id, wanted, _("производственный календарь"),
-            )
+            # Норма часов закрытого месяца правится (T121, D020): закрытый
+            # расчёт от этого не двигается, а разница едет вперёд помеченной
+            # строкой. Человеку об этом говорится словами — до правки на самой
+            # форме и после неё на странице календаря.
+            carried = directory.touches_closed_month(who.tenant_id, wanted)
             Calendar.objects.update_or_create(
                 country_code=country, period=wanted,
                 defaults={"norm_hours": norm, "working_days": int(days)},
             )
-            return redirect(reverse("directory-calendar"))
+            return redirect(
+                reverse("directory-calendar") + ("?retro=1" if carried else "")
+            )
         except BadInput as bad:
             error = bad.message
         except directory.DirectoryRefused as refusal:
@@ -1038,6 +1072,7 @@ def calendar_month(request, month=None):
         "back_url": reverse("directory-calendar"),
         "back_label": _("← К календарю"),
         "error": error,
+        "closed_note": directory.closed_month_warning(who.tenant_id),
         "submit_label": _("Сохранить"),
         "fields": ([] if period else [
             {"kind": "month", "name": "month", "label": _("Месяц"), "required": True,

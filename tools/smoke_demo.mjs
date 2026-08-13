@@ -102,6 +102,46 @@ check(
   landing.includes("two legal entities") && landing.includes("thirty people"),
 );
 
+// T117: проза титульной не должна расходиться со списком ролей на ней же.
+// Раньше расходилась: список честно показывал у бухгалтера три регистра, а
+// абзац ниже уверял, что бухгалтер видит только официальный (осталось от модели
+// доступа до D036). Сравнивается страница сама с собой — списка ролей, который
+// собирается из кода, достаточно, чтобы уличить прозу.
+const claims = await evalIn(`
+  (() => {
+    const roles = [...document.querySelectorAll("ul.roles li")].map(li => {
+      const name = (li.querySelector("a") || {}).textContent || "";
+      return {
+        who: name.replace(/^Enter as\\s*/, "").trim().toLowerCase(),
+        ledgers: ((li.querySelector("span") || {}).textContent || "")
+          .split("·")[0].replace(/^\\s*—\\s*sees\\s*/, "").split(",")
+          .map(s => s.trim()).filter(Boolean),
+      };
+    });
+    const prose = [...document.querySelectorAll("p")]
+      .map(p => p.textContent.replace(/\\s+/g, " ").trim()).join(" ");
+    return { roles, prose: prose.toLowerCase() };
+  })()
+`);
+const fullAccess = claims.roles.filter((r) => r.ledgers.length === 3);
+check("на титульной перечислены роли и их регистры", claims.roles.length >= 2,
+      JSON.stringify(claims.roles));
+check(
+  "проза не называет ограниченной роль, у которой все три регистра",
+  fullAccess.every((role) => !claims.prose.split(/[.;]/).some(
+    (sentence) => sentence.includes(role.who.split(" ")[0])
+      && sentence.includes("ledger") && sentence.includes("only"),
+  )),
+  fullAccess.map((r) => r.who).join(", "),
+);
+check(
+  "и всё-таки объясняет срез — на роли, которая ограничена на самом деле",
+  claims.prose.includes("cannot be recovered by subtracting")
+    && claims.roles.some((r) => r.ledgers.length < 3
+        && claims.prose.includes(r.who.split(" ")[0])),
+  claims.prose.slice(0, 300),
+);
+
 // --- один клик — и посетитель внутри продукта ----------------------------------
 
 check(

@@ -9,7 +9,12 @@
 своих точек, из общей выводилась бы чужая (D023).
 Вместе с итогами возвращается база для взносов: правка часов могла сдвинуть её,
 и оставить на экране прежнее число значило бы показывать не то, что в базе.
-{% endcomment %}<td id="row-total-{{ row_id }}" hx-swap-oob="true" class="num strong">{{ row_total|hours }}</td>
+Вместе с ними едет подсказка о подозрительных числах (T118): она обязана
+появиться в тот момент, когда человек набрал число. Разметка у неё общая с
+сеткой — `_row_total.html` и `_hints.html`.
+{% endcomment %}{% if row %}{% include "timesheets/_row_total.html" with row=row oob=True %}{% endif %}
 {% for code, total in grid.column_totals.items %}<td id="col-total-{{ code }}" hx-swap-oob="true" class="num">{{ total|hours }}</td>
 {% endfor %}<td id="grand-total" hx-swap-oob="true" class="num strong">{{ grid.total|hours }}</td>
 {% if row %}{% include "timesheets/_insured_cell.html" with row=row oob=True %}{% endif %}
+{% include "timesheets/_hints.html" with grid=grid oob=True %}
+

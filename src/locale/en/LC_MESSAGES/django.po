@@ -2273,3 +2273,53 @@ msgstr ""
 "  What was reconciled is what does not depend on the ledger: hours, rate, "
 "coefficient. The discrepancy\n"
 "  most often lives right there."
+
+#, python-format
+msgid "%(who)s: ни одного часа за этот месяц — строка табеля пустая"
+msgstr "%(who)s: not a single hour this month — the timesheet row is empty"
+
+#, python-format
+msgid "%(who)s: уволен %(date)s, а часов за этот месяц %(total)s"
+msgstr "%(who)s: dismissed on %(date)s, yet has %(total)s hours this month"
+
+msgid "Стоит посмотреть до расчёта"
+msgstr "Worth a look before the calculation"
+
+msgid "Ни одно из этих чисел не ошибка само по себе — но незамеченными они и становятся неверной зарплатой. Сохранению они не мешают."
+msgstr "None of these numbers is an error by itself — but unnoticed is exactly how they turn into wrong pay. They do not stop the row from being saved."
+
+msgid "проверьте"
+msgstr "check"
+
+msgid "Сопоставлено, но не загружено"
+msgstr "Matched, but not loaded"
+
+msgid "Не загружено: человек найден, а строка не записана"
+msgstr "Not loaded: the person was found, but the row was not written"
+
+msgid "Этих людей продукт узнал, но записывать было некуда — причина у каждой строки своя."
+msgstr "These people were recognised, but there was nowhere to write the row — each row says why."
+
+msgid "Этих людей в справочнике партнёра нет — неизвестно, о ком строка."
+msgstr "These people are not in the partner's directory — there is no telling who the row is about."
+
+#, python-format
+msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: если она изменит его числа, разница ляжет помеченной строкой в ближайший неутверждённый месяц — перенести её можно на странице закрытого."
+msgstr "Payroll is approved through %(edge)s inclusive. An edit dated earlier is accepted, but it does not rewrite the closed month: if it changes the numbers of that month, the difference goes as a marked line into the nearest month that is not approved yet — carry it over on the page of the closed one."
+
+#, python-format
+msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
+msgstr "Payroll is approved through %(edge)s inclusive. An edit dated earlier is accepted, but it does not rewrite the closed month: for this partner the difference is applied by recalculation — reopen the month with a reason and calculate it again."
+
+#, python-format
+msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним до копейки: если правка изменила его числа, разница видна на странице этого месяца и переносится оттуда помеченной строкой в ближайший неутверждённый."
+msgstr "The edit touched payroll approved through %(edge)s. The closed month is unchanged to the last cent: if the edit changed its numbers, the difference is shown on the page of that month and is carried from there as a marked line into the nearest month that is not approved yet."
+
+#, python-format
+msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
+msgstr "The edit touched payroll approved through %(edge)s. The closed month is unchanged: for this partner the difference is applied by recalculation — reopen the month with a reason and calculate it again."
+
+msgid ""
+"Схему расчёта и регистр группы это не касается: версий по датам у них нет\n"
+"  вовсе, и такая правка задним числом по-прежнему отклоняется."
+msgstr "This does not apply to a group's calculation scheme and ledger: they have no dated versions at all, so a backdated edit of them is still rejected."

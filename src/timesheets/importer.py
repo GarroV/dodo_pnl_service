@@ -12,9 +12,11 @@
 2. **Идемпотентность.** Повторная загрузка того же файла не меняет ничего — ни
    строк, ни чисел, ни идентификаторов дней. Достигается не «перезаписью тем же
    значением», а отказом писать: см. `store.row_differs`.
-3. **Отчёт.** Всё, что не разобрано (`findings` разбора), и всё, что разобрано,
-   но подозрительно (`warnings`). Конституция, принцип 1: молча загруженный
-   наполовину табель посчитается и даст правдоподобно неверную зарплату.
+3. **Отчёт.** Всё, что не разобрано (`findings` разбора), всё, что не попало в
+   табель (`unmatched_rows` — человека нет в справочнике; `skipped_rows` —
+   человек найден, но строку не записали), и всё, что записано, но подозрительно
+   (`warnings`). Конституция, принцип 1: молча загруженный наполовину табель
+   посчитается и даст правдоподобно неверную зарплату.
 """
 from __future__ import annotations
 
@@ -24,7 +26,6 @@ from decimal import Decimal
 from uuid import UUID
 
 from django.db import transaction
-from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
 from core.models import Employee, EmploymentTerm, Timesheet, Unit
@@ -32,6 +33,7 @@ from payroll import d
 from payroll.importers import Finding, read_plata_file
 from payrun.calc import month_end
 
+from . import suspicion
 from .closing import open_closures
 from .store import RowInput, country_of, hour_types, store_row
 
@@ -45,7 +47,15 @@ CORRECTION_REASON = "загрузка таблицы партнёра: коло�
 
 @dataclass(frozen=True)
 class UnmatchedRow:
-    """Строка файла, которую не на кого записать."""
+    """Строка файла, которая в табель не попала, — и почему.
+
+    Поводов два, и путать их нельзя (T122). **Не сопоставлена** — человека из
+    файла в справочнике партнёра нет вовсе; тут и правда неизвестно, о ком речь.
+    **Сопоставлена, но не загружена** — человек найден и назван по фамилии, а
+    строку не записали по другой причине (часы точки закрыты, условий найма на
+    месяц нет). Один счётчик на оба повода врал про класс события: отчёт писал
+    «Не сопоставлено 16» и тут же перечислял этих шестнадцати поимённо.
+    """
 
     sheet: str
     name: str
@@ -54,7 +64,7 @@ class UnmatchedRow:
 
 @dataclass(frozen=True)
 class Note:
-    """Загружено, но выглядит подозрительно.
+    """Загружено, но выглядит подозрительно: подсказка плюс место в файле.
 
     Отличается от `Finding` тем, что данные **приняты**: это не «не разобрано»,
     а «посмотрите». Смешивать их в один список нельзя — человек перестанет
@@ -78,16 +88,22 @@ class ImportResult:
     updated: int = 0        # строк табеля изменено
     unchanged: int = 0      # строк табеля, которых загрузка не коснулась
     unmatched_rows: list[UnmatchedRow] = field(default_factory=list)
+    # Сопоставленные, но не записанные: см. `UnmatchedRow`. Отдельным списком, а
+    # не полем внутри строки, потому что на экране это два разных раздела с
+    # разными заголовками и разными следующими шагами.
+    skipped_rows: list[UnmatchedRow] = field(default_factory=list)
     warnings: list[Note] = field(default_factory=list)
     findings: list[Finding] = field(default_factory=list)
 
     @property
     def total_rows(self) -> int:
-        return self.matched + len(self.unmatched_rows)
+        return self.matched + len(self.skipped_rows) + len(self.unmatched_rows)
 
     @property
     def clean(self) -> bool:
-        return not (self.unmatched_rows or self.warnings or self.findings)
+        return not (
+            self.unmatched_rows or self.skipped_rows or self.warnings or self.findings
+        )
 
 
 def _terms_at(tenant_id: UUID, period: date) -> dict[UUID, EmploymentTerm]:
@@ -111,62 +127,23 @@ def _terms_at(tenant_id: UUID, period: date) -> dict[UUID, EmploymentTerm]:
 def _check_data(row, employee, want: RowInput, period: date) -> list[Note]:
     """Подсказки о подозрительном (T021). Загрузку они не отменяют.
 
-    Ни одна из них не ошибка сама по себе: у человека бывает месяц без часов, и
-    норму перерабатывают. Ошибкой был бы **молчаливый** табель, в котором это
-    видно только тому, кто сложит столбик руками.
+    Само правило живёт в `timesheets/suspicion.py` — одно на оба пути ввода
+    (T118). Здесь только то, что есть у загрузки и чего нет у сетки: лист файла,
+    на котором строка стояла, и ключ сотрудника, по которому подсказку можно
+    связать со строкой табеля.
     """
-    notes: list[Note] = []
-    total = sum(want.hours.values(), Decimal("0"))
     who = f"{employee.last_name} {employee.first_name}".strip() or employee.external_id
     where = f"{row.sheet}: {who}"
-    key = employee.external_id
-
-    negative = sorted(kind for kind, value in want.hours.items() if value < 0)
-    if negative:
-        notes.append(Note(
-            "negative",
-            _("%(who)s: отрицательные часы (%(kinds)s)")
-            % {"who": who, "kinds": ", ".join(negative)},
-            where, key,
-        ))
-
-    if total == 0:
-        notes.append(Note(
-            "no_hours",
-            _("%(who)s: в файле нет ни одного часа — строка табеля будет пустой")
-            % {"who": who},
-            where, key,
-        ))
-    elif want.norm_hours > 0 and total > want.norm_hours:
-        notes.append(Note(
-            "over_norm",
-            _("%(who)s: %(total)s ч при норме %(norm)s ч")
-            % {"who": who, "total": f"{total:.2f}", "norm": f"{want.norm_hours:.2f}"},
-            where, key,
-        ))
-
-    # Уволен ДО начала месяца — часов у него быть не может. Увольнение в
-    # середине месяца ничего не значит: часы до даты увольнения законны.
-    if employee.dismissed_at and employee.dismissed_at < period and total > 0:
-        notes.append(Note(
-            "dismissed",
-            _("%(who)s: уволен %(date)s, а в файле %(total)s ч за этот месяц")
-            % {
-                "who": who,
-                # Формат языка страницы, а не жёсткий русский (T103).
-                # `dismissed_at` — дата без времени (models.py), поэтому берём
-                # полный `DATE_FORMAT`, а не машинный `SHORT_DATE_FORMAT`: рядом
-                # на той же странице табеля дата закрытия точки показывается
-                # полным `DATETIME_FORMAT` (см. grid.html), и эта не должна
-                # выглядеть третьим вариантом. `date_format` — не шаблонный
-                # фильтр `date`: часовой пояс сам не переводит, но для
-                # `DateField` перевода и не нужно — там времени нет.
-                "date": date_format(employee.dismissed_at, "DATE_FORMAT"),
-                "total": f"{total:.2f}",
-            },
-            where, key,
-        ))
-    return notes
+    return [
+        Note(hint.kind, hint.text, where, employee.external_id)
+        for hint in suspicion.hints(
+            who=who,
+            hours=want.hours,
+            norm_hours=want.norm_hours,
+            dismissed_at=employee.dismissed_at,
+            period=period,
+        )
+    ]
 
 
 def import_partner_table(file, *, tenant_id: UUID, period: date,
@@ -208,7 +185,7 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
             if term is None:
                 # Без условий найма неизвестна точка, а точка — ключ строки
                 # табеля. Догадка здесь означала бы часы, записанные не туда.
-                result.unmatched_rows.append(UnmatchedRow(
+                result.skipped_rows.append(UnmatchedRow(
                     source.sheet, source.name,
                     _("нет условий найма на этот месяц — неизвестно, на какой точке"),
                 ))
@@ -220,7 +197,7 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
             # а человек прочитал бы неправду о причине — «файл не удалось
             # прочитать». Строка называется поимённо и не теряется.
             if term.unit_id is not None and term.unit_id in closures:
-                result.unmatched_rows.append(UnmatchedRow(
+                result.skipped_rows.append(UnmatchedRow(
                     source.sheet, source.name,
                     _("часы точки %(unit)s за этот месяц закрыты — строка не загружена")
                     % {"unit": unit_codes.get(term.unit_id, "")},

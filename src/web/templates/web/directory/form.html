@@ -16,6 +16,14 @@
 {% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
 {% endif %}
 
+{% comment %}
+Что случится с уже утверждённой зарплатой, сказано ДО правки, а не только после
+неё (T121). Раньше здесь стоял отказ, и человек узнавал о нём, нажав кнопку;
+теперь правка проходит, и знать заранее надо не о запрете, а о последствии:
+закрытый месяц останется прежним, разница поедет вперёд отдельной строкой.
+{% endcomment %}
+{% if closed_note %}<p class="note">{{ closed_note }}</p>{% endif %}
+
 <form class="card" method="post">{% csrf_token %}
   {% include "web/directory/fields.html" with fields=fields %}
   <button type="submit" class="primary">{{ submit_label }}</button>

@@ -320,24 +320,6 @@ def test_a_rule_change_does_not_move_a_closed_period(
     )
 
 
-def test_a_rule_version_inside_a_closed_month_is_refused(
-    client, sql, web_env, overrides_restored, payruns_restored,
-):
-    """Дату внутри утверждённого месяца экран не принимает и называет месяц."""
-    approve_june(client, web_env)
-
-    login_as(client, "admin")
-    answer = post_rule(client, NIGHT_PERCENT, value="1.99", valid_from="2026-06-15")
-    assert answer.status_code == 409, answer.status_code
-    html = body(answer)
-    assert "2026-06" in html, "отказ не назвал месяц, из-за которого отказано"
-    client.post("/logout/")
-
-    assert sql.execute(
-        "select count(*) from rule_overrides where path = %s", (NIGHT_PERCENT,)
-    ).fetchone()[0] == 0, "отказ отказал, но что-то всё-таки записал"
-
-
 def test_the_form_offers_a_date_that_does_not_touch_the_closed_month(
     client, web_env, payruns_restored,
 ):
@@ -467,25 +449,6 @@ def test_editing_a_group_without_touching_the_measure_asks_for_no_date(
     ).fetchone()[0] == 0
 
 
-def test_switching_the_measure_inside_a_closed_month_is_refused(
-    client, sql, web_env, overrides_restored, payruns_restored,
-):
-    """Смена способа задним числом — тот же отказ, что у любого другого правила."""
-    approve_june(client, web_env)
-    login_as(client, "admin")
-    url = group_url(client, "couriers")
-    answer = client.post(url, {
-        "code": "couriers", "title": "Курьеры", "scheme": "direct", "ledger": "internal",
-        "work_measure": "deliveries", "measure_from": "2026-06-10",
-    })
-    assert answer.status_code == 409, answer.status_code
-    assert "2026-06" in body(answer)
-    client.post("/logout/")
-    assert sql.execute(
-        "select count(*) from rule_overrides where path = %s", (COURIERS_MEASURE,)
-    ).fetchone()[0] == 0
-
-
 def test_the_timesheet_shows_the_piece_column_once_the_measure_is_switched(
     client, sql, web_env, overrides_restored, period_restored,
 ):
@@ -514,14 +477,15 @@ def test_the_timesheet_shows_the_piece_column_once_the_measure_is_switched(
     client.post("/logout/")
 
 
-def test_the_rule_page_warns_about_the_closed_month_before_the_refusal(
+def test_the_rule_page_names_the_closed_month_before_the_edit(
     client, web_env, payruns_restored,
 ):
-    """Граница закрытого месяца названа до правки, а не только в отказе после неё.
+    """Граница утверждённой зарплаты названа до правки, а не только после неё.
 
     Найдено в браузере: подставленная дата была верной, но человек, набравший
-    свою, узнавал о запрете только нажав «Завести версию» — продукт молчал там,
-    где знал ответ заранее.
+    свою, узнавал ответ только нажав «Завести версию» — продукт молчал там,
+    где знал его заранее. С T121 ответ другой (правка проходит, разница едет
+    вперёд), а требование то же: сказать заранее.
     """
     approve_june(client, web_env)
     login_as(client, "admin")

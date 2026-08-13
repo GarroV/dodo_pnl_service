@@ -22,6 +22,8 @@
 <h1>{{ heading }}</h1>
 <p class="sub">{{ about }}</p>
 
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+
 {% if search_label %}
 <form class="search" method="get">
   {% include "web/components/field.html" with id="q" name="q" label=search_label value=search_value %}
