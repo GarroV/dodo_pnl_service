@@ -32,6 +32,11 @@ COPY tests/fixtures/plata-sample.xlsx ./tests/fixtures/
 # нездоров всегда.
 COPY docker/ ./docker/
 
+# Статика собирается в образ, а не при старте: старт контейнера — не место для
+# работы, которая может упасть, и не место, где её кто-то увидит. Отдаёт файлы
+# whitenoise прямо из приложения (issue #68); базы этой команде не нужно.
+RUN python manage.py collectstatic --noinput --clear
+
 # Не root: приложение ничего не пишет в файловую систему, и повода давать ему
 # права на неё нет.
 RUN useradd --create-home --uid 10001 app && chown -R app:app /app

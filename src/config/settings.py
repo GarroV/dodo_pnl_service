@@ -45,6 +45,11 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Статика отдаётся тут же, приложением, а не отдельным веб-сервером
+    # (issue #68; почему именно так — у STATIC_ROOT ниже). Место в списке не
+    # произвольное: сразу после SecurityMiddleware, как требует whitenoise, —
+    # тогда файл уходит клиенту, не проходя через сессии, язык и права.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -257,3 +262,29 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+
+# --- Кто отдаёт статику (issue #68) -----------------------------------------
+# Штатный `runserver` отдаёт статику только при DEBUG=1. На площадке стоит
+# DJANGO_DEBUG=0, и до этой правки экран табеля там оставался без htmx, grid.js
+# и grid.css: страница открывалась, сетка рисовалась, ячейка на сервер не
+# уходила — человек вводил часы, видел числа и уходил, ничего не сохранив.
+# Проверено на раскатанном стенде: все три файла отдавали 404.
+#
+# Отдаёт их whitenoise — тем же процессом приложения, без отдельного веб-сервера:
+# файлов три, отдельный nginx рядом стоил бы больше, чем весит проблема.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # Сжатие есть, хешей в именах нет намеренно. Хеши (Manifest…Storage) требуют
+    # обязательного `collectstatic` перед каждым запуском: без собранного
+    # манифеста падает сам тег `{% static %}`, то есть страница целиком. Менять
+    # молчаливую поломку одной ячейки на громкую поломку всех страниц смысла нет
+    # — файлов три, и меняются они раз в полгода.
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
+
+# Отдавать и то, что лежит в пакетах, а не только собранное в STATIC_ROOT.
+# Это страховка ровно от того случая, который и породил issue #68: забытый
+# `collectstatic` снова оставил бы табель без скриптов, и снова молча.
+WHITENOISE_USE_FINDERS = True
