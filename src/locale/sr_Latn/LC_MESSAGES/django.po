@@ -79,19 +79,19 @@ msgid "Черновик"
 msgstr "Nacrt"
 
 msgid "Посчитан"
-msgstr "nije obračunat"
+msgstr "Obračunat"
 
 msgid "Утверждён"
-msgstr "3. Odobrenje"
+msgstr "Odobren"
 
 msgid "Открыт заново"
-msgstr "Ponovo otvori"
+msgstr "Ponovo otvoren"
 
 msgid "Выплачен"
 msgstr "Isplaćeno"
 
 msgid "Период утверждён: расчёт и его данные заморожены. Чтобы пересчитать, период нужно сначала открыть заново."
-msgstr "Period je odobren. Obračun i njegovi podaci su zamrznuti."
+msgstr "Period je odobren: obračun i njegovi podaci su zamrznuti. Da biste ga ponovo obračunali, prvo ponovo otvorite period."
 
 msgid "Откат периода требует причины: напишите, зачем открываете период. Причина попадёт в историю рядом с вашим именем."
 msgstr "Ponovno otvaranje perioda zahteva razlog: napišite zašto otvarate period. Razlog će ući u istoriju pored vašeg imena."
@@ -110,12 +110,10 @@ msgid "разница переносится в текущий период"
 msgstr "razlika se prenosi u tekući period"
 
 msgid "период открывается заново и пересчитывается"
-msgstr "Period je ponovo otvoren. Razlog i vaše ime su zabeleženi u istoriji."
+msgstr "period se ponovo otvara i ponovo obračunava"
 
 msgid "У этого партнёра правки задним числом ведутся пересчётом, а не переносом: закрытый период открывается заново с указанием причины и считается снова. Перенос разницы для него выключен настройкой."
-msgstr ""
-"Kod ovog partnera se izmene unazad rade ponovnim obračunom: ponovo otvorite period\n"
-"    uz navođenje razloga i ponovo ga obračunajte."
+msgstr "Kod ovog partnera se izmene unazad rade ponovnim obračunom, a ne prenosom: zatvoreni period se ponovo otvara uz navođenje razloga i ponovo se obračunava. Prenos razlike je za njega isključen podešavanjem."
 
 msgid "Расхождений с сегодняшними данными в доступном вам срезе нет: переносить нечего. Возможно, разницу уже перенесли — посмотрите период-получатель."
 msgstr "U delu koji vam je dostupan nema odstupanja od današnjih podataka: nema šta da se prenese. Razlika je možda već preneta — pogledajte period-primalac."
@@ -591,7 +589,7 @@ msgid "Действует с"
 msgstr "Od"
 
 msgid "Ставка"
-msgstr "Stopa po satu"
+msgstr "Stopa"
 
 msgid "Коэффициент"
 msgstr "Koeficijent"
@@ -799,25 +797,25 @@ msgid "Утвердите период: расчёт замораживаетс�
 msgstr "Odobrite period: obračun se zamrzava, vraćanje unazad — samo uz razlog."
 
 msgid "Правка табеля"
-msgstr "Idi na evidenciju sati"
+msgstr "Izmena evidencije sati"
 
 msgid "Расчёт периода"
-msgstr "Obračun perioda je u toku"
+msgstr "Obračun perioda"
 
 msgid "Утверждение периода"
-msgstr "Odobri period"
+msgstr "Odobrenje perioda"
 
 msgid "Откат периода"
-msgstr "Istorija perioda"
+msgstr "Vraćanje perioda"
 
 msgid "Закрытие часов по точке"
-msgstr "Zatvori sate objekta"
+msgstr "Zatvaranje sati objekta"
 
 msgid "Заморозка строки ведомости"
-msgstr "Ukupno obračunskog reda"
+msgstr "Zamrzavanje reda obračunske liste"
 
 msgid "Перенос разницы за закрытый месяц"
-msgstr "Prenos iz zatvorenog meseca"
+msgstr "Prenos razlike za zatvoreni mesec"
 
 msgid "Ведение справочников"
 msgstr "Upravljanje imenicima"
@@ -837,10 +835,10 @@ msgid "Бруто"
 msgstr "Bruto"
 
 msgid "Полная стоимость"
-msgstr "Obračunska lista"
+msgstr "Ukupan trošak"
 
 msgid "Часы для взносов"
-msgstr "Osnovica doprinosa"
+msgstr "Sati za doprinose"
 
 msgid "Ставка за час"
 msgstr "Stopa po satu"
@@ -1680,37 +1678,37 @@ msgid "Заморозка не снята."
 msgstr "Zamrzavanje nije ukinuto."
 
 msgid "часов"
-msgstr "Norma sati"
+msgstr "sati"
 
 msgid "ставка за час"
 msgstr "stopa po satu"
 
 msgid "процент оплаты"
-msgstr "Obračun zarade"
+msgstr "procenat plaćanja"
 
 msgid "минимум за час"
 msgstr "minimum po satu"
 
 msgid "типы часов"
-msgstr "Norma sati"
+msgstr "tipovi sati"
 
 msgid "пропорция"
 msgstr "proporcija"
 
 msgid "за полную норму"
-msgstr "Rezultat"
+msgstr "za punu normu"
 
 msgid "отработано дней"
-msgstr "Nije obrađeno u fajlu"
+msgstr "odrađeni dani"
 
 msgid "рабочих дней в месяце"
-msgstr "Prenos iz zatvorenog meseca"
+msgstr "radnih dana u mesecu"
 
 msgid "отработано часов"
-msgstr "Norma sati"
+msgstr "odrađeni sati"
 
 msgid "норма часов"
-msgstr "Norma sati"
+msgstr "norma sati"
 
 msgid "способ"
 msgstr "način"
@@ -1719,7 +1717,7 @@ msgid "база"
 msgstr "osnovica"
 
 msgid "база взносов, часов"
-msgstr "Osnovica doprinosa"
+msgstr "osnovica doprinosa, sati"
 
 msgid "базовая ставка"
 msgstr "osnovna stopa"
@@ -1734,10 +1732,10 @@ msgid "бруто"
 msgstr "bruto"
 
 msgid "налог"
-msgstr "Porez"
+msgstr "porez"
 
 msgid "взносы"
-msgstr "Doprinosi"
+msgstr "doprinosi"
 
 msgid "зачтено"
 msgstr "uračunato"
@@ -1749,7 +1747,7 @@ msgid "доля"
 msgstr "udeo"
 
 msgid "ставка налога"
-msgstr "objekat nije pronađen"
+msgstr "poreska stopa"
 
 msgid "взносы работника"
 msgstr "doprinosi zaposlenog"
@@ -1770,13 +1768,13 @@ msgid "половина необлагаемого"
 msgstr "polovina neoporezivog"
 
 msgid "минимальная база взносов"
-msgstr "Osnovica doprinosa"
+msgstr "minimalna osnovica doprinosa"
 
 msgid "эталонная норма часов"
-msgstr "Norma sati"
+msgstr "referentna norma sati"
 
 msgid "делитель часов"
-msgstr "Norma sati"
+msgstr "delilac sati"
 
 msgid "часов в рабочем дне"
 msgstr "sati u radnom danu"
@@ -1812,7 +1810,7 @@ msgid "сумма из табеля как есть"
 msgstr "iznos iz evidencije sati, kakav jeste"
 
 msgid "правило страны"
-msgstr "Pravilo"
+msgstr "pravilo zemlje"
 
 msgid "переопределение партнёра"
 msgstr "izmena partnera"
@@ -1821,10 +1819,10 @@ msgid "переопределение группы"
 msgstr "izmena grupe"
 
 msgid "переопределение по сотруднику"
-msgstr "Upareno sa zaposlenima"
+msgstr "izmena zaposlenog"
 
 msgid "введено руками"
-msgstr "Uneto redova evidencije sati"
+msgstr "ručno uneto"
 
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
@@ -1932,7 +1930,7 @@ msgid "Схемы расчёта"
 msgstr "Šeme obračuna"
 
 msgid "Типы часов"
-msgstr "Norma sati"
+msgstr "Tipovi sati"
 
 msgid "Чем меряется работа"
 msgstr "Mera rada"

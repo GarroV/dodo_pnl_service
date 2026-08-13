@@ -79,19 +79,19 @@ msgid "Черновик"
 msgstr "Draft"
 
 msgid "Посчитан"
-msgstr "not calculated yet"
+msgstr "Calculated"
 
 msgid "Утверждён"
-msgstr "3. Approval"
+msgstr "Approved"
 
 msgid "Открыт заново"
-msgstr "Reopen"
+msgstr "Reopened"
 
 msgid "Выплачен"
 msgstr "Paid"
 
 msgid "Период утверждён: расчёт и его данные заморожены. Чтобы пересчитать, период нужно сначала открыть заново."
-msgstr "Period approved. The calculation and its data are frozen."
+msgstr "The period is approved: the calculation and its data are frozen. To recalculate it, reopen the period first."
 
 msgid "Откат периода требует причины: напишите, зачем открываете период. Причина попадёт в историю рядом с вашим именем."
 msgstr "Reopening the period requires a reason: write why you are reopening it. The reason will go into the history next to your name."
@@ -110,12 +110,10 @@ msgid "разница переносится в текущий период"
 msgstr "the difference is carried over to the current period"
 
 msgid "период открывается заново и пересчитывается"
-msgstr "Period reopened. The reason and your name are recorded in the history."
+msgstr "the period is reopened and recalculated"
 
 msgid "У этого партнёра правки задним числом ведутся пересчётом, а не переносом: закрытый период открывается заново с указанием причины и считается снова. Перенос разницы для него выключен настройкой."
-msgstr ""
-"For this partner, backdated corrections are handled by recalculation: reopen the period\n"
-"    with a reason and calculate it again."
+msgstr "For this partner, backdated corrections are handled by recalculation rather than carryover: a closed period is reopened with a reason and calculated again. Difference carryover is turned off for them in the settings."
 
 msgid "Расхождений с сегодняшними данными в доступном вам срезе нет: переносить нечего. Возможно, разницу уже перенесли — посмотрите период-получатель."
 msgstr "There are no discrepancies with today's data in the slice available to you: there is nothing to carry over. The difference may have already been carried over — check the receiving period."
@@ -591,7 +589,7 @@ msgid "Действует с"
 msgstr "From"
 
 msgid "Ставка"
-msgstr "Rate per hour"
+msgstr "Rate"
 
 msgid "Коэффициент"
 msgstr "Coefficient"
@@ -799,25 +797,25 @@ msgid "Утвердите период: расчёт замораживаетс�
 msgstr "Approve the period: the calculation is frozen, reverting requires a reason."
 
 msgid "Правка табеля"
-msgstr "Go to timesheet"
+msgstr "Timesheet editing"
 
 msgid "Расчёт периода"
-msgstr "Calculating the period"
+msgstr "Period calculation"
 
 msgid "Утверждение периода"
-msgstr "Approve the period"
+msgstr "Period approval"
 
 msgid "Откат периода"
-msgstr "Period history"
+msgstr "Period rollback"
 
 msgid "Закрытие часов по точке"
-msgstr "Close unit hours"
+msgstr "Closing unit hours"
 
 msgid "Заморозка строки ведомости"
-msgstr "Payslip total"
+msgstr "Payslip row freeze"
 
 msgid "Перенос разницы за закрытый месяц"
-msgstr "Carryover from a closed month"
+msgstr "Posting a difference for a closed month"
 
 msgid "Ведение справочников"
 msgstr "Directory management"
@@ -837,10 +835,10 @@ msgid "Бруто"
 msgstr "Gross"
 
 msgid "Полная стоимость"
-msgstr "Payroll sheet"
+msgstr "Total cost"
 
 msgid "Часы для взносов"
-msgstr "Contribution base"
+msgstr "Hours for contributions"
 
 msgid "Ставка за час"
 msgstr "Rate per hour"
@@ -1680,37 +1678,37 @@ msgid "Заморозка не снята."
 msgstr "Freeze not lifted."
 
 msgid "часов"
-msgstr "Standard hours"
+msgstr "hours"
 
 msgid "ставка за час"
 msgstr "rate per hour"
 
 msgid "процент оплаты"
-msgstr "Payroll calculation"
+msgstr "pay percentage"
 
 msgid "минимум за час"
 msgstr "minimum per hour"
 
 msgid "типы часов"
-msgstr "Standard hours"
+msgstr "hour types"
 
 msgid "пропорция"
 msgstr "proportion"
 
 msgid "за полную норму"
-msgstr "Result"
+msgstr "for the full standard"
 
 msgid "отработано дней"
-msgstr "Not parsed from file"
+msgstr "days worked"
 
 msgid "рабочих дней в месяце"
-msgstr "Carryover from a closed month"
+msgstr "working days in the month"
 
 msgid "отработано часов"
-msgstr "Standard hours"
+msgstr "hours worked"
 
 msgid "норма часов"
-msgstr "Standard hours"
+msgstr "standard hours"
 
 msgid "способ"
 msgstr "method"
@@ -1719,7 +1717,7 @@ msgid "база"
 msgstr "base"
 
 msgid "база взносов, часов"
-msgstr "Contribution base"
+msgstr "contribution base, hours"
 
 msgid "базовая ставка"
 msgstr "base rate"
@@ -1734,10 +1732,10 @@ msgid "бруто"
 msgstr "gross"
 
 msgid "налог"
-msgstr "Tax"
+msgstr "tax"
 
 msgid "взносы"
-msgstr "Contributions"
+msgstr "contributions"
 
 msgid "зачтено"
 msgstr "credited"
@@ -1749,7 +1747,7 @@ msgid "доля"
 msgstr "share"
 
 msgid "ставка налога"
-msgstr "unit not found"
+msgstr "tax rate"
 
 msgid "взносы работника"
 msgstr "employee contributions"
@@ -1770,13 +1768,13 @@ msgid "половина необлагаемого"
 msgstr "half of the tax-exempt amount"
 
 msgid "минимальная база взносов"
-msgstr "Contribution base"
+msgstr "minimum contribution base"
 
 msgid "эталонная норма часов"
-msgstr "Standard hours"
+msgstr "reference standard hours"
 
 msgid "делитель часов"
-msgstr "Standard hours"
+msgstr "hours divisor"
 
 msgid "часов в рабочем дне"
 msgstr "hours in a workday"
@@ -1812,7 +1810,7 @@ msgid "сумма из табеля как есть"
 msgstr "amount from the timesheet, as is"
 
 msgid "правило страны"
-msgstr "Rule"
+msgstr "country rule"
 
 msgid "переопределение партнёра"
 msgstr "partner override"
@@ -1821,10 +1819,10 @@ msgid "переопределение группы"
 msgstr "group override"
 
 msgid "переопределение по сотруднику"
-msgstr "Matched to employees"
+msgstr "employee override"
 
 msgid "введено руками"
-msgstr "Timesheet rows entered"
+msgstr "entered manually"
 
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
@@ -1932,7 +1930,7 @@ msgid "Схемы расчёта"
 msgstr "Calculation schemes"
 
 msgid "Типы часов"
-msgstr "Standard hours"
+msgstr "Hour types"
 
 msgid "Чем меряется работа"
 msgstr "Unit of work"
