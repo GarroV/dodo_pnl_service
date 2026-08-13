@@ -1967,6 +1967,7 @@ msgstr "← Na pravila"
 
 msgid "Зарплата утверждена по %(edge)s включительно: дата раньше этого дня переписала бы закрытый месяц, и правка будет отклонена."
 msgstr "Plata je odobrena zaključno sa %(edge)s: datum pre tog dana bi prepisao zatvoreni mesec, i izmena će biti odbijena."
+
 msgid "%(percent)s и %(amount)s"
 msgstr "%(percent)s i %(amount)s"
 

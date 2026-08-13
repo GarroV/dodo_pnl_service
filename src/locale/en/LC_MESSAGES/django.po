@@ -1967,6 +1967,7 @@ msgstr "← To the rules"
 
 msgid "Зарплата утверждена по %(edge)s включительно: дата раньше этого дня переписала бы закрытый месяц, и правка будет отклонена."
 msgstr "Payroll is approved through %(edge)s inclusive: a date before that day would rewrite the closed month, and the change will be refused."
+
 msgid "%(percent)s и %(amount)s"
 msgstr "%(percent)s and %(amount)s"
 

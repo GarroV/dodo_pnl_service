@@ -35,8 +35,8 @@ from reports.variance import ThresholdsMissing, build_variance
 
 from . import auth, onboarding, permissions
 from .format import cut_title, hours, ledger_title, money, percent, threshold
-from .labels import labeller
 from .i18n import month_title
+from .labels import labeller
 from .principal import get_current_principal
 
 STATUS_TITLES = {
