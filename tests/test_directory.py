@@ -489,11 +489,42 @@ def test_the_calendar_of_a_closed_month_is_refused(client, sql, web_env, payruns
 # --- регистры учёта (D023) ----------------------------------------------------
 
 
-def test_the_directory_never_names_a_ledger_the_role_cannot_see(client, sql):
-    """Ни строкой, ни словом: у администратора в сиде только официальный регистр.
+@pytest.fixture
+def accountant_manages(sql):
+    """Право вести справочники — временно бухгалтеру, у которого один регистр.
+
+    Зачем такая подмена вообще понадобилась (T089). Раньше срез регистров в
+    справочнике проверялся на администраторе сети: у него в сиде стоял один
+    официальный регистр. Ровно это и оказалось дефектом — админка показывала ему
+    8 карточек из 35 и 3 группы из 6, а `directory.manage` есть **только** у
+    него, то есть карточку курьера не мог открыть ни один пользователь продукта.
+    Регистры администратору открыли (тот же довод, что в D033), и проверять срез
+    на нём стало нельзя: он видит всё по праву.
+
+    Само правило при этом никуда не делось: партнёр вправе поручить справочники
+    тому, кто видит не все регистры. Такой роли в сиде нет, поэтому она делается
+    здесь — и разбирается обратно, что бы ни случилось с тестом.
+    """
+    sql.execute(
+        "update roles set permissions = permissions || '[\"directory.manage\"]'::jsonb "
+        "where code = 'accountant' and tenant_id is not null"
+    )
+    try:
+        yield
+    finally:
+        sql.execute(
+            "update roles set permissions = permissions - 'directory.manage' "
+            "where code = 'accountant' and tenant_id is not null"
+        )
+
+
+def test_the_directory_never_names_a_ledger_the_role_cannot_see(
+    client, sql, accountant_manages,
+):
+    """Ни строкой, ни словом: у бухгалтера только официальный регистр.
 
     В сиде есть группы всех трёх регистров, и без отбора справочник назвал бы
-    администратору и «Дополнительный», и «Внутренний» — то есть сообщил бы о
+    бухгалтеру и «Дополнительный», и «Внутренний» — то есть сообщил бы о
     существовании регистров, которых он не видит нигде больше.
     """
     hidden = rows_of(
@@ -503,7 +534,7 @@ def test_the_directory_never_names_a_ledger_the_role_cannot_see(client, sql):
     )
     assert hidden, "в сиде нет групп чужого регистра — проверка проверяет пустоту"
 
-    login_as(client, "admin")
+    login_as(client, "accountant")
     for url in ["/directory/", "/directory/groups/", "/directory/employees/"]:
         html = body(client.get(url))
         assert "Дополнительный" not in html, url
@@ -513,12 +544,63 @@ def test_the_directory_never_names_a_ledger_the_role_cannot_see(client, sql):
     client.post("/logout/")
 
 
-def test_a_group_of_another_ledger_is_not_openable_by_address(client, sql):
+def test_a_group_of_another_ledger_is_not_openable_by_address(
+    client, sql, accountant_manages,
+):
     """Отбор в списке — не защита, если запись открывается прямой ссылкой."""
     group_id = sql.execute(
         "select id from employee_groups where ledger = 'internal' and tenant_id in "
         "(select id from tenants where code = 'rs-dev') limit 1"
     ).fetchone()[0]
-    login_as(client, "admin")
+    login_as(client, "accountant")
     assert client.get(f"/directory/groups/{group_id}/").status_code == 404
+    client.post("/logout/")
+
+
+# --- справочники ведутся ЦЕЛИКОМ (T089) ---------------------------------------
+
+
+def test_the_admin_leads_every_card_not_a_quarter_of_them(client, sql):
+    """Тупик T089 закрыт: у того, кто ведёт справочники, они видны полностью.
+
+    Раньше здесь было 8 карточек из 35 и 3 группы из 6, и это не «часть данных
+    скрыта» — это «продуктом нельзя сделать работу»: `directory.manage` есть
+    только у администратора, и поменять ставку курьеру не мог никто.
+
+    Проверяется парой чисел, а не «страница открылась»: страница открывалась и
+    до починки. И числа берутся из базы, а не написаны в тесте, — иначе тест
+    пришлось бы править всякий раз, когда меняется фикстура, и однажды его
+    поправили бы под сломанное поведение.
+    """
+    people, groups_count = sql.execute(
+        """select (select count(*) from employees e
+                    where e.tenant_id = t.id and e.dismissed_at is null),
+                  (select count(*) from employee_groups g where g.tenant_id = t.id)
+             from tenants t where t.code = 'rs-dev'"""
+    ).fetchone()
+    assert people > 8 and groups_count > 3, "в фикстуре нет скрытых карточек — проверять нечего"
+
+    login_as(client, "admin")
+    index = body(client.get("/directory/"))
+    assert f">{people}<" in index, f"на оглавлении не {people} сотрудников:\n{index}"
+    assert f">{groups_count}<" in index, f"на оглавлении не {groups_count} групп"
+
+    groups_html = body(client.get("/directory/groups/"))
+    for (title,) in rows_of(
+        sql,
+        "select title from employee_groups where tenant_id in "
+        "(select id from tenants where code = 'rs-dev')",
+    ):
+        assert title in groups_html, f"группа {title} не видна тому, кто ведёт справочники"
+    client.post("/logout/")
+
+
+def test_the_admin_opens_a_card_of_every_ledger(client, sql):
+    """Карточка курьера открывается — та самая, ради которой задача и заведена."""
+    group_id = sql.execute(
+        "select id from employee_groups where ledger = 'internal' and tenant_id in "
+        "(select id from tenants where code = 'rs-dev') limit 1"
+    ).fetchone()[0]
+    login_as(client, "admin")
+    assert client.get(f"/directory/groups/{group_id}/").status_code == 200
     client.post("/logout/")
