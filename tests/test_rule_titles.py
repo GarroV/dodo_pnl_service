@@ -221,6 +221,93 @@ def test_every_component_the_engine_can_produce_has_a_title(raw_serbia):
         )
 
 
+# --- строка P&L: та же подпись, тот же язык (T103) ----------------------------
+#
+# `pnl_line` называет строку P&L, на которую ложатся расходы группы, и стоит в
+# том же узле, что `title`. Многоязычным при этом был только `title`, а
+# `pnl_line` оставался русским на всех трёх экранах: `Расходы на управление`,
+# `LC / Тестомейкер`. Проверка экранов его пропускала, потому что числила
+# данными партнёра, — а он приезжает из пресета СТРАНЫ, то есть от продукта.
+
+
+def pnl_lines_of(body: dict) -> dict[str, object]:
+    """Строки P&L групп с путями до них."""
+    return {
+        f"groups.{code}.pnl_line": item["pnl_line"]
+        for code, item in (body.get("groups") or {}).items()
+        if isinstance(item, dict) and "pnl_line" in item
+    }
+
+
+def test_the_pnl_line_collapses_to_the_language_asked_for():
+    """Свёртка обязана знать `pnl_line`, а не только `title`.
+
+    Иначе многоязычная строка P&L доехала бы до экрана словарём — то есть
+    показалась бы человеку питоновским объектом.
+    """
+    body = {"groups": {"office": {
+        "title": {"ru": "Офис", "en": "Office"},
+        "pnl_line": {"ru": "Расходы на управление", "en": "Management costs"},
+        "scheme": "standard",
+    }}}
+    collapsed = localize(body, "en")
+    assert collapsed["groups"]["office"]["pnl_line"] == "Management costs"
+    # Свернулось только называние: схема расчёта осталась схемой.
+    assert collapsed["groups"]["office"]["scheme"] == "standard"
+
+
+def test_a_plain_pnl_line_stays_as_it_was_written():
+    """Строка одним текстом — по-прежнему рабочая запись.
+
+    Партнёр вправе назвать статью на своём языке, и требовать от него перевода
+    продукт не может. Тот же довод, что у подписи одной строкой.
+    """
+    body = {"groups": {"office": {"pnl_line": "LC / GMC"}}}
+    for language in LANGUAGES:
+        assert localize(body, language)["groups"]["office"]["pnl_line"] == "LC / GMC"
+
+
+def test_no_pnl_line_of_the_serbia_preset_stays_russian(raw_serbia):
+    """Русских слов в строке P&L на нерусском экране быть не должно.
+
+    Правило здесь мягче, чем у подписей, и намеренно: `LC / GMC` и `LC / DC` —
+    сокращения учёта, а не слова, переводить их не во что и незачем. Поэтому
+    требование ровно одно: **если строка названа русскими словами, у неё обязаны
+    быть все языки продукта**. Кириллица в нерусском значении — тот же признак
+    непереведённого, что и у подписей.
+    """
+    problems = []
+    for path, line in pnl_lines_of(raw_serbia).items():
+        if isinstance(line, str):
+            if CYRILLIC.search(line):
+                problems.append(
+                    f"{path}: русские слова одной строкой — {line!r}; "
+                    "назовите её на всех языках продукта"
+                )
+            continue
+        by_code = {str(k).lower().replace("_", "-"): v for k, v in line.items()}
+        for language in LANGUAGES:
+            value = str(by_code.get(language, "")).strip()
+            if not value:
+                problems.append(f"{path}: нет языка {language}")
+            elif language != "ru" and CYRILLIC.search(value):
+                problems.append(f"{path}[{language}]: русский текст — {value!r}")
+    assert not problems, "строки P&L пресета Сербии:\n" + "\n".join(problems)
+
+
+def test_the_serbia_preset_really_has_multilingual_pnl_lines(raw_serbia):
+    """Проверка выше не должна оказаться проверкой пустоты.
+
+    Убрать все `pnl_line` из пресета — и она позеленеет, ничего не проверив.
+    Поэтому здесь сказано прямо: многоязычная строка P&L в пресете есть.
+    """
+    lines = pnl_lines_of(raw_serbia)
+    assert lines, "в пресете Сербии не нашлось ни одной строки P&L"
+    assert any(isinstance(line, dict) for line in lines.values()), (
+        "ни одна строка P&L не многоязычна — проверка языков ничего не проверяет"
+    )
+
+
 def test_the_languages_here_are_the_languages_of_the_product():
     """Список языков в этом файле — тот же, что у продукта.
 

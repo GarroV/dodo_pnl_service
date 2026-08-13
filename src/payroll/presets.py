@@ -43,6 +43,17 @@ LEVELS = ("country", "tenant", "group", "employee")
 # нет и быть не может.
 TITLE_KEY = "title"
 
+# Ключи, которые называют вещь человеку и потому сворачиваются к его языку.
+# Множество, а не один `title`: `pnl_line` — строка P&L, на которую ложатся
+# расходы группы, — стоит в том же узле, приезжает из пресета СТРАНЫ и точно так
+# же читается человеком. Пока свёртка знала только `title`, на английском и
+# сербском экране правил рядом с `Unit managers` стояло `Расходы на управление`.
+#
+# Список закрытый, и это важно: свернуть к языку **любой** словарь нельзя —
+# значение правила само бывает отображением (`calendar`, `allowance_prorate`), и
+# свёртка потеряла бы расчёт. Новый называющий ключ вписывается сюда осознанно.
+LOCALIZED_KEYS = frozenset({TITLE_KEY, "pnl_line"})
+
 # Язык, на котором написан продукт и его пресеты, если пресет не сказал иного.
 DEFAULT_LANGUAGE = "ru"
 
@@ -87,9 +98,10 @@ def pick_title(title: Any, language: str, fallback: str) -> Any:
 def localize(body: dict[str, Any], language: str | None = None) -> dict[str, Any]:
     """Свернуть многоязычные подписи тела пресета к одному языку.
 
-    Трогаются только ключи `title`. Остальные отображения остаются как есть, и
-    это не мелочь: значение правила само бывает словарём (`calendar`,
-    `allowance_prorate`), и свернуть его к языку значило бы потерять расчёт.
+    Трогаются только ключи из `LOCALIZED_KEYS`. Остальные отображения остаются
+    как есть, и это не мелочь: значение правила само бывает словарём
+    (`calendar`, `allowance_prorate`), и свернуть его к языку значило бы
+    потерять расчёт.
     """
     fallback = preset_language(body)
     wanted = language_key(language or fallback)
@@ -99,7 +111,7 @@ def localize(body: dict[str, Any], language: str | None = None) -> dict[str, Any
             return {
                 key: (
                     pick_title(value, wanted, fallback)
-                    if key == TITLE_KEY
+                    if key in LOCALIZED_KEYS
                     else walk(value)
                 )
                 for key, value in node.items()
