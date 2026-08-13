@@ -14,9 +14,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#, python-format
-msgid "нет условий найма на этот месяц: %(count)s чел. Расчёт без них выглядел бы верным, поэтому не выполняется."
-msgstr "Nema uslova zapošljavanja za ovaj mesec: %(count)s osoba. Obračun bez njih bi izgledao ispravno, zato se ne izvršava."
+msgid "нет условий найма на этот месяц. Расчёт без них выглядел бы верным, поэтому не выполняется."
+msgstr "Nema uslova zapošljavanja za ovaj mesec. Obračun bez njih bi izgledao ispravno, zato se ne izvršava."
 
 msgid "за этот период нет ни одного табеля — считать нечего. Внесите часы и повторите."
 msgstr "Za ovaj period ne postoji nijedna evidencija sati — nema šta da se obračuna. Unesite sate i pokušajte ponovo."
@@ -29,9 +28,11 @@ msgstr "U pravilima zemlje nema šema obračuna: %(schemes)s. Ispravite grupu za
 msgid "в правилах страны нет способов измерения работы: %(measures)s. Поправьте настройку группы или пресет."
 msgstr "U pravilima zemlje nema načina merenja rada: %(measures)s. Ispravite podešavanje grupe ili preset."
 
-#, python-format
-msgid "база для взносов не сходится с часами табеля: %(count)s чел. По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы верным. Проверьте колонку «База взносов» в табеле."
-msgstr "Osnovica doprinosa se ne poklapa sa satima iz evidencije sati: %(count)s osoba. Iz nje se računaju doprinosi i bruto, zato bi obračun po zastareloj osnovici izgledao ispravno. Proverite kolonu „Osnovica doprinosa“ u evidenciji sati."
+msgid "база для взносов не сходится с часами табеля. По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы верным. Проверьте колонку «База взносов» в табеле."
+msgstr "Osnovica doprinosa se ne poklapa sa satima iz evidencije sati. Iz nje se računaju doprinosi i bruto, zato bi obračun po zastareloj osnovici izgledao ispravno. Proverite kolonu „Osnovica doprinosa“ u evidenciji sati."
+
+msgid "Кто именно не прошёл проверку, видно тому, кому отдан весь расчёт партнёра, — спросите бухгалтера или оперативного директора."
+msgstr "Ko tačno nije prošao proveru vidi onaj kome je dat ceo obračun partnera — pitajte računovođu ili operativnog direktora."
 
 msgid "Ведомость этого периода попадает в регистры учёта, недоступные вашей роли. Запустить расчёт может тот, кто видит их все."
 msgstr "Obračunska lista ovog perioda spada u knjige koje nisu dostupne vašoj ulozi. Obračun može pokrenuti samo onaj ko vidi sve knjige."

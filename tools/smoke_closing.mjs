@@ -224,16 +224,18 @@ await goto(APP + gridHref);
     (alien?.unit || "чужой точки не нашлось") + " → " + denied.status);
 }
 
-await login("accountant");
+// Роль без права закрытия — администратор сети. Бухгалтер им был до T115;
+// теперь у него `unit.close` есть (D036), и здесь он ничего бы не доказывал.
+await login("admin");
 await goto(APP + gridHref);
 {
   const forms = await evalIn(`document.querySelectorAll('input[name=unit]').length`);
   const html = await evalIn(`document.body.innerText`);
-  check("у бухгалтера кнопки закрытия нет, а на её месте объяснение",
+  check("у администратора сети кнопки закрытия нет, а на её месте объяснение",
     forms === 0 && /не входит в права вашей роли/.test(html), String(forms));
 
   const denied = await postAs(APP + gridHref + "close/", { unit: alien?.unit });
-  check("закрытие бухгалтером мимо экрана отвергнуто по праву",
+  check("закрытие им мимо экрана отвергнуто по праву",
     denied.status === 403 && /не входит в права вашей роли/.test(denied.text),
     denied.status + " " + denied.text.slice(0, 60));
 }
