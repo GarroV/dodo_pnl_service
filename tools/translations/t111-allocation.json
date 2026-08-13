@@ -1,0 +1,166 @@
+{
+  " Правила разнесения у статьи нет.": {
+    "en": " The item has no allocation rule.",
+    "sr": " Stavka nema pravilo raspodele."
+  },
+  " Разнести его по точкам может тот, кто ведёт все точки: строки разнесения ложатся и на чужие точки.": {
+    "en": " Only someone who manages every unit can allocate it across units: allocation rows land on other people's units too.",
+    "sr": " Da ga raspodeli po objektima može samo onaj ko vodi sve objekte: redovi raspodele padaju i na tuđe objekte."
+  },
+  " Расход разнесён по точкам правилом статьи: строк — %(count)s.": {
+    "en": " The expense was allocated across units by the item's rule: rows — %(count)s.",
+    "sr": " Trošak je raspodeljen po objektima pravilom stavke: redova — %(count)s."
+  },
+  " Точки у расхода нет, поэтому он ждёт разнесения — и виден в списке нераспределённых: %(url)s": {
+    "en": " The expense has no unit, so it is waiting for allocation — and is visible in the unallocated list: %(url)s",
+    "sr": " Trošak nema objekat, pa čeka raspodelu — i vidljiv je na listi neraspoređenog: %(url)s"
+  },
+  " по %(date)s": {
+    "en": " to %(date)s",
+    "sr": " do %(date)s"
+  },
+  "%(method)s%(unit)s, %(ledger)s, с %(from)s%(to)s": {
+    "en": "%(method)s%(unit)s, %(ledger)s, from %(from)s%(to)s",
+    "sr": "%(method)s%(unit)s, %(ledger)s, od %(from)s%(to)s"
+  },
+  "«Вся сеть» — расход юрлица целиком (аренда офиса, реклама): он разойдётся по точкам правилом статьи.": {
+    "en": "\"Entire network\" — an expense for the whole legal entity (office rent, advertising): it will be spread across units by the item's rule.",
+    "sr": "„Cela mreža“ — trošak celog pravnog lica (kirija kancelarije, reklama): raspodeliće se po objektima pravilom stavke."
+  },
+  "Версии правила": {
+    "en": "Rule versions",
+    "sr": "Verzije pravila"
+  },
+  "Все расходы лежат на точках: закрывать месяц ничто не держит.": {
+    "en": "All expenses are sitting on units: nothing is holding up closing the month.",
+    "sr": "Svi troškovi su na objektima: ništa ne sprečava zatvaranje meseca."
+  },
+  "Для разнесения «%(method)s» нужно выбрать точку.": {
+    "en": "For the \"%(method)s\" allocation, a unit must be chosen.",
+    "sr": "Za raspodelu „%(method)s“ potrebno je izabrati objekat."
+  },
+  "Закрытые месяцы не пересчитывались: %(months)s. Чтобы пересчитать их, месяц придётся открыть заново с причиной.": {
+    "en": "Closed months were not recalculated: %(months)s. To recalculate them, the month must be reopened with a reason.",
+    "sr": "Zatvoreni meseci nisu ponovo obračunati: %(months)s. Da biste ih ponovo obračunali, mesec morate ponovo otvoriti sa razlogom."
+  },
+  "Итого ждёт разнесения": {
+    "en": "Total waiting for allocation",
+    "sr": "Ukupno čeka raspodelu"
+  },
+  "Как разложить по точкам расход, внесённый на всю сеть (аренда офиса, реклама). Без правила он остаётся в списке нераспределённых и в разрез по точкам не попадает.": {
+    "en": "How to spread across units an expense entered for the entire network (office rent, advertising). Without a rule it stays in the unallocated list and never reaches the per-unit breakdown.",
+    "sr": "Kako da se po objektima raspodeli trošak unet na celu mrežu (kirija kancelarije, reklama). Bez pravila ostaje na listi neraspoređenog i ne ulazi u razrez po objektima."
+  },
+  "На одну точку": {
+    "en": "To one unit",
+    "sr": "Na jedan objekat"
+  },
+  "Не выбрана": {
+    "en": "Not chosen",
+    "sr": "Nije izabran"
+  },
+  "Нераспределённого нет.": {
+    "en": "Nothing unallocated.",
+    "sr": "Nema neraspoređenog."
+  },
+  "Нераспределённое": {
+    "en": "Unallocated",
+    "sr": "Neraspoređeno"
+  },
+  "Нужна только для разнесения на одну точку.": {
+    "en": "Needed only for allocation to one unit.",
+    "sr": "Potreban je samo za raspodelu na jedan objekat."
+  },
+  "Пересчёт прошёл: менять было нечего, ни одна строка не тронута.": {
+    "en": "Recalculation completed: there was nothing to change, not a single row was touched.",
+    "sr": "Ponovni obračun je izvršen: nije bilo šta da se menja, ni jedan red nije dodirnut."
+  },
+  "Пересчёт прошёл: строк изменено — %(count)s.": {
+    "en": "Recalculation completed: rows changed — %(count)s.",
+    "sr": "Ponovni obračun je izvršen: izmenjeno redova — %(count)s."
+  },
+  "Пересчёт разнесения.": {
+    "en": "Recalculation of the allocation.",
+    "sr": "Ponovni obračun raspodele."
+  },
+  "По ним видно, каким правилом посчитан закрытый месяц.": {
+    "en": "They show which rule was used to calculate a closed month.",
+    "sr": "Iz njih se vidi kojim pravilom je obračunat zatvoreni mesec."
+  },
+  "Поровну между точками": {
+    "en": "Equally between units",
+    "sr": "Podjednako između objekata"
+  },
+  "Правила нет — расход будет ждать": {
+    "en": "No rule — the expense will wait",
+    "sr": "Nema pravila — trošak će čekati"
+  },
+  "Правило действует с": {
+    "en": "Rule in effect from",
+    "sr": "Pravilo važi od"
+  },
+  "Правило действует с %(from)s: убрать его можно только более поздней датой.": {
+    "en": "The rule has been in effect since %(from)s: it can only be removed with a later date.",
+    "sr": "Pravilo važi od %(from)s: ukloniti ga je moguće samo kasnijim datumom."
+  },
+  "Правило уже действует с %(from)s: новая версия не может начинаться раньше. Возьмите дату позже.": {
+    "en": "The rule is already in effect from %(from)s: a new version cannot start earlier. Pick a later date.",
+    "sr": "Pravilo već važi od %(from)s: nova verzija ne može početi ranije. Izaberite kasniji datum."
+  },
+  "Пропорционально выручке": {
+    "en": "Proportionally to revenue",
+    "sr": "Proporcionalno prihodu"
+  },
+  "Разнесение": {
+    "en": "Allocation",
+    "sr": "Raspodela"
+  },
+  "Разнесение расхода без точки": {
+    "en": "Allocation of an expense without a unit",
+    "sr": "Raspodela troška bez objekta"
+  },
+  "Разнести по правилам": {
+    "en": "Allocate by the rules",
+    "sr": "Raspodeli po pravilima"
+  },
+  "Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по сети, но её нет ни на одной точке.": {
+    "en": "Expenses without a unit: they are waiting for an allocation rule. While they wait, the amount exists for the network but is on none of the units.",
+    "sr": "Troškovi bez objekta: čekaju pravilo raspodele. Dok čekaju, iznos postoji za mrežu, ali ga nema na nijednom objektu."
+  },
+  "Регистр учёта правила": {
+    "en": "Rule's ledger",
+    "sr": "Knjiga pravila"
+  },
+  "Смена правила — новая версия с этой даты, а не правка прежней: закрытые месяцы обязаны считаться тем правилом, которым были посчитаны.": {
+    "en": "Changing the rule is a new version from this date, not an edit of the old one: closed months must be calculated by the rule they were actually calculated with.",
+    "sr": "Promena pravila je nova verzija od ovog datuma, a ne izmena prethodne: zatvoreni meseci moraju biti obračunati onim pravilom kojim su i obračunati."
+  },
+  "Сохранено.": {
+    "en": "Saved.",
+    "sr": "Sačuvano."
+  },
+  "Спрашивать каждый раз": {
+    "en": "Ask every time",
+    "sr": "Pitaj svaki put"
+  },
+  "Точка разнесения": {
+    "en": "Allocation unit",
+    "sr": "Objekat raspodele"
+  },
+  "У одной статьи законно по правилу на регистр: одна и та же трата бывает и официальной, и из кассы.": {
+    "en": "One item may legitimately have a rule per ledger: the same expense can be both official and from the till.",
+    "sr": "Jedna stavka legalno ima pravilo po knjizi: isti trošak može biti i zvaničan i iz kase."
+  },
+  "Что это": {
+    "en": "What this is",
+    "sr": "Šta je to"
+  },
+  "Эти месяцы не пересчитаны: %(months)s — разносит расходы по точкам тот, кто ведёт все точки партнёра.": {
+    "en": "These months were not recalculated: %(months)s — expenses are allocated across units by whoever manages all of the partner's units.",
+    "sr": "Ovi meseci nisu ponovo obračunati: %(months)s — troškove po objektima raspodeljuje onaj ko vodi sve objekte partnera."
+  },
+  "правило разнесения статьи расходов": {
+    "en": "expense item's allocation rule",
+    "sr": "pravilo raspodele stavke troškova"
+  }
+}

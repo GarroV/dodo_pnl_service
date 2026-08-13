@@ -258,3 +258,35 @@ def test_seed_survives_recorded_facts(seeded, conn):
     assert conn.execute("select count(*) from facts").fetchone()[0] == 0
     assert conn.execute("select count(*) from expense_items").fetchone()[0] == 0
     assert conn.execute("select count(*) from employees").fetchone()[0] > 0
+
+
+def test_seed_survives_an_allocation_rule(seeded, conn):
+    """Тот же случай, что выше, и та же цена ошибки: правило разнесения статьи.
+
+    С T111 у правила есть второй ключ — статья расхода, и ссылка эта `PROTECT`.
+    Порядок уборки в сиде — единственная защита от `ProtectedError`: Django
+    исполняет каскад в Python и сам ничего не переставляет. Найдено смоуком —
+    сид падал на стенде, где правило разнесения хоть раз завели с экрана.
+    """
+    from psycopg.types.json import Jsonb
+
+    tenant = conn.execute("select id from tenants where code = 'rs-dev'").fetchone()[0]
+    line = conn.execute("select id from pnl_items where code = 'food_cost'").fetchone()[0]
+    item = conn.execute(
+        """insert into expense_items (tenant_id, code, titles, pnl_item_id, valid_from)
+           values (%s, 'seed-rent', %s, %s, '2020-01-01') returning id""",
+        (tenant, Jsonb({"ru": "Аренда офиса"}), line),
+    ).fetchone()[0]
+    conn.execute(
+        """insert into allocation_rules
+               (tenant_id, expense_item_id, pnl_item_id, method, valid_from)
+           values (%s, %s, %s, 'even', '2026-01-01')""",
+        (tenant, item, line),
+    )
+    conn.commit()
+
+    run_manage(seeded, "seed_dev")
+
+    assert conn.execute("select count(*) from allocation_rules").fetchone()[0] == 0
+    assert conn.execute("select count(*) from expense_items").fetchone()[0] == 0
+    assert conn.execute("select count(*) from employees").fetchone()[0] > 0
