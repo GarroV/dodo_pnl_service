@@ -542,6 +542,105 @@ def test_the_seed_runs_over_a_period_that_is_still_approved():
             assert conn.execute("select count(*) from pay_components").fetchone()[0] == 0
 
 
+def test_the_seed_runs_over_a_stand_left_in_the_dirtiest_state():
+    """Сид приводит стенд к эталону при любом состоянии, а не только при
+    утверждённом расчёте (T126).
+
+    Сторожей правильных чисел у продукта не один, и каждый новый ломает
+    обслуживание одним и тем же способом: уборка ходит теми же путями записи,
+    что человек (issue #60, #62, перенос разницы). Проверять их по одному — это
+    находить каждый следующий на стенде руками, поэтому здесь стенд доводится до
+    состояния, в котором срабатывают **все сразу**: расчёт утверждён (и потому
+    месяц закрыт), строка ведомости заморожена, часы точки закрыты, висит
+    незавершённое задание очереди и лежит факт закрытого месяца.
+
+    Ни один сторож при этом не ослабляется — сид открывает период заново с
+    причиной и снимает заморозку, как это делает человек. Что запрет остался на
+    месте после сида, проверяют соседние тесты этого файла.
+    """
+    psycopg = pytest.importorskip("psycopg")
+
+    from conftest import run_manage, temp_database
+
+    with temp_database("payrun_seed_dirty") as dsn:
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn, autocommit=True) as conn:
+            tenant = conn.execute("select id from tenants limit 1").fetchone()[0]
+            unit = conn.execute("select id from units limit 1").fetchone()[0]
+            employee = conn.execute("select id from employees limit 1").fetchone()[0]
+            item = conn.execute("select id from pnl_items limit 1").fetchone()[0]
+
+            payrun_id = conn.execute(
+                "insert into payruns (tenant_id, period) values (%s, %s) returning id",
+                (tenant, JUNE),
+            ).fetchone()[0]
+            payslip_id = conn.execute(
+                """insert into payslips (tenant_id, payrun_id, employee_id)
+                   values (%s, %s, %s) returning id""",
+                (tenant, payrun_id, employee),
+            ).fetchone()[0]
+            conn.execute(
+                """insert into pay_components
+                       (tenant_id, payslip_id, code, title, amount, ledger)
+                   values (%s, %s, 'hours.regular', 'Часы', 100, 'official')""",
+                (tenant, payslip_id),
+            )
+            # Заморозка ставится ДО утверждения: спорную строку помечают, пока
+            # месяц ведут, — и вместе с ней месяц и закрывают (T027).
+            conn.execute(
+                """insert into payslip_freezes (tenant_id, payslip_id, reason)
+                   values (%s, %s, 'спорная строка')""",
+                (tenant, payslip_id),
+            )
+            conn.execute(
+                """insert into timesheet_closures (tenant_id, unit_id, period)
+                   values (%s, %s, %s)""",
+                (tenant, unit, JUNE),
+            )
+            conn.execute(
+                """insert into payrun_jobs (tenant_id, period, status, started_at)
+                   values (%s, %s, 'running', now())""",
+                (tenant, JUNE),
+            )
+            batch = conn.execute(
+                """insert into fact_batches (tenant_id, source, external_ref)
+                   values (%s, 'manual', 'проба') returning id""",
+                (tenant,),
+            ).fetchone()[0]
+            conn.execute(
+                """insert into facts (tenant_id, batch_id, period, unit_id, pnl_item_id,
+                                      amount, currency, title, source, dedup_key, ledger)
+                   values (%s, %s, %s, %s, %s, 100, 'RSD', 'проба', 'manual',
+                           'probe-1', 'official')""",
+                (tenant, batch, JUNE, unit, item),
+            )
+            set_status(conn, payrun_id, "calculated", "approved")
+
+            assert status_of(conn, payrun_id) == "approved"
+            assert conn.execute(
+                "select status from periods where tenant_id = %s", (tenant,)
+            ).fetchone()[0] == "closed", "подготовка не закрыла месяц"
+
+        run_manage(dsn, "seed_dev")
+
+        with psycopg.connect(dsn) as conn:
+            left = {
+                table: conn.execute(f"select count(*) from {table}").fetchone()[0]
+                for table in (
+                    "payruns", "payslips", "pay_components", "payslip_freezes",
+                    "timesheet_closures", "payrun_jobs", "facts", "fact_batches",
+                )
+            }
+            assert left == dict.fromkeys(left, 0), f"сид оставил за собой: {left}"
+            # И эталон на месте, а не «пусто вообще»: уборка не должна унести с
+            # собой сами тестовые данные.
+            assert conn.execute("select count(*) from employees").fetchone()[0] == 35
+            assert conn.execute(
+                "select status from periods limit 1"
+            ).fetchone()[0] == "open"
+
+
 # --- расчёт и статус ---------------------------------------------------------
 # Дальше — живой Django на базе с сидом: расчёт со страницы периода обязан
 # оставлять статус, а не молча держать черновик.
