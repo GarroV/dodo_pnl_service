@@ -2089,3 +2089,187 @@ msgstr "entered manually"
 
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
+
+#, python-format
+msgid ""
+"нет условий найма на этот месяц: %(count)s чел. Расчёт без них выглядел бы "
+"верным, поэтому не выполняется."
+msgstr ""
+"No employment terms for this month: %(count)s people. A calculation without "
+"them would look correct, so it does not run."
+
+#, python-format
+msgid ""
+"база для взносов не сходится с часами табеля: %(count)s чел. По ней "
+"считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы "
+"верным. Проверьте колонку «База взносов» в табеле."
+msgstr ""
+"The contribution base does not match the timesheet hours: %(count)s people. "
+"Contributions and gross pay are calculated from it, so a calculation on an "
+"outdated base would look correct. Check the \"Contribution base\" column in "
+"the timesheet."
+
+#, python-format
+msgid ""
+"Месяц %(month)s закрыт, и текущий месяц %(current)s тоже — расход записать "
+"некуда. Откройте месяц заново с причиной."
+msgstr "Month %(month)s is closed, and the current month %(current)s is too — there is nowhere to record the expense. Reopen the month with a reason."
+
+msgid "Точка не найдена."
+msgstr "Unit not found."
+
+msgid "Месяц закрылся, пока расход вносили. Откройте форму заново."
+msgstr "The month was closed while the expense was being entered. Reopen the form and try again."
+
+msgid ""
+"Форма устарела или испорчена. Откройте её заново и внесите расход ещё раз."
+msgstr "The form is outdated or corrupted. Reopen it and record the expense again."
+
+msgid ""
+"Вас ещё не завели ни к одному партнёру, поэтому вносить расход некуда. "
+"Попросите администратора сети добавить вас."
+msgstr "You have not been added to any partner yet, so there is nowhere to record an expense. Ask the network administrator to add you."
+
+msgid "Дата расхода"
+msgstr "Expense date"
+
+#, python-format
+msgid "«%(label)s»: расход на ноль не вносится."
+msgstr "\"%(label)s\": a zero-amount expense is not recorded."
+
+msgid "Комментарий"
+msgstr "Comment"
+
+msgid "Статья расхода"
+msgstr "Expense item"
+
+msgid "Статья не найдена."
+msgstr "Expense item not found."
+
+#, python-format
+msgid ""
+"Статья «%(title)s» на %(date)s не действует: выберите другую или поправьте "
+"её в справочнике."
+msgstr "Expense item \"%(title)s\" is not effective on %(date)s: choose another one or fix it in the directory."
+
+msgid ""
+"Когда деньги вышли из кассы. Месяц уже закрыт — расход ляжет в текущий, а "
+"эта дата останется при нём."
+msgstr "When the money left the cash register. If the month is already closed, the expense lands in the current month, and this date stays with it."
+
+msgid ""
+"Статьи ведёт администратор сети. Нужной нет — попросите завести: выдумывать "
+"название на месте нельзя, иначе одна трата назовётся по-разному."
+msgstr "Expense items are maintained by the network administrator. If the one you need is missing, ask them to add it — making up a name on the spot is not allowed, or the same expense would end up called differently each time."
+
+msgid "Зачем потратили. Через месяц это единственное, по чему строку узнают."
+msgstr "What the money was spent on. A month from now, this is the only thing the line will be recognized by."
+
+msgid "Ваша точка. Расход пойдёт на неё."
+msgstr "Your unit. The expense will be posted to it."
+
+#, python-format
+msgid "Расход записан в месяц %(month)s."
+msgstr "The expense was recorded for %(month)s."
+
+#, python-format
+msgid ""
+"Месяц %(closed)s закрыт, поэтому расход записан в %(month)s — с исходной "
+"датой и не сдвинув закрытый месяц."
+msgstr "Month %(closed)s is closed, so the expense was recorded for %(month)s — keeping the original date and without moving the closed month."
+
+msgid "Статьи расходов"
+msgstr "Expense items"
+
+msgid "Чем называют траты и в какую строку P&L они попадают"
+msgstr "What expenses are called and which P&L line they fall into"
+
+msgid "Нужно хотя бы одно название статьи — без него её не выбрать глазами."
+msgstr "At least one name for the item is required — without it, no one can pick it out by eye."
+
+msgid "статья расходов"
+msgstr "expense item"
+
+msgid "Чем называют траты и в какую строку P&L они попадают."
+msgstr "What expenses are called and which P&L line they fall into."
+
+msgid "Завести статью"
+msgstr "Add expense item"
+
+msgid "Строка P&L"
+msgstr "P&L line"
+
+msgid "Статей расходов нет."
+msgstr "No expense items."
+
+msgid ""
+"Справочник поставляется пустым намеренно: список статей придёт с файла "
+"бухгалтера, а не выдумывается здесь — иначе одна и та же трата называлась бы "
+"по-разному у нас и у неё."
+msgstr "The directory ships empty on purpose: the list of items will come from the accountant's file, not be invented here — otherwise the same expense would be named differently by us and by them."
+
+msgid "Дата закрытия раньше или равна дате начала действия."
+msgstr "The closing date is earlier than or the same as the start date."
+
+msgid "строка P&L статьи расходов"
+msgstr "P&L line of an expense item"
+
+msgid "Новая статья"
+msgstr "New expense item"
+
+msgid "← К статьям расходов"
+msgstr "← To the expense items"
+
+msgid "По нему статья сходится с файлом бухгалтера при загрузке."
+msgstr "Used to match the item with the accountant's file on import."
+
+#, python-format
+msgid "Название (%(language)s)"
+msgstr "Name (%(language)s)"
+
+msgid ""
+"Статья закрывается датой, а не удалением: закрытые месяцы на неё ссылаются."
+msgstr "An expense item is closed with a date, not by deleting it: closed months refer to it."
+
+msgid "Ставка за час"
+msgstr "Rate per hour"
+
+msgid "Внести расход"
+msgstr "Record expense"
+
+msgid ""
+"Наличные из кассы точки: что потратили, сколько и на что. Расход попадёт в "
+"P&L строкой своей статьи."
+msgstr "Cash from the unit's till: what was spent, how much, and on what. The expense lands in P&L as a line of its item."
+
+msgid "Записано."
+msgstr "Recorded."
+
+msgid "Не записано."
+msgstr "Not recorded."
+
+msgid "Записать расход"
+msgstr "Save expense"
+
+msgid ""
+"Итоги расчёта по этим строкам вам не отданы: нето, бруто и взносы посчитаны\n"
+"  по строке ведомости целиком, и база показывает их только роли, которой "
+"видны\n"
+"  все регистры учёта. Поэтому <strong>деньги здесь не сравнивались</strong> "
+"— ни\n"
+"  одного нашего числа по ним не показано, и совпадением это не считается.\n"
+"  Сверено то, что от регистра не зависит: часы, ставка, коэффициент. "
+"Расхождение\n"
+"  чаще всего сидит именно там."
+msgstr ""
+"The calculation totals for these rows were not given to you: net, gross, and "
+"contributions are calculated\n"
+"  for the payslip as a whole, and the system shows them only to a role that "
+"can see\n"
+"  all ledgers. That is why <strong>amounts were not compared here</strong> — "
+"not\n"
+"  a single one of our numbers is shown for them, and this does not count as "
+"a match.\n"
+"  What was reconciled is what does not depend on the ledger: hours, rate, "
+"coefficient. The discrepancy\n"
+"  most often lives right there."

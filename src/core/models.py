@@ -286,6 +286,71 @@ class PnlItem(models.Model):
         ]
 
 
+class ExpenseItem(models.Model):
+    """Статья расходов партнёра: то, что человек выбирает, внося трату (T108).
+
+    **Зачем отдельно от `pnl_items`.** Строка P&L — это то, что видно в отчёте
+    («Коммунальные»), а статья — то, чем оперирует бухгалтер, внося расход
+    («вода», «электричество», «вывоз мусора»). Их несколько на одну строку
+    отчёта, и складывать их в один справочник значило бы либо раздувать P&L до
+    сотни строк, либо терять подробность внесения. Поэтому статья **ссылается**
+    на строку P&L, а не заменяет её.
+
+    **Справочник поставляется пустым, и это решение, а не недоделка.** Список
+    статей придёт с файла бухгалтера Сербии (вопрос Q015). Выдуманный список
+    означал бы, что одна и та же трата у нас и у неё называется по-разному, — и
+    вскрылось бы это на первой сборке P&L, когда сходиться уже поздно.
+
+    **Названия — на языках интерфейса, ключами из `settings.LANGUAGES`.** Это
+    исключение из правила «данные не переводятся» (`web/i18n.py`), и оно
+    оправдано составом читателей: одну и ту же статью выбирает сербский
+    бухгалтер и читает русскоязычный оперативный директор. Название точки такой
+    пары читателей не имеет, а статья имеет. Хранится словарём, а не тремя
+    колонками: четвёртый язык интерфейса не должен требовать миграции колонок.
+
+    **Действует с даты, закрывается датой.** Привязка статьи к строке P&L — это
+    правило разнесения трат по отчёту, а правки правил задним числом ломают
+    закрытый месяц (D020). Версий у привязки нет — она одна на всю историю
+    статьи, — поэтому правка, задевающая утверждённый месяц, отклоняется
+    словами (`web/directory.refuse_if_unversioned_touches_closed_month`), тем же
+    отказом, что схема расчёта группы. Закончилась статья — ставится `valid_to`,
+    а не удаление: закрытые месяцы на неё ссылаются.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    code = models.TextField()
+    # Ключи — коды языков интерфейса как есть (`ru`, `en`, `sr-latn`), без
+    # своего словаря соответствий: второй список языков рядом с настройками
+    # разъехался бы с ними молча.
+    titles = models.JSONField(db_default={})
+    pnl_item = models.ForeignKey(PnlItem, on_delete=models.PROTECT, db_column="pnl_item_id")
+    valid_from = models.DateField()
+    valid_to = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "expense_items"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant", "code"], name="expense_items_tenant_code_uniq"
+            ),
+            # Статья без единого названия — строка, которую человек не сможет
+            # выбрать глазами: в списке она будет пустой. Пустое название
+            # запрещено базой, а не только формой, потому что писать сюда будут
+            # и загрузка файла бухгалтера, и будущий API.
+            models.CheckConstraint(
+                condition=~models.Q(titles={}), name="expense_items_titles_not_empty"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(valid_to__isnull=True)
+                | models.Q(valid_to__gt=models.F("valid_from")),
+                name="expense_items_validity",
+            ),
+        ]
+
+
 class Counterparty(models.Model):
     """Контрагент. Знание «как его пишут в разных системах» — это данные, не память."""
 
@@ -1274,6 +1339,15 @@ class Fact(models.Model):
         db_column="legal_entity_id",
     )
     pnl_item = models.ForeignKey(PnlItem, on_delete=models.PROTECT, db_column="pnl_item_id")
+    # Статья расходов, которую человек выбрал, внося трату (T108). Пусто у всего,
+    # что статьи не имеет: зарплатных строк, выручки из коннектора, переводов.
+    # Строка P&L при этом заполнена всегда — она берётся из статьи, но остаётся
+    # у факта своей колонкой: отчёт не должен зависеть от того, переназвали ли
+    # статью после закрытия месяца.
+    expense_item = models.ForeignKey(
+        "ExpenseItem", on_delete=models.PROTECT, null=True, blank=True,
+        db_column="expense_item_id",
+    )
     ledger = ledger_field(db_default="official")
     counterparty = models.ForeignKey(
         Counterparty, on_delete=models.SET_NULL, null=True, blank=True,

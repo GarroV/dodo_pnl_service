@@ -40,7 +40,13 @@
   устройство продукта: объяснять здесь нечего, и плашка «вам нельзя» в шапке
   каждой страницы была бы шумом.
   {% endcomment %}
-  <nav aria-label="{% translate "Основная навигация" %}"><a href="{% url 'periods' %}">{% translate "Периоды" %}</a>{% if principal|may:"directory.manage" %} <a href="{% url 'directory' %}">{% translate "Справочники" %}</a>{% endif %}{% if principal|may:"rules.manage" %} <a href="{% url 'rules' %}">{% translate "Правила" %}</a>{% endif %}</nav>
+  {% comment %}
+  «Внести расход» (T109) видит каждый, кто вошёл: права на внесение первичных
+  данных в продукте нет — расход отвергают точка и регистр, а не отдельное
+  право. Показывать пункт только части ролей значило бы завести разграничение
+  в разметке, где его никто не проверит.
+  {% endcomment %}
+  <nav aria-label="{% translate "Основная навигация" %}"><a href="{% url 'periods' %}">{% translate "Периоды" %}</a>{% if principal %} <a href="{% url 'expense-new' %}">{% translate "Внести расход" %}</a>{% endif %}{% if principal|may:"directory.manage" %} <a href="{% url 'directory' %}">{% translate "Справочники" %}</a>{% endif %}{% if principal|may:"rules.manage" %} <a href="{% url 'rules' %}">{% translate "Правила" %}</a>{% endif %}</nav>
   <div class="who">
     {% if languages %}
     <form class="lang" method="post" action="{% url 'set_language' %}">{% csrf_token %}

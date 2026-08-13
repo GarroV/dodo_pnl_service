@@ -1,7 +1,14 @@
 """Маршруты интерфейса."""
 from django.urls import path
 
-from . import directory_views, reports_views, rules_views, views
+from . import (
+    cash_views,
+    directory_views,
+    expense_items_views,
+    reports_views,
+    rules_views,
+    views,
+)
 
 urlpatterns = [
     path("", views.index, name="index"),
@@ -97,6 +104,31 @@ urlpatterns = [
         directory_views.legal_entity,
         name="directory-legal-entity",
     ),
+    # Статьи расходов (T108). Шестой справочник, поэтому и адрес под тем же
+    # префиксом: право одно и то же (`directory.manage`), и общий префикс делает
+    # это видно по адресу, а не только по коду.
+    path(
+        "directory/expense-items/",
+        expense_items_views.expense_items,
+        name="directory-expense-items",
+    ),
+    path(
+        "directory/expense-items/new/",
+        expense_items_views.expense_item,
+        name="directory-expense-item-new",
+    ),
+    path(
+        "directory/expense-items/<uuid:item_id>/",
+        expense_items_views.expense_item,
+        name="directory-expense-item",
+    ),
+    # Внесение расхода из кассы (T109). Не под префиксом справочников: это
+    # внесение первичных данных, а не ведение словаря, и делают это все роли,
+    # кроме администратора сети, — у которого как раз справочники и есть.
+    #
+    # Списка расходов здесь пока нет намеренно: он задача T110, и заводить
+    # адрес под ненаписанный экран значило бы обещать несделанное.
+    path("expenses/new/", cash_views.cash_expense, name="expense-new"),
     # Правила расчёта (T090). Отдельный префикс, а не раздел справочников:
     # право другое (`rules.manage`), и партнёр вправе развести ведение
     # справочников и ведение правил по разным людям.

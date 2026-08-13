@@ -2089,3 +2089,185 @@ msgstr "ručno uneto"
 
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
+
+#, python-format
+msgid ""
+"нет условий найма на этот месяц: %(count)s чел. Расчёт без них выглядел бы "
+"верным, поэтому не выполняется."
+msgstr ""
+"Nema uslova zapošljavanja za ovaj mesec: %(count)s osoba. Obračun bez njih "
+"bi izgledao ispravno, zato se ne izvršava."
+
+#, python-format
+msgid ""
+"база для взносов не сходится с часами табеля: %(count)s чел. По ней "
+"считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы "
+"верным. Проверьте колонку «База взносов» в табеле."
+msgstr ""
+"Osnovica doprinosa se ne poklapa sa satima iz evidencije sati: %(count)s "
+"osoba. Iz nje se računaju doprinosi i bruto, zato bi obračun po zastareloj "
+"osnovici izgledao ispravno. Proverite kolonu „Osnovica doprinosa“ u "
+"evidenciji sati."
+
+#, python-format
+msgid ""
+"Месяц %(month)s закрыт, и текущий месяц %(current)s тоже — расход записать "
+"некуда. Откройте месяц заново с причиной."
+msgstr "Mesec %(month)s je zatvoren, a i tekući mesec %(current)s — nema gde da se upiše trošak. Ponovo otvorite mesec sa razlogom."
+
+msgid "Точка не найдена."
+msgstr "Objekat nije pronađen."
+
+msgid "Месяц закрылся, пока расход вносили. Откройте форму заново."
+msgstr "Mesec je zatvoren dok je trošak unošen. Otvorite formu ponovo."
+
+msgid ""
+"Форма устарела или испорчена. Откройте её заново и внесите расход ещё раз."
+msgstr "Forma je zastarela ili oštećena. Otvorite je ponovo i unesite trošak još jednom."
+
+msgid ""
+"Вас ещё не завели ни к одному партнёру, поэтому вносить расход некуда. "
+"Попросите администратора сети добавить вас."
+msgstr "Još niste dodati ni jednom partneru, pa nema gde da se unese trošak. Zamolite administratora mreže da vas doda."
+
+msgid "Дата расхода"
+msgstr "Datum troška"
+
+#, python-format
+msgid "«%(label)s»: расход на ноль не вносится."
+msgstr "„%(label)s“: trošak sa iznosom nula se ne unosi."
+
+msgid "Комментарий"
+msgstr "Komentar"
+
+msgid "Статья расхода"
+msgstr "Stavka troška"
+
+msgid "Статья не найдена."
+msgstr "Stavka troška nije pronađena."
+
+#, python-format
+msgid ""
+"Статья «%(title)s» на %(date)s не действует: выберите другую или поправьте "
+"её в справочнике."
+msgstr "Stavka troška „%(title)s“ nije važeća na %(date)s: izaberite drugu ili je ispravite u imeniku."
+
+msgid ""
+"Когда деньги вышли из кассы. Месяц уже закрыт — расход ляжет в текущий, а "
+"эта дата останется при нём."
+msgstr "Kada je novac izašao iz kase. Ako je mesec već zatvoren, trošak upada u tekući mesec, a ovaj datum ostaje uz njega."
+
+msgid ""
+"Статьи ведёт администратор сети. Нужной нет — попросите завести: выдумывать "
+"название на месте нельзя, иначе одна трата назовётся по-разному."
+msgstr "Stavke troškova održava administrator mreže. Ako nedostaje ona koja vam treba, zamolite ga da je doda — nije dozvoljeno smišljati naziv u hodu, jer bi se isti trošak svaki put zvao drugačije."
+
+msgid "Зачем потратили. Через месяц это единственное, по чему строку узнают."
+msgstr "Zašto je potrošeno. Za mesec dana to je jedino po čemu će se red prepoznati."
+
+msgid "Ваша точка. Расход пойдёт на неё."
+msgstr "Vaš objekat. Trošak će biti knjižen na njega."
+
+#, python-format
+msgid "Расход записан в месяц %(month)s."
+msgstr "Trošak je zapisan za %(month)s."
+
+#, python-format
+msgid ""
+"Месяц %(closed)s закрыт, поэтому расход записан в %(month)s — с исходной "
+"датой и не сдвинув закрытый месяц."
+msgstr "Mesec %(closed)s je zatvoren, zato je trošak zapisan za %(month)s — sa originalnim datumom i bez pomeranja zatvorenog meseca."
+
+msgid "Статьи расходов"
+msgstr "Stavke troškova"
+
+msgid "Чем называют траты и в какую строку P&L они попадают"
+msgstr "Kako se troškovi nazivaju i u koji red P&L-a spadaju"
+
+msgid "Нужно хотя бы одно название статьи — без него её не выбрать глазами."
+msgstr "Potreban je bar jedan naziv stavke — bez njega se ne može prepoznati očima."
+
+msgid "статья расходов"
+msgstr "stavka troška"
+
+msgid "Чем называют траты и в какую строку P&L они попадают."
+msgstr "Kako se troškovi nazivaju i u koji red P&L-a spadaju."
+
+msgid "Завести статью"
+msgstr "Dodaj stavku troška"
+
+msgid "Строка P&L"
+msgstr "P&L red"
+
+msgid "Статей расходов нет."
+msgstr "Nema stavki troškova."
+
+msgid ""
+"Справочник поставляется пустым намеренно: список статей придёт с файла "
+"бухгалтера, а не выдумывается здесь — иначе одна и та же трата называлась бы "
+"по-разному у нас и у неё."
+msgstr "Imenik se isporučuje prazan namerno: spisak stavki će stići iz fajla računovođe, a ne izmišljati se ovde — inače bi se isti trošak kod nas i kod nje zvao drugačije."
+
+msgid "Дата закрытия раньше или равна дате начала действия."
+msgstr "Datum zatvaranja je pre datuma početka ili je isti kao on."
+
+msgid "строка P&L статьи расходов"
+msgstr "P&L red stavke troška"
+
+msgid "Новая статья"
+msgstr "Nova stavka troška"
+
+msgid "← К статьям расходов"
+msgstr "← Na stavke troškova"
+
+msgid "По нему статья сходится с файлом бухгалтера при загрузке."
+msgstr "Po njemu se stavka poklapa sa fajlom računovođe pri uvozu."
+
+#, python-format
+msgid "Название (%(language)s)"
+msgstr "Naziv (%(language)s)"
+
+msgid ""
+"Статья закрывается датой, а не удалением: закрытые месяцы на неё ссылаются."
+msgstr "Stavka troška se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na nju."
+
+msgid "Ставка за час"
+msgstr "Stopa po satu"
+
+msgid "Внести расход"
+msgstr "Unesi trošak"
+
+msgid ""
+"Наличные из кассы точки: что потратили, сколько и на что. Расход попадёт в "
+"P&L строкой своей статьи."
+msgstr "Gotovina iz kase objekta: šta je potrošeno, koliko i na šta. Trošak ulazi u P&L kao red svoje stavke."
+
+msgid "Записано."
+msgstr "Zapisano."
+
+msgid "Не записано."
+msgstr "Nije zapisano."
+
+msgid "Записать расход"
+msgstr "Sačuvaj trošak"
+
+msgid ""
+"Итоги расчёта по этим строкам вам не отданы: нето, бруто и взносы посчитаны\n"
+"  по строке ведомости целиком, и база показывает их только роли, которой "
+"видны\n"
+"  все регистры учёта. Поэтому <strong>деньги здесь не сравнивались</strong> "
+"— ни\n"
+"  одного нашего числа по ним не показано, и совпадением это не считается.\n"
+"  Сверено то, что от регистра не зависит: часы, ставка, коэффициент. "
+"Расхождение\n"
+"  чаще всего сидит именно там."
+msgstr ""
+"Ukupni iznosi obračuna za ove redove vam nisu dati: neto, bruto i doprinosi "
+"se računaju\n"
+"  za obračunski red u celini, a baza ih prikazuje samo ulozi kojoj su "
+"vidljive\n"
+"  sve knjige. Zato <strong>iznosi ovde nisu upoređeni</strong> — nijedan\n"
+"  naš broj za njih nije prikazan, i to se ne smatra poklapanjem.\n"
+"  Upoređeno je ono što ne zavisi od knjige: sati, stopa, koeficijent. "
+"Odstupanje\n"
+"  najviše leži baš tu."

@@ -308,7 +308,19 @@ class Command(BaseCommand):
         models.PayslipFreeze.objects.filter(
             tenant__in=tenants, released_at__isnull=True
         ).update(released_at=now())
+        # Факты идут раньше точек, юрлиц и статей: ссылки на них у факта
+        # `PROTECT`, и пока факт жив, точку не удалить. Пока фактов никто не
+        # писал, этого не было видно — сид падал в первый же день, когда в
+        # продукте появилось внесение расхода (T109), и падал не на расходе, а
+        # на попытке пересобрать тенант: `ProtectedError` на `Fact.unit`.
+        # Найдено смоуком, а не тестами: тесты сид не гоняют поверх собственных
+        # данных.
+        #
+        # Удалять их можно только **после** отката утверждённых расчётов выше:
+        # факт закрытого месяца не даёт удалить триггер `facts_guard`, и
+        # действует он в том числе на владельца схемы.
         for model in (
+            models.Fact, models.SourceDocument, models.FactBatch, models.ExpenseItem,
             models.PayComponent, models.Payslip, models.Payrun, models.Timesheet,
             models.EmploymentTerm, models.Employee, models.EmployeeGroup,
             models.Membership, models.Role, models.Period, models.AllocationRule,
