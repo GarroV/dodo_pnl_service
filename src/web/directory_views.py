@@ -38,6 +38,7 @@ from core.models import (
     Employee,
     EmployeeGroup,
     EmploymentTerm,
+    ExpenseItem,
     LegalEntity,
     Unit,
 )
@@ -157,6 +158,14 @@ def _sections(who) -> list[dict]:
             "title": _("Юрлица"),
             "about": _("С кем работает бухгалтерия: название и налоговый номер"),
             "count": LegalEntity.objects.count(),
+        },
+        {
+            "url": reverse("directory-expense-items"),
+            "title": _("Статьи расходов"),
+            "about": _("Чем называют траты и в какую строку P&L они попадают"),
+            # Счётчик считает то же, что покажет раздел: статьи тенанта целиком.
+            # Регистра у статьи нет — она словарь названий, а не данные о деньгах.
+            "count": ExpenseItem.objects.count(),
         },
         {
             "url": reverse("directory-calendar"),

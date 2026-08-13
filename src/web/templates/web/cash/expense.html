@@ -1,0 +1,39 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Внесение расхода из кассы (T109).
+
+Форма собрана из тех же полей, что и справочники (`web/directory/fields.html`):
+подпись связана с вводом, выбор — списком, пояснение под полем. Своя разметка
+здесь означала бы, что на соседних экранах одно и то же поле ведёт себя
+по-разному.
+
+Ключ записи — скрытым полем, и это не украшение. По нему повторная отправка той
+же формы (двойное нажатие, обновление страницы) узнаётся как та же самая, а не
+как второй расход теми же деньгами. Поле обязано быть в разметке, потому что
+живёт оно между показом формы и записью — на сервере хранить его негде, сессия
+для этого не место: форм у человека может быть открыто несколько.
+
+Введённое остаётся в полях после отказа: набирать заново из-за одной опечатки
+человек не должен — то же правило, что у формы справочника.
+{% endcomment %}
+{% block title %}{% translate "Внести расход" %}{% endblock %}
+{% block content %}
+<h1>{% translate "Внести расход" %}</h1>
+<p class="sub">{% translate "Наличные из кассы точки: что потратили, сколько и на что. Расход попадёт в P&amp;L строкой своей статьи." %}</p>
+
+{% if notice %}
+{% translate "Записано." as saved %}
+{% notice "ok" title=saved %}{{ notice }}{% endnotice %}
+{% endif %}
+
+{% if error %}
+{% translate "Не записано." as not_saved %}
+{% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
+{% endif %}
+
+<form class="card" method="post">{% csrf_token %}
+  <input type="hidden" name="entry_key" value="{{ entry_key }}">
+  {% include "web/directory/fields.html" with fields=fields %}
+  <button type="submit" class="primary">{% translate "Записать расход" %}</button>
+</form>
+{% endblock %}

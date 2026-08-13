@@ -214,3 +214,47 @@ def test_seed_is_idempotent(seeded, conn):
     run_manage(seeded, "seed_dev")
     after = conn.execute("select count(*) from employees").fetchone()[0]
     assert after == before
+
+
+def test_seed_survives_recorded_facts(seeded, conn):
+    """Сид пересобирает тенант и тогда, когда в нём уже есть первичные данные.
+
+    Ссылки факта на точку, юрлицо и статью — `PROTECT`, поэтому живой факт не
+    даёт удалить точку, а значит и пересобрать тенант. Пока в продукте фактов
+    никто не писал, этого не было видно; с появлением внесения расхода (T109)
+    сид падал `ProtectedError` на **любом** стенде, где хоть раз внесли расход,
+    — и падал не на расходе, а на попытке вернуть стенд к эталону.
+
+    Факт кладётся тем же путём, что и продукт (`upsert_fact`), а не прямым
+    `insert`: проверять надо тот путь, которым данные появляются на самом деле.
+    """
+    from psycopg.types.json import Jsonb
+
+    tenant, unit = conn.execute(
+        """select t.id, u.id from tenants t join units u on u.tenant_id = t.id
+            where t.code = 'rs-dev' order by u.code limit 1"""
+    ).fetchone()
+    line = conn.execute(
+        "select id from pnl_items where code = 'food_cost'"
+    ).fetchone()[0]
+    item = conn.execute(
+        """insert into expense_items (tenant_id, code, titles, pnl_item_id, valid_from)
+           values (%s, 'seed-water', %s, %s, '2020-01-01') returning id""",
+        (tenant, Jsonb({"ru": "Вода"}), line),
+    ).fetchone()[0]
+    conn.execute(
+        "select upsert_fact(%s)",
+        (Jsonb({
+            "tenant_id": str(tenant), "period": "2026-06-01", "unit_id": str(unit),
+            "pnl_item_id": str(line), "expense_item_id": str(item),
+            "amount": "100.00", "title": "Вода", "source": "manual",
+            "channel": "cash", "dedup_key": "manual:cash:seed-test",
+        }),),
+    )
+    conn.commit()
+
+    run_manage(seeded, "seed_dev")
+
+    assert conn.execute("select count(*) from facts").fetchone()[0] == 0
+    assert conn.execute("select count(*) from expense_items").fetchone()[0] == 0
+    assert conn.execute("select count(*) from employees").fetchone()[0] > 0
