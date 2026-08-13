@@ -77,6 +77,15 @@ FIELDS = ("net", "gross", "contributions", "total_cost")
 # допуск сравнения: строка с копейками не сходится, она лишь названа иначе.
 ROUNDING = Decimal("1.00")
 
+# Почему сверка не сравнила ни одного числа (T120). Коды, а не готовые фразы:
+# слова — дело того, кто показывает, и живут они рядом с остальными на экране.
+# Пустая строка означает «сравнивала», и это тоже ответ.
+NOTHING_MATCHED = "nothing_matched"    # ни одна строка файла не сопоставилась
+TOTALS_HIDDEN = "totals_hidden"        # итоги не отданы этой роли (T071)
+NO_RUN_TOTALS = "no_run_totals"        # итогов нет в самом расчёте
+NO_FILE_NUMBERS = "no_file_numbers"    # сверяемых чисел нет в файле
+NO_PAIR = "no_pair"                    # числа есть, но не в одной строке
+
 # Код надбавки, которую бухгалтер иногда проставляет руками вместо правила
 # (колонка «TOPLI OBROK I REGRES»). Названа причиной, а не подогнана: по какому
 # основанию она делится — по дням или по часам — вопрос владельца (Q003), и
@@ -125,6 +134,89 @@ class Cause:
 
 
 @dataclass(frozen=True)
+class FileLine:
+    """Строка **принесённого файла** в том виде, в каком её сверяют.
+
+    Заведена ради второго формата (T119): кроме таблицы партнёра сверка читает
+    теперь и нашу собственную выгрузку «Вид бухгалтера», а в ней нет ни часов,
+    ни ставки — только деньги. Разбору таблицы партнёра это ничего не меняет,
+    он приводится сюда `from_plata`.
+
+    **`None` значит «файл об этом молчит», и это не то же самое, что ноль.**
+    Отсутствующий вид часов внутри `hours` — действительно ноль (колонка в
+    файле есть, в ней пусто), а вот `hours=None` означает, что колонок с часами
+    в файле нет вовсе. Разница не словесная: «в таблице 0, в расчёте 152» про
+    файл, где часов нет, — то же правдоподобно-неверное, что чинили T095 и
+    T100, только про входы.
+    """
+
+    key: str
+    name: str
+    sheet: str
+    expected: dict[str, Decimal | None]
+    hours: dict[str, Decimal] | None = None
+    insured_hours: Decimal | None = None
+    base_rate: Decimal | None = None
+    coefficient: Decimal | None = None
+    meal: Decimal | None = None
+
+    @property
+    def states_inputs(self) -> bool:
+        """Сказал ли файл хоть что-нибудь о входах расчёта."""
+        return any(
+            value is not None
+            for value in (self.hours, self.insured_hours, self.base_rate,
+                          self.coefficient, self.meal)
+        )
+
+
+def from_plata(row: ImportedRow) -> FileLine:
+    """Строка таблицы партнёра как строка сверки. Ключ — тот же, что был."""
+    return FileLine(
+        key=row.employee.ext_id,
+        name=row.name,
+        sheet=row.sheet,
+        expected=dict(row.expected),
+        hours=dict(row.timesheet.hours),
+        insured_hours=_num(row.timesheet.insured_hours),
+        base_rate=_num(row.employee.base_rate),
+        coefficient=_num(row.employee.coefficient),
+        meal=row.sheet_meal,
+    )
+
+
+def from_own_export(rows) -> list[FileLine]:
+    """Строки нашей выгрузки как строки сверки: одна на человека (T119).
+
+    В файле человек встречается столько раз, сколько у него регистров и точек:
+    строка ведомости — это пара «сотрудник × регистр». Сверяется же он один
+    раз, и итогом ему служит сумма его строк — ровно то, что показывает
+    `payslip_totals.net`, и ровно то, что человек сложит в Excel сам.
+
+    Сопоставление идёт по имени, потому что другого ключа в файле нет:
+    сквозного ключа (в продуктовой постановке — JMBG, D007) в выгрузке нет
+    намеренно, и заводить его ради сверки значило бы выпустить национальный
+    идентификатор в файл, который уходит из продукта.
+    """
+    merged: dict[str, dict] = {}
+    for row in rows:
+        line = merged.setdefault(row.name, {"sheet": row.sheet, "total": Decimal(0)})
+        line["total"] += row.total
+    return [
+        FileLine(
+            key=name, name=name, sheet=body["sheet"],
+            # Кроме нето в нашей выгрузке нет ничего: бруто, взносы и полная
+            # стоимость посчитаны по строке целиком и в «привычном виде» не
+            # печатаются. `None` здесь — «файл об этом молчит», и сверка
+            # промолчит вместе с ним.
+            expected={"net": body["total"], "gross": None,
+                      "contributions": None, "total_cost": None},
+        )
+        for name, body in merged.items()
+    ]
+
+
+@dataclass(frozen=True)
 class Line:
     """Строка сверки: человек, у которого есть обе стороны."""
 
@@ -133,6 +225,11 @@ class Line:
     sheet: str
     amounts: list[Amount]
     causes: list[Cause] = field(default_factory=list)
+    # Говорил ли файл что-нибудь о входах расчёта. У таблицы партнёра — да
+    # (часы, ставка, коэффициент), у нашей выгрузки — нет (T119). Показывающий
+    # обязан спросить это поле: «входы сошлись» про файл, в котором входов нет,
+    # — утверждение о том, чего не сравнивали.
+    stated_inputs: bool = True
 
     @property
     def compared(self) -> bool:
@@ -250,6 +347,41 @@ class Reconciliation:
     def total_diff(self) -> Decimal:
         return self.total_actual - self.total_expected
 
+    @property
+    def nothing_compared(self) -> str:
+        """Почему не сравнилось ни одно число. Пусто — сравнивалось (T120).
+
+        Причину называет ядро, а не разметка, и это главное решение задачи.
+        Разметка знает только, что сумм нет, и раньше объясняла это **одним и
+        тем же**: «итоги расчёта вам не отданы». Бухгалтеру после D036 они
+        отданы — она читала неправду про собственный доступ и шла выяснять
+        права вместо того, чтобы посмотреть на формат файла.
+
+        Различаются четыре положения, и каждое проверяется по фактам, а не по
+        догадке о пустоте:
+
+        * строк нет вовсе — файл ни с чем не сопоставился;
+        * нашей стороны нет ни у одной строки, а роли отдан не весь расчёт —
+          та самая закрытая политикой видимость итогов (T071), про которую
+          молчать нельзя: ноль в подвале читался бы как совпадение;
+        * нашей стороны нет, а расчёт роли отдан весь — значит итогов нет в
+          самом расчёте, и доступ здесь ни при чём;
+        * нашей стороны нет только в файле — значит сверяемых чисел нет в нём.
+        """
+        if any(line.compared for line in self.lines):
+            return ""
+        if not self.lines:
+            return NOTHING_MATCHED
+        ours = any(a.actual is not None for line in self.lines for a in line.amounts)
+        theirs = any(a.expected is not None for line in self.lines for a in line.amounts)
+        if not ours:
+            return TOTALS_HIDDEN if not self.whole_run_visible else NO_RUN_TOTALS
+        if not theirs:
+            return NO_FILE_NUMBERS
+        # Числа есть с обеих сторон, но ни разу не встретились в одной строке:
+        # например, файл принёс только бруто, а расчёт отдал только нето.
+        return NO_PAIR
+
 
 @dataclass(frozen=True)
 class RunLine:
@@ -279,15 +411,22 @@ def _hour_causes(theirs: dict, ours: dict) -> list[Cause]:
     return causes
 
 
-def _causes(row: ImportedRow, run: RunLine) -> list[Cause]:
-    """Чем объяснить расхождение. Только то, что действительно разошлось."""
-    causes = _hour_causes(row.timesheet.hours, run.hours)
+def _causes(row: FileLine, run: RunLine) -> list[Cause]:
+    """Чем объяснить расхождение. Только то, что действительно разошлось.
+
+    Вход, о котором файл молчит (`None`), не сравнивается вовсе. Это не
+    придирка: в нашей собственной выгрузке часов нет ни одной колонки, и
+    сравнение «пусто против 152» объявило бы расхождением каждую строку —
+    причём словами «в таблице 0», то есть утверждением о файле, которого в нём
+    нет (T119).
+    """
+    causes = [] if row.hours is None else _hour_causes(row.hours, run.hours)
 
     pairs = (
-        ("insured", _num(row.timesheet.insured_hours), run.insured_hours),
-        ("rate", _num(row.employee.base_rate), run.base_rate),
-        ("coefficient", _num(row.employee.coefficient), run.coefficient),
-        ("meal", row.sheet_meal, run.meal),
+        ("insured", row.insured_hours, run.insured_hours),
+        ("rate", row.base_rate, run.base_rate),
+        ("coefficient", row.coefficient, run.coefficient),
+        ("meal", row.meal, run.meal),
     )
     for kind, want, got in pairs:
         # Пусто с любой стороны — не расхождение, а отсутствие данных для
@@ -318,8 +457,8 @@ def compare(
     )
     seen: set[str] = set()
 
-    for row in rows:
-        key = row.employee.ext_id
+    for row in (from_plata(row) if isinstance(row, ImportedRow) else row for row in rows):
+        key = row.key
         seen.add(key)
         ours = run.get(key)
         if ours is None:
@@ -346,6 +485,7 @@ def compare(
                 Amount(code, row.expected.get(code), ours.totals.get(code))
                 for code in FIELDS
             ],
+            stated_inputs=row.states_inputs,
         )
         # Причины — объяснение расхождения. У сошедшейся строки объяснять
         # нечего, и перечислять там разошедшиеся входы значило бы звать
@@ -356,6 +496,7 @@ def compare(
             line = Line(
                 key=line.key, name=line.name, sheet=line.sheet,
                 amounts=line.amounts, causes=_causes(row, ours),
+                stated_inputs=line.stated_inputs,
             )
         result.lines.append(line)
 
@@ -490,19 +631,72 @@ def collect_run(tenant_id: UUID, period: date) -> dict[str, RunLine]:
     return out
 
 
+def run_by_name(run: dict[str, RunLine]) -> tuple[dict[str, RunLine], list[Finding]]:
+    """Наша сторона по имени человека — для нашей же выгрузки (T119).
+
+    В файле, который продукт отдаёт наружу, сквозного ключа нет намеренно
+    (D007), поэтому сопоставлять остаётся по имени. Имя различает людей ровно
+    до первого совпадения — и тогда обе строки **выбрасываются с находкой**, а
+    не сливаются в одну: слитые дали бы сумму двоих под одним именем, то есть
+    расхождение у обоих и объяснение ни у кого.
+    """
+    grouped: dict[str, list[RunLine]] = {}
+    for line in run.values():
+        grouped.setdefault(line.name, []).append(line)
+
+    out: dict[str, RunLine] = {}
+    findings: list[Finding] = []
+    for name, lines in grouped.items():
+        if len(lines) == 1:
+            out[name] = lines[0]
+            continue
+        findings.append(Finding(
+            "row", name,
+            _("в расчёте под этим именем несколько человек (%(count)s) — "
+              "по имени их не различить, и по ним сверка ничего не говорит")
+            % {"count": len(lines)},
+        ))
+    return out, findings
+
+
 def reconcile(file, *, tenant_id: UUID, period: date) -> Reconciliation:
     """Сверить загруженный файл с расчётом периода.
+
+    Форматов два, и выбирается тот, которым файл написан: таблица партнёра
+    (`plata_xlsx`) или наша собственная выгрузка «Вид бухгалтера» (T119).
+    Второй появился потому, что первое, что делает человек, получивший от нас
+    файл, — приносит его обратно, а сверка отвечала ему «лист не входит в
+    формат PLATA» и списком фамилий «такой строки нет».
 
     Файл нигде не сохраняется — ни на диск, ни в базу. Это не экономия, а D028:
     в таблице партнёра ФИО и суммы живых людей, и сверка не повод заводить им
     ещё одно место жительства. Она разовая операция, её ответ живёт на экране.
     """
+    import openpyxl
+
     from payroll.importers import read_plata_file
 
-    parsed = read_plata_file(file)
+    from .own_export import looks_like_own_export, read_own_export
+
+    visible = whole_run_visible(tenant_id)
+    book = openpyxl.load_workbook(file, data_only=True)
+    if looks_like_own_export(book):
+        parsed = read_own_export(book)
+        run, findings = run_by_name(collect_run(tenant_id, period))
+        return compare(
+            from_own_export(parsed.rows), run,
+            whole_run_visible=visible,
+            findings=list(parsed.findings) + findings,
+        )
+
+    # Разбор таблицы партнёра читает файл сам: у него свои правила про листы,
+    # колонки и находки, и передавать ему уже открытую книгу значило бы
+    # завести второй путь чтения рядом с первым.
+    file.seek(0)
+    plata = read_plata_file(file)
     return compare(
-        parsed.rows,
+        plata.rows,
         collect_run(tenant_id, period),
-        whole_run_visible=whole_run_visible(tenant_id),
-        findings=list(parsed.findings),
+        whole_run_visible=visible,
+        findings=list(plata.findings),
     )
