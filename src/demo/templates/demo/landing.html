@@ -114,10 +114,23 @@
         {% endif %}
       {% endfor %}
     </ul>
+    {% comment %}
+    Роль, названная в этом абзаце, обязана быть той, у которой набор регистров
+    действительно неполный (T117). До D036 здесь стоял бухгалтер — «an
+    accountant sees only the official ledger», — и после уравнивания доступов
+    абзац стал противоречить списку ролей на пятнадцать строк выше, где у
+    бухгалтера честно перечислены все три регистра. Первое, что читает гость
+    демо, обещало механизм, которого он тут же не увидит.
+
+    Роль не подставляется из `ROLES` переменной намеренно: предложение
+    объясняет смысл, а не перечисляет данные, и собранное из кусков оно
+    развалилось бы. Согласие с кодом держит `tests/test_demo_landing_claims.py`:
+    он краснеет, если проза назовёт ограниченной роль, у которой все регистры.
+    {% endcomment %}
     <p class="note" style="margin-bottom:0">
-      Switching roles is the point: an accountant sees only the official ledger,
-      and the numbers on screen are recomputed for what that role may see — the
-      hidden part cannot be recovered by subtracting.
+      Switching roles is the point: the unit manager sees one unit and two of the
+      three ledgers, and the numbers on screen are recomputed for what that role
+      may see — the hidden part cannot be recovered by subtracting.
     </p>
   </div>
 
