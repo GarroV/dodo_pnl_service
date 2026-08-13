@@ -105,7 +105,6 @@ def rule_at(web_env, path: str, when: date):
     """Значение правила, которое расчёт возьмёт на эту дату, — тем же кодом, что и он."""
     from core.models import Tenant
     from core.rules import load_rules_at
-
     from web import rules
     from web.directory import country_of
 
