@@ -33,7 +33,7 @@ from web.auth import login_with_password
 
 from .accountant_table import build_accountant_table
 from .seed import ROLES, demo_password
-from .table import accountant_rows
+from .table import accountant_rows, full_slice
 
 __all__ = ["accountant_file", "enter", "landing"]
 
@@ -131,6 +131,21 @@ def accountant_file(request):
     существенное, одно копеечное и один человек, которого в таблице нет. Так
     экран сверки показывает все свои состояния сразу, и после каждого сброса
     демо — те же самые.
+
+    **Файл один и тот же для всех, кто его открыл** (T104, issue #88). Это
+    решение, а не побочный эффект: таблицу ведёт бухгалтер у себя, и остальным
+    она приходит письмом — артефакт, пришедший со стороны, не может зависеть от
+    того, кто его скачал. Иначе сверка показывала бы разным ролям разные
+    расхождения в ОДНОМ И ТОМ ЖЕ файле, то есть демо врало бы ровно про то, ради
+    чего этот экран существует. Раньше файл собирался срезом скачивающего, и
+    роли с неполным набором регистров получали 404 с текстом про непосчитанный
+    период — при том что период посчитан и утверждён.
+
+    Чем это ограничено, чтобы не стать дырой: маршрут живёт **только в
+    демо-стенде** (`DEMO_MODE`, `config/urls.py`), а демо-база отдельная и
+    населена выдуманными людьми (D016). В продукте такого маршрута нет, и
+    переносить этот приём туда нельзя: там за строками стоят живые люди, и
+    «файл вне продукта» перестанет быть правдой в тот же день.
     """
     _guard(request)
 
@@ -145,9 +160,14 @@ def accountant_file(request):
             return render(request, "demo/unavailable.html", {"role": DEFAULT_ROLE},
                           status=503)
 
-    rows = accountant_rows(RECONCILE_PERIOD)
+    with full_slice():
+        rows = accountant_rows(RECONCILE_PERIOD)
     if not rows:
-        raise Http404("demo period is not calculated")
+        # Текст для того, кто чинит: раньше здесь стояло «demo period is not
+        # calculated» — и это было неправдой, период был посчитан и утверждён,
+        # а пуст был срез скачивающего. Теперь срез полный, поэтому пустой
+        # список означает именно ненаполненное демо.
+        raise Http404("demo data is not seeded: no calculated rows for the period")
 
     response = HttpResponse(
         build_accountant_table(rows),
