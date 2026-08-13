@@ -116,12 +116,18 @@ def _money_format(ws, first_column: int) -> None:
     местам, `isinstance` ниже перестанет находить уже подмененные строкой
     ячейки при повторном проходе, и формат проставится не туда или не
     проставится вовсе.
+
+    Округлять значение здесь не нужно и опасно: файл должен показывать ровно
+    то, что посчитал движок, а не свою версию с округлением до копейки —
+    иначе сумма строк в Excel молча разойдётся с итогом, если где-то в колонке
+    окажется величина точнее двух знаков. `str()` у `Decimal` и так отдаёт
+    точное представление без округления, поэтому `quantize` не нужен.
     """
     for row in ws.iter_rows(min_col=first_column):
         for cell in row:
             if isinstance(cell.value, (int, float, Decimal)):
                 cell.number_format = MONEY
-                cell._value = str(Decimal(str(cell.value)).quantize(Decimal("0.01")))
+                cell._value = str(Decimal(str(cell.value)))
                 cell.data_type = "n"
 
 
