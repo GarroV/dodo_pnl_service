@@ -2017,3 +2017,6 @@ msgstr "Something broke on our side"
 
 msgid "Мы записали это в журнал. Попробуйте ещё раз через минуту, а если повторится — скажите тому, кто ведёт сервис."
 msgstr "We have written it to the log. Try again in a minute, and if it repeats, tell whoever runs the service."
+
+msgid "%(what)s нельзя изменить: зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
+msgstr "%(what)s cannot be changed: payroll for %(month)s is already approved, and this setting has no dated versions — the change would rewrite a closed month retroactively. Override what you need for the individual person in their employment terms: there a change takes effect from a date. Or reopen the month with a reason."

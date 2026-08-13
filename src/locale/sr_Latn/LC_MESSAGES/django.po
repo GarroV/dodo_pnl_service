@@ -2017,3 +2017,6 @@ msgstr "Nešto se pokvarilo na našoj strani"
 
 msgid "Мы записали это в журнал. Попробуйте ещё раз через минуту, а если повторится — скажите тому, кто ведёт сервис."
 msgstr "Zabeležili smo to u dnevnik. Pokušajte ponovo za minut, a ako se ponovi — javite onome ko vodi servis."
+
+msgid "%(what)s нельзя изменить: зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
+msgstr "%(what)s se ne može promeniti: plata za %(month)s je već odobrena, a ovo podešavanje nema verzije po datumima — izmena bi retroaktivno prepisala zatvoreni mesec. Podesite ono što vam treba pojedinačnom zaposlenom u uslovima zaposlenja: tamo izmena važi od datuma. Ili ponovo otvorite mesec uz obrazloženje."
