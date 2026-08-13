@@ -10,7 +10,7 @@
 """
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal
 
 from django.utils.translation import get_language
 from django.utils.translation import gettext_lazy as _
@@ -117,13 +117,10 @@ def threshold(percent_value, amount_value) -> str:
     }
 
 
-def money(value: Decimal | int | float | None) -> str:
-    """Сумма с двумя знаками: `1 234,50`. Пустое значение — прочерк, не ноль."""
-    if value is None:
-        return EMPTY
+def _grouped(text: str) -> str:
+    """Число из точки в разделители языка страницы: `1234.50` → `1 234,50`."""
     thousands, decimal = separators()
-    quantized = Decimal(value).quantize(Decimal("0.01"))
-    whole, _dot, fraction = f"{quantized:.2f}".partition(".")
+    whole, _dot, fraction = text.partition(".")
     sign = ""
     if whole.startswith("-"):
         sign, whole = "-", whole[1:]
@@ -133,3 +130,55 @@ def money(value: Decimal | int | float | None) -> str:
         whole = whole[:-3]
     groups.insert(0, whole)
     return f"{sign}{thousands.join(groups)}{decimal}{fraction}"
+
+
+def money(value: Decimal | int | float | None) -> str:
+    """Сумма с двумя знаками: `1 234,50`. Пустое значение — прочерк, не ноль."""
+    if value is None:
+        return EMPTY
+    return _grouped(f"{Decimal(value).quantize(Decimal('0.01')):.2f}")
+
+
+# Сколько знаков после запятой показываем у величины, которая деньгами не
+# является. Шести хватает любой ставке и любому коэффициенту из правил страны;
+# больше бывает только у вычисленных долей (часы / норма), где знаков
+# бесконечно много.
+EXACT_LIMIT = 6
+# Что стоит на месте отрезанного хвоста. Без него обрезанное читается как
+# точное значение, по которому сумма не повторится, — то самое
+# правдоподобно-неверное, ради которого весь этот формат и заведён (T116).
+TAIL = "…"
+
+
+def exact(value: Decimal | int | float | None) -> str:
+    """Величина, которая **не деньги**: показывается как есть, без округления.
+
+    Ставка часа 421,085, коэффициент 1,135, множитель нето → бруто 0,701 — по
+    ним человек повторяет сумму на калькуляторе, и копейки им малы: 152 ×
+    421,08 даёт 64 004,16 вместо 64 004,92. Округление здесь не «неточность»,
+    а неверное основание, показанное уверенно (T116).
+
+    Два знака — нижняя граница, не верхняя: `371` показывается как `371,00`,
+    потому что рядом в том же ряду стоят суммы, и число без дробной части
+    читалось бы как величина другого рода. Хвостовые нули при этом снимаются
+    (`1,1350` → `1,135`): они не несут смысла, а ширину съедают.
+
+    Длинный хвост (доля часов от нормы) обрезается на `EXACT_LIMIT` знаках и
+    помечается многоточием: молча обрезанное — снова уверенно неверное.
+    """
+    if value is None:
+        return EMPTY
+    number = Decimal(value)
+    trimmed = number.normalize()
+    exponent = trimmed.as_tuple().exponent
+    # `normalize` у целого даёт показатель степени (`120960` → `1.2096E+5`),
+    # поэтому формат `f` обязателен: он всегда разворачивает число обычной
+    # записью, без экспоненты.
+    if not isinstance(exponent, int) or exponent > -2:
+        return _grouped(f"{number.quantize(Decimal('0.01')):f}")
+    if exponent < -EXACT_LIMIT:
+        # Отрезаем, а не округляем: с многоточием «дальше есть ещё» округление
+        # последнего знака вверх было бы мелкой неправдой о том, что дальше.
+        cut = number.quantize(Decimal(1).scaleb(-EXACT_LIMIT), rounding=ROUND_DOWN)
+        return _grouped(f"{cut:f}") + TAIL
+    return _grouped(f"{trimmed:f}")
