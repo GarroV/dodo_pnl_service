@@ -300,21 +300,37 @@ check("июнь утверждён — есть на чём проверять �
 await logout();
 await login("admin");
 await goto(APP + employeeHref);
-const beforeRefusal = (await cells()).length;
+const beforeBackdated = (await cells()).length;
+check("форма предупреждает о закрытом месяце до правки",
+      (await text()).includes("Зарплата утверждена по 2026-06-30"),
+      (await text()).slice(0, 160).replace(/\n/g, " "));
 await fill({ valid_from: "2026-06-15", base_rate: "777.0000", coefficient: "1.0000" });
 await clickOn("button", "Завести версию");
-const refusal = await text();
-check("правка внутри закрытого месяца отклонена словами", refusal.includes("уже утверждена"),
-      refusal.slice(0, 160).replace(/\n/g, " "));
-check("отказ назвал месяц, из-за которого отказано", refusal.includes("2026-06"));
-check("отказ ничего не записал", (await cells()).length === beforeRefusal);
+const backdated = await text();
+// T121: правка задним числом — умолчание продукта (D020), а не запрет. Версия
+// заводится, закрытый месяц остаётся прежним, разница ждёт переноса.
+check("правка внутри закрытого месяца принята", (await cells()).length > beforeBackdated,
+      backdated.slice(0, 160).replace(/\n/g, " "));
+check("сказано, что закрытый месяц остался прежним",
+      backdated.includes("Закрытый месяц остался прежним"),
+      backdated.slice(0, 200).replace(/\n/g, " "));
+check("названа граница утверждённой зарплаты", backdated.includes("2026-06-30"));
 
 await goto(`${APP}/directory/calendar/`);
 await goto(APP + monthHref);
 await fill({ norm_hours: "100" });
 await clickOn("button", "Сохранить");
-check("норма закрытого месяца тоже не правится",
-      (await text()).includes("уже утверждена"));
+check("норма закрытого месяца тоже правится, и об этом сказано",
+      (await text()).includes("Закрытый месяц остался прежним"),
+      (await text()).slice(0, 200).replace(/\n/g, " "));
+
+// Календарь общий для страны и `seed_dev` его не пересобирает — норму возвращаем
+// руками. Оставленная сотня поехала бы во все соседние смоуки молча.
+await goto(APP + monthHref);
+await fill({ norm_hours: wasNorm });
+await clickOn("button", "Сохранить");
+check("норма закрытого месяца возвращена как была",
+      (await text()).includes("176,00"), wasNorm);
 
 // Вернуть стенд: месяц открывается заново с причиной — тем же путём, что у человека.
 await logout();

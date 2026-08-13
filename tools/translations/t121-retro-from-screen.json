@@ -1,0 +1,22 @@
+{
+  "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова.": {
+    "en": "Payroll is approved through %(edge)s inclusive. An edit dated earlier is accepted, but it does not rewrite the closed month: for this partner the difference is applied by recalculation — reopen the month with a reason and calculate it again.",
+    "sr": "Zarada je odobrena zaključno sa %(edge)s. Izmena sa ranijim datumom se prihvata, ali ne prepisuje zatvoreni mesec: kod ovog partnera se razlika primenjuje ponovnim obračunom — otvorite mesec ponovo uz razlog i obračunajte ga opet."
+  },
+  "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова.": {
+    "en": "The edit touched payroll approved through %(edge)s. The closed month is unchanged: for this partner the difference is applied by recalculation — reopen the month with a reason and calculate it again.",
+    "sr": "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mesec je ostao isti: kod ovog partnera se razlika primenjuje ponovnim obračunom — otvorite mesec ponovo uz razlog i obračunajte ga opet."
+  },
+  "Схему расчёта и регистр группы это не касается: версий по датам у них нет\n  вовсе, и такая правка задним числом по-прежнему отклоняется.": {
+    "en": "This does not apply to a group's calculation scheme and ledger: they have no dated versions at all, so a backdated edit of them is still rejected.",
+    "sr": "Ovo se ne odnosi na šemu obračuna i registar grupe: one uopšte nemaju verzije po datumima, pa se takva izmena unazad i dalje odbija."
+  },
+  "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: если она изменит его числа, разница ляжет помеченной строкой в ближайший неутверждённый месяц — перенести её можно на странице закрытого.": {
+    "en": "Payroll is approved through %(edge)s inclusive. An edit dated earlier is accepted, but it does not rewrite the closed month: if it changes the numbers of that month, the difference goes as a marked line into the nearest month that is not approved yet — carry it over on the page of the closed one.",
+    "sr": "Zarada je odobrena zaključno sa %(edge)s. Izmena sa ranijim datumom se prihvata, ali ne prepisuje zatvoreni mesec: ako promeni njegove brojeve, razlika ulazi označenom stavkom u prvi neodobreni mesec — prenesite je na stranici zatvorenog meseca."
+  },
+  "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним до копейки: если правка изменила его числа, разница видна на странице этого месяца и переносится оттуда помеченной строкой в ближайший неутверждённый.": {
+    "en": "The edit touched payroll approved through %(edge)s. The closed month is unchanged to the last cent: if the edit changed its numbers, the difference is shown on the page of that month and is carried from there as a marked line into the nearest month that is not approved yet.",
+    "sr": "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mesec je ostao isti do dinara: ako je izmena promenila njegove brojeve, razlika se vidi na stranici tog meseca i odatle se prenosi označenom stavkom u prvi neodobreni mesec."
+  }
+}

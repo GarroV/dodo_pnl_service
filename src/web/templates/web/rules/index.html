@@ -26,8 +26,9 @@
   <button type="submit">{% translate "Показать" %}</button>
 </form>
 
-{% if closed_through %}
-<p class="note">{% blocktranslate with edge=closed_through|date:"Y-m-d" %}Зарплата утверждена по {{ edge }} включительно: правило можно завести только с более поздней даты либо открыв месяц заново с причиной.{% endblocktranslate %}</p>
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+{% if closed_note %}
+<p class="note">{{ closed_note }}</p>
 {% endif %}
 
 {% if sections %}
