@@ -287,7 +287,12 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
 
     accruals: dict[tuple[str, str, str, str, str], Decimal] = {}
     for row in view.sheet.rows:
-        article = articles.get(row.employee, _("Без статьи"))
+        # Ключом, а не отображаемым именем: справочник собран по
+        # `employees.external_id`, и спрошенный именем он не отвечал никогда —
+        # у всех начислений стояло «Без статьи» (issue #95). Налоговые строки
+        # спрашивали правильно, поэтому дефект и выглядел как «статья есть,
+        # но не у всех».
+        article = articles.get(row.employee_key or row.employee, _("Без статьи"))
         for column in view.sheet.columns:
             amount = row.amounts.get(column.code)
             if not amount:

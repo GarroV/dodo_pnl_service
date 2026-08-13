@@ -72,9 +72,16 @@ class Column:
 class Row:
     employee: str
     unit: str
+    # Ключ сотрудника (`employees.external_id`) — тот же, которым строки
+    # группировались. Хранится рядом с отображаемым именем намеренно: выгрузка
+    # ищет по нему статью P&L, и пока ключа здесь не было, она спрашивала
+    # справочник ОТОБРАЖАЕМЫМ именем. Совпасть они не могут («ФАМИЛИЯ ИМЯ»
+    # против ключа), поэтому у всех начислений в файле стояло «Без статьи», а
+    # файл выглядел нормальным (issue #95).
     ledger: str
     amounts: dict[str, Decimal]
     total: Decimal
+    employee_key: str = ""
     payslip_id: UUID | None = None
     frozen: bool = False
     freeze_reason: str = ""
@@ -124,7 +131,8 @@ def assemble(cells: list[Cell]) -> Sheet:
         row = grouped.setdefault(
             (cell.employee_key, cell.ledger, cell.retro_source),
             {
-                "employee": cell.employee, "unit": cell.unit, "amounts": {},
+                "employee": cell.employee, "employee_key": cell.employee_key,
+                "unit": cell.unit, "amounts": {},
                 "payslip_id": cell.payslip_id, "frozen": cell.frozen,
                 "freeze_reason": cell.freeze_reason, "retro_source": cell.retro_source,
             },
@@ -136,7 +144,8 @@ def assemble(cells: list[Cell]) -> Sheet:
 
     rows = [
         Row(
-            employee=body["employee"], unit=body["unit"], ledger=ledger,
+            employee=body["employee"], employee_key=body["employee_key"],
+            unit=body["unit"], ledger=ledger,
             amounts=body["amounts"], total=sum(body["amounts"].values(), Decimal(0)),
             payslip_id=body["payslip_id"], frozen=body["frozen"],
             freeze_reason=body["freeze_reason"], retro_source=body["retro_source"],
