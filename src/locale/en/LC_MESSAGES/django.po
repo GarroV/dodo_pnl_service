@@ -1805,3 +1805,142 @@ msgstr "Timesheet rows entered"
 
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
+
+#, python-format
+msgid "«%(label)s»: значение обязательно."
+msgstr "\"%(label)s\": a value is required."
+
+#, python-format
+msgid "«%(label)s»: нужно «да» или «нет», а не «%(value)s»."
+msgstr "\"%(label)s\": \"yes\" or \"no\" is needed, not \"%(value)s\"."
+
+#, python-format
+msgid "«Действует с»: дата пишется как 2026-06-01, а не «%(value)s»."
+msgstr "\"From\": a date is written as 2026-06-01, not \"%(value)s\"."
+
+msgid "Ведение правил расчёта"
+msgstr "Calculation rules management"
+
+msgid "Версии настройки партнёра"
+msgstr "Partner setting versions"
+
+msgid "Действующие на"
+msgstr "As of"
+
+msgid "Доплата до минимума"
+msgstr "Top-up to the minimum"
+
+msgid "Задаётся после сохранения группы: правило адресуется её кодом."
+msgstr "Set after the group is saved: the rule is addressed by its code."
+
+#, python-format
+msgid "Зарплата утверждена по %(edge)s включительно: правило можно завести только с более поздней даты либо открыв месяц заново с причиной."
+msgstr "Payroll is approved through %(edge)s inclusive: a rule can only be added from a later date, or by reopening the month with a reason."
+
+msgid "Значение"
+msgstr "Value"
+
+msgid "Значение приходит из правил страны. Первая же версия ниже станет настройкой партнёра — с той даты, которую вы укажете."
+msgstr "The value comes from the country rules. The first version below becomes the partner setting — from the date you specify."
+
+msgid "Константы страны"
+msgstr "Country constants"
+
+#, python-format
+msgid "Набор правил: %(code)s (%(country)s)"
+msgstr "Rule set: %(code)s (%(country)s)"
+
+msgid "Надбавки"
+msgstr "Allowances"
+
+msgid "Новая версия правила"
+msgstr "New version of the rule"
+
+msgid "Нужна только при смене способа. Пусто — берётся первый день, который не задевает утверждённый месяц."
+msgstr "Needed only when changing the method. Empty — the first day that does not touch an approved month is used."
+
+msgid "Откуда"
+msgstr "Source"
+
+msgid "Партнёр это правило не менял."
+msgstr "The partner has not changed this rule."
+
+msgid "Первичная загрузка страны делается командой load_presets — до неё считать нечем, и показывать здесь тоже нечего."
+msgstr "The initial load of a country is done with the load_presets command — before it there is nothing to calculate with, and nothing to show here either."
+
+msgid "Показать"
+msgstr "Show"
+
+msgid "Поле «Действует с» обязательно."
+msgstr "The \"From\" field is required."
+
+msgid "Пороги отчёта расхождений"
+msgstr "Variance report thresholds"
+
+msgid "Правил расчёта для этой страны на эту дату в базе нет."
+msgstr "There are no calculation rules for this country on this date in the database."
+
+msgid "Правила"
+msgstr "Rules"
+
+msgid "Правила расчёта"
+msgstr "Calculation rules"
+
+msgid "Правило страны, а не колонка справочника: у смены способа есть дата, и закрытый месяц от неё не двигается."
+msgstr "A country rule, not a directory column: changing the method has a date, and a closed month is not moved by it."
+
+msgid "С этой даты расчёт берёт новое значение. Месяцы до неё считаются по-прежнему."
+msgstr "From this date the calculation takes the new value. Months before it are still calculated as before."
+
+#, python-format
+msgid "Сейчас действует: %(value)s — %(origin)s"
+msgstr "Currently in effect: %(value)s — %(origin)s"
+
+msgid "Способ действует с"
+msgstr "Method effective from"
+
+msgid "Ставки налогов и взносов"
+msgstr "Tax and contribution rates"
+
+msgid "Страна поставляется готовым набором правил. Партнёр меняет только отличия — новой версией с датой: закрытый месяц от этого не двигается, потому что расчёт берёт версию, действовавшую в считаемом месяце."
+msgstr "The country ships with a ready-made set of rules. The partner changes only the differences — with a new dated version: a closed month is not affected by this, because the calculation takes the version effective in the month being calculated."
+
+msgid "Схемы расчёта"
+msgstr "Calculation schemes"
+
+msgid "Типы часов"
+msgstr "Standard hours"
+
+msgid "Чем меряется работа"
+msgstr "Unit of work"
+
+msgid "Через запятую."
+msgstr "Comma-separated."
+
+msgid "да"
+msgstr "yes"
+
+msgid "настройка партнёра"
+msgstr "partner setting"
+
+msgid "нет"
+msgstr "no"
+
+msgid "переопределение по человеку"
+msgstr "employee override"
+
+msgid "правила страны"
+msgstr "country rules"
+
+msgid "правило расчёта"
+msgstr "calculation rule"
+
+#, python-format
+msgid "с %(day)s"
+msgstr "from %(day)s"
+
+msgid "← К правилам"
+msgstr "← To the rules"
+
+msgid "Зарплата утверждена по %(edge)s включительно: дата раньше этого дня переписала бы закрытый месяц, и правка будет отклонена."
+msgstr "Payroll is approved through %(edge)s inclusive: a date before that day would rewrite the closed month, and the change will be refused."

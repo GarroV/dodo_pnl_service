@@ -58,6 +58,10 @@ SCOPE = "tenant"
 # бессмысленно: сборка пресета выбирает строку `rule_presets` ДО того, как
 # накладывает переопределения, и `valid_from`, заведённый поверх, ни на что не
 # повлиял бы, но выглядел бы работающим.
+#
+# На экране их нет вовсе, а не «показаны и не правятся»: набор правил и страна
+# уже подписаны над таблицей, и четыре строки-раздела из одного значения только
+# мешали бы читать остальные сто тридцать.
 IDENTITY = ("preset", "country", "currency", "valid_from", "title")
 
 # Названия разделов пресета на языке страницы. Словарём, а не полем в теле
@@ -269,18 +273,21 @@ class Leaf:
 
 
 def leaves(preset, *, hidden: tuple[str, ...] = ()) -> list[Leaf]:
-    """Все правила пресета листьями, в порядке разделов тела.
+    """Все правила пресета листьями, кроме тех, что называют сам пресет.
 
-    Порядок — из тела правил, а не сортировкой по алфавиту: YAML страны написан
-    так, чтобы его читал человек, и раскладывать его заново значило бы потерять
-    эту работу.
+    Путь сортируется, а не берётся в порядке тела, и это не вкус. Тело приезжает
+    из `jsonb`, а он порядок ключей **не хранит**: Postgres раскладывает их по
+    длине и байтам. Порядок YAML, в котором правила написаны для человека, до
+    экрана не доезжает вовсе — проверено на живом стенде, где разделы вышли
+    вперемешку. Раз своего порядка нет, лучше предсказуемый алфавитный, чем
+    случайный: по алфавиту правило хотя бы находится глазами.
     """
     rows: list[Leaf] = []
 
     def walk(node: dict, prefix: str) -> None:
-        for key, value in node.items():
+        for key, value in sorted(node.items()):
             path = f"{prefix}{key}"
-            if not is_visible(path, hidden):
+            if not is_visible(path, hidden) or path in IDENTITY:
                 continue
             if isinstance(value, dict):
                 walk(value, path + ".")
@@ -293,7 +300,7 @@ def leaves(preset, *, hidden: tuple[str, ...] = ()) -> list[Leaf]:
                     value=show(value),
                     level=where.level if where else "country",
                     valid_from=where.valid_from if where else None,
-                    editable=path.split(".")[0] not in IDENTITY,
+                    editable=True,
                 )
             )
 
@@ -302,16 +309,19 @@ def leaves(preset, *, hidden: tuple[str, ...] = ()) -> list[Leaf]:
 
 
 def sections(preset, *, hidden: tuple[str, ...] = ()) -> list[dict]:
-    """Правила, разложенные по разделам тела: так их и читают."""
-    rows = leaves(preset, hidden=hidden)
-    order: list[str] = []
+    """Правила, разложенные по разделам: так их и читают.
+
+    Порядок разделов задан здесь (`SECTION_TITLES`), а не приходит из данных, по
+    той же причине: из базы он не приходит вовсе. Раздел, которого этот список
+    не знает, показывается **после** известных и своим ключом — молча пропасть
+    он не должен, иначе новая страна принесла бы правила, которых нет на экране.
+    """
+    known = list(SECTION_TITLES)
     grouped: dict[str, list[Leaf]] = {}
-    for leaf in rows:
-        name = leaf.path.split(".")[0]
-        if name not in grouped:
-            grouped[name] = []
-            order.append(name)
-        grouped[name].append(leaf)
+    for leaf in leaves(preset, hidden=hidden):
+        grouped.setdefault(leaf.path.split(".")[0], []).append(leaf)
+    order = [name for name in known if name in grouped]
+    order += sorted(name for name in grouped if name not in known)
     return [
         {"name": name, "title": section_title(name), "rows": grouped[name]} for name in order
     ]

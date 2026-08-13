@@ -503,3 +503,19 @@ def test_the_timesheet_shows_the_piece_column_once_the_measure_is_switched(
         "у почасовых строк нет обещанного прочерка"
     )
     client.post("/logout/")
+
+
+def test_the_rule_page_warns_about_the_closed_month_before_the_refusal(
+    client, web_env, payruns_restored,
+):
+    """Граница закрытого месяца названа до правки, а не только в отказе после неё.
+
+    Найдено в браузере: подставленная дата была верной, но человек, набравший
+    свою, узнавал о запрете только нажав «Завести версию» — продукт молчал там,
+    где знал ответ заранее.
+    """
+    approve_june(client, web_env)
+    login_as(client, "admin")
+    html = body(client.get(f"/rules/{NIGHT_PERCENT}/"))
+    assert "2026-06-30" in html, "страница не называет границу закрытого месяца"
+    client.post("/logout/")

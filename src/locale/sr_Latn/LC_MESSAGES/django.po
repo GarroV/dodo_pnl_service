@@ -1805,3 +1805,142 @@ msgstr "Uneto redova evidencije sati"
 
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
+
+#, python-format
+msgid "«%(label)s»: значение обязательно."
+msgstr "„%(label)s“: vrednost je obavezna."
+
+#, python-format
+msgid "«%(label)s»: нужно «да» или «нет», а не «%(value)s»."
+msgstr "„%(label)s“: potrebno je „da“ ili „ne“, a ne „%(value)s“."
+
+#, python-format
+msgid "«Действует с»: дата пишется как 2026-06-01, а не «%(value)s»."
+msgstr "„Od“: datum se piše kao 2026-06-01, a ne „%(value)s“."
+
+msgid "Ведение правил расчёта"
+msgstr "Upravljanje pravilima obračuna"
+
+msgid "Версии настройки партнёра"
+msgstr "Verzije podešavanja partnera"
+
+msgid "Действующие на"
+msgstr "Na dan"
+
+msgid "Доплата до минимума"
+msgstr "Doplata do minimuma"
+
+msgid "Задаётся после сохранения группы: правило адресуется её кодом."
+msgstr "Postavlja se nakon čuvanja grupe: pravilo se adresira njenim kodom."
+
+#, python-format
+msgid "Зарплата утверждена по %(edge)s включительно: правило можно завести только с более поздней даты либо открыв месяц заново с причиной."
+msgstr "Plata je odobrena zaključno sa %(edge)s: pravilo se može dodati samo od kasnijeg datuma ili ponovnim otvaranjem meseca sa razlogom."
+
+msgid "Значение"
+msgstr "Vrednost"
+
+msgid "Значение приходит из правил страны. Первая же версия ниже станет настройкой партнёра — с той даты, которую вы укажете."
+msgstr "Vrednost dolazi iz pravila zemlje. Prva verzija ispod postaje podešavanje partnera — od datuma koji navedete."
+
+msgid "Константы страны"
+msgstr "Konstante zemlje"
+
+#, python-format
+msgid "Набор правил: %(code)s (%(country)s)"
+msgstr "Skup pravila: %(code)s (%(country)s)"
+
+msgid "Надбавки"
+msgstr "Dodaci"
+
+msgid "Новая версия правила"
+msgstr "Nova verzija pravila"
+
+msgid "Нужна только при смене способа. Пусто — берётся первый день, который не задевает утверждённый месяц."
+msgstr "Potrebno samo pri promeni načina. Prazno — koristi se prvi dan koji ne zadire u odobren mesec."
+
+msgid "Откуда"
+msgstr "Poreklo"
+
+msgid "Партнёр это правило не менял."
+msgstr "Partner nije menjao ovo pravilo."
+
+msgid "Первичная загрузка страны делается командой load_presets — до неё считать нечем, и показывать здесь тоже нечего."
+msgstr "Prvo učitavanje zemlje se radi komandom load_presets — pre toga nema čime da se računa, pa nema ni šta da se prikaže ovde."
+
+msgid "Показать"
+msgstr "Prikaži"
+
+msgid "Поле «Действует с» обязательно."
+msgstr "Polje „Od“ je obavezno."
+
+msgid "Пороги отчёта расхождений"
+msgstr "Pragovi izveštaja o odstupanjima"
+
+msgid "Правил расчёта для этой страны на эту дату в базе нет."
+msgstr "Za ovu zemlju na ovaj datum u bazi nema pravila obračuna."
+
+msgid "Правила"
+msgstr "Pravila"
+
+msgid "Правила расчёта"
+msgstr "Pravila obračuna"
+
+msgid "Правило страны, а не колонка справочника: у смены способа есть дата, и закрытый месяц от неё не двигается."
+msgstr "Pravilo zemlje, a ne kolona imenika: promena načina ima datum, i zatvoren mesec se od toga ne pomera."
+
+msgid "С этой даты расчёт берёт новое значение. Месяцы до неё считаются по-прежнему."
+msgstr "Od ovog datuma obračun uzima novu vrednost. Meseci pre njega se i dalje računaju kao ranije."
+
+#, python-format
+msgid "Сейчас действует: %(value)s — %(origin)s"
+msgstr "Trenutno važi: %(value)s — %(origin)s"
+
+msgid "Способ действует с"
+msgstr "Način važi od"
+
+msgid "Ставки налогов и взносов"
+msgstr "Stope poreza i doprinosa"
+
+msgid "Страна поставляется готовым набором правил. Партнёр меняет только отличия — новой версией с датой: закрытый месяц от этого не двигается, потому что расчёт берёт версию, действовавшую в считаемом месяце."
+msgstr "Zemlja dolazi sa spremnim skupom pravila. Partner menja samo razlike — novom verzijom sa datumom: zatvoren mesec se time ne pomera, jer obračun uzima verziju koja je važila u mesecu koji se obračunava."
+
+msgid "Схемы расчёта"
+msgstr "Šeme obračuna"
+
+msgid "Типы часов"
+msgstr "Norma sati"
+
+msgid "Чем меряется работа"
+msgstr "Mera rada"
+
+msgid "Через запятую."
+msgstr "Odvojeno zarezom."
+
+msgid "да"
+msgstr "da"
+
+msgid "настройка партнёра"
+msgstr "podešavanje partnera"
+
+msgid "нет"
+msgstr "ne"
+
+msgid "переопределение по человеку"
+msgstr "izmena zaposlenog"
+
+msgid "правила страны"
+msgstr "pravila zemlje"
+
+msgid "правило расчёта"
+msgstr "pravilo obračuna"
+
+#, python-format
+msgid "с %(day)s"
+msgstr "od %(day)s"
+
+msgid "← К правилам"
+msgstr "← Na pravila"
+
+msgid "Зарплата утверждена по %(edge)s включительно: дата раньше этого дня переписала бы закрытый месяц, и правка будет отклонена."
+msgstr "Plata je odobrena zaključno sa %(edge)s: datum pre tog dana bi prepisao zatvoreni mesec, i izmena će biti odbijena."
