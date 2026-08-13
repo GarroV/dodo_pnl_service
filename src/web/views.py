@@ -749,6 +749,36 @@ INPUT_TITLES = {
     "hours_divisor": gettext_noop("делитель часов"),
     "hours_per_day": gettext_noop("часов в рабочем дне"),
     "rate_key": gettext_noop("какая ставка"),
+    # Сдельная работа (T075). `rate` и `quantity` меняют смысл вместе с
+    # правилом `pay_per_unit` — их подписи ниже, здесь только умолчания.
+    "measure": gettext_noop("мера работы"),
+    "quantity": gettext_noop("величина из табеля"),
+    "pay_per_unit": gettext_noop("как считается"),
+    # Правка руками — не правило, а ввод: сумма, которую поставил бухгалтер.
+    "amount": gettext_noop("сумма"),
+}
+
+# Подписи, у которых смысл зависит от соседнего входа того же шага (T081,
+# issue #72). У сдельной группы `rate` — цена ЕДИНИЦЫ, а не часа: рядом стоит
+# `quantity 120` и `pay_per_unit True`, и подпись «ставка за час» превращает
+# объяснение в неправду про единицу измерения. Одна подпись на все шаги здесь
+# невозможна в принципе — величина у входа одна, а означает она разное.
+PIECE_TITLES = {
+    "rate": gettext_noop("цена единицы"),
+    "quantity": gettext_noop("количество"),
+}
+
+# Фиксированная выплата: в табель вводят саму сумму, а не количество чего-то.
+# Ставки при этом нет вовсе — не «ставка None», а нет (см. `input_pairs`).
+FIXED_PAYOUT_TITLES = {
+    "quantity": gettext_noop("сумма из табеля"),
+}
+
+# Значение `pay_per_unit` словами: «True» посреди объяснения денег читается как
+# отладочный вывод, а сказать здесь нужно ровно одно — как получилась сумма.
+PAY_PER_UNIT_VALUES = {
+    True: gettext_noop("количество × цена единицы"),
+    False: gettext_noop("сумма из табеля как есть"),
 }
 
 # Откуда приехало правило: чьё это решение — страны, партнёра, группы или
@@ -762,8 +792,9 @@ LEVEL_TITLES = {
 }
 
 # Порядок входов на экране — как в формуле, слева направо: часы × ставка ×
-# процент. Прочие идут следом по алфавиту, чтобы не прыгали от шага к шагу.
-INPUT_ORDER = ["hours", "rate", "pay_percent", "floor", "amount_per_norm"]
+# процент, количество × цена единицы. Прочие идут следом по алфавиту, чтобы не
+# прыгали от шага к шагу.
+INPUT_ORDER = ["hours", "quantity", "rate", "pay_percent", "floor", "amount_per_norm"]
 
 
 def titled(titles: dict, code: str, fallback: str = "") -> str:
@@ -781,22 +812,49 @@ def titled(titles: dict, code: str, fallback: str = "") -> str:
     return fallback or code
 
 
+def input_title(name: str, values: dict) -> str:
+    """Подпись входа с оглядкой на соседей по шагу (T081).
+
+    Смысл `rate` и `quantity` задаёт правило `pay_per_unit` того же шага, а не
+    имя ключа: 420 — это цена доставки, если работа меряется доставками, и
+    ставка часа, если часами. Подпись обязана говорить именно то, что верно для
+    этой строки, иначе след врёт ровно в том месте, ради которого его читают.
+    """
+    per_unit = values.get("pay_per_unit")
+    special = PIECE_TITLES if per_unit is True else FIXED_PAYOUT_TITLES if per_unit is False else {}
+    if name in special:
+        return gettext(special[name])
+    return titled(INPUT_TITLES, name)
+
+
+def input_value(name: str, value) -> str:
+    """Значение входа так, как его читает человек."""
+    if name == "pay_per_unit":
+        # Признак правила словами: «True» посреди денег читается как отладка.
+        return gettext(PAY_PER_UNIT_VALUES[bool(value)])
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value)
+    if isinstance(value, Decimal):
+        return hours(value) if name.endswith(("hours", "days")) else money(value)
+    return str(value)
+
+
 def input_pairs(values: dict) -> list[dict]:
-    """Входы шага в том порядке, в котором по ним повторяют сумму на калькуляторе."""
+    """Входы шага в том порядке, в котором по ним повторяют сумму на калькуляторе.
+
+    Пустая величина не показывается вовсе. У фиксированной сдельной выплаты
+    ставки нет — правило её не применяет, — и строка «ставка за час None» на
+    экране означала бы, что ставка есть и она неизвестна. Это разные вещи, и
+    вторая неправда (issue #72).
+    """
     def key(name: str):
         return (INPUT_ORDER.index(name) if name in INPUT_ORDER else len(INPUT_ORDER), name)
 
-    pairs = []
-    for name in sorted(values, key=key):
-        value = values[name]
-        if isinstance(value, list):
-            shown = ", ".join(str(item) for item in value)
-        elif isinstance(value, Decimal):
-            shown = hours(value) if name.endswith(("hours", "days")) else money(value)
-        else:
-            shown = str(value)
-        pairs.append({"title": titled(INPUT_TITLES, name), "value": shown})
-    return pairs
+    return [
+        {"title": input_title(name, values), "value": input_value(name, values[name])}
+        for name in sorted(values, key=key)
+        if values[name] is not None
+    ]
 
 
 def trace_step(step) -> dict:
