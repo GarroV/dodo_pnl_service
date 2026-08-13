@@ -12,7 +12,7 @@ from .engine import (
     uses_insured_hours,
     work_measure,
 )
-from .presets import Origin, Preset, list_presets, load_preset
+from .presets import Origin, Preset, list_presets, load_preset, load_preset_body
 from .trace import TraceStep, explain
 
 __all__ = [
@@ -29,6 +29,7 @@ __all__ = [
     "explain",
     "insured_base",
     "load_preset",
+    "load_preset_body",
     "list_presets",
     "uses_insured_hours",
     "work_measure",
