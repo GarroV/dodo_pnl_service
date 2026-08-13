@@ -830,10 +830,11 @@ def period_url_for(period, tenant_id, cut: str) -> str:
 def payslip_trace(request, payslip_id):
     """«Как получилась эта сумма»: шаги расчёта одной строки ведомости.
 
-    Экран **пересобирает** след по сегодняшним правилам — хранения следа в
-    продукте пока нет (issue #48, T056). Поэтому он не только показывает шаги,
-    но и говорит, сошлись ли они с сохранённой суммой: показать пересчёт молча
-    значило бы выдать сегодняшние правила за те, которыми считали.
+    След **сохранён вместе с расчётом** (T056), поэтому закрытый месяц
+    объясняется тем, чем считался. У строк, посчитанных до появления хранения,
+    объяснение пересобирается по сегодняшним правилам и сверяется с сохранённой
+    суммой — экран говорит, какой из двух следов показывает: обещания у них
+    разные, и молчать об этом нельзя.
     """
     who = get_current_principal(request)
     if who is None or who.tenant_id is None:
@@ -875,6 +876,7 @@ def payslip_trace(request, payslip_id):
             "stored_total": money(view.stored_total),
             "row_total": money(view.row_total),
             "agrees": view.agrees,
+            "stored_trace": view.stored_trace,
             "error": view.error,
             "approved": view.approved,
         },

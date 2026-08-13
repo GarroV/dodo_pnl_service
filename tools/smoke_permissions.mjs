@@ -30,6 +30,17 @@ const ROLES = [
 const { evalIn, goto, send, key, type, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
 
+// Ждём условие, подглядывая в живую страницу, вместо того чтобы спать заранее
+// угаданное число секунд: фиксированная пауза либо ждёт дольше нужного, либо
+// (как здесь и было) рвёт проверку раньше, чем стенд успевает ответить.
+async function waitFor(expr, seconds) {
+  for (let i = 0; i < seconds * 5; i++) {
+    if (await evalIn(expr).catch(() => false)) return true;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  return false;
+}
+
 const state = {};
 
 // Период считается один раз, настоящим нажатием кнопки под директором: без
@@ -51,9 +62,30 @@ await login("director");
   for (const t of ["mousePressed", "mouseReleased"]) {
     await send("Input.dispatchMouseEvent", { type: t, x: box.x, y: box.y, button: "left", clickCount: 1 });
   }
-  await new Promise((r) => setTimeout(r, 2500));
-  const done = await evalIn(`document.body.innerText.includes("Расчёт выполнен")`);
-  check("расчёт запущен нажатием кнопки", done);
+
+  // «Расчёт выполнен» появляется только когда расчёт идёт прямо в запросе
+  // (`?calculated=1`). На стенде по умолчанию включена очередь
+  // (PAYRUN_BACKGROUND=1): нажатие уводит на `?queued=1`, и вместо фразы на
+  // странице встаёт полоса `section.progress` (см. `period_calculate` и
+  // `period.html`). Этой фразы в фоновом режиме не бывает никогда — ждать
+  // её означало бы гонять смоук вслепую только на одном из двух режимов
+  // стенда. Какой режим — решает стенд, не смоук: годится любой из исходов.
+  const started = await waitFor(
+    `document.body.innerText.includes("Расчёт выполнен") ||
+     !!document.querySelector("section.progress")`,
+    10,
+  );
+  check("расчёт запущен нажатием кнопки", started,
+    "ни фразы «Расчёт выполнен», ни полосы прогресса за 10 секунд");
+
+  // Дальше смоуку нужна готовая ведомость (числа по ролям ниже сверяются по
+  // table.sheet). При фоновом расчёте страница сама перезагрузится, когда
+  // рабочий процесс очереди закончит считать (см. tick() в period.html) —
+  // ждём появления таблицы с потолком, а не спим фиксированное время и не
+  // гадаем, сколько займёт расчёт на конкретном стенде.
+  const ready = await waitFor(`!!document.querySelector("table.sheet")`, 30);
+  check("ведомость посчитана и показана", ready,
+    "table.sheet не появился за 30 секунд ожидания");
 }
 
 for (const role of ROLES) {
