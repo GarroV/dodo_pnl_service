@@ -216,7 +216,10 @@ groups:
     title: { ru: "Офис", en: "Office", sr-latn: "Kancelarija" }
     scheme: standard
     ledger: official
-    pnl_line: "Расходы на управление"
+    pnl_line:
+      ru: "Расходы на управление"
+      en: "Management costs"
+      sr-latn: "Troškovi upravljanja"
   management:
     title: { ru: "Управляющие", en: "Unit managers", sr-latn: "Menadžeri objekata" }
     scheme: standard
@@ -226,12 +229,18 @@ groups:
     title: { ru: "Кухня и касса", en: "Kitchen and counter", sr-latn: "Kuhinja i kasa" }
     scheme: standard
     ledger: supplementary
-    pnl_line: "LC / КС"
+    pnl_line:
+      ru: "LC / КС"
+      en: "LC / Kitchen and counter"
+      sr-latn: "LC / Kuhinja i kasa"
   doughmaker:
     title: { ru: "Тестомейкер", en: "Dough maker", sr-latn: "Majstor za testo" }
     scheme: standard
     ledger: supplementary
-    pnl_line: "LC / Тестомейкер"
+    pnl_line:
+      ru: "LC / Тестомейкер"
+      en: "LC / Dough maker"
+      sr-latn: "LC / Majstor za testo"
   couriers:
     title: { ru: "Курьеры", en: "Couriers", sr-latn: "Kuriri" }
     scheme: direct
@@ -242,7 +251,10 @@ groups:
     title: { ru: "Временные работы", en: "Temporary contracts", sr-latn: "Privremeni poslovi" }
     scheme: temporary
     ledger: official
-    pnl_line: "LC / КС"
+    pnl_line:
+      ru: "LC / КС"
+      en: "LC / Kitchen and counter"
+      sr-latn: "LC / Kuhinja i kasa"
 
 # --- Производственный календарь ---
 calendar:

@@ -24,6 +24,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from django.db import transaction
+from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 
 from core.models import Employee, EmploymentTerm, Timesheet, Unit
@@ -152,7 +153,15 @@ def _check_data(row, employee, want: RowInput, period: date) -> list[Note]:
             _("%(who)s: уволен %(date)s, а в файле %(total)s ч за этот месяц")
             % {
                 "who": who,
-                "date": f"{employee.dismissed_at:%d.%m.%Y}",
+                # Формат языка страницы, а не жёсткий русский (T103).
+                # `dismissed_at` — дата без времени (models.py), поэтому берём
+                # полный `DATE_FORMAT`, а не машинный `SHORT_DATE_FORMAT`: рядом
+                # на той же странице табеля дата закрытия точки показывается
+                # полным `DATETIME_FORMAT` (см. grid.html), и эта не должна
+                # выглядеть третьим вариантом. `date_format` — не шаблонный
+                # фильтр `date`: часовой пояс сам не переводит, но для
+                # `DateField` перевода и не нужно — там времени нет.
+                "date": date_format(employee.dismissed_at, "DATE_FORMAT"),
                 "total": f"{total:.2f}",
             },
             where, key,

@@ -844,12 +844,31 @@ def input_title(name: str, values: dict) -> str:
 
 
 def input_value(name: str, value) -> str:
-    """Значение входа так, как его читает человек."""
+    """Значение входа так, как его читает человек.
+
+    Разбор идёт вглубь, а не только по верхнему слою (T103). Вход не обязан
+    быть числом: у доплаты до минимума `часов` — это раскладка по видам,
+    `{"sick": Decimal("20")}`, и до разбора вложенного она выезжала на экран
+    ровно в таком виде — питоновским `repr` через `str(value)`. Экран следа для
+    того и заведён, чтобы человек повторил сумму рукой; величина, показанная
+    внутренним представлением, эту работу останавливает.
+
+    Формат при этом остаётся форматом своего вида: часы внутри раскладки
+    печатаются как часы. Иначе рядом на одной строке стояли бы `20,00` и `20`,
+    и сверять след с табелем пришлось бы с догадкой.
+    """
     if name == "pay_per_unit":
         # Признак правила словами: «True» посреди денег читается как отладка.
         return gettext(PAY_PER_UNIT_VALUES[bool(value)])
+    if isinstance(value, dict):
+        # Ключ — код вида часов; он же стоит в колонке «из чего собрано»
+        # (`hours.sick`), поэтому человек узнаёт его на той же строке. Порядок
+        # закреплён: иначе виды прыгали бы от строки к строке.
+        return ", ".join(
+            f"{code} {input_value(name, item)}" for code, item in sorted(value.items())
+        )
     if isinstance(value, list):
-        return ", ".join(str(item) for item in value)
+        return ", ".join(input_value(name, item) for item in value)
     if isinstance(value, Decimal):
         return hours(value) if name.endswith(("hours", "days")) else money(value)
     return str(value)

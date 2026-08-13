@@ -1,0 +1,51 @@
+{
+  "часов": {"en": "hours", "sr": "sati"},
+  "типы часов": {"en": "hour types", "sr": "tipovi sati"},
+  "отработано часов": {"en": "hours worked", "sr": "odrađeni sati"},
+  "норма часов": {"en": "standard hours", "sr": "norma sati"},
+  "эталонная норма часов": {"en": "reference standard hours", "sr": "referentna norma sati"},
+  "делитель часов": {"en": "hours divisor", "sr": "delilac sati"},
+  "процент оплаты": {"en": "pay percentage", "sr": "procenat plaćanja"},
+  "за полную норму": {"en": "for the full standard", "sr": "za punu normu"},
+  "отработано дней": {"en": "days worked", "sr": "odrađeni dani"},
+  "рабочих дней в месяце": {"en": "working days in the month", "sr": "radnih dana u mesecu"},
+  "база взносов, часов": {"en": "contribution base, hours", "sr": "osnovica doprinosa, sati"},
+  "минимальная база взносов": {"en": "minimum contribution base", "sr": "minimalna osnovica doprinosa"},
+  "ставка налога": {"en": "tax rate", "sr": "poreska stopa"},
+  "налог": {"en": "tax", "sr": "porez"},
+  "взносы": {"en": "contributions", "sr": "doprinosi"},
+
+  "правило страны": {"en": "country rule", "sr": "pravilo zemlje"},
+  "переопределение по сотруднику": {"en": "employee override", "sr": "izmena zaposlenog"},
+  "введено руками": {"en": "entered manually", "sr": "ručno uneto"},
+
+  "Посчитан": {"en": "Calculated", "sr": "Obračunat"},
+  "Утверждён": {"en": "Approved", "sr": "Odobren"},
+  "Открыт заново": {"en": "Reopened", "sr": "Ponovo otvoren"},
+
+  "Правка табеля": {"en": "Timesheet editing", "sr": "Izmena evidencije sati"},
+  "Расчёт периода": {"en": "Period calculation", "sr": "Obračun perioda"},
+  "Утверждение периода": {"en": "Period approval", "sr": "Odobrenje perioda"},
+  "Откат периода": {"en": "Period rollback", "sr": "Vraćanje perioda"},
+  "Закрытие часов по точке": {"en": "Closing unit hours", "sr": "Zatvaranje sati objekta"},
+  "Заморозка строки ведомости": {"en": "Payslip row freeze", "sr": "Zamrzavanje reda obračunske liste"},
+  "Перенос разницы за закрытый месяц": {"en": "Posting a difference for a closed month", "sr": "Prenos razlike za zatvoreni mesec"},
+
+  "Полная стоимость": {"en": "Total cost", "sr": "Ukupan trošak"},
+  "Часы для взносов": {"en": "Hours for contributions", "sr": "Sati za doprinose"},
+  "Ставка": {"en": "Rate", "sr": "Stopa"},
+  "Типы часов": {"en": "Hour types", "sr": "Tipovi sati"},
+
+  "Период утверждён: расчёт и его данные заморожены. Чтобы пересчитать, период нужно сначала открыть заново.": {
+    "en": "The period is approved: the calculation and its data are frozen. To recalculate it, reopen the period first.",
+    "sr": "Period je odobren: obračun i njegovi podaci su zamrznuti. Da biste ga ponovo obračunali, prvo ponovo otvorite period."
+  },
+  "У этого партнёра правки задним числом ведутся пересчётом, а не переносом: закрытый период открывается заново с указанием причины и считается снова. Перенос разницы для него выключен настройкой.": {
+    "en": "For this partner, backdated corrections are handled by recalculation rather than carryover: a closed period is reopened with a reason and calculated again. Difference carryover is turned off for them in the settings.",
+    "sr": "Kod ovog partnera se izmene unazad rade ponovnim obračunom, a ne prenosom: zatvoreni period se ponovo otvara uz navođenje razloga i ponovo se obračunava. Prenos razlike je za njega isključen podešavanjem."
+  },
+  "период открывается заново и пересчитывается": {
+    "en": "the period is reopened and recalculated",
+    "sr": "period se ponovo otvara i ponovo obračunava"
+  }
+}

@@ -102,10 +102,13 @@ def data_terms(dsn: str, language: str = "") -> set[str]:
         """Все подписи пресета: их состав у каждой страны свой, перечислять нельзя."""
         if isinstance(node, dict):
             for key, value in node.items():
-                if key == "title":
+                if key in ("title", "pnl_line"):
+                    # `pnl_line` разбирается ровно как подпись, а не как данные
+                    # целиком. Пока он разрешался любой строкой, экран показывал
+                    # `Расходы на управление` по-английски, а проверка молчала:
+                    # она числила данными партнёра то, что приезжает из пресета
+                    # СТРАНЫ, то есть от продукта (T103).
                     add_title(value)
-                elif key == "pnl_line" and isinstance(value, str):
-                    add(value)
                 else:
                     walk(value)
         elif isinstance(node, list):

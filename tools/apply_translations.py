@@ -70,23 +70,28 @@ def apply(po: Path, table: dict[str, str]) -> tuple[int, list[str]]:
             index += 1
             continue
 
-        # Пометки, которые `makemessages` вешает на угаданный перевод, снимаем:
-        # `fuzzy` — потому что gettext строку с ней не показывает **вовсе**, и на
-        # экране она молча остаётся русской; `#| msgid` — потому что это остаток
-        # от прежнего ключа, к нашему переводу отношения не имеющий. Прочие
-        # флаги (`python-format`) остаются: ими gettext проверяет подстановки.
+        # Пометки, которые `makemessages` вешает на угаданный перевод:
+        # `fuzzy` — «этот текст я взял у похожей строки, посмотри глазами», и
+        # gettext такую строку не показывает **вовсе**; `#| msgid` — прежний
+        # ключ, от которого текст достался. Прочие флаги (`python-format`)
+        # трогать нельзя: ими gettext проверяет подстановки.
+        #
+        # Снять их вправе только тот, кто заменил текст. Раньше они снимались
+        # здесь, до того как выяснялось, есть ли для строки перевод, — и записи,
+        # которой перевода не дали, доставался чужой угаданный текст уже без
+        # пометки. С этой минуты каталог врал молча: `gettext` строку показывал,
+        # а проверка «пустых и fuzzy нет» была зелёной, потому что она требует
+        # снять пометку, а не исправить перевод. Именно так на главный экран
+        # вышло `Payroll calculation: not calculated yet` над полной ведомостью
+        # (T102). Поэтому пометки только откладываются в сторону, а вернуть их
+        # или выбросить решает ветка ниже.
         def guessed(line: str) -> bool:
             return line.startswith("#|") or (line.startswith("#,") and "fuzzy" in line)
 
+        markers: list[str] = []
         while out and guessed(out[-1]):
-            if out[-1].startswith("#|"):
-                out.pop()
-                continue
-            flags = [f.strip() for f in out[-1][2:].split(",") if f.strip() != "fuzzy"]
-            out.pop()
-            if flags:
-                out.append("#, " + ", ".join(flags))
-            break
+            markers.insert(0, out.pop())
+        marker_at = len(out)
 
         # Оригинал: строка `msgid` и продолжения под ней.
         raw = [line[len("msgid "):].strip()]
@@ -108,16 +113,36 @@ def apply(po: Path, table: dict[str, str]) -> tuple[int, list[str]]:
                 old.append(lines[index])
                 index += 1
 
+        def keep_markers() -> None:
+            """Вернуть пометки на место: текст остался чужим, признать его своим
+            нельзя. Из `#, fuzzy, python-format` при этом сохраняется всё."""
+            out[marker_at:marker_at] = markers
+
+        def drop_markers() -> None:
+            """Текст заменён — пометки уходят. `#| msgid` выбрасывается целиком:
+            он про прежний ключ. Прочие флаги остаются, `fuzzy` из них вынут."""
+            kept = []
+            for marker in markers:
+                if marker.startswith("#|"):
+                    continue
+                flags = [f.strip() for f in marker[2:].split(",") if f.strip() != "fuzzy"]
+                if flags:
+                    kept.append("#, " + ", ".join(flags))
+            out[marker_at:marker_at] = kept
+
         known = table.get(source)
         if source and known:
             broken = check(source, known)
             if broken:
                 problems.append(f"{'; '.join(broken)}: {source[:60]}")
+                keep_markers()
                 out.extend(old)
                 continue
+            drop_markers()
             out.append("msgstr " + quote(known))
             filled += 1
         else:
+            keep_markers()
             out.extend(old)
 
     po.write_text("\n".join(out) + "\n", encoding="utf-8")
