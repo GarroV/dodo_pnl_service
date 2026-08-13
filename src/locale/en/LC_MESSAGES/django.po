@@ -14,9 +14,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#, python-format
-msgid "нет условий найма на этот месяц: %(count)s чел. Расчёт без них выглядел бы верным, поэтому не выполняется."
-msgstr "No employment terms for this month: %(count)s people. A calculation without them would look correct, so it does not run."
+msgid "нет условий найма на этот месяц. Расчёт без них выглядел бы верным, поэтому не выполняется."
+msgstr "No employment terms for this month. A calculation without them would look correct, so it does not run."
 
 msgid "за этот период нет ни одного табеля — считать нечего. Внесите часы и повторите."
 msgstr "There is no timesheet at all for this period — nothing to calculate. Enter hours and try again."
@@ -29,9 +28,11 @@ msgstr "The country rules have no calculation schemes: %(schemes)s. Fix the empl
 msgid "в правилах страны нет способов измерения работы: %(measures)s. Поправьте настройку группы или пресет."
 msgstr "The country rules have no work measures: %(measures)s. Fix the group setting or the preset."
 
-#, python-format
-msgid "база для взносов не сходится с часами табеля: %(count)s чел. По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы верным. Проверьте колонку «База взносов» в табеле."
-msgstr "The contribution base does not match the timesheet hours: %(count)s people. Contributions and gross pay are calculated from it, so a calculation on an outdated base would look correct. Check the \"Contribution base\" column in the timesheet."
+msgid "база для взносов не сходится с часами табеля. По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы верным. Проверьте колонку «База взносов» в табеле."
+msgstr "The contribution base does not match the timesheet hours. Contributions and gross pay are calculated from it, so a calculation on an outdated base would look correct. Check the \"Contribution base\" column in the timesheet."
+
+msgid "Кто именно не прошёл проверку, видно тому, кому отдан весь расчёт партнёра, — спросите бухгалтера или оперативного директора."
+msgstr "Who exactly failed the check is shown to those given the partner's whole payroll run — ask the accountant or the operations director."
 
 msgid "Ведомость этого периода попадает в регистры учёта, недоступные вашей роли. Запустить расчёт может тот, кто видит их все."
 msgstr "This period's payroll sheet falls under ledgers not available to your role. Only someone who can see all of them can start the calculation."

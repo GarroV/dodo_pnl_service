@@ -16,7 +16,14 @@
 
 {% if error %}
 {% notice "alert" title=error_title %}{{ error }}
-  {% if details %}<div class="details">{{ details|join:", " }}</div>{% endif %}
+  {% comment %}
+  Кто именно не прошёл проверку (T114). Список собран по всему расчёту партнёра
+  и показывается только тому, кому весь расчёт отдан; остальным на его месте
+  стоит объяснение, почему списка нет. Молчание читалось бы как поломка
+  продукта, а не как запрет, — тот же порядок, что у кнопок, которых нет.
+  {% endcomment %}
+  {% if details %}<div class="details">{{ details|join:", " }}</div>
+  {% elif details_denied %}<div class="details note">{{ details_denied }}</div>{% endif %}
 {% endnotice %}
 {% endif %}
 

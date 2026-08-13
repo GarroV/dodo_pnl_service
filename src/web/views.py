@@ -33,7 +33,7 @@ from reports.sheet import build_slice
 from reports.trace import TraceNotFound, build_trace
 from reports.variance import ThresholdsMissing, build_variance
 
-from . import auth, onboarding, permissions
+from . import auth, onboarding, permissions, runslice
 from .format import cut_title, hours, ledger_title, money, percent, threshold
 from .i18n import month_title
 from .labels import labeller
@@ -163,6 +163,12 @@ def period_page(
     # русским навсегда.
     error_title=None,
     details=(),
+    # Отказ пришёл от самого расчёта, а не от прав роли или цикла периода
+    # (T114). Разница не косметическая: подробности расчёта собраны по всему
+    # партнёру и показываются не каждому, а вместо них стоит объяснение, почему
+    # их нет. Флагом, а не по «пуст ли список»: объяснение обязано быть
+    # свойством роли, иначе его появление само рассказывает о скрытых именах.
+    run_refusal=False,
     status=200,
     reason_value="",
 ):
@@ -217,6 +223,15 @@ def period_page(
     if error is None and last is not None and last.status == jobs.FAILED and last.error:
         error = last.error
         details = details or last.details or []
+        run_refusal = True
+
+    # Весь ли расчёт партнёра отдан этой роли (T114). Спрашивается один раз на
+    # страницу и решает две вещи сразу: показывать ли, у кого именно не сошлось,
+    # и показывать ли счётчик посчитанных. И то и другое собрано по всему
+    # периоду, мимо политик базы, — значит, срез им нужен свой.
+    whole_run = runslice.sees_whole_run(period.tenant_id)
+    if not whole_run:
+        details = []
 
     # Кнопки нет по двум разным причинам, и они не смешиваются: цикл сюда не
     # пускает (тогда о праве говорить нечего) или права нет (тогда на месте
@@ -371,9 +386,15 @@ def period_page(
             "error": error,
             "error_title": error_title or _("Расчёт не выполнен."),
             "details": list(details),
+            # Почему списка нет — на месте списка, а не молчанием (T114).
+            # Стоит только у отказа самого расчёта: у отказа по правам роли
+            # объяснять нечего, там подробностей не бывает вовсе.
+            "details_denied": (
+                runslice.details_note(whole_run=whole_run) if run_refusal else ""
+            ),
             "calculated": request.GET.get("calculated") == "1",
             # --- ход фонового расчёта (T024) ---
-            "job": jobs.state_of(job),
+            "job": runslice.state_for_viewer(jobs.state_of(job), whole_run=whole_run),
             "job_running": job is not None,
             # Что обещано под кнопкой. «Считается сразу» при включённой очереди —
             # неправда ровно в тот момент, когда человек решает, ждать ему на
@@ -505,7 +526,8 @@ def period_calculate(request, period_id):
         details = refusal.details or [ledger_title(name) for name in refusal.ledgers]
         return period_page(
             request, period,
-            error=refusal.message, details=details, status=refusal.http_status,
+            error=refusal.message, details=details, run_refusal=True,
+            status=refusal.http_status,
         )
 
     # Перенаправление после записи: обновление страницы не повторяет расчёт.
@@ -517,13 +539,26 @@ def period_calculate(request, period_id):
 def period_calculate_status(request, period_id):
     """Состояние расчёта отдельным ответом — его спрашивает полоса прогресса.
 
-    Тот же `state_of`, что рисует страницу: два разных ответа об одном и том же
-    расчёте означали бы полосу, которая говорит не то, что написано рядом с ней.
-    Своей проверки доступа здесь нет и не нужно — задание чужого партнёра не
-    видно политикам базы, и ответ честно скажет «расчёта нет».
+    Тот же `state_of` и тот же срез, что рисуют страницу: два разных ответа об
+    одном и том же расчёте означали бы полосу, которая говорит не то, что
+    написано рядом с ней.
+
+    Раньше здесь было сказано, что своей проверки доступа не нужно — задание
+    чужого партнёра не видно политикам базы. Про **чужого партнёра** это верно и
+    сейчас, а про чужую точку и скрытый регистр было неверно (T114): задание
+    хранит рассказ о расчёте по всему периоду — текст отказа, поимённый список и
+    счётчик, — и политики этот рассказ не режут, потому что он приезжает готовой
+    строкой в поле, а не выборкой из таблиц. Управляющий точки получал отсюда
+    `external_id` людей внутреннего регистра и чужой точки. Срез поэтому явный,
+    и он тот же, что на странице.
     """
     period = find_period(period_id)
-    return JsonResponse(jobs.state_of(jobs.last_job(period.tenant_id, period.period)))
+    state = jobs.state_of(jobs.last_job(period.tenant_id, period.period))
+    return JsonResponse(
+        runslice.state_for_viewer(
+            state, whole_run=runslice.sees_whole_run(period.tenant_id)
+        )
+    )
 
 
 def current_payrun(period: Period):
@@ -636,6 +671,7 @@ def period_retro_post(request, period_id):
         details = refusal.details or [ledger_title(name) for name in refusal.ledgers]
         return period_page(
             request, period, error=refusal.message, details=details,
+            run_refusal=True,
             error_title=_("Разница не перенесена."), status=refusal.http_status,
         )
 
