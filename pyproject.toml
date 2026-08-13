@@ -34,7 +34,12 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+# `.` рядом с `src` обязателен, и это не украшение: `tests/test_error_pages.py`
+# подменяет ROOT_URLCONF на `tests.boom_urls`, то есть импортирует пакет `tests`
+# по имени. Корень репозитория попадает в пути сам только при запуске
+# `python -m pytest` (так делает CLAUDE.md), а при голом `pytest` (так делает CI
+# и README) — нет, и три проверки страницы отказа падали ТОЛЬКО в CI.
+pythonpath = ["src", "."]
 addopts = "-q"
 
 [tool.ruff]
