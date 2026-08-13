@@ -49,6 +49,13 @@
     <tr><td>{% translate "Заведено строк табеля" %}</td><td class="num">{{ result.created }}</td></tr>
     <tr><td>{% translate "Изменено" %}</td><td class="num">{{ result.updated }}</td></tr>
     <tr><td>{% translate "Без изменений" %}</td><td class="num muted">{{ result.unchanged }}</td></tr>
+    {% comment %}
+    Два разных повода не попасть в табель, и счётчики у них разные (T122). Один
+    общий врал про класс события: писал «Не сопоставлено 16» и тут же
+    перечислял этих шестнадцати поимённо — то есть сопоставил.
+    {% endcomment %}
+    <tr><td>{% translate "Сопоставлено, но не загружено" %}</td>
+        <td class="num {% if result.skipped_rows %}strong{% else %}muted{% endif %}">{{ result.skipped_rows|length }}</td></tr>
     <tr><td>{% translate "Не сопоставлено" %}</td>
         <td class="num {% if result.unmatched_rows %}strong{% else %}muted{% endif %}">{{ result.unmatched_rows|length }}</td></tr>
   </tbody>
@@ -58,9 +65,22 @@
 <p class="note">{% translate "Файл разобран целиком, подозрительного не нашлось." %}</p>
 {% endif %}
 
+{% if result.skipped_rows %}
+<h2>{% translate "Не загружено: человек найден, а строка не записана" %}</h2>
+<p class="sub">{% translate "Этих людей продукт узнал, но записывать было некуда — причина у каждой строки своя." %}</p>
+<table class="sheet">
+  <thead><tr><th>{% translate "Лист" %}</th><th>{% translate "Кто" %}</th><th>{% translate "Почему" %}</th></tr></thead>
+  <tbody>
+    {% for row in result.skipped_rows %}
+    <tr><td>{{ row.sheet }}</td><td class="who">{{ row.name }}</td><td>{{ row.why }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
 {% if result.unmatched_rows %}
 <h2>{% translate "Не загружено: некому записать" %}</h2>
-<p class="sub">{% translate "Эти строки в файле есть, а в табеле их нет." %}</p>
+<p class="sub">{% translate "Этих людей в справочнике партнёра нет — неизвестно, о ком строка." %}</p>
 <table class="sheet">
   <thead><tr><th>{% translate "Лист" %}</th><th>{% translate "Кто" %}</th><th>{% translate "Почему" %}</th></tr></thead>
   <tbody>

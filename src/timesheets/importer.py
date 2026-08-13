@@ -12,9 +12,11 @@
 2. **Идемпотентность.** Повторная загрузка того же файла не меняет ничего — ни
    строк, ни чисел, ни идентификаторов дней. Достигается не «перезаписью тем же
    значением», а отказом писать: см. `store.row_differs`.
-3. **Отчёт.** Всё, что не разобрано (`findings` разбора), и всё, что разобрано,
-   но подозрительно (`warnings`). Конституция, принцип 1: молча загруженный
-   наполовину табель посчитается и даст правдоподобно неверную зарплату.
+3. **Отчёт.** Всё, что не разобрано (`findings` разбора), всё, что не попало в
+   табель (`unmatched_rows` — человека нет в справочнике; `skipped_rows` —
+   человек найден, но строку не записали), и всё, что записано, но подозрительно
+   (`warnings`). Конституция, принцип 1: молча загруженный наполовину табель
+   посчитается и даст правдоподобно неверную зарплату.
 """
 from __future__ import annotations
 
@@ -45,7 +47,15 @@ CORRECTION_REASON = "загрузка таблицы партнёра: коло�
 
 @dataclass(frozen=True)
 class UnmatchedRow:
-    """Строка файла, которую не на кого записать."""
+    """Строка файла, которая в табель не попала, — и почему.
+
+    Поводов два, и путать их нельзя (T122). **Не сопоставлена** — человека из
+    файла в справочнике партнёра нет вовсе; тут и правда неизвестно, о ком речь.
+    **Сопоставлена, но не загружена** — человек найден и назван по фамилии, а
+    строку не записали по другой причине (часы точки закрыты, условий найма на
+    месяц нет). Один счётчик на оба повода врал про класс события: отчёт писал
+    «Не сопоставлено 16» и тут же перечислял этих шестнадцати поимённо.
+    """
 
     sheet: str
     name: str
@@ -78,16 +88,22 @@ class ImportResult:
     updated: int = 0        # строк табеля изменено
     unchanged: int = 0      # строк табеля, которых загрузка не коснулась
     unmatched_rows: list[UnmatchedRow] = field(default_factory=list)
+    # Сопоставленные, но не записанные: см. `UnmatchedRow`. Отдельным списком, а
+    # не полем внутри строки, потому что на экране это два разных раздела с
+    # разными заголовками и разными следующими шагами.
+    skipped_rows: list[UnmatchedRow] = field(default_factory=list)
     warnings: list[Note] = field(default_factory=list)
     findings: list[Finding] = field(default_factory=list)
 
     @property
     def total_rows(self) -> int:
-        return self.matched + len(self.unmatched_rows)
+        return self.matched + len(self.skipped_rows) + len(self.unmatched_rows)
 
     @property
     def clean(self) -> bool:
-        return not (self.unmatched_rows or self.warnings or self.findings)
+        return not (
+            self.unmatched_rows or self.skipped_rows or self.warnings or self.findings
+        )
 
 
 def _terms_at(tenant_id: UUID, period: date) -> dict[UUID, EmploymentTerm]:
@@ -169,7 +185,7 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
             if term is None:
                 # Без условий найма неизвестна точка, а точка — ключ строки
                 # табеля. Догадка здесь означала бы часы, записанные не туда.
-                result.unmatched_rows.append(UnmatchedRow(
+                result.skipped_rows.append(UnmatchedRow(
                     source.sheet, source.name,
                     _("нет условий найма на этот месяц — неизвестно, на какой точке"),
                 ))
@@ -181,7 +197,7 @@ def import_partner_table(file, *, tenant_id: UUID, period: date,
             # а человек прочитал бы неправду о причине — «файл не удалось
             # прочитать». Строка называется поимённо и не теряется.
             if term.unit_id is not None and term.unit_id in closures:
-                result.unmatched_rows.append(UnmatchedRow(
+                result.skipped_rows.append(UnmatchedRow(
                     source.sheet, source.name,
                     _("часы точки %(unit)s за этот месяц закрыты — строка не загружена")
                     % {"unit": unit_codes.get(term.unit_id, "")},

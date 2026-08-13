@@ -15,6 +15,7 @@
 """
 from __future__ import annotations
 
+import re
 import shutil
 from datetime import date
 from decimal import Decimal
@@ -346,9 +347,15 @@ def test_rows_of_a_closed_unit_are_reported_not_written(period_restored):
     )
     try:
         result = _import()
-        refused = [row.why for row in result.unmatched_rows]
+        refused = [row.why for row in result.skipped_rows]
         assert refused, "закрытая точка загрузилась молча"
         assert all("закрыт" in why for why in refused), refused
+        # T122: продукт назвал этих людей поимённо — значит сопоставил, и
+        # звать их несопоставленными он не вправе.
+        assert result.unmatched_rows == [], (
+            "строки закрытой точки снова попали в «не сопоставлено», хотя "
+            f"сопоставлены: {[row.name for row in result.unmatched_rows]}"
+        )
     finally:
         closure.delete()
 
@@ -500,3 +507,36 @@ def test_upload_is_refused_without_the_right(client, web_env):
 
     assert response.status_code == 403
     assert "Правка табеля" in body(response)
+
+
+def test_the_report_does_not_call_a_named_row_unmatched(client, period_restored):
+    """Счётчик отчёта не вправе врать про класс события (T122).
+
+    Было: «Сопоставлено сотрудникам 16 · Не сопоставлено 16», и тут же список
+    этих шестнадцати с причиной «часы точки NS1 за этот месяц закрыты». Их
+    сопоставили — их назвали по фамилиям; не загрузили по другой причине.
+    Человек читает счётчик раньше списка и уходит искать несуществующее
+    расхождение справочника.
+    """
+    from conftest import body, login_as
+    from core.models import TimesheetClosure, Unit
+
+    unit = Unit.objects.get(tenant__code="rs-dev", code="NS1")
+    closure = TimesheetClosure.objects.create(
+        tenant_id=_tenant_id(), unit=unit, period=JUNE
+    )
+    login_as(client, "director")
+    try:
+        with open(PLATA_SAMPLE, "rb") as handle:
+            html = body(client.post(_grid_url(client) + "import/", {"table": handle}))
+    finally:
+        closure.delete()
+
+    unmatched = re.search(
+        r"Не сопоставлено</td>\s*<td[^>]*>(\d+)</td>", html, re.S
+    )
+    assert unmatched, f"в отчёте нет счётчика «Не сопоставлено»:\n{html[:2000]}"
+    assert unmatched.group(1) == "0", (
+        "строки закрытой точки посчитаны несопоставленными, хотя названы поимённо"
+    )
+    assert "закрыт" in html, "отчёт перестал говорить, почему строки не загружены"

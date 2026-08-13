@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-13 21:30+0000\n"
+"POT-Creation-Date: 2026-08-13 21:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -423,17 +423,20 @@ msgstr "Izmenjeno"
 msgid "Без изменений"
 msgstr "Bez izmena"
 
+msgid "Сопоставлено, но не загружено"
+msgstr "Upareno, ali nije učitano"
+
 msgid "Не сопоставлено"
 msgstr "Nije upareno"
 
 msgid "Файл разобран целиком, подозрительного не нашлось."
 msgstr "Fajl je u potpunosti obrađen, ništa sumnjivo nije pronađeno."
 
-msgid "Не загружено: некому записать"
-msgstr "Nije učitano: nema kome da se upiše"
+msgid "Не загружено: человек найден, а строка не записана"
+msgstr "Nije učitano: osoba je pronađena, ali red nije upisan"
 
-msgid "Эти строки в файле есть, а в табеле их нет."
-msgstr "Ovi redovi postoje u fajlu, ali ih nema u evidenciji sati."
+msgid "Этих людей продукт узнал, но записывать было некуда — причина у каждой строки своя."
+msgstr "Ove osobe su prepoznate, ali red nije imao gde da se upiše — razlog stoji uz svaki red."
 
 msgid "Лист"
 msgstr "List"
@@ -443,6 +446,12 @@ msgstr "Ko"
 
 msgid "Почему"
 msgstr "Zašto"
+
+msgid "Не загружено: некому записать"
+msgstr "Nije učitano: nema kome da se upiše"
+
+msgid "Этих людей в справочнике партнёра нет — неизвестно, о ком строка."
+msgstr "Ovih osoba nema u šifarniku partnera — ne zna se na koga se red odnosi."
 
 msgid "Не разобрано в файле"
 msgstr "Nije obrađeno u fajlu"

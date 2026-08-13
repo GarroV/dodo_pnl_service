@@ -1,0 +1,18 @@
+{
+  "Сопоставлено, но не загружено": {
+    "en": "Matched, but not loaded",
+    "sr": "Upareno, ali nije učitano"
+  },
+  "Не загружено: человек найден, а строка не записана": {
+    "en": "Not loaded: the person was found, but the row was not written",
+    "sr": "Nije učitano: osoba je pronađena, ali red nije upisan"
+  },
+  "Этих людей продукт узнал, но записывать было некуда — причина у каждой строки своя.": {
+    "en": "These people were recognised, but there was nowhere to write the row — each row says why.",
+    "sr": "Ove osobe su prepoznate, ali red nije imao gde da se upiše — razlog stoji uz svaki red."
+  },
+  "Этих людей в справочнике партнёра нет — неизвестно, о ком строка.": {
+    "en": "These people are not in the partner's directory — there is no telling who the row is about.",
+    "sr": "Ovih osoba nema u šifarniku partnera — ne zna se na koga se red odnosi."
+  }
+}

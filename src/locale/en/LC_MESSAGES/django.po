@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-13 21:30+0000\n"
+"POT-Creation-Date: 2026-08-13 21:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -423,17 +423,20 @@ msgstr "Changed"
 msgid "Без изменений"
 msgstr "Unchanged"
 
+msgid "Сопоставлено, но не загружено"
+msgstr "Matched, but not loaded"
+
 msgid "Не сопоставлено"
 msgstr "Not matched"
 
 msgid "Файл разобран целиком, подозрительного не нашлось."
 msgstr "File parsed completely, nothing suspicious found."
 
-msgid "Не загружено: некому записать"
-msgstr "Not uploaded: no one to record it for"
+msgid "Не загружено: человек найден, а строка не записана"
+msgstr "Not loaded: the person was found, but the row was not written"
 
-msgid "Эти строки в файле есть, а в табеле их нет."
-msgstr "These rows exist in the file but not in the timesheet."
+msgid "Этих людей продукт узнал, но записывать было некуда — причина у каждой строки своя."
+msgstr "These people were recognised, but there was nowhere to write the row — each row says why."
 
 msgid "Лист"
 msgstr "Sheet"
@@ -443,6 +446,12 @@ msgstr "Who"
 
 msgid "Почему"
 msgstr "Why"
+
+msgid "Не загружено: некому записать"
+msgstr "Not uploaded: no one to record it for"
+
+msgid "Этих людей в справочнике партнёра нет — неизвестно, о ком строка."
+msgstr "These people are not in the partner's directory — there is no telling who the row is about."
 
 msgid "Не разобрано в файле"
 msgstr "Not parsed from file"
