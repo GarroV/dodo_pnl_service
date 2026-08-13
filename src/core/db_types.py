@@ -27,6 +27,11 @@ ENUM_TYPES = (
     "payrun_job_status",
     "rule_scope",
     "retro_mode",
+    # Словари фактов — миграция 0230_facts.
+    "fact_source",
+    "document_kind",
+    "fact_allocation",
+    "batch_status",
 )
 
 

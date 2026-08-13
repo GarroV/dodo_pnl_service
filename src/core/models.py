@@ -32,6 +32,11 @@ PAYRUN_JOB_STATUS = "payrun_job_status"
 RULE_SCOPE = "rule_scope"
 # Как партнёр ведёт правки задним числом. Тип создаёт миграция 0060.
 RETRO_MODE = "retro_mode"
+# Словари фактов. Типы создаёт миграция 0230_facts.
+FACT_SOURCE = "fact_source"
+DOCUMENT_KIND = "document_kind"
+FACT_ALLOCATION = "fact_allocation"
+BATCH_STATUS = "batch_status"
 
 
 def now_default() -> models.Func:
@@ -270,8 +275,12 @@ class PnlItem(models.Model):
         db_table = "pnl_items"
         constraints = [
             models.UniqueConstraint(fields=["tenant", "code"], name="pnl_items_tenant_code_uniq"),
+            # `transfer` — перевод между кассой и банком, пополнение кассы
+            # (миграция 0230). Это тоже событие, которое надо накапливать ради
+            # сверки наличных, но ни расход, ни выручка: из P&L такие статьи
+            # исключены по `kind`, а не по забывчивости каждого отчёта.
             models.CheckConstraint(
-                condition=models.Q(kind__in=["revenue", "expense", "subtotal"]),
+                condition=models.Q(kind__in=["revenue", "expense", "subtotal", "transfer"]),
                 name="pnl_items_kind_check",
             ),
         ]
@@ -1121,4 +1130,253 @@ class RetroAdjustment(models.Model):
         indexes = [
             models.Index("tenant", "target_period", name="retro_target_idx"),
             models.Index("tenant", "source_period", name="retro_source_idx"),
+        ]
+
+
+# --- Факты -------------------------------------------------------------------
+# Единственное место, куда стекаются все первичные финансовые события: выручка
+# из Dodo IS, сырьё и списания, фактуры поставщиков, зарплата, наличные из
+# кассы, переводы, налоги. Каждый следующий модуль пишет сюда, а не заводит своё
+# хранилище — иначе P&L собирался бы из нескольких правд.
+#
+# Это НЕ двойная запись. Управленческий учёт: одна строка = одно событие с
+# разрезами. Единственное требование к прослеживаемости — от строки P&L дойти до
+# первичного документа и понять, откуда взялась сумма.
+#
+# Схема перенесена миграцией `0230_facts` из `db/migrations/0004_facts.sql` —
+# 1159 строк SQL, проверенных на живой базе до переноса. Всё, чего Django не
+# видит (проверки с `date_trunc`, отложенный внешний ключ, представления,
+# функции разнесения, политики), живёт там же в `RunSQL`, а не здесь.
+
+
+class FactBatch(models.Model):
+    """Одна загрузка = одна партия.
+
+    Нужна, чтобы отвечать на вопрос «откуда взялись эти триста строк» и чтобы
+    при разборе кривого импорта было за что взяться. Без партии единственным
+    способом отличить одну выгрузку от другой было бы время создания строк —
+    то есть догадка.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    source = EnumField(db_type_name=FACT_SOURCE)
+    # Имя файла, период выгрузки, id запроса — что угодно, по чему человек
+    # опознает загрузку.
+    external_ref = models.TextField(null=True, blank=True)
+    status = EnumField(db_type_name=BATCH_STATUS, db_default="running")
+    started_at = models.DateTimeField(db_default=now_default())
+    finished_at = models.DateTimeField(null=True, blank=True)
+    stats = models.JSONField(db_default={})  # сколько вставлено, изменено, пропущено
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "fact_batches"
+        indexes = [
+            models.Index(
+                "tenant", "source", models.F("started_at").desc(),
+                name="fact_batches_lookup_idx",
+            ),
+        ]
+
+
+class SourceDocument(models.Model):
+    """Первичный документ: фактура, чек, строка выписки, расчёт зарплаты.
+
+    Прослеживаемость идёт по цепочке «строка P&L → факт → документ → файл».
+    Позиций у документа своей таблицей нет: позиция и есть факт (`document` +
+    `line_no`). Накладная из Метро с едой и канцелярией — два факта с разными
+    статьями, а не один документ с непонятной статьёй.
+
+    Идемпотентность на уровне документа — ключ `(тенант, источник, внешний id)`:
+    повторная выгрузка выписки не плодит документов.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    legal_entity = models.ForeignKey(
+        LegalEntity, on_delete=models.SET_NULL, null=True, blank=True,
+        db_column="legal_entity_id",
+    )
+    counterparty = models.ForeignKey(
+        Counterparty, on_delete=models.SET_NULL, null=True, blank=True,
+        db_column="counterparty_id",
+    )
+    kind = EnumField(db_type_name=DOCUMENT_KIND)
+    source = EnumField(db_type_name=FACT_SOURCE)
+    external_id = models.TextField()  # id в системе-источнике
+    doc_number = models.TextField(null=True, blank=True)
+    doc_date = models.DateField()
+    # Период учёта по умолчанию для позиций. Отдельно от даты документа: счёт за
+    # электричество за июнь приходит в июле, и отчёт строится по периоду.
+    period = models.DateField(null=True, blank=True)
+    currency = models.TextField(null=True, blank=True)
+    total_amount = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    # Не поменялся — разбирать заново нечего.
+    content_hash = models.TextField(null=True, blank=True)
+    file_url = models.TextField(null=True, blank=True)
+    payload = models.JSONField(db_default={})  # сырой ответ источника, как пришёл
+    batch = models.ForeignKey(
+        FactBatch, on_delete=models.SET_NULL, null=True, blank=True, db_column="batch_id",
+    )
+    created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "source_documents"
+        indexes = [
+            models.Index("tenant", models.F("doc_date").desc(), name="source_docs_date_idx"),
+            models.Index("tenant", "counterparty", name="source_docs_counterparty_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant", "source", "external_id"], name="source_documents_external_uniq"
+            ),
+        ]
+
+
+class Fact(models.Model):
+    """Строка факта = позиция документа.
+
+    Пять решений, без которых схема не читается (полностью — в шапке миграции
+    `0230_facts` и в `docs/backlog-facts.md`):
+
+    1. **Позиция, а не документ.** Отдельной таблицы позиций нет: связь даёт
+       `document` + `line_no`.
+    2. **`doc_date` и `period` — разные поля.** Отчёт строится по `period`,
+       всегда первое число месяца.
+    3. **Разнесение выражено в данных.** Фактура приходит `pending` без точки,
+       правило порождает детей `allocated` со ссылкой на правило, долю и
+       родителя; родитель получает `split` и из P&L исключается — иначе двойной
+       счёт.
+    4. **Правка — заменой версии, не на месте.** `superseded_at` +
+       `superseded_by` + `revision`; отчёты смотрят только на действующие
+       строки. Закрытый период защищён триггером `facts_guard`.
+    5. **Идемпотентность на `dedup_key`**, который считает источник.
+       Уникальность только среди действующих строк, поэтому история версий не
+       конфликтует сама с собой.
+
+    Писать в таблицу напрямую не надо: единственная точка записи — функция
+    `upsert_fact(jsonb)`, там же живут идемпотентность и версионирование.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+
+    # --- обязательные разрезы
+    period = models.DateField()  # первое число месяца
+    doc_date = models.DateField(null=True, blank=True)  # может быть в другом месяце
+    unit = models.ForeignKey(
+        Unit, on_delete=models.PROTECT, null=True, blank=True, db_column="unit_id",
+    )
+    legal_entity = models.ForeignKey(
+        LegalEntity, on_delete=models.PROTECT, null=True, blank=True,
+        db_column="legal_entity_id",
+    )
+    pnl_item = models.ForeignKey(PnlItem, on_delete=models.PROTECT, db_column="pnl_item_id")
+    ledger = ledger_field(db_default="official")
+    counterparty = models.ForeignKey(
+        Counterparty, on_delete=models.SET_NULL, null=True, blank=True,
+        db_column="counterparty_id",
+    )
+
+    # --- суммы
+    # Знак: обычно положительный, отрицательный = возврат или исправление.
+    # Доход это или расход, задаёт статья, а не знак.
+    amount = models.DecimalField(max_digits=18, decimal_places=2)
+    currency = models.TextField()
+    amount_report = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    report_currency = models.TextField(null=True, blank=True)
+    # Курс приколачивается к факту: закрытый месяц не должен ехать при
+    # обновлении справочника курсов.
+    fx_rate = models.DecimalField(max_digits=18, decimal_places=8, null=True, blank=True)
+    fx_rate_date = models.DateField(null=True, blank=True)
+
+    # --- натуральные показатели: сырьё, списания, упаковка
+    quantity = models.DecimalField(max_digits=18, decimal_places=4, null=True, blank=True)
+    uom = models.TextField(null=True, blank=True)
+
+    title = models.TextField()  # что это: наименование позиции
+    note = models.TextField(null=True, blank=True)
+
+    # Канал денег — для сверки кассы, а не для P&L: «надбавка кешем» это обычный
+    # факт с `channel = 'cash'`. Пусто = движения денег нет (начисление).
+    channel = EnumField(db_type_name=PAYOUT_CHANNEL, null=True, blank=True)
+
+    # --- откуда пришло
+    source = EnumField(db_type_name=FACT_SOURCE)
+    source_ref = models.TextField(null=True, blank=True)  # id строки в источнике
+    document = models.ForeignKey(
+        SourceDocument, on_delete=models.SET_NULL, null=True, blank=True, db_column="document_id",
+    )
+    line_no = models.IntegerField(null=True, blank=True)
+    batch = models.ForeignKey(
+        FactBatch, on_delete=models.SET_NULL, null=True, blank=True, db_column="batch_id",
+    )
+
+    # Ключ идемпотентности. Считает его источник, и он обязан быть устойчивым
+    # между загрузками: не по времени и не по номеру строки в файле.
+    dedup_key = models.TextField()
+
+    # --- разнесение по точкам
+    allocation = EnumField(db_type_name=FACT_ALLOCATION, db_default="direct")
+    allocation_rule = models.ForeignKey(
+        AllocationRule, on_delete=models.SET_NULL, null=True, blank=True,
+        db_column="allocation_rule_id",
+    )
+    allocation_share = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    # db_constraint=False: внешний ключ ставится руками в миграции, с
+    # `on delete cascade` в самой базе. Django исполняет каскад в Python, а дети
+    # обязаны исчезать вместе с родителем и тогда, когда родителя сносят чистым
+    # SQL, — иначе в отчёте останутся суммы от строки, которой больше нет.
+    parent_fact = models.ForeignKey(
+        "self", on_delete=models.DO_NOTHING, null=True, blank=True,
+        db_column="parent_fact_id", db_constraint=False, related_name="children",
+    )
+
+    # --- версионирование
+    revision = models.IntegerField(db_default=1)
+    superseded_at = models.DateTimeField(null=True, blank=True)
+    # Голый uuid, а не внешний ключ Django: ссылка на заменившую строку
+    # отложенная (`deferrable initially deferred`), потому что она ставится до
+    # вставки новой версии — иначе не обойти уникальность `dedup_key`.
+    # Отложенные ключи Django объявлять не умеет, ключ ставится в миграции.
+    superseded_by = models.UUIDField(null=True, blank=True)
+
+    created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "facts"
+        indexes = [
+            models.Index(
+                "tenant", "period", "unit", condition=models.Q(superseded_at__isnull=True),
+                name="facts_period_unit",
+            ),
+            models.Index(
+                "tenant", "period", "pnl_item", condition=models.Q(superseded_at__isnull=True),
+                name="facts_period_item",
+            ),
+            models.Index("tenant", "document", name="facts_document"),
+            models.Index(
+                "parent_fact", condition=models.Q(superseded_at__isnull=True), name="facts_parent"
+            ),
+            # Что мешает закрыть месяц: суммы без точки. Отдельным индексом,
+            # потому что этот список смотрят в конце каждого периода.
+            models.Index(
+                "tenant", "period",
+                condition=models.Q(allocation="pending", superseded_at__isnull=True),
+                name="facts_pending",
+            ),
+        ]
+        constraints = [
+            # Ключ уникален только среди действующих строк: история версий
+            # иначе конфликтовала бы сама с собой.
+            models.UniqueConstraint(
+                fields=["tenant", "dedup_key"],
+                condition=models.Q(superseded_at__isnull=True),
+                name="facts_dedup_active",
+            ),
         ]

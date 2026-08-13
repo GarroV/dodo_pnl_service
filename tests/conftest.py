@@ -288,8 +288,12 @@ def _seed(conn) -> None:
                (%s, null, 'utilities',     'Коммунальные',      'expense',  30),
                (%s, null, 'labour_cost',   'Зарплата',          'expense',  40),
                (%s, null, 'payroll_taxes', 'Налоги с зарплаты', 'expense',  50),
-               (%s, null, 'total',         'Результат',         'subtotal', 90)""",
-        (I_REVENUE, I_FOOD, I_UTILITIES, I_LABOUR, I_TAXES, I_TOTAL),
+               (%s, null, 'total',         'Результат',         'subtotal', 90),
+               -- Перевод из кассы в банк и пополнение кассы: событие, которое
+               -- надо накапливать ради сверки наличных, но ни расход, ни
+               -- выручка. В P&L такие статьи не попадают по `kind` (T107).
+               (%s, null, 'cash_transfer', 'Перевод наличных',  'transfer', 95)""",
+        (I_REVENUE, I_FOOD, I_UTILITIES, I_LABOUR, I_TAXES, I_TOTAL, I_TRANSFER),
     )
     conn.execute(
         """insert into counterparties (id, tenant_id, title)
