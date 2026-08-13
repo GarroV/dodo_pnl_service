@@ -57,15 +57,32 @@
     </tr>
     {% endfor %}
   </tbody>
+  {% comment %}
+  Рост и снижение показаны врозь, одного «итого» здесь нет (T096). Прибавка
+  одному гасит убавку другому, и алгебраическая сумма четырёх настоящих
+  расхождений давала «0,00» — число, которое читается как «всё сошлось» ровно
+  над списком того, что не сошлось.
+  {% endcomment %}
   <tfoot>
     <tr class="grand">
-      <td colspan="6">{% blocktranslate with employees_count=employees %}Итого отклонений · {{ employees_count }} чел.{% endblocktranslate %}</td>
-      <td class="num total">{{ total_delta }}</td>
+      <td colspan="6">{% blocktranslate with grew_count=grew %}Выросло · строк: {{ grew_count }}{% endblocktranslate %}</td>
+      <td class="num total">{{ total_up }}</td>
+      <td colspan="2"></td>
+    </tr>
+    <tr class="grand">
+      <td colspan="6">{% blocktranslate with fell_count=fell %}Снизилось · строк: {{ fell_count }}{% endblocktranslate %}</td>
+      <td class="num total">{{ total_down }}</td>
       <td colspan="2"></td>
     </tr>
   </tfoot>
 </table>
 {% endscroll %}
+<p class="note">
+  {% blocktranslate with compared_count=compared employees_count=employees %}Отклонения нашлись у {{ employees_count }} чел. Одним числом они не складываются:
+  прибавка одному гасит убавку другому, и такая сумма читалась бы как «всё
+  сошлось» над списком того, что не сошлось. Поэтому рост и снижение показаны
+  врозь.{% endblocktranslate %}
+</p>
 <p class="note">
   {% blocktranslate with compared_count=compared %}Сравнено пар «сотрудник × компонент»: {{ compared_count }}. Показаны только те, где
   превышены оба порога сразу — процент и сумма. Пороги задаются правилами

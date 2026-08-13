@@ -166,9 +166,28 @@ class Report:
     # Прошлого периода нет или он пуст: сравнивать не с чем.
     nothing_to_compare: bool = False
 
+    # Рост и снижение — врозь, одним числом отклонения не складываются (T096).
+    # Алгебраическая сумма отвечает на вопрос «на сколько изменился фонд», а
+    # экран отвечает на другой — «что разошлось»; при взаимно погасившихся
+    # отклонениях она даёт ноль, и над списком настоящих расхождений стоит
+    # число, которое читается как «всё сошлось». Поэтому её здесь нет вовсе, а
+    # не спрятана в шаблоне: свойство, которое нельзя показать не соврав, — это
+    # приглашение показать его снова.
     @property
-    def total_delta(self) -> Decimal:
-        return sum((line.delta for line in self.lines), Decimal(0))
+    def total_up(self) -> Decimal:
+        return sum((line.delta for line in self.lines if line.delta > 0), Decimal(0))
+
+    @property
+    def total_down(self) -> Decimal:
+        return sum((line.delta for line in self.lines if line.delta < 0), Decimal(0))
+
+    @property
+    def grew(self) -> int:
+        return sum(1 for line in self.lines if line.delta > 0)
+
+    @property
+    def fell(self) -> int:
+        return sum(1 for line in self.lines if line.delta < 0)
 
     @property
     def employees(self) -> int:

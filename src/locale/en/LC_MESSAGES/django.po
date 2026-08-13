@@ -197,8 +197,8 @@ msgstr "Income tax"
 msgid "Взносы"
 msgstr "Contributions"
 
-msgid "в расчёте этого периода такой строки нет"
-msgstr "there is no such payslip in this period's calculation"
+msgid "не входит в доступную вам часть расчёта этого периода"
+msgstr "not in the part of this period's calculation available to you"
 
 msgid "в загруженной таблице такой строки нет"
 msgstr "there is no such payslip in the uploaded table"
@@ -1026,12 +1026,6 @@ msgstr ""
 msgid "Пользователь"
 msgstr "User"
 
-msgid "Видит регистры"
-msgstr "Sees ledgers"
-
-msgid "все"
-msgstr "all"
-
 msgid "Смена пароля"
 msgstr "Password change"
 
@@ -1348,11 +1342,24 @@ msgstr "Off"
 msgid "Сверены только входы — деньги не сравнивались"
 msgstr "Only inputs reconciled — amounts were not compared"
 
-msgid "Есть в таблице, нет в расчёте"
-msgstr "In the table, not in the calculation"
+msgid "Есть в таблице, нет в вашей части расчёта"
+msgstr "In the table, not in your part of the calculation"
 
 msgid "Есть в расчёте, нет в таблице"
 msgstr "In the calculation, not in the table"
+
+msgid ""
+"По этим строкам сверять нечего: в расчёт, отданный вам, они не входят. Это\n"
+"  <strong>не значит</strong>, что расчёта по ним не было: сверка показывает\n"
+"  ровно то, что база показывает вам, и отличить «строки нет вовсе» от «строка\n"
+"  вам не видна» она не может. Ни одного числа с нашей стороны здесь не\n"
+"  показано — сравнивать не с чем."
+msgstr ""
+"There is nothing to reconcile for these rows: they are not in the calculation\n"
+"  given to you. That does <strong>not mean</strong> no calculation was made for\n"
+"  them: the reconciliation shows exactly what the database shows you, and it\n"
+"  cannot tell \"the row does not exist\" from \"the row is not visible to you\".\n"
+"  Not a single number of ours is shown here — there is nothing to compare with."
 
 #, python-format
 msgid ""
@@ -1597,8 +1604,24 @@ msgid "Порог"
 msgstr "Threshold"
 
 #, python-format
-msgid "Итого отклонений · %(employees_count)s чел."
-msgstr "Total variances · %(employees_count)s employees"
+msgid "Выросло · строк: %(grew_count)s"
+msgstr "Grew · rows: %(grew_count)s"
+
+#, python-format
+msgid "Снизилось · строк: %(fell_count)s"
+msgstr "Fell · rows: %(fell_count)s"
+
+#, python-format
+msgid ""
+"Отклонения нашлись у %(employees_count)s чел. Одним числом они не складываются:\n"
+"  прибавка одному гасит убавку другому, и такая сумма читалась бы как «всё\n"
+"  сошлось» над списком того, что не сошлось. Поэтому рост и снижение показаны\n"
+"  врозь."
+msgstr ""
+"Variances were found for %(employees_count)s employees. They do not add up to a\n"
+"  single number: a rise for one cancels a fall for another, and such a sum would\n"
+"  read as \"everything matched\" above a list of what did not. That is why growth\n"
+"  and decline are shown apart."
 
 #, python-format
 msgid ""

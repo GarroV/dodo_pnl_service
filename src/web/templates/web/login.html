@@ -22,15 +22,20 @@
   руками — отдельного способа войти у неё нет. Выключается переменной окружения
   <code>DEV_LOGIN=0</code>; выданные ею сессии при этом перестают действовать.{% endblocktranslate %}
 </p>
+{% comment %}
+Что кому видно — здесь не пишется (T096). Панель стояла открытой любому, кто
+открыл страницу, и перечисляла непредставившемуся названия всех трёх регистров
+учёта и код точки: устройство учёта партнёра — не то, что продукт сообщает до
+входа. Роли достаточно её названия, чтобы выбрать, под кем войти; что ей видно,
+она узнает на своих экранах — там показано ровно то, что видно ей.
+{% endcomment %}
 <table>
-  <thead><tr><th>{% translate "Пользователь" %}</th><th>{% translate "Логин" %}</th><th>{% translate "Видит регистры" %}</th><th>{% translate "Точки" %}</th><th></th></tr></thead>
+  <thead><tr><th>{% translate "Пользователь" %}</th><th>{% translate "Логин" %}</th><th></th></tr></thead>
   <tbody>
     {% for user in dev_users %}
     <tr>
       <td>{{ user.title }}</td>
       <td><code>{{ user.username }}</code></td>
-      <td>{{ user.ledgers|join:", " }}</td>
-      <td>{% if user.unit %}{{ user.unit }}{% else %}{% translate "все" %}{% endif %}</td>
       <td class="num">
         <form class="inline" method="post" action="{% url 'dev-login' %}">{% csrf_token %}
           <input type="hidden" name="user" value="{{ user.code }}">

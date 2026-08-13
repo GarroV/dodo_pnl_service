@@ -924,7 +924,13 @@ def payslip_trace(request, payslip_id):
             "unit": view.unit,
             "title": month_title(view.period) if view.period else "",
             "back_url": period_url_for(view.period, who.tenant_id, view.cut),
-            "cut_title": cut_title(view.cut) if view.cut else "",
+            # Подпись разреза стоит **всегда**, в том числе когда разрез «все
+            # видимые» (T096). Переключателя на этом экране нет, и подпись —
+            # единственное, что говорит, какой срез объясняется. Пока её
+            # ставили только при выбранном разрезе, чужой `?ledger=`, который
+            # `_chosen_cut` честно сводит ко «всем видимым», убирал её вовсе:
+            # экран показывал срез и молчал о том, какой.
+            "cut_title": cut_title(view.cut),
             "steps": [trace_step(step) for step in view.steps],
             "derived": [
                 {**trace_step(step), "title": titled(DERIVED_TITLES, step.kind, step.title)}
@@ -1035,7 +1041,11 @@ def period_variance(request, period_id):
             ],
             "cut_title": cut_title(report.cut) if report.cut else "",
             "lines": [variance_line(line) for line in report.lines],
-            "total_delta": signed(report.total_delta),
+            # Два числа, а не одно: см. довод у `Report.total_up`.
+            "total_up": signed(report.total_up),
+            "total_down": signed(report.total_down),
+            "grew": report.grew,
+            "fell": report.fell,
             "employees": report.employees,
             "compared": report.compared,
             "nothing_to_compare": report.nothing_to_compare,

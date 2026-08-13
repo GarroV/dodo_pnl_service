@@ -197,8 +197,8 @@ msgstr "Porez na dohodak"
 msgid "Взносы"
 msgstr "Doprinosi"
 
-msgid "в расчёте этого периода такой строки нет"
-msgstr "takav obračunski red ne postoji u obračunu ovog perioda"
+msgid "не входит в доступную вам часть расчёта этого периода"
+msgstr "nije u delu obračuna ovog perioda koji vam je dostupan"
 
 msgid "в загруженной таблице такой строки нет"
 msgstr "takav obračunski red ne postoji u učitanoj tabeli"
@@ -1026,12 +1026,6 @@ msgstr ""
 msgid "Пользователь"
 msgstr "Korisnik"
 
-msgid "Видит регистры"
-msgstr "Vidi knjige"
-
-msgid "все"
-msgstr "sve"
-
 msgid "Смена пароля"
 msgstr "Promena lozinke"
 
@@ -1348,11 +1342,24 @@ msgstr "Odstupilo"
 msgid "Сверены только входы — деньги не сравнивались"
 msgstr "Upoređeni samo ulazi — iznosi nisu upoređeni"
 
-msgid "Есть в таблице, нет в расчёте"
-msgstr "Postoji u tabeli, ne postoji u obračunu"
+msgid "Есть в таблице, нет в вашей части расчёта"
+msgstr "Ima u tabeli, nema u vašem delu obračuna"
 
 msgid "Есть в расчёте, нет в таблице"
 msgstr "Postoji u obračunu, ne postoji u tabeli"
+
+msgid ""
+"По этим строкам сверять нечего: в расчёт, отданный вам, они не входят. Это\n"
+"  <strong>не значит</strong>, что расчёта по ним не было: сверка показывает\n"
+"  ровно то, что база показывает вам, и отличить «строки нет вовсе» от «строка\n"
+"  вам не видна» она не может. Ни одного числа с нашей стороны здесь не\n"
+"  показано — сравнивать не с чем."
+msgstr ""
+"Za ove redove nema šta da se uporedi: nisu u obračunu koji vam je predat. To\n"
+"  <strong>ne znači</strong> da obračuna za njih nije bilo: usaglašavanje\n"
+"  prikazuje tačno ono što vam baza prikazuje, i ne može da razlikuje „reda\n"
+"  uopšte nema“ od „red vam nije vidljiv“. Nijedan naš broj ovde nije\n"
+"  prikazan — nema sa čim da se uporedi."
 
 #, python-format
 msgid ""
@@ -1597,8 +1604,24 @@ msgid "Порог"
 msgstr "Prag"
 
 #, python-format
-msgid "Итого отклонений · %(employees_count)s чел."
-msgstr "Ukupno odstupanja · %(employees_count)s zaposlenih"
+msgid "Выросло · строк: %(grew_count)s"
+msgstr "Poraslo · redova: %(grew_count)s"
+
+#, python-format
+msgid "Снизилось · строк: %(fell_count)s"
+msgstr "Palo · redova: %(fell_count)s"
+
+#, python-format
+msgid ""
+"Отклонения нашлись у %(employees_count)s чел. Одним числом они не складываются:\n"
+"  прибавка одному гасит убавку другому, и такая сумма читалась бы как «всё\n"
+"  сошлось» над списком того, что не сошлось. Поэтому рост и снижение показаны\n"
+"  врозь."
+msgstr ""
+"Odstupanja su nađena kod %(employees_count)s zaposlenih. Ne sabiraju se u jedan\n"
+"  broj: rast kod jednog poništava pad kod drugog, i takav zbir bi se čitao kao\n"
+"  „sve se slaže“ iznad spiska onoga što se ne slaže. Zato su rast i pad\n"
+"  prikazani odvojeno."
 
 #, python-format
 msgid ""
