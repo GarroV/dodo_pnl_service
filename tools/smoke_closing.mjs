@@ -8,14 +8,22 @@
  * директору — вся сеть, управляющему — только своя точка, бухгалтеру не
  * выдано вовсе.
  *
- *     node tools/smoke_closing.mjs            (APP=http://127.0.0.1:8052)
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> node tools/smoke_closing.mjs            (APP=http://127.0.0.1:8052)
  */
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8052";
 
 const { evalIn, goto, send, key, type, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

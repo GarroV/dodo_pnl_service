@@ -274,6 +274,14 @@ export async function attach({ cdpPort = process.env.CDP_PORT || 9339 } = {}) {
   await send("Runtime.enable");
   await send("Network.enable");
 
+  // Браузер тоже состояние, и его тоже портили друг другу. Выбор языка живёт в
+  // cookie и переживает смоук: смоук локализации оставлял английский, а
+  // соседние написаны по-русски и сверяют русские надписи — и валились все
+  // разом, выглядя как сломанный продукт. Чистим на входе, а не просим каждого
+  // прибраться на выходе: уборка на выходе не срабатывает ровно тогда, когда
+  // она нужна, — при падении на полпути.
+  await send("Network.clearBrowserCookies");
+
   // Окно задаёт смоук, а не тот, кто запустил браузер (issue #81). Chrome без
   // `--window-size` даёт 800×600: кнопка «Посчитать период» уходит за нижний
   // край, клик по координатам из `getBoundingClientRect` попадает в пустоту, и
@@ -318,6 +326,36 @@ export function loginWith(app, evalIn, goto) {
     `);
     await new Promise((r) => setTimeout(r, 1500));
   };
+}
+
+/**
+ * Довести период до посчитанного — если он ещё не посчитан.
+ *
+ * Нужно смоукам, которые период не считают, а только смотрят на его результат
+ * (каркас интерфейса, языки). Раньше они молча рассчитывали на то, что период
+ * посчитал кто-то до них, и в одиночку краснели на пустой ведомости — при
+ * исправном продукте. Сид период не считает намеренно: непосчитанный месяц —
+ * это тоже состояние продукта, и половине смоуков нужно именно оно.
+ *
+ * Нажатием кнопки, а не запросом мимо экрана: считать период умеет только тот,
+ * у кого есть право, и подготовка должна идти тем же путём, что у человека.
+ */
+export async function ensureCalculated(app, { evalIn, goto, clickOn }, seconds = 120) {
+  const { periodHref } = await findPeriodAndGrid(app, evalIn, goto);
+  await goto(app + periodHref);
+  if (await evalIn(`!!document.querySelector("table.sheet")`)) return periodHref;
+
+  const button = `[...document.querySelectorAll("button")]
+      .find(b => b.textContent.includes("Посчитать период"))`;
+  await clickOn(button, "кнопка «Посчитать период» (подготовка стенда)");
+  for (let i = 0; i < seconds * 2; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    if (await evalIn(`!!document.querySelector("table.sheet")`)) return periodHref;
+  }
+  throw new Error(
+    `период не посчитался за ${seconds} с — смоуку не с чем работать; ` +
+      "запущен ли рабочий процесс очереди?",
+  );
 }
 
 /** Адреса периода и его табеля — так же, как их берёт человек со страниц. */

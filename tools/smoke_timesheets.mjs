@@ -15,12 +15,16 @@
  *     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
  *         --headless=new --disable-gpu --no-first-run \
  *         --remote-debugging-port=9339 --user-data-dir=/tmp/chrome-smoke &
- *     APP=http://127.0.0.1:8000 node tools/smoke_timesheets.mjs
+ *
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8000 node tools/smoke_timesheets.mjs
  *
  * Скрипт пишет в базу — гонять только на тестовом стенде. Порт отладки задаётся
  * переменной CDP_PORT, адрес продукта — APP.
  */
-import { attach, loginWith } from "./cdp.mjs";
+import { attach, loginWith, standFromSeed } from "./cdp.mjs";
 
 // Умолчание — APP_PORT из .env.example. На своём стенде задайте APP.
 const APP = process.env.APP || "http://127.0.0.1:8000";
@@ -30,6 +34,11 @@ const { send, evalIn, goto, key, type, check, report, logs } = await attach();
 // Вход настоящим логином и паролем, а не кнопкой-ярлыком: проверяем тот путь,
 // которым пойдёт человек.
 const loginAs = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 
 await loginAs("director");
 check("вошли директором", (await evalIn("location.pathname")) === "/periods/",

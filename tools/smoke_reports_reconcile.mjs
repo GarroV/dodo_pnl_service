@@ -17,15 +17,24 @@
  *     google-chrome --headless=new --remote-debugging-port=9341 \
  *         --user-data-dir=/tmp/chrome-smoke-rep3 &
  *     APP=http://127.0.0.1:8058 DOWNLOADS=/tmp/rep3-downloads \
- *         node tools/smoke_reports_reconcile.mjs
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку,
+ * а `COMPOSE_PROJECT_NAME` обязателен: без него сброс ушёл бы на чужой стенд.
+ *
+ *         COMPOSE_PROJECT_NAME=<стенд> node tools/smoke_reports_reconcile.mjs
  */
-import { mkdirSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8058";
 const DOWNLOADS = resolve(process.env.DOWNLOADS || "/tmp/rep3-downloads");
+// Каталог скачиваний чистится на входе, а не на выходе: проверка считает
+// скачанные файлы, и файлы прошлого прогона сделали бы её красной при
+// исправном продукте. На выходе уборка не срабатывает ровно тогда, когда она
+// нужна, — при падении на полпути.
+rmSync(DOWNLOADS, { recursive: true, force: true });
 const SAMPLE = resolve(process.env.SAMPLE || "tests/fixtures/plata-sample.xlsx");
 
 // Ориентиры приёмки на данных сида. Разные роли получают разную сверку, и это
@@ -64,6 +73,11 @@ mkdirSync(DOWNLOADS, { recursive: true });
 
 const { send, evalIn, goto, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 
 await send("Emulation.setDeviceMetricsOverride", {
   width: 1440, height: 900, deviceScaleFactor: 1, mobile: false,

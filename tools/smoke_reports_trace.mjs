@@ -10,9 +10,14 @@
  *
  *     google-chrome --headless=new --remote-debugging-port=9341 \
  *         --user-data-dir=/tmp/chrome-smoke-rep2 &
- *     APP=http://127.0.0.1:8057 node tools/smoke_reports_trace.mjs
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку,
+ * а `COMPOSE_PROJECT_NAME` обязателен: без него сброс ушёл бы на чужой стенд.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8057 \\
+ *         node tools/smoke_reports_trace.mjs
  */
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8057";
 
@@ -26,6 +31,11 @@ const ALL_LEDGERS = ["Официальный", "Дополнительный", "
 
 const { evalIn, goto, send, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 
 const money = (text) => Number(String(text).replace(/[  +]/g, "").replace(",", "."));
 
@@ -300,13 +310,10 @@ const PLANTED = 9000;
      "-v", "ON_ERROR_STOP=1"],
     {
       cwd: new URL("..", import.meta.url).pathname,
-      // Имя стенда — из окружения: зашитое привязывает сценарий к той машине,
-      // на которой его однажды написали, и на любой другой он падает не
-      // проверкой, а запуском.
-      env: {
-        ...process.env,
-        COMPOSE_PROJECT_NAME: process.env.COMPOSE_PROJECT_NAME || "dodo-pnl-rep2",
-      },
+      // Имя стенда — только из окружения, без запасного варианта: умолчание
+      // здесь означало бы, что смоук готовит данные на чужом стенде, если
+      // переменную забыли. Проверку требования держит харнесс (`cdp.mjs`).
+      env: process.env,
       input: sql, encoding: "utf8",
     },
   );

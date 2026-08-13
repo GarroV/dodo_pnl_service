@@ -19,9 +19,14 @@
  *
  *     google-chrome --headless=new --remote-debugging-port=9350 \
  *         --user-data-dir=/tmp/chrome-web2 &
- *     APP=http://127.0.0.1:8060 node tools/smoke_ui_shell.mjs
+ * Стенд смоук готовит себе сам: приводит к сиду и считает период, потому что
+ * смотрит на результат расчёта (метки регистров, след суммы). После себя
+ * возвращает стенд к сиду — см. договор в шапке `cdp.mjs`.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8060 \
+ *         node tools/smoke_ui_shell.mjs
  */
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, ensureCalculated, findPeriodAndGrid, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8060";
 
@@ -36,12 +41,20 @@ const ROLES = [
 // исходник вместо продукта.
 const LEFTOVERS = ["{%", "{{", "{#", "endblock", "endcomment", "None"];
 
-const { evalIn, goto, send, check, report, logs } = await attach();
+const { evalIn, goto, send, clickOn, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
+
+standFromSeed();
 
 await send("Emulation.setDeviceMetricsOverride", {
   width: 1440, height: 900, deviceScaleFactor: 1, mobile: false,
 });
+
+// Ведомость и след расчёта существуют только у посчитанного периода, а сид
+// оставляет месяц непосчитанным намеренно. Считаем сами и настоящим нажатием —
+// иначе смоук зависел бы от того, кто запускался до него (issue #76).
+await login("director");
+await ensureCalculated(APP, { evalIn, goto, clickOn });
 
 /** Что видно на экране: шапка, текст, перелив таблиц и страницы. */
 const look = () => evalIn(`

@@ -13,27 +13,29 @@
  * Ставки правятся через psql в контейнере базы. Это не проверка, а **вход**:
  * без изменения данных «закрытый месяц не сдвинулся» ничего не доказывает.
  *
- *     node tools/smoke_retro.mjs        (APP=http://127.0.0.1:8055)
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку,
+ * а `COMPOSE_PROJECT_NAME` обязателен: без него сброс ушёл бы на чужой стенд.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8055 \\
+ *         node tools/smoke_retro.mjs
  */
-import { execFileSync } from "node:child_process";
-
-import { attach, loginWith } from "./cdp.mjs";
+import { attach, loginWith, sql, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8055";
-const DB = process.env.DB_CONTAINER || "dodo-pnl-pr5-db-1";
 const REFERENCE_TOTAL = "1 951 806,13";
 const REOPEN_REASON = "смоук: попытка открыть месяц с уже выплаченной разницей";
 
 const { evalIn, goto, send, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
 
-/** Подготовка данных, не проверка: ставки и учётный месяц получателя. */
-function sql(statement) {
-  return execFileSync("docker", [
-    "exec", DB, "psql", "-U", "app", "-d", "dodo_pnl", "-tAq", "-c", statement,
-  ]).toString().trim();
-}
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 
+// Подготовка данных, не проверка: ставки и учётный месяц получателя. Ходит
+// `sql` харнесса — в базу стенда, названного в COMPOSE_PROJECT_NAME.
 async function clickButton(text, nth = 0) {
   const box = await evalIn(`
     (() => {

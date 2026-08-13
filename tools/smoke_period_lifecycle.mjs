@@ -10,15 +10,23 @@
  * обработчик, вызванный напрямую, доказывает работоспособность обработчика, а
  * не экрана.
  *
- *     node tools/smoke_period_lifecycle.mjs       (APP=http://127.0.0.1:8051)
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> node tools/smoke_period_lifecycle.mjs       (APP=http://127.0.0.1:8051)
  */
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8051";
 const REASON = "смоук: ошиблись в часах за третью неделю";
 
 const { evalIn, goto, send, type, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 
 /** Нажать кнопку по тексту — настоящей мышью, по её месту на экране. */
 async function clickButton(text) {

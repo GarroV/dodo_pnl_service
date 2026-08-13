@@ -39,9 +39,15 @@
  *                jsonb_path_query(body, '\$.**.title')::text) from rule_presets
  *         union select trim(both '\"' from
  *                jsonb_path_query(body, '\$.**.pnl_line')::text) from rule_presets")" \
- *     APP=http://127.0.0.1:8063 CDP_PORT=9351 node tools/smoke_i18n.mjs
+ * Стенд смоук готовит себе сам: приводит к сиду и считает период, потому что
+ * половина проверяемых надписей — заголовки ведомости. После себя возвращает
+ * стенд к сиду, а язык браузера чистится на входе харнессом — см. договор в
+ * шапке `cdp.mjs`.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8063 CDP_PORT=9351 \
+ *         node tools/smoke_i18n.mjs
  */
-import { attach, loginWith } from "./cdp.mjs";
+import { attach, ensureCalculated, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8063";
 
@@ -53,8 +59,16 @@ const LANGUAGES = [
 
 const ROLES = ["director", "accountant", "manager", "admin"];
 
-const { evalIn, goto, check, report, logs } = await attach();
+const { evalIn, goto, clickOn, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
+
+standFromSeed();
+
+// Ведомость нужна самой проверке: заголовки её колонок приходят из правил
+// страны и переводятся отдельно от слов продукта (T092). На непосчитанном
+// периоде эта половина проверок молча смотрела бы в пустоту.
+await login("director");
+await ensureCalculated(APP, { evalIn, goto, clickOn });
 
 await evalIn("1");
 

@@ -21,7 +21,7 @@
  *     APP=http://127.0.0.1:8064 DOWNLOADS=/tmp/demo-downloads \
  *         node tools/smoke_demo.mjs
  */
-import { existsSync, mkdirSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { attach } from "./cdp.mjs";
@@ -33,6 +33,9 @@ const DOWNLOADS = resolve(process.env.DOWNLOADS || "/tmp/demo-downloads");
 // продукта, и это правило владельца, а не пожелание.
 const CYRILLIC = /[а-яА-ЯёЁ]/;
 
+// Каталог скачиваний чистится на входе: проверка «скачался ровно один файл»
+// краснела бы на файле прошлого прогона при исправном демо.
+rmSync(DOWNLOADS, { recursive: true, force: true });
 mkdirSync(DOWNLOADS, { recursive: true });
 
 const { send, evalIn, goto, check, report, logs } = await attach();

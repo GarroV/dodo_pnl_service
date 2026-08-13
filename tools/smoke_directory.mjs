@@ -17,14 +17,24 @@
  * проверял бы не то. Возврат к эталону:
  *
  *     docker compose exec app python manage.py seed_dev
- *     node tools/smoke_directory.mjs        (APP=http://127.0.0.1:8065, CDP_PORT=9365)
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку,
+ * а `COMPOSE_PROJECT_NAME` обязателен: без него сброс ушёл бы на чужой стенд.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8065 CDP_PORT=9365 \\
+ *         node tools/smoke_directory.mjs
  */
-import { attach, loginWith } from "./cdp.mjs";
+import { attach, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8065";
 
 const { evalIn, goto, send, check, report, logs } = await attach();
 const loginRaw = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Вход, доведённый до конца.

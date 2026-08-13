@@ -11,9 +11,14 @@
  *
  *     google-chrome --headless=new --remote-debugging-port=9339 \
  *         --user-data-dir=/tmp/chrome-smoke-rep &
- *     APP=http://127.0.0.1:8056 node tools/smoke_reports_sheet.mjs
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку,
+ * а `COMPOSE_PROJECT_NAME` обязателен: без него сброс ушёл бы на чужой стенд.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8056 \\
+ *         node tools/smoke_reports_sheet.mjs
  */
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8056";
 
@@ -30,6 +35,11 @@ const ALL_LEDGERS = ["Официальный", "Дополнительный", "
 
 const { evalIn, goto, send, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 
 const money = (text) => Number(text.replace(/[  ]/g, "").replace(",", "."));
 
