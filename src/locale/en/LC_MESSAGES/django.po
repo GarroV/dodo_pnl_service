@@ -1457,7 +1457,7 @@ msgid ""
 "  пересчёт по сегодняшним правилам. Сходится с суммой строки до копейки\n"
 "  (%(total)s).\n"
 "  "
-msgstr ""
+msgstr "\n  The trace was <strong>saved</strong> at calculation time: it shows what was used to\n  calculate, not a recalculation using today's rules. Matches the row's amount\n  to the cent (%(total)s).\n  "
 
 #, python-format
 msgid ""
@@ -1467,15 +1467,9 @@ msgid ""
 "  Две записи одного расчёта разошлись — так бывает только от правки в обход\n"
 "  продукта. Строки, где разошлось, помечены ниже.\n"
 "  "
-msgstr ""
+msgstr "\n  The trace was <strong>saved</strong> at calculation time, but it\n  <strong>does not match</strong> the row's amount: saved %(stored)s, the steps give %(traced)s.\n  Two records of the same calculation have diverged — that only happens from an edit\n  made outside the product. Rows where it diverges are marked below.\n  "
 
-#, fuzzy, python-format
-#| msgid ""
-#| "\n"
-#| "  След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока\n"
-#| "  не хранится. Сверено с сохранённой суммой строки: <strong>сходится</strong>\n"
-#| "  до копейки (%(total)s), значит правила с момента расчёта не менялись.\n"
-#| "  "
+#, python-format
 msgid ""
 "\n"
 "  Сохранённого следа у этой строки нет — она посчитана раньше, чем он появился,\n"
@@ -1483,22 +1477,9 @@ msgid ""
 "  Сверено с сохранённой суммой строки: <strong>сходится</strong> до копейки\n"
 "  (%(total)s), значит правила с момента расчёта не менялись.\n"
 "  "
-msgstr ""
-"\n"
-"  The trace is <strong>rebuilt</strong> using today's rules — the product does not\n"
-"  store it yet. Checked against the row's saved amount: <strong>it matches</strong>\n"
-"  to the cent (%(total)s), which means the rules have not changed since the calculation.\n"
-"  "
+msgstr "\n  There is no saved trace for this row — it was calculated before the trace existed,\n  so the explanation is <strong>rebuilt</strong> using today's rules.\n  Checked against the row's saved amount: <strong>it matches</strong> to the cent\n  (%(total)s), which means the rules have not changed since the calculation.\n  "
 
-#, fuzzy, python-format
-#| msgid ""
-#| "\n"
-#| "  След <strong>пересобран</strong> по сегодняшним правилам — в продукте он пока\n"
-#| "  не хранится, — и с сохранённой суммой <strong>не сходится</strong>:\n"
-#| "  сохранено %(stored)s, сегодняшние правила дают %(traced)s.\n"
-#| "  Строки, где разошлось, помечены ниже. Ведомость показывает сохранённое —\n"
-#| "  менять его этот экран не может и не должен.\n"
-#| "  "
+#, python-format
 msgid ""
 "\n"
 "  Сохранённого следа у этой строки нет — она посчитана раньше, чем он появился,\n"
@@ -1507,25 +1488,12 @@ msgid ""
 "  сегодняшние правила дают %(traced)s. Строки, где разошлось, помечены ниже.\n"
 "  Ведомость показывает сохранённое — менять его этот экран не может и не должен.\n"
 "  "
-msgstr ""
-"\n"
-"  The trace is <strong>rebuilt</strong> using today's rules — the product does not\n"
-"  store it yet — and <strong>does not match</strong> the saved amount:\n"
-"  saved %(stored)s, today's rules give %(traced)s.\n"
-"  Rows where it diverges are marked below. The payroll sheet shows the saved value —\n"
-"  this screen cannot and must not change it.\n"
-"  "
+msgstr "\n  There is no saved trace for this row — it was calculated before the trace existed,\n  so the explanation is <strong>rebuilt</strong> using today's rules — and it\n  <strong>does not match</strong> the saved amount: saved %(stored)s,\n  today's rules give %(traced)s. Rows where it diverges are marked below.\n  The payroll sheet shows the saved value — this screen cannot and must not change it.\n  "
 
-#, fuzzy
-#| msgid ""
-#| "Период утверждён. Его числа неизменны, а объяснение — нет: оно пересобирается\n"
-#| "  каждый раз заново, поэтому сверка выше и нужна."
 msgid ""
 "Период утверждён: его числа неизменны, и объяснение выше — то самое, которым\n"
 "  их посчитали."
-msgstr ""
-"The period is approved. Its numbers are fixed, but the explanation is not: it is rebuilt\n"
-"  from scratch every time, which is why the reconciliation above is needed."
+msgstr "The period is approved: its numbers are fixed, and the explanation above is the very one\n  that was used to calculate them."
 
 msgid ""
 "Период утверждён. Его числа неизменны, а объяснение — нет: оно пересобирается\n"
@@ -1793,42 +1761,32 @@ msgstr "hours in a workday"
 msgid "какая ставка"
 msgstr "which rate"
 
-#, fuzzy
-#| msgid "удержано с работника"
 msgid "мера работы"
-msgstr "withheld from the employee"
+msgstr "unit of work"
 
-#, fuzzy
-#| msgid "Перейти к табелю"
 msgid "величина из табеля"
-msgstr "Go to timesheet"
+msgstr "value from the timesheet"
 
-#, fuzzy
-#| msgid "не считался"
 msgid "как считается"
-msgstr "not calculated yet"
+msgstr "how it is calculated"
 
-#, fuzzy
-#| msgid "Сумма"
 msgid "сумма"
-msgstr "Amount"
+msgstr "amount"
 
 msgid "цена единицы"
-msgstr ""
+msgstr "unit price"
 
 msgid "количество"
-msgstr ""
+msgstr "quantity"
 
-#, fuzzy
-#| msgid "Правка табеля"
 msgid "сумма из табеля"
-msgstr "Go to timesheet"
+msgstr "amount from the timesheet"
 
 msgid "количество × цена единицы"
-msgstr ""
+msgstr "quantity × unit price"
 
 msgid "сумма из табеля как есть"
-msgstr ""
+msgstr "amount from the timesheet, as is"
 
 msgid "правило страны"
 msgstr "Rule"
