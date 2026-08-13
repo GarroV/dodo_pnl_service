@@ -489,14 +489,31 @@ def test_the_trace_of_a_foreign_row_is_indistinguishable_from_a_missing_one(
 
 
 def test_the_page_says_the_trace_is_rebuilt_and_whether_it_still_agrees(
-    client, calculated_june
+    client, calculated_june, web_env
 ):
-    """Экран не выдаёт пересобранный след за сохранённый (issue #48, T056)."""
+    """Экран не выдаёт пересобранный след за сохранённый (issue #48, T056).
+
+    След теперь хранится, и обычная строка объясняется сохранённым. Пересборка
+    осталась запасным путём для строк, посчитанных до появления хранения, — и
+    её обещание другое, поэтому проверяются оба слова. Материал старой строки
+    делается так же, как она и появляется: у неё нет сохранённых шагов.
+    """
+    import psycopg
+
     login_as(client, "director")
     url, _ = sheet_rows(client, "director")[0]
-    html = body(client.get(url))
-    assert "пересобран" in html, "экран молчит о том, что след не хранится"
-    assert "сходится" in html, "экран не говорит, сошёлся ли след с сохранённой суммой"
+
+    saved = body(client.get(url))
+    assert "сохранён" in saved, "экран молчит о том, что показывает сохранённый след"
+    assert "пересобран" not in saved, "экран зовёт сохранённый след пересобранным"
+
+    payslip_id = url.split("/")[2]
+    with psycopg.connect(web_env, autocommit=True) as conn:
+        conn.execute("delete from payslip_steps where payslip_id = %s", (payslip_id,))
+
+    legacy = body(client.get(url))
+    assert "пересобран" in legacy, "экран молчит о том, что след пересобран"
+    assert "сходится" in legacy, "экран не говорит, сошёлся ли след с сохранённой суммой"
 
 
 def test_the_rounding_is_the_same_one_that_wrote_the_row(web_env):

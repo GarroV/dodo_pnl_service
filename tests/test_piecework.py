@@ -568,3 +568,62 @@ def test_the_same_switch_from_june_does_change_june(web_env):
     finally:
         Row.objects.filter(pk=row.pk).update(piece_value=0)
         wipe_payruns(web_env)
+
+
+# =============================================================================
+# 5. Подписи следа: величина называется тем, чем является (T081, issue #72)
+# =============================================================================
+#
+# След — единственное место, где человек проверяет, откуда взялось число.
+# Подпись, которая врёт про единицу измерения, обесценивает именно его: «420 в
+# час» и «420 за доставку» — разные утверждения, и второе здесь правда.
+
+
+def shown(step) -> dict[str, str]:
+    """Входы шага так, как их читает человек: подпись → значение."""
+    from web.views import input_pairs
+
+    return {pair["title"]: pair["value"] for pair in input_pairs(step.input_values)}
+
+
+def piecework_step(preset, measure: str, value):
+    engine = piecework_engine(preset, measure)
+    slip = engine.calculate(courier(), Timesheet(piece_value=D(value)))
+    return next(s for s in slip.trace if s.rule_code == f"piecework.{measure}")
+
+
+def test_the_unit_price_is_not_called_a_rate_per_hour(serbia_preset, web_env):
+    """Цена доставки — не ставка за час, хотя число берётся из того же поля."""
+    pairs = shown(piecework_step(serbia_preset, "deliveries", 120))
+
+    assert "цена единицы" in pairs, f"цены единицы нет среди подписей: {pairs}"
+    assert pairs["цена единицы"] == "420,00"
+    assert "ставка за час" not in pairs, (
+        "сдельная цена подписана ставкой за час — ровно то, из-за чего заведён issue #72"
+    )
+
+
+def test_the_quantity_is_named_and_readable(serbia_preset, web_env):
+    """Количество доставок обязано читаться количеством, а не ключом движка."""
+    pairs = shown(piecework_step(serbia_preset, "deliveries", 120))
+
+    assert pairs.get("количество") == "120,00", f"количества нет среди подписей: {pairs}"
+    assert "quantity" not in pairs, "ключ движка вышел на экран как есть"
+    assert "pay_per_unit" not in pairs and "measure" not in pairs
+
+
+def test_a_fixed_payout_has_no_rate_at_all(serbia_preset, web_env):
+    """При фиксированной выплате ставки нет — и «None» вместо неё тем более.
+
+    Пустая величина, напечатанная словом None, читается как отладочный вывод
+    посреди объяснения денег: именно так это и выглядело на стенде.
+    """
+    pairs = piecework_step(serbia_preset, "fixed_amount", "45000.00")
+    values = shown(pairs)
+
+    assert "None" not in str(values), f"на экране следа осталось None: {values}"
+    assert "ставка за час" not in values and "цена единицы" not in values, (
+        f"у фиксированной выплаты показана ставка, которой нет: {values}"
+    )
+    # Введённое в табель число — это сама сумма, а не количество чего-либо.
+    assert "количество" not in values

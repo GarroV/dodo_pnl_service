@@ -8,14 +8,19 @@
 сумма на экране одна, объяснение — от другой версии формулы. Здесь только
 отбор видимого, сверка с сохранённым и оформление данных для страницы.
 
-**След пересобирается, а не хранится** (issue #48, T056). У закрытого месяца,
-чьи правила с тех пор поменяли, пересобранный след объясняет **не то**, чем
-считали. Молчать об этом нельзя, и одной оговорки на экране мало: оговорку
-читают один раз и перестают замечать. Поэтому пересобранное **сверяется с
-сохранённым** покомпонентно (`stored`, `agrees`, `Step.differs`), и экран
-говорит не «след может не сходиться», а «сошёлся» или «разошёлся вот здесь».
-Хранение следа этим не заменяется — оно остаётся отдельной задачей; но экран,
-который врёт, отличается от экрана, который честно говорит о своей границе.
+**След хранится, а не пересобирается** (issue #48, T056). Объяснение пишет тот
+же расчёт, который пишет суммы, и дальше оно не меняется — поэтому закрытый
+месяц объясняется тем, чем считался, даже если правила с тех пор правили задним
+числом. Читает сохранённое `from_stored`, и он ничего не считает: считать здесь
+означало бы вернуть ту самую пересборку.
+
+Пересборка (`trace_row`) осталась одним запасным путём — для строк, посчитанных
+**до** появления хранения. Выбросить её значило бы оставить старые расчёты вовсе
+без объяснения. Вместе с ней осталась и покомпонентная сверка с сохранёнными
+суммами (`stored`, `agrees`, `Step.differs`): у пересобранного следа она говорит
+«правила уехали», у сохранённого — «две записи одного расчёта разошлись», что
+возможно только от правки в обход продукта. Экран называет источник словами:
+обещания у сохранённого и пересобранного следа разные.
 
 **Ни строк, ни следа** (D023). Шаг чужого регистра — это сразу и сумма, и
 правило, и человек, то есть утечка худшего вида. Поэтому:
@@ -46,8 +51,8 @@ from django.utils.translation import gettext as _
 from reports.sheet import ALL
 
 __all__ = [
-    "ALL", "Carried", "RowTrace", "Step", "TraceNotFound", "build_trace", "to_cents",
-    "trace_row",
+    "ALL", "Carried", "RowTrace", "Step", "StoredStep", "TraceNotFound", "build_trace",
+    "from_stored", "to_cents", "trace_row",
 ]
 
 # Производные величины: не слагаемые строки, а следствия. Складывать их с
@@ -122,6 +127,9 @@ class RowTrace:
     derived: list[Step] = field(default_factory=list)
     carried: list[Carried] = field(default_factory=list)
     cut: str = ALL
+    # Откуда объяснение: сохранено расчётом (T056) или пересобрано сегодня.
+    # Экран обязан называть это словами — два разных обещания читателю.
+    stored_trace: bool = False
     # Что дал бы расчёт сегодня (по видимым шагам) и что лежит в базе.
     traced_total: Decimal = Decimal(0)
     stored_total: Decimal = Decimal(0)
@@ -146,6 +154,94 @@ class RowTrace:
         return self.stored_total + sum(
             (line.amount for line in self.carried), Decimal(0)
         )
+
+
+@dataclass(frozen=True)
+class StoredStep:
+    """Шаг, прочитанный из базы (T056). Ровно то, что записал расчёт.
+
+    Отдельный тип, а не строка модели: `trace` остаётся чистым Python без
+    Django — по той же причине, по которой здесь своё округление (см.
+    `to_cents`). Django-часть живёт в `build_trace` и только перекладывает.
+    """
+
+    code: str
+    title: str
+    amount: Decimal
+    # Пусто — производная величина: она про строку целиком, а не про регистр.
+    ledger: str | None = None
+    kind: str = NET
+    inputs: dict[str, Any] = field(default_factory=dict)
+    level: str = "country"
+    version_id: Any = None
+
+
+def from_stored(
+    steps: list[StoredStep],
+    *,
+    stored: dict[tuple[str, str], Decimal],
+    visible_ledgers,
+    cut: str = ALL,
+    carried=(),
+    approved: bool = False,
+    name: str = "",
+    unit: str = "",
+    period: date | None = None,
+) -> RowTrace:
+    """След из сохранённых шагов: объяснение того расчёта, который лежит в базе.
+
+    Ничего не считает и считать не должно — в этом вся задача T056. Сравнение с
+    сохранёнными суммами остаётся, но проверяет теперь другое: не «не уехали ли
+    правила» (уехать они больше не могут), а не разошлись ли между собой две
+    записи одного и того же расчёта. Разойтись они могут только от правки в
+    обход продукта, и молчать об этом было бы хуже всего.
+
+    **Производные величины отбирает база, а не этот код.** Их видит тот, кому
+    видны все регистры вообще (политика `ledger_visibility` на `payslip_steps`,
+    тот же довод, что у `payslip_totals` в T071): наличие или отсутствие
+    производной, зависящее от содержимого строки, само по себе поимённый список
+    тех, у кого есть выплаты в закрытом регистре. Здесь остаётся только разрез:
+    бруто половины строки не бывает.
+    """
+    visible_ledgers = set(visible_ledgers or [])
+    row_ledgers = {ledger for _code, ledger in stored} & visible_ledgers
+    chosen = _chosen_cut(cut, row_ledgers)
+    narrowed = chosen != ALL and row_ledgers != {chosen}
+
+    shown = [
+        Step(
+            code=step.code, title=step.title, amount=to_cents(step.amount),
+            ledger=step.ledger, inputs=dict(step.inputs), level=step.level,
+            version_id=step.version_id,
+            stored=stored.get((step.code, step.ledger)),
+        )
+        for step in steps
+        if step.kind == NET and _visible(step.ledger or "", visible_ledgers, chosen)
+    ]
+    derived = [
+        Step(
+            code=step.code, title=step.title, amount=to_cents(step.amount),
+            ledger="", inputs=dict(step.inputs), level=step.level,
+            version_id=step.version_id, kind=step.kind,
+        )
+        for step in steps
+        if step.kind != NET and not narrowed
+    ]
+
+    return RowTrace(
+        steps=shown,
+        derived=derived,
+        carried=[line for line in carried if _visible(line.ledger, visible_ledgers, chosen)],
+        cut=chosen,
+        stored_trace=True,
+        traced_total=sum((step.amount for step in shown), Decimal(0)),
+        stored_total=sum(
+            (amount for (_code, ledger), amount in stored.items()
+             if _visible(ledger, visible_ledgers, chosen)),
+            Decimal(0),
+        ),
+        employee=name, unit=unit, period=period, approved=approved,
+    )
 
 
 def _visible(ledger: str, visible_ledgers, cut: str) -> bool:
@@ -273,10 +369,11 @@ def build_trace(
     Сохранённые суммы отбирает база сама, а вот пересобранный след живёт в
     памяти, и политике его не отфильтровать: чем сузить, приходится сказать.
     """
-    from core.models import PayComponent, Payslip, Tenant
+    from core.models import PayComponent, Payslip, PayslipStep, Tenant
     from payrun.calc import PayrunRefused, collect_cases
     from payrun.lifecycle import APPROVED
     from payrun.rules import select_rules
+    from payrun.steps import unpack_inputs
 
     row = (
         Payslip.objects.select_related("employee", "unit", "payrun")
@@ -315,6 +412,26 @@ def build_trace(
     name = f"{row.employee.last_name} {row.employee.first_name}".strip()
     unit = row.unit.code if row.unit_id else ""
     approved = row.payrun.status == APPROVED
+
+    # Сохранённый след — первый и главный источник (T056). Пересборка ниже
+    # осталась для строк, посчитанных до появления хранения: выбросить её
+    # значило бы оставить старые расчёты вовсе без объяснения.
+    saved = [
+        StoredStep(
+            code=step.code, title=step.title, amount=step.applied_value,
+            ledger=step.ledger, kind=step.kind,
+            inputs=unpack_inputs(step.input_values),
+            level=step.source_level, version_id=step.rule_version_id,
+        )
+        for step in PayslipStep.objects.filter(
+            tenant_id=tenant_id, payslip_id=row.pk
+        ).order_by("position")
+    ]
+    if saved:
+        return from_stored(
+            saved, stored=stored, visible_ledgers=visible_ledgers, cut=cut,
+            carried=carried, approved=approved, name=name, unit=unit, period=period,
+        )
 
     tenant = Tenant.objects.filter(pk=tenant_id).first()
     if tenant is None:

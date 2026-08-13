@@ -31,7 +31,9 @@
 живёт готовой строкой ведомости. Иначе первый же пересчёт снёс бы её вместе с
 остальными строками.
 
-Чего здесь нет и не должно быть: следа расчёта (D025) — это T013.
+След расчёта (D025) считает движок, а не этот модуль, — но **записывается он
+здесь и той же транзакцией**, что и суммы (T056): объяснение, сохранённое
+отдельно от чисел, однажды разъедется с ними именно на закрытом месяце.
 """
 from __future__ import annotations
 
@@ -63,6 +65,7 @@ from .errors import LedgerAccessDenied, PayrunRefused
 from .freezing import frozen_payslip_ids
 from .lifecycle import mark_calculated, refuse_if_approved
 from .rules import select_rules
+from .steps import store_steps
 
 __all__ = [
     "CalcOutcome", "LedgerAccessDenied", "PayrunRefused", "calculate_period", "compute",
@@ -465,6 +468,11 @@ def _store(tenant_id, period, preset_code, slips, ledgers, carried=()) -> CalcOu
         for row, (_, slip) in zip(rows, slips, strict=True)
         for component in slip.components
     ]
+    # След пишется тем же расчётом и той же транзакцией, что и суммы (T056).
+    # Порядок важен: строки ведомости уже созданы, а `_carry_in` может завести
+    # ещё одну — у неё своего расчёта нет, объяснять там нечего.
+    store_steps(tenant_id, rows, slips, money)
+
     components += _carry_in(tenant_id, payrun, rows, frozen_employees, carried)
     PayComponent.objects.bulk_create(components)
 
