@@ -17,17 +17,29 @@
  *     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
  *         --headless=new --disable-gpu --no-first-run --window-size=1440,900 \
  *         --remote-debugging-port=9339 --user-data-dir=/tmp/chrome-smoke &
- *     APP=http://127.0.0.1:8043 STAGE=base node tools/smoke_timesheets_review.mjs
+ * Стенд смоук приводит к сиду сам — но только на базовой ступени: ступени
+ * `mismatch` и `norules` работают на стенде, подготовленном снаружи (см.
+ * договор в шапке `cdp.mjs`). `COMPOSE_PROJECT_NAME` обязателен.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8043 STAGE=base \\
+ *         node tools/smoke_timesheets_review.mjs
  *
  * Скрипт пишет в базу — гонять только на тестовом стенде.
  */
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8000";
 const STAGE = process.env.STAGE || "base";
 
 const { send, evalIn, goto, key, type, check, report, logs } = await attach();
 const loginAs = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону — только на базовой ступени (issue #76). Ступени `mismatch` и
+// `norules` работают на стенде, подготовленном снаружи: там нарочно разведены
+// часы и база взносов или сдвинуты правила месяца. Сброс к сиду снёс бы ровно
+// то, что они проверяют, — поэтому здесь он под условием, а не «на всякий
+// случай для всех».
+if (STAGE === "base") standFromSeed();
 
 // Окно ровно то, в котором сверка нашла дефект. Задаётся явно, а не флагом
 // запуска браузера: у headless высота окна и высота страницы разные, и

@@ -9,15 +9,15 @@
  * а не вызовами обработчиков: обработчик, вызванный напрямую, доказывает
  * работоспособность обработчика, а не экрана.
  *
- *     node tools/smoke_permissions.mjs            (APP=http://127.0.0.1:8047)
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8047 \
+ *         node tools/smoke_permissions.mjs
  */
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, onCleanup, sql, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8047";
-// Имя контейнера базы стенда — переменной, как в остальных смоуках: зашитое
-// имя привязывает сценарий к тому стенду, на котором его однажды написали, и
-// на любом другом он падает не проверкой, а запуском.
-const DB = process.env.DB_CONTAINER || "dodo-pnl-ui-db-1";
 
 // Кому что положено — из сида (`seed_dev.ROLES`), а не из головы.
 const ROLES = [
@@ -27,8 +27,14 @@ const ROLES = [
   { code: "admin", calculate: false, edit: false },
 ];
 
-const { evalIn, goto, send, key, type, check, report, logs } = await attach();
+const { evalIn, goto, send, key, type, clickOn, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
+
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук упадёт
+// на полпути (issues #76, #80). Этот смоук пишет в табель и выключает правила
+// расчёта: раньше ячейка оставалась изменённой, и следующие смоуки краснели на
+// контрольных числах при исправном продукте.
+standFromSeed();
 
 // Ждём условие, подглядывая в живую страницу, вместо того чтобы спать заранее
 // угаданное число секунд: фиксированная пауза либо ждёт дольше нужного, либо
@@ -49,19 +55,14 @@ await login("director");
 {
   const { periodHref } = await findPeriodAndGrid(APP, evalIn, goto);
   await goto(APP + periodHref);
-  const box = await evalIn(`
-    (() => {
-      const b = [...document.querySelectorAll("button")]
-        .find(x => x.textContent.includes("Посчитать период"));
-      if (!b) return null;
-      const r = b.getBoundingClientRect();
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-    })()
-  `);
-  check("директор видит кнопку расчёта", !!box);
-  for (const t of ["mousePressed", "mouseReleased"]) {
-    await send("Input.dispatchMouseEvent", { type: t, x: box.x, y: box.y, button: "left", clickCount: 1 });
-  }
+  // Через общий `clickOn`: он сам прокручивает страницу к кнопке и отказывается
+  // бить по координатам, которых нет в окне. Раньше клик по кнопке за нижним
+  // краем окна уходил в пустоту, и краснела следующая проверка — «ни фразы
+  // «Расчёт выполнен», ни полосы прогресса» (issue #81).
+  const button = `[...document.querySelectorAll("button")]
+        .find(x => x.textContent.includes("Посчитать период"))`;
+  check("директор видит кнопку расчёта", await evalIn(`!!(${button})`));
+  await clickOn(button, "кнопка «Посчитать период»");
 
   // «Расчёт выполнен» появляется только когда расчёт идёт прямо в запросе
   // (`?calculated=1`). На стенде по умолчанию включена очередь
@@ -164,41 +165,26 @@ await login("manager");
 {
   const { periodHref } = await findPeriodAndGrid(APP, evalIn, goto);
   await goto(APP + periodHref);
-  const box = await evalIn(`
-    (() => {
-      const link = [...document.querySelectorAll("a")]
-        .find(a => a.textContent.trim() === "Табель");
-      if (!link) return null;
-      const r = link.getBoundingClientRect();
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-    })()
-  `);
-  if (!box) check("управляющий: ссылка «Табель» на месте", false);
-  else {
-    for (const type of ["mousePressed", "mouseReleased"]) {
-      await send("Input.dispatchMouseEvent", {
-        type, x: box.x, y: box.y, button: "left", clickCount: 1,
-      });
-    }
-    await new Promise((r) => setTimeout(r, 1200));
-    const url = await evalIn("location.pathname");
-    check("управляющий: клик по «Табель» открывает табель", url.startsWith("/timesheets/"), url);
-  }
+  const link = `[...document.querySelectorAll("a")]
+        .find(a => a.textContent.trim() === "Табель")`;
+  check("управляющий: ссылка «Табель» на месте", await evalIn(`!!(${link})`));
+  await clickOn(link, "ссылка «Табель»");
+  await new Promise((r) => setTimeout(r, 1200));
+  const url = await evalIn("location.pathname");
+  check("управляющий: клик по «Табель» открывает табель", url.startsWith("/timesheets/"), url);
 }
 
 // --- T073: отказ на записи ячейки --------------------------------------------
 // Правила на месяц выключаются на время проверки прямо в базе стенда: сценарий
 // узкий и другим способом не воспроизводится.
-async function rulesShiftedTo(year) {
-  // execFile с массивом аргументов, а не строкой в оболочке: год здесь свой, но
-  // заводить в проекте пример сборки команды строкой не стоит.
-  const { execFileSync } = await import("node:child_process");
-  execFileSync(
-    "docker",
-    ["exec", DB, "psql", "-U", "app", "-d", "dodo_pnl",
-     "-c", `update rule_presets set valid_from = '${year}-01-01'`],
-    { stdio: "pipe" },
-  );
+// Правила стран лежат ВНЕ тенанта, поэтому сид их не возвращает: он сносит и
+// заводит заново данные партнёра, а `rule_presets` только дописывает по ключу
+// (код, дата начала). Сдвинутую дату он не починит — заведёт вторую строку.
+// Значит возврат обязан быть свой и обязан пережить падение смоука: без него
+// следующий прогон получал «в базе нет правил расчёта» и выглядел сломанным
+// продуктом (issue #80).
+function rulesShiftedTo(year) {
+  sql(`update rule_presets set valid_from = '${year}-01-01'`);
 }
 
 await login("director");
@@ -225,7 +211,10 @@ await login("director");
   const saved = await evalIn(`document.querySelector("input.cell").value`);
   check("ячейка сохранена обычным путём", saved === "12.00", saved);
 
-  await rulesShiftedTo(2030);
+  // Уборка регистрируется ДО сдвига, а не после: падение случается между
+  // строками, а не после них.
+  onCleanup("правила расчёта возвращены на место", () => rulesShiftedTo(2026));
+  rulesShiftedTo(2030);
   try {
     // Тот же ввод, но правил на месяц больше нет.
     for (const t of ["mousePressed", "mouseReleased"]) {
@@ -265,7 +254,7 @@ await login("director");
     check("страница табеля объясняет то же самое",
       page.includes("нет правил расчёта") && page.includes("load_presets"));
   } finally {
-    await rulesShiftedTo(2026);
+    rulesShiftedTo(2026);
   }
 
   // Правила вернули — ячейка снова пишется, и в базе то, что показано.

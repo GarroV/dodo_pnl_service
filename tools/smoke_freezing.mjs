@@ -14,14 +14,16 @@
  * проверка, а подготовка входных данных: пересчёт обязан что-то менять, иначе
  * «числа не изменились» ничего не доказывает.
  *
- *     node tools/smoke_freezing.mjs        (APP=http://127.0.0.1:8054)
+ * Стенд смоук приводит к сиду сам — и в начале, и после себя (см. договор в
+ * шапке `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку,
+ * а `COMPOSE_PROJECT_NAME` обязателен: без него сброс ушёл бы на чужой стенд.
+ *
+ *     COMPOSE_PROJECT_NAME=<стенд> APP=http://127.0.0.1:8054 \\
+ *         node tools/smoke_freezing.mjs
  */
-import { execFileSync } from "node:child_process";
-
-import { attach, findPeriodAndGrid, loginWith } from "./cdp.mjs";
+import { attach, findPeriodAndGrid, loginWith, sql, standFromSeed } from "./cdp.mjs";
 
 const APP = process.env.APP || "http://127.0.0.1:8054";
-const DB = process.env.DB_CONTAINER || "dodo-pnl-pr4-db-1";
 const REASON = "смоук: спорные ночные часы, разбираемся с сотрудником";
 const REOPEN_REASON = "смоук: вернуть период в работу";
 const REFERENCE_TOTAL = "1 951 806,13";
@@ -29,13 +31,14 @@ const REFERENCE_TOTAL = "1 951 806,13";
 const { evalIn, goto, send, type, check, report, logs } = await attach();
 const login = loginWith(APP, evalIn, goto);
 
-/** Подготовка данных: ставки в базе. Не проверка — вход для пересчёта. */
-function sql(statement) {
-  execFileSync("docker", [
-    "exec", DB, "psql", "-U", "app", "-d", "dodo_pnl", "-q", "-c", statement,
-  ]);
-}
+// Стенд к эталону сейчас и обратно к нему после — в том числе если смоук
+// упадёт на полпути (issue #76). Порядок запуска смоуков больше ничего не
+// решает: каждый начинает с известного входа и ничего за собой не оставляет.
+standFromSeed();
 
+// Ставки правятся через `sql` харнесса: он ходит в базу того стенда, который
+// назван в COMPOSE_PROJECT_NAME. Зашитое имя контейнера, стоявшее здесь раньше,
+// привязывало сценарий к стенду, на котором его однажды написали.
 /** Нажать кнопку по тексту — настоящей мышью, по её месту на экране. */
 async function clickButton(text, nth = 0) {
   const box = await evalIn(`
