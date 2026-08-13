@@ -47,6 +47,7 @@ select c.relname
 
 OWNER_PASSWORD = "plain-owner-test-only"
 APP_PASSWORD = "app-login-test-only"
+QUEUE_PASSWORD = "queue-login-test-only"
 
 
 def _migrate(dsn: str) -> None:
@@ -82,6 +83,11 @@ def _plain_owner_cluster():
     pid = os.getpid()
     owner = f"dodo_owner_{pid}"
     app_login = f"dodo_app_{pid}"
+    # Третья логин-роль — рабочего процесса очереди (T124, issue #66). Она есть
+    # именно здесь, а не в общей фикстуре: разделение ролей — свойство площадки,
+    # и проверять его надо на конфигурации площадки, где ни у кого нет права
+    # обходить политики.
+    queue_login = f"dodo_queue_{pid}"
     dbname = f"dodo_pnl_test_owner_{pid}"
 
     params = conninfo_to_dict(ADMIN_DSN)
@@ -98,9 +104,14 @@ def _plain_owner_cluster():
             "", host=host, port=port, dbname=db, user=app_login, password=APP_PASSWORD
         )
 
+    def queue_dsn(db: str) -> str:
+        return make_conninfo(
+            "", host=host, port=port, dbname=db, user=queue_login, password=QUEUE_PASSWORD
+        )
+
     with admin:
         admin.execute(f'drop database if exists "{dbname}" with (force)')
-        for role in (owner, app_login):
+        for role in (owner, app_login, queue_login):
             admin.execute(f'drop role if exists "{role}"')
         # createrole нужен, чтобы миграция могла завести роль приложения; права
         # обходить RLS роль не получает намеренно — в этом весь смысл проверки.
@@ -112,6 +123,10 @@ def _plain_owner_cluster():
             f"""create role "{app_login}" login password '{APP_PASSWORD}'
                 nosuperuser nobypassrls"""
         )
+        admin.execute(
+            f"""create role "{queue_login}" login password '{QUEUE_PASSWORD}'
+                nosuperuser nobypassrls"""
+        )
         admin.execute(f'create database "{dbname}" owner "{owner}"')
         # На чистой площадке роли `app_user` ещё нет и миграция заводит её сама
         # (создатель роли получает права её администрировать). Здесь кластер
@@ -120,6 +135,9 @@ def _plain_owner_cluster():
         # накатывает миграции. Ветку «создаём сами» на общем кластере проверить
         # нельзя, не сломав соседние базы.
         admin.execute(f'grant app_user to "{owner}" with admin option')
+        # То же самое для роли очереди: на чистой площадке её заводит миграция,
+        # на общем кластере она уже есть, и её выдаёт администратор.
+        admin.execute(f'grant queue_worker to "{owner}" with admin option')
 
     try:
         _migrate(owner_dsn(dbname))
@@ -131,11 +149,23 @@ def _plain_owner_cluster():
         with psycopg.connect(make_conninfo(ADMIN_DSN, dbname=dbname), autocommit=True) as grants:
             grants.execute(f'grant connect on database "{dbname}" to "{app_login}"')
             grants.execute(f'grant app_user to "{app_login}"')
-        yield {"dbname": dbname, "owner_dsn": owner_dsn(dbname), "app_dsn": app_dsn(dbname)}
+            # Логин-роль очереди состоит в двух ролях: `queue_worker` — разбирать
+            # очередь, `app_user` — работать с данными внутри задачи. Членства в
+            # `queue_worker` у роли веба нет намеренно: тогда защита полезной
+            # нагрузки (`0047`) держалась бы на дисциплине кода.
+            grants.execute(f'grant connect on database "{dbname}" to "{queue_login}"')
+            grants.execute(f'grant app_user to "{queue_login}"')
+            grants.execute(f'grant queue_worker to "{queue_login}"')
+        yield {
+            "dbname": dbname,
+            "owner_dsn": owner_dsn(dbname),
+            "app_dsn": app_dsn(dbname),
+            "queue_dsn": queue_dsn(dbname),
+        }
     finally:
         with psycopg.connect(ADMIN_DSN, autocommit=True) as cleanup:
             cleanup.execute(f'drop database if exists "{dbname}" with (force)')
-            for role in (owner, app_login):
+            for role in (owner, app_login, queue_login):
                 cleanup.execute(f'drop owned by "{role}"')
                 cleanup.execute(f'drop role if exists "{role}"')
 
@@ -391,3 +421,58 @@ def test_a_connection_that_forgets_the_role_sees_nothing(app_conn):
         if count:
             leaking[table] = count
     assert leaking == {}, f"роль подключения видит строки без контекста: {leaking}"
+
+
+# --- Роли площадки: миграции, продукт, очередь (T124, issues #66 и #50) -------
+# На площадке ролей три, и разведены они не для красоты: схему накатывает
+# владелец, продукт ходит логин-ролью без DDL, очередь — своей. Пока обе службы
+# ходили одной ролью, рабочий процесс очереди не работал вовсе
+# (`permission denied for table django_q_ormq`), и узнать об этом можно было
+# только на площадке.
+
+
+def test_the_queue_login_role_can_work_the_queue(plain_owner):
+    """Логин-роль очереди разбирает очередь — на конфигурации площадки.
+
+    Проверяется настоящим подключением этой ролью, а не привилегией в каталоге:
+    привилегия бывает выдана роли, а логин-роль не окажется её членом — и
+    рабочий процесс всё равно упадёт на площадке.
+    """
+    import psycopg
+
+    with psycopg.connect(plain_owner["queue_dsn"]) as conn:
+        conn.execute("select payload from django_q_ormq").fetchall()
+        conn.execute(
+            "insert into django_q_ormq (key, payload, lock) values ('t', 'x', now())"
+        )
+        conn.execute("delete from django_q_ormq where key = 't'")
+        conn.commit()
+
+
+def test_the_queue_login_role_still_obeys_the_policies(plain_owner):
+    """Она же не получает данных продукта в обход политик.
+
+    Роль очереди подключается к базе с ФИО и суммами, и своей дороги к ним у
+    неё быть не должно: контекст пользователя она выставляет уже внутри задачи
+    (`db_context` делает `set local role app_user`). Без контекста — пусто, как
+    у любой другой роли.
+    """
+    import psycopg
+
+    with psycopg.connect(plain_owner["queue_dsn"]) as conn:
+        assert conn.execute("select count(*) from employees").fetchone()[0] == 0
+        assert conn.execute("select count(*) from pay_components").fetchone()[0] == 0
+
+
+def test_the_web_login_role_cannot_read_the_queue(plain_owner):
+    """А роль веба очередь по-прежнему не читает — иначе `0047` отменена.
+
+    Это и есть цена решения: очередь получила свою роль, а не права `app_user`.
+    Если однажды логин-роль веба сделают членом `queue_worker` «чтобы работало»,
+    красным станет этот тест, а не тишина.
+    """
+    import psycopg
+
+    with psycopg.connect(plain_owner["app_dsn"]) as conn:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            conn.execute("select payload from django_q_ormq").fetchall()

@@ -192,19 +192,34 @@ await login("director");
   const { gridHref } = await findPeriodAndGrid(APP, evalIn, goto);
   await goto(APP + gridHref);
 
+  // Клик в первую ячейку. Координаты меряются **перед каждым** кликом, а не
+  // один раз на весь блок: после сохранения над сеткой появляется подсказка о
+  // подозрительных числах (T118), она сдвигает таблицу на полторы сотни
+  // пикселей вниз, и прежняя точка попадает уже в саму подсказку. Тогда фокус
+  // остаётся на body, а `document.activeElement.select()` падает исключением —
+  // смоук обрывался на середине, не добравшись до своей проверки, и в отчёте
+  // не оставалось ни строки (issue #106).
+  const clickCell = async () => {
+    const point = await evalIn(`
+      (() => {
+        const input = document.querySelector("input.cell");
+        input.scrollIntoView({ block: "center" });
+        const r = input.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      })()
+    `);
+    for (const t of ["mousePressed", "mouseReleased"]) {
+      await send("Input.dispatchMouseEvent", {
+        type: t, x: point.x, y: point.y, button: "left", clickCount: 1,
+      });
+    }
+    const focused = await evalIn(`document.activeElement.classList.contains("cell")`);
+    if (!focused) throw new Error("клик не попал в ячейку сетки — координаты устарели");
+    await evalIn(`document.activeElement.select()`);
+  };
+
   // Ставим известное число обычным путём: клик в ячейку, набор, уход фокуса.
-  const cell = await evalIn(`
-    (() => {
-      const input = document.querySelector("input.cell");
-      input.scrollIntoView({ block: "center" });
-      const r = input.getBoundingClientRect();
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-    })()
-  `);
-  for (const t of ["mousePressed", "mouseReleased"]) {
-    await send("Input.dispatchMouseEvent", { type: t, x: cell.x, y: cell.y, button: "left", clickCount: 1 });
-  }
-  await evalIn(`document.activeElement.select()`);
+  await clickCell();
   await type("12");
   await key("Enter", "Enter", 13);
   await new Promise((r) => setTimeout(r, 900));
@@ -217,10 +232,7 @@ await login("director");
   rulesShiftedTo(2030);
   try {
     // Тот же ввод, но правил на месяц больше нет.
-    for (const t of ["mousePressed", "mouseReleased"]) {
-      await send("Input.dispatchMouseEvent", { type: t, x: cell.x, y: cell.y, button: "left", clickCount: 1 });
-    }
-    await evalIn(`document.activeElement.select()`);
+    await clickCell();
     await type("9");
     await key("Enter", "Enter", 13);
     await new Promise((r) => setTimeout(r, 1200));

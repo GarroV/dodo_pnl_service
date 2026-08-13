@@ -165,6 +165,49 @@ def test_queue_tables_are_closed_by_privileges(db):
             raise _Rollback()
 
 
+def test_the_queue_worker_role_may_work_the_queue(db):
+    """Роль очереди читает и правит очередь целиком — иначе она не работает.
+
+    Дефект, ради которого роль появилась (issue #66): продукт и очередь ходили
+    одной ролью, а `0047` оставляет `app_user` на очереди только право поставить
+    задачу — рабочий процесс падал `permission denied for table django_q_ormq`.
+    Разбирать очередь ролью приложения нельзя (полезная нагрузка ей не нужна),
+    поэтому у очереди роль своя, и права ей выдаёт миграция, а не рука на
+    площадке: сделанное руками до площадки не доедет.
+    """
+    for table in sorted(QUEUE_TABLES):
+        granted = db.execute(
+            "select has_table_privilege('queue_worker', %s, 'select, insert, update, delete')",
+            (table,),
+        ).fetchone()[0]
+        assert granted, f"роль очереди не может работать с {table}"
+
+    # Ключи задач берутся из последовательности: без права на неё `insert` не
+    # проходит, и очередь встала бы уже на постановке задачи.
+    assert db.execute(
+        "select has_sequence_privilege('queue_worker', 'django_q_ormq_id_seq', 'usage')"
+    ).fetchone()[0]
+
+
+def test_the_queue_role_does_not_leak_into_the_product_role(db):
+    """`app_user` не член роли очереди — иначе `0047` отменяется сама собой.
+
+    Права членов складываются: сделай роль продукта членом `queue_worker`, и
+    полезная нагрузка снова видна каждому запросу, при том что соседний тест
+    по-прежнему зелёный — он спрашивает права `app_user`, а не её членства.
+    Поэтому проверяется именно членство, и проверяется в обе стороны.
+    """
+    assert db.execute(
+        "select pg_has_role('app_user', 'queue_worker', 'member')"
+    ).fetchone()[0] is False, "роль продукта состоит в роли очереди — 0047 отменена"
+    assert db.execute(
+        "select pg_has_role('queue_worker', 'app_user', 'member')"
+    ).fetchone()[0] is False, (
+        "роль очереди состоит в роли продукта — доступ к данным она получает "
+        "внутри задачи через set local role, а не постоянным членством"
+    )
+
+
 def test_no_domain_table_returns_rows_without_context(db):
     """Гарантия наружу: без контекста пусто везде, а не только там, где смотрели.
 
