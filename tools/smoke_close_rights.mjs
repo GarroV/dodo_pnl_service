@@ -168,15 +168,19 @@ let alienId = null;
 }
 
 // --- 4. Роль без права: кнопки нет, действие отвергается ---------------------
-await login("accountant");
+// Администратор сети, а не бухгалтер: с T115 у бухгалтера `unit.close` есть
+// (D036, доступ равен директорскому), и проверка на нём стала бы зелёной не по
+// своей причине. Администратор видит все точки и все регистры — то есть отказ
+// по-прежнему нельзя списать на видимость.
+await login("admin");
 await goto(APP + gridHref);
 {
   const forms = await evalIn(`document.querySelectorAll("input[name=unit]").length`);
-  check("у бухгалтера кнопки закрытия нет", forms === 0, String(forms));
+  check("у администратора сети кнопки закрытия нет", forms === 0, String(forms));
   check("и сказано, почему",
     /не входит в права вашей роли/.test(await evalIn(`document.body.innerText`)));
   const denied = await postAs(APP + gridHref + "close/", { unit: alienId });
-  check("закрытие бухгалтером мимо экрана отвергнуто", denied.status === 403,
+  check("закрытие им мимо экрана отвергнуто", denied.status === 403,
     String(denied.status));
   check("отказ по праву объяснён словами",
     /не входит в права вашей роли/.test(denied.text), denied.text.slice(0, 80));

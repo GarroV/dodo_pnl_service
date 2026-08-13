@@ -146,10 +146,12 @@ def test_approval_requires_the_right_to_approve(db):
 
 
 def test_reopening_requires_its_own_right(db):
-    """Бухгалтер умеет считать и утверждать, но открывать период — не его дело.
+    """`period.reopen` — самостоятельное право, а не следствие «умею утверждать».
 
-    Ровно на этой роли видно, что `period.reopen` — самостоятельное право:
-    писать в расчёт она умеет, причину подставляет, и всё равно отказ.
+    Роль фикстуры умеет считать и утверждать, причину подставляет — и всё равно
+    отказ. Роль фикстуры, а не роль продукта: у бухгалтера продукта откат с T115
+    есть (D036). Условие создаётся явно — тем же способом, что и с регистрами
+    (`narrowed_ledgers`): механизм базы остаётся и обязан проверяться.
     """
     with as_app_user(db, USER_ACCOUNTANT) as conn:
         payrun_id = payrun_in(conn, "calculated")
@@ -316,14 +318,20 @@ def test_a_reopened_period_is_not_approved_again_without_a_recalculation(client,
 
 
 def test_the_reopen_button_belongs_to_the_reopen_right(client, clean_payruns):
-    """У бухгалтера право утверждать есть, право открывать — нет."""
-    url = calculated_period(client, clean_payruns)
-    login_as(client, "accountant")
+    """Кнопка отката — у права отката, и мимо экрана он тоже закрыт.
 
-    assert "approve/" in body(client.get(url))
+    Роль — управляющий точки: право `period.reopen` проверяется отдельно от
+    состояния периода, и утверждённый период у него на экране такой же, как у
+    всех. Раньше здесь стоял бухгалтер, у которого было право утверждать и не
+    было права откатывать; с T115 (D036) откат у него есть. Пара «утверждать
+    умею, откатывать нет» никуда не делась — она проверяется на роли фикстуры,
+    где условие создаётся явно (`test_reopening_requires_its_own_right`).
+    """
+    url = calculated_period(client, clean_payruns)
     client.post(url + "approve/", follow=True)
     assert payrun_status(clean_payruns) == "approved"
 
+    login_as(client, "manager")
     page = body(client.get(url))
     assert "reopen/" not in page
     assert "Откат периода" in page
