@@ -490,8 +490,8 @@ def test_the_calendar_of_a_closed_month_is_refused(client, sql, web_env, payruns
 
 
 @pytest.fixture
-def accountant_manages(sql):
-    """Право вести справочники — временно бухгалтеру, у которого один регистр.
+def manager_manages(sql):
+    """Право вести справочники — временно управляющему, у которого неполный набор.
 
     Зачем такая подмена вообще понадобилась (T089). Раньше срез регистров в
     справочнике проверялся на администраторе сети: у него в сиде стоял один
@@ -501,58 +501,90 @@ def accountant_manages(sql):
     Регистры администратору открыли (тот же довод, что в D033), и проверять срез
     на нём стало нельзя: он видит всё по праву.
 
+    Роль для подмены сначала была бухгалтером — у него в сиде стоял один
+    официальный регистр. После D036 бухгалтеру открыты все три, как директору,
+    и подмена на нём перестала бы что-либо проверять: и без урезания регистров
+    видел бы всё то же самое. Управляющий точки — единственная роль с
+    по-прежнему неполным набором (официальный и дополнительный, без
+    внутреннего, D031), поэтому подмена права переехала на него.
+
     Само правило при этом никуда не делось: партнёр вправе поручить справочники
-    тому, кто видит не все регистры. Такой роли в сиде нет, поэтому она делается
-    здесь — и разбирается обратно, что бы ни случилось с тестом.
+    тому, кто видит не все регистры. Такой роли в сиде нет (у управляющего в
+    сиде нет `directory.manage`), поэтому она делается здесь — и разбирается
+    обратно, что бы ни случилось с тестом.
     """
     sql.execute(
         "update roles set permissions = permissions || '[\"directory.manage\"]'::jsonb "
-        "where code = 'accountant' and tenant_id is not null"
+        "where code = 'manager' and tenant_id is not null"
     )
     try:
         yield
     finally:
         sql.execute(
             "update roles set permissions = permissions - 'directory.manage' "
-            "where code = 'accountant' and tenant_id is not null"
+            "where code = 'manager' and tenant_id is not null"
         )
 
 
 def test_the_directory_never_names_a_ledger_the_role_cannot_see(
-    client, sql, accountant_manages,
+    client, sql, manager_manages,
 ):
-    """Ни строкой, ни словом: у бухгалтера только официальный регистр.
+    """Ни строкой, ни словом: у управляющего нет внутреннего регистра (D031).
+
+    Была роль бухгалтера с одним официальным регистром — после D036 её набор
+    полон, как у директора, и проверка на ней перестала бы что-либо доказывать
+    (она законно увидела бы всё). Управляющий видит официальный и дополнительный,
+    но не внутренний, поэтому «дополнительный» здесь ожидаемо виден, а
+    «внутренний» — нет: срез всё так же проверяется по регистру, а не по праву
+    и не по точке (справочник групп точками не режется вовсе).
 
     В сиде есть группы всех трёх регистров, и без отбора справочник назвал бы
-    бухгалтеру и «Дополнительный», и «Внутренний» — то есть сообщил бы о
-    существовании регистров, которых он не видит нигде больше.
+    управляющему слово «Внутренний» — то есть сообщил бы о существовании
+    регистра, которого он не видит нигде больше.
     """
     hidden = rows_of(
         sql,
-        "select title from employee_groups where ledger <> 'official' and tenant_id in "
+        "select title from employee_groups where ledger = 'internal' and tenant_id in "
         "(select id from tenants where code = 'rs-dev')",
     )
-    assert hidden, "в сиде нет групп чужого регистра — проверка проверяет пустоту"
+    assert hidden, "в сиде нет групп внутреннего регистра — проверка проверяет пустоту"
+    shown = rows_of(
+        sql,
+        "select title from employee_groups where ledger = 'supplementary' and tenant_id in "
+        "(select id from tenants where code = 'rs-dev')",
+    )
+    assert shown, "в сиде нет групп дополнительного регистра — контрольная часть проверки пуста"
 
-    login_as(client, "accountant")
+    login_as(client, "manager")
     for url in ["/directory/", "/directory/groups/", "/directory/employees/"]:
         html = body(client.get(url))
-        assert "Дополнительный" not in html, url
         assert "Внутренний" not in html, url
         for (title,) in hidden:
-            assert title not in html, f"{url}: группа чужого регистра названа — {title}"
+            assert title not in html, f"{url}: группа скрытого регистра названа — {title}"
+
+    # Контроль: дополнительный регистр управляющему открыт (D031), и его слово
+    # и группы обязаны быть на месте — иначе непонятно, срез это или дырка.
+    groups_html = body(client.get("/directory/groups/"))
+    assert "Дополнительный" in groups_html
+    for (title,) in shown:
+        assert title in groups_html, f"группа своего регистра пропала у управляющего — {title}"
     client.post("/logout/")
 
 
 def test_a_group_of_another_ledger_is_not_openable_by_address(
-    client, sql, accountant_manages,
+    client, sql, manager_manages,
 ):
-    """Отбор в списке — не защита, если запись открывается прямой ссылкой."""
+    """Отбор в списке — не защита, если запись открывается прямой ссылкой.
+
+    Роль — управляющий, а не бухгалтер: после D036 бухгалтер видит внутренний
+    регистр законно, и 404 на его карточке доказывал бы уже не отбор по
+    регистру. У управляющего внутренний регистр не открыт (D031).
+    """
     group_id = sql.execute(
         "select id from employee_groups where ledger = 'internal' and tenant_id in "
         "(select id from tenants where code = 'rs-dev') limit 1"
     ).fetchone()[0]
-    login_as(client, "accountant")
+    login_as(client, "manager")
     assert client.get(f"/directory/groups/{group_id}/").status_code == 404
     client.post("/logout/")
 

@@ -84,15 +84,28 @@ def pooled_connection(web_env):
 
 @pytest.fixture
 def two_ledger_rows(web_env):
-    """Официальная и внутренняя строки: разным ролям видно разное."""
+    """Официальная и внутренняя строки: разным ролям видно разное.
+
+    Сотрудник и строка ведомости явно привязаны к точке NS1 — точке
+    управляющего (см. `test_next_user_on_the_same_connection_sees_only_his_own`).
+    Без этого случайно выбранный сотрудник другой точки пропал бы у управляющего
+    по видимости точки (T044/T057), и проверка вышла бы зелёной не по причине
+    регистров, а по причине, которую тест не собирался проверять.
+    """
     import psycopg
 
     wipe_payruns(web_env)
     with psycopg.connect(web_env, autocommit=True) as conn:
         tenant = conn.execute("select id from tenants where code = 'rs-dev'").fetchone()[0]
+        unit_ns1 = conn.execute(
+            "select id from units where tenant_id = %s and code = 'NS1'", (tenant,)
+        ).fetchone()[0]
         employee = conn.execute(
-            "select id from employees where tenant_id = %s order by external_id limit 1",
-            (tenant,),
+            """select e.id from employees e
+                 join employment_terms t on t.employee_id = e.id
+                where e.tenant_id = %s and t.unit_id = %s
+                order by e.external_id limit 1""",
+            (tenant, unit_ns1),
         ).fetchone()[0]
         payrun = conn.execute(
             """insert into payruns (tenant_id, period) values (%s, %s)
@@ -101,9 +114,9 @@ def two_ledger_rows(web_env):
             (tenant, JUNE),
         ).fetchone()[0]
         payslip = conn.execute(
-            """insert into payslips (tenant_id, payrun_id, employee_id)
-               values (%s, %s, %s) returning id""",
-            (tenant, payrun, employee),
+            """insert into payslips (tenant_id, payrun_id, employee_id, unit_id)
+               values (%s, %s, %s, %s) returning id""",
+            (tenant, payrun, employee, unit_ns1),
         ).fetchone()[0]
         for ledger, amount in (
             ("official", AMOUNT_OFFICIAL),
@@ -137,7 +150,15 @@ def test_context_does_not_outlive_the_request(pooled_connection, seed_password):
 def test_next_user_on_the_same_connection_sees_only_his_own(
     pooled_connection, seed_password, two_ledger_rows
 ):
-    """Директор, затем бухгалтер по тому же соединению: чужого регистра не видно."""
+    """Директор, затем управляющий по тому же соединению: чужого регистра не видно.
+
+    Была роль бухгалтера — после D036 набор её регистров полон, как у
+    директора, и «внутренний регистр не протёк» перестало бы что-либо
+    доказывать (она увидела бы его законно). Управляющему точки внутренний
+    регистр не открыт (D031), а строка сида — на его же точке NS1
+    (`two_ledger_rows`), поэтому отказ здесь именно от регистра, а не от того,
+    что точка другая.
+    """
     from django.test import Client
 
     from web.format import money
@@ -149,13 +170,13 @@ def test_next_user_on_the_same_connection_sees_only_his_own(
     pid_first = backend_pid()
     assert money(AMOUNT_INTERNAL) in seen, "директору внутренний регистр должен быть виден"
 
-    accountant = Client()
-    login_real(accountant, "accountant", seed_password)
-    seen = body(accountant.get(url))
+    manager = Client()
+    login_real(manager, "manager", seed_password)
+    seen = body(manager.get(url))
     assert backend_pid() == pid_first, "соединение переоткрылось — тест ничего не доказывает"
 
-    assert money(AMOUNT_OFFICIAL) in seen
-    assert money(AMOUNT_INTERNAL) not in seen, "внутренний регистр протёк на бухгалтера"
+    assert money(AMOUNT_OFFICIAL) in seen, "официальный регистр управляющему открыт (D031)"
+    assert money(AMOUNT_INTERNAL) not in seen, "внутренний регистр протёк на управляющего"
 
 
 def test_anonymous_after_a_logged_in_user_gets_nothing(

@@ -86,23 +86,33 @@ def visible_totals(conn) -> list[tuple]:
 # --- главное требование ------------------------------------------------------
 
 
-def test_totals_of_a_mixed_payslip_are_invisible_to_the_accountant(db):
+def test_totals_of_a_mixed_payslip_are_invisible_to_a_partial_role(db):
     """Итоги строки из видимого и скрытого не показываются вовсе.
 
     Показать их «частично» нельзя: `net` — одно число на все регистры, и любое
     его появление на экране выдаёт скрытую часть вычитанием.
+
+    Роль здесь — управляющий точки: после D036 набор бухгалтера полон, как у
+    директора, и её «не видно» доказывало бы не работу политики, а совпадение.
+    Управляющему не виден внутренний регистр (D031) — граница проходит по
+    полноте набора, а не по названию роли.
     """
     make_payslip(db, "mixed", [("official", "100.00"), ("internal", "900.00")])
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         assert visible_totals(conn) == []
 
     with as_app_user(db, USER_DIRECTOR) as conn:
         assert len(visible_totals(conn)) == 1, "директор обязан видеть итоги целиком"
 
-    # А сама строка ведомости видна обоим: на ней держится ведомость по
-    # компонентам, и её пропажа отняла бы у бухгалтера видимые ей суммы.
+    # Бухгалтеру после D036 итоги видны так же, как директору: равный доступ —
+    # это проверяемое свойство, а не отсутствие проверки.
     with as_app_user(db, USER_ACCOUNTANT) as conn:
+        assert len(visible_totals(conn)) == 1, "бухгалтеру итоги обязаны быть видны (D036)"
+
+    # А сама строка ведомости видна и роли с неполным набором: на ней держится
+    # ведомость по компонентам, и её пропажа отняла бы у роли видимые ей суммы.
+    with as_app_user(db, USER_MANAGER) as conn:
         assert conn.execute("select count(*) from payslips").fetchone()[0] == 1
 
 
@@ -118,7 +128,7 @@ def test_a_partial_role_gets_no_totals_even_from_a_clean_row(db):
     """
     make_payslip(db, "clean", [("official", "500.00")])
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         assert visible_totals(conn) == []
 
     with as_app_user(db, USER_DIRECTOR) as conn:
@@ -160,15 +170,16 @@ def test_visible_payslips_contain_nothing_hidden(db):
         with as_app_user(db, user) as conn:
             each_visible_payslip_is_built_from_visible_components(conn)
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         visible_components = conn.execute(
             "select coalesce(sum(amount), 0) from pay_components"
         ).fetchone()[0]
         net = conn.execute("select coalesce(sum(net), 0) from payslip_totals").fetchone()[0]
 
-    # Компоненты бухгалтер видит как и раньше — 450 (100 + 50 + 300): её работа
-    # от T071 не пострадала. А итогов нет ни одного, поэтому и вычитать нечего.
-    assert visible_components == Decimal("450.00")
+    # Компоненты роль с неполным набором видит как и раньше — 850 (100 + 400
+    # + 50 + 300, всё кроме внутреннего): её работа от T071 не пострадала.
+    # А итогов нет ни одного, поэтому и вычитать нечего.
+    assert visible_components == Decimal("850.00")
     assert net == Decimal("0")
 
     with as_app_user(db, USER_DIRECTOR) as conn:
@@ -253,7 +264,7 @@ def test_the_protection_is_the_policy_and_not_luck(db):
     make_payslip(db, "leak", [("official", "100.00"), ("internal", "900.00")])
     db.execute("drop policy ledger_visibility on payslip_totals")
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         assert len(visible_totals(conn)) == 1, "без политики строка обязана быть видна"
         with pytest.raises(AssertionError):
             each_visible_payslip_is_built_from_visible_components(conn)
@@ -323,7 +334,7 @@ def test_the_sheet_still_shows_official_components_of_a_mixed_person(db):
     """
     make_payslip(db, "mixed", [("official", "100.00"), ("internal", "900.00")])
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         rows = conn.execute(
             """select c.amount from pay_components c
                  join payslips p on p.id = c.payslip_id"""
@@ -553,7 +564,7 @@ def test_the_rule_does_not_depend_on_what_is_in_the_row(db):
     clean = make_payslip(db, "t071-only-official", [("official", "300.00")])
     mixed = make_payslip(db, "t071-with-hidden", [("official", "300.00"), ("internal", "1.00")])
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         seen = {
             row[0]
             for row in conn.execute("select payslip_id from payslip_totals").fetchall()
@@ -585,10 +596,11 @@ def test_the_old_rule_would_bring_the_leak_back(db):
             using (app_payslip_ledgers_visible(payslip_totals.payslip_id));
     """)
     try:
-        with as_app_user(db, USER_ACCOUNTANT) as conn:
+        with as_app_user(db, USER_MANAGER) as conn:
             slips, orphans = orphan_payslips(conn)
         assert (slips, orphans) == (2, 1), (
-            "со старой политикой бухгалтер обязана видеть 2 строки и 1 без итога — "
+            "со старой политикой роль с неполным набором обязана видеть 2 строки "
+            "и 1 без итога — "
             f"иначе проверка ничего не значит; получено {(slips, orphans)}"
         )
     finally:

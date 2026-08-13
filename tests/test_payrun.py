@@ -21,7 +21,7 @@ from decimal import Decimal
 
 import pytest
 
-from conftest import body, login_as, period_url, wipe_payruns
+from conftest import body, login_as, narrowed_ledgers, period_url, wipe_payruns
 from payroll import Employee, PayrollEngine, Timesheet, d
 
 JUNE = "2026-06-01"
@@ -310,21 +310,29 @@ def test_employee_without_terms_is_reported_not_skipped_silently(client, clean_p
 # --- кто может считать -------------------------------------------------------
 
 
-def test_accountant_cannot_launch_calculation(client, clean_payruns):
-    """Расчёт пишет строки во все регистры; роль, которая их не видит, не пишет.
+def test_accountant_can_launch_calculation(client, clean_payruns):
+    """Бухгалтер считает период — спека требует этого прямо (D036).
 
-    Иначе `insert ... returning` упёрся бы в политику базы и человек получил бы
-    500-ю вместо объяснения.
+    До ответа владельца (Q012) расчёт у бухгалтера был невозможен: расчёт пишет
+    строки во все регистры, а роли с неполным набором база запись отвергает.
+    Теперь набор полный, и проверка стоит на самом действии, а не на надежде:
+    в базе обязаны появиться строки **всех трёх** регистров, а не только
+    официального, — иначе «посчитал» означало бы «посчитал половину».
     """
     import psycopg
 
     login_as(client, "accountant")
     response = calculate(client)
-    assert response.status_code == 403
-    assert "регистр" in body(response).lower()
+    assert response.status_code == 200, body(response)[:2000]
+    assert "недоступные вашей роли" not in body(response)
 
     with psycopg.connect(clean_payruns) as conn:
-        assert conn.execute("select count(*) from payslips").fetchone()[0] == 0
+        assert conn.execute("select count(*) from payslips").fetchone()[0] > 0
+        ledgers = {
+            row[0]
+            for row in conn.execute("select distinct ledger::text from pay_components")
+        }
+    assert ledgers == {"official", "supplementary", "internal"}, ledgers
 
 
 def test_calculation_without_login_writes_nothing(client, clean_payruns):
@@ -340,15 +348,47 @@ def test_calculation_without_login_writes_nothing(client, clean_payruns):
         assert conn.execute("select count(*) from payruns").fetchone()[0] == 0
 
 
-def test_database_refuses_a_component_of_an_invisible_ledger(clean_payruns):
-    """Страховка: даже если проверка в коде исчезнет, база не даст записать.
+def test_the_screen_explains_the_refusal_when_the_role_misses_a_ledger(client, clean_payruns):
+    """Роли с неполным набором регистров расчёт отказывают словами, а не 500-й.
 
-    Именно это и делает отказ выше не декоративным.
+    После D036 роли, у которой право считать есть, а набор регистров неполон, в
+    сиде нет вовсе: у бухгалтера и директора он полный, у управляющего нет
+    права. Условие поэтому создаётся явно — набор бухгалтера на время теста
+    сужают до официального, как это сделает партнёр экраном ролей, когда дойдёт
+    до сужения доступов («потом будем закрывать там, где надо», D036).
+
+    Проверка не декоративная и после открытия регистров: она держит второй
+    контур, из-за которого человек видит объяснение, а не ошибку политики на
+    `insert ... returning`.
     """
     import psycopg
 
-    accountant = "0f1efdd9-bc29-5eae-8b9a-3ab006d71d44"  # видит только официальный
-    with psycopg.connect(clean_payruns) as conn:
+    with narrowed_ledgers(clean_payruns, "accountant", ["official"]):
+        login_as(client, "accountant")
+        response = calculate(client)
+        assert response.status_code == 403
+        assert "недоступные вашей роли" in body(response)
+
+        with psycopg.connect(clean_payruns) as conn:
+            assert conn.execute("select count(*) from payslips").fetchone()[0] == 0
+
+    # Набор вернулся — тот же человек считает период.
+    login_as(client, "accountant")
+    assert calculate(client).status_code == 200
+
+
+def test_database_refuses_a_component_of_an_invisible_ledger(clean_payruns):
+    """Страховка: даже если проверка в коде исчезнет, база не даст записать.
+
+    Именно это и делает отказ выше не декоративным. Роль здесь та же
+    искусственно сузённая (см. тест выше): проверяется механизм, а не то, кому
+    сегодня открыты регистры.
+    """
+    import psycopg
+
+    accountant = "0f1efdd9-bc29-5eae-8b9a-3ab006d71d44"  # учётка бухгалтера сида
+    with narrowed_ledgers(clean_payruns, "accountant", ["official"]), \
+            psycopg.connect(clean_payruns) as conn:
         tenant, employee = conn.execute(
             """select t.id, (select id from employees where tenant_id = t.id limit 1)
                  from tenants t where t.code = 'rs-dev'"""
@@ -392,7 +432,34 @@ def test_sheet_shows_a_row_per_employee_and_ledger(client, clean_payruns):
 
 
 def test_totals_match_the_rows_the_role_can_see(client, clean_payruns):
-    """D023 целиком: у двух ролей разные строки и разные сходящиеся итоги."""
+    """D023 целиком: у двух ролей разные строки и разные сходящиеся итоги.
+
+    Вторая роль — управляющий точки: после D036 у бухгалтера тот же срез, что у
+    директора, и сравнение «строк меньше, итог меньше» стало бы сравнением
+    одинакового с одинаковым, то есть зелёным при снятых политиках. Управляющий
+    видит и меньше регистров (без внутреннего, D031), и одну точку из трёх.
+    """
+    login_as(client, "director")
+    calculate(client)
+    director = body(client.get(period_url(client)))
+
+    login_as(client, "manager")
+    manager = body(client.get(period_url(client)))
+
+    director_rows, manager_rows = sheet_numbers(director), sheet_numbers(manager)
+    assert len(manager_rows) < len(director_rows)
+    assert sum(director_rows) == grand_total(director)
+    assert sum(manager_rows) == grand_total(manager)
+    assert grand_total(manager) < grand_total(director)
+
+
+def test_the_accountant_sees_the_same_sheet_as_the_director(client, clean_payruns):
+    """D036: доступ бухгалтера и оперативного директора равен — до строки.
+
+    Проверка стоит рядом с предыдущей нарочно: одна следит, что срез по-прежнему
+    режет (управляющий), вторая — что бухгалтеру он больше ничего не режет.
+    Разъехаться молча они не могут: обе считают одни и те же строки.
+    """
     login_as(client, "director")
     calculate(client)
     director = body(client.get(period_url(client)))
@@ -400,19 +467,20 @@ def test_totals_match_the_rows_the_role_can_see(client, clean_payruns):
     login_as(client, "accountant")
     accountant = body(client.get(period_url(client)))
 
-    director_rows, accountant_rows = sheet_numbers(director), sheet_numbers(accountant)
-    assert len(accountant_rows) < len(director_rows)
-    assert sum(director_rows) == grand_total(director)
-    assert sum(accountant_rows) == grand_total(accountant)
-    assert grand_total(accountant) < grand_total(director)
+    assert sheet_numbers(accountant) == sheet_numbers(director)
+    assert grand_total(accountant) == grand_total(director)
 
 
-def test_hidden_ledgers_leave_no_trace_for_the_accountant(client, clean_payruns):
+def test_hidden_ledgers_leave_no_trace_for_a_partial_role(client, clean_payruns):
     """Ни строк, ни следа в итогах: разницу нельзя получить вычитанием.
 
-    Проверяются оба скрытых от бухгалтера регистра. Внутренний появился в сиде
-    задачей T045 — до неё этот сценарий приходилось воспроизводить вставкой
-    строки руками, то есть на самих данных продукта он не проверялся.
+    Роль — управляющий точки: после D036 неполный набор регистров остался
+    только у него (официальный и дополнительный, D031), и внутренний регистр
+    скрыт от него на данных самого продукта, а не вставленной руками строкой.
+
+    Итог сверяется с базой в его же срезе — по точке и по видимым регистрам.
+    Проверять «итог равен официальному регистру», как раньше, здесь нельзя:
+    у управляющего срез двойной, и такая проверка молчала бы о протечке точки.
     """
     import psycopg
 
@@ -428,24 +496,32 @@ def test_hidden_ledgers_leave_no_trace_for_the_accountant(client, clean_payruns)
                 "select ledger::text, sum(amount) from pay_components group by ledger"
             ).fetchall()
         )
+        # То же, что обязан увидеть управляющий: его точка и его регистры.
+        visible = conn.execute(
+            """select coalesce(sum(c.amount), 0)
+                 from pay_components c
+                 join payslips p on p.id = c.payslip_id
+                 join units u on u.id = p.unit_id
+                where u.code = 'NS1'
+                  and c.ledger in ('official', 'supplementary')"""
+        ).fetchone()[0]
     assert set(totals) == {"official", "supplementary", "internal"}, (
         f"в сиде представлены не все регистры: {sorted(totals)}"
     )
 
-    login_as(client, "accountant")
-    accountant = body(client.get(period_url(client)))
+    login_as(client, "manager")
+    manager = body(client.get(period_url(client)))
 
-    # Ни одной строки чужого регистра и ни следа его суммы.
-    for title, ledger in (("Дополнительный", "supplementary"), ("Внутренний", "internal")):
-        assert title in director and title not in accountant
-        assert money(totals[ledger]) not in accountant
-    # Итог бухгалтера — ровно официальный регистр: разницу нельзя получить
-    # вычитанием, потому что общей суммы он нигде не видит.
-    assert grand_total(accountant) == totals["official"]
+    # Ни одной строки скрытого регистра и ни следа его суммы.
+    assert "Внутренний" in director and "Внутренний" not in manager
+    assert money(totals["internal"]) not in manager
+    # Итог управляющего — ровно его срез: разницу нельзя получить вычитанием,
+    # потому что общей суммы он нигде не видит.
+    assert grand_total(manager) == visible, "итог управляющего разошёлся с его срезом в базе"
     assert grand_total(director) == sum(totals.values())
     # Суммарные поля ведомости (нето, бруто, взносы) не показываются вовсе:
     # политики видимости регистров на них нет, и они выдали бы скрытое.
-    assert "Нето" not in accountant and "Бруто" not in accountant
+    assert "Нето" not in manager and "Бруто" not in manager
 
 
 def test_period_page_without_calculation_offers_to_run_it(client, clean_payruns):

@@ -51,15 +51,21 @@ def test_seed_creates_tenant_and_org(conn):
 
 
 def test_seed_creates_roles_with_different_ledgers(conn):
-    """Три роли спеки: директор видит всё, бухгалтер — только официальный регистр."""
+    """Роли спеки: директор и бухгалтер видят всё (D036), управляющий — не всё.
+
+    Проверка называет обе стороны нарочно. «Бухгалтер видит всё» без второй
+    половины была бы зелёной и на сиде, где регистры выданы всем подряд, — то
+    есть при снятом разграничении вовсе. Роль с неполным набором в сиде одна,
+    управляющий (D031), и именно она держит механизм видимости живым.
+    """
     roles = dict(
         conn.execute(
             "select code, visible_ledgers from roles where tenant_id is not null"
         ).fetchall()
     )
     assert set(roles["director"]) == {"official", "supplementary", "internal"}
-    assert set(roles["accountant"]) == {"official"}
-    assert "manager" in roles
+    assert set(roles["accountant"]) == {"official", "supplementary", "internal"}
+    assert set(roles["manager"]) == {"official", "supplementary"}
 
     # У управляющего доступ ограничен одной точкой
     manager_units = conn.execute(

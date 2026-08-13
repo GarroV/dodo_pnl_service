@@ -23,7 +23,9 @@ const APP = process.env.APP || "http://127.0.0.1:8057";
 
 const ROLES = [
   { code: "director", ledgers: ["Официальный", "Дополнительный", "Внутренний"] },
-  { code: "accountant", ledgers: ["Официальный"] },
+  // Бухгалтеру после D036 видны все три регистра, как директору (равный
+  // доступ). Роль с неполным набором — управляющий, строкой ниже.
+  { code: "accountant", ledgers: ["Официальный", "Дополнительный", "Внутренний"] },
   { code: "manager", ledgers: ["Официальный", "Дополнительный"] },
 ];
 
@@ -242,12 +244,14 @@ for (const role of ROLES) {
       .map(a => a.getAttribute("href"))
   `);
   const internal = hrefs.find((href) => href.includes("ledger=internal"));
-  await login("accountant");
+  // Роль, которой строка ЧУЖАЯ: после D036 это управляющий, а не бухгалтер —
+  // ей внутренний регистр виден, и «чужой» строки у неё не осталось вовсе.
+  await login("manager");
   const foreign = await goto(APP + internal);
   const missing = await goto(APP + "/payslips/00000000-0000-0000-0000-000000000000/trace/");
   const body = await evalIn(`document.body.innerText`);
   check(
-    "бухгалтер: чужая строка отвечает как несуществующая",
+    "управляющий: чужая строка отвечает как несуществующая",
     !body.includes("Как получилась эта сумма"),
     body.slice(0, 60).replace(/\n/g, " "),
   );

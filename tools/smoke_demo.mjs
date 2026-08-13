@@ -235,17 +235,73 @@ if (downloaded.length === 1) {
     check("копеечное расхождение показано отдельно",
       summary["Off by cents (rounding)"] >= 1,
       String(summary["Off by cents (rounding)"]));
+    // Подпись именно такая: расчёт роли отдан не весь ровно настолько, насколько
+    // велит её срез, и строка называет это прямо — «в вашей части расчёта»
+    // (T095/T096). Старая подпись «In the table, not in the calculation» из
+    // продукта ушла, а смоук искал её и краснел на исправном демо (issue #86).
     check("человек, оставшийся только в файле, показан",
-      summary["In the table, not in the calculation"] >= 1,
-      String(summary["In the table, not in the calculation"]));
+      summary["In the table, not in your part of the calculation"] >= 1,
+      String(summary["In the table, not in your part of the calculation"]));
     check("курьеров в таблице бухгалтера нет — и это видно",
       summary["In the calculation, not in the table"] >= 4,
       String(summary["In the calculation, not in the table"]));
   }
 }
 
+// --- тот же файл у каждой роли (T104, issue #88) ----------------------------------
+//
+// Ссылка на таблицу бухгалтера отвечала 404 бухгалтеру и управляющему — тем
+// самым ролям, ради которых экран сверки и существует. Файл изображает артефакт
+// ВНЕ продукта, поэтому собирается полным срезом и одинаков для всех; проверяем
+// это настоящим скачиванием каждой ролью и настоящей сверкой на скачанном.
+
+for (const role of ["accountant", "manager"]) {
+  const folder = resolve(DOWNLOADS, role);
+  mkdirSync(folder, { recursive: true });
+  await send("Browser.setDownloadBehavior", {
+    behavior: "allow", downloadPath: folder, eventsEnabled: true,
+  });
+  await send("Network.clearBrowserCookies");
+  await goto(`${APP}/demo/enter/${role}/`);
+  await sleep(1000);
+  await goto(`${APP}/demo/`);
+  check(
+    `${role}: нажата ссылка на таблицу бухгалтера`,
+    await clickBy(
+      `[...document.querySelectorAll("a")].find(x => x.textContent.includes("Download accountant"))`,
+      "Download accountant's spreadsheet",
+    ),
+  );
+  await sleep(2500);
+  const got = readdirSync(folder).filter((n) => n.endsWith(".xlsx"));
+  check(`${role}: файл скачался, а не 404`, got.length === 1, got.join(", ") || "ничего");
+  if (got.length !== 1) continue;
+
+  await goto(`${APP}${june}reconcile/`);
+  check(`${role}: файл выбран в поле`,
+    await chooseFile("input[type=file][name=table]", resolve(folder, got[0])));
+  check(
+    `${role}: нажата кнопка сверки`,
+    await clickBy(
+      `[...document.querySelectorAll("button")].find(x => x.textContent.trim() === "Reconcile")`,
+      "Reconcile",
+    ),
+  );
+  await sleep(2500);
+  const page = await text();
+  check(`${role}: сверка прошла на скачанном файле`, page.includes("Reconciliation result"));
+  // Человек, оставшийся только в таблице бухгалтера, обязан быть назван каждой
+  // роли: он и есть то, ради чего экран существует.
+  check(`${role}: сверка назвала оставшегося только в файле`, page.includes("Ashford"));
+}
+
 // --- вторая роль: демо показывает разницу видимости --------------------------------
 
+// Разницу видимости в демо показывает управляющий точки: у него неполный набор
+// регистров и одна точка (D031). Бухгалтер на этом месте больше не годится —
+// после D036 её доступ равен директорскому, и проверка «видит меньше» краснела
+// бы на исправном демо. Обе стороны проверяются рядом: равенство у бухгалтера и
+// сужение у управляющего. Одна без другой ничего не значит.
 await send("Network.clearBrowserCookies");
 await goto(`${APP}/demo/enter/accountant/`);
 await sleep(1200);
@@ -254,9 +310,22 @@ const accountantRows = await evalIn(
   `document.querySelectorAll("table.sheet tbody tr").length`,
 );
 check(
-  "бухгалтер видит меньше строк, чем директор",
-  accountantRows > 0 && accountantRows < sheetRows,
+  "бухгалтер видит то же, что директор (D036)",
+  accountantRows === sheetRows,
   `${accountantRows} против ${sheetRows}`,
+);
+
+await send("Network.clearBrowserCookies");
+await goto(`${APP}/demo/enter/manager/`);
+await sleep(1200);
+await goto(APP + june);
+const managerRows = await evalIn(
+  `document.querySelectorAll("table.sheet tbody tr").length`,
+);
+check(
+  "управляющий видит меньше строк, чем директор",
+  managerRows > 0 && managerRows < sheetRows,
+  `${managerRows} против ${sheetRows}`,
 );
 
 // --- демо не притворяется включённым там, где его нет --------------------------

@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from contextlib import nullcontext
 
 import pytest
 
@@ -46,6 +47,7 @@ from conftest import (
     as_app_user,
     body,
     login_as,
+    narrowed_ledgers,
     period_url,
     wipe_payruns,
 )
@@ -53,6 +55,31 @@ from test_payrun_lifecycle import payrun_in, rejected
 from test_payslip_freezing import REASON, make_payslip
 
 RANDOM_ID = "00000000-dead-4bee-8000-000000000001"
+
+# Регистры, до которых на время части проверок ниже сужается бухгалтер.
+# После D036 у неё в сиде полный набор регистров, а часть проверок этого
+# файла написана про роль «право `payslip.freeze` есть, а регистры не все» —
+# такой роли в сиде больше нет (у управляющего регистры узкие, но нет самого
+# права — см. `test_the_right_still_matters_on_its_own`). Значение то же, что
+# в образце из T101 (`test_payrun.py::test_the_screen_explains_the_refusal_
+# when_the_role_misses_a_ledger`), поэтому условие узнаваемо на весь модуль.
+NARROW_LEDGERS = ["official"]
+
+
+def narrow_accountant(conn) -> None:
+    """Сузить регистры бухгалтера прямо в транзакции теста уровня `db`.
+
+    `db` подключается владельцем схемы, и `_seed()` заводит роли той же
+    транзакцией — правка идёт тем же путём и откатится вместе с ней, когда
+    фикстура сделает `conn.rollback()`. Восстанавливать значение вручную не
+    нужно (в отличие от `narrowed_ledgers` из conftest, которая правит общую
+    базу веб-тестов по DSN и обязана вернуть набор сама).
+    """
+    conn.execute(
+        "update roles set visible_ledgers = %s::text[]::ledger[]"
+        " where tenant_id = %s and code = 'accountant'",
+        (NARROW_LEDGERS, T1),
+    )
 
 
 def internal_payslip(conn, payrun_id: str) -> str:
@@ -93,7 +120,15 @@ def freeze_attempt(conn, payslip_id: str):
 
 
 def test_a_role_without_every_ledger_does_not_freeze_a_hidden_row(two_rows, db):
-    """Главная дырка задачи: запись по строке, расчёта которой роли не отдали."""
+    """Главная дырка задачи: запись по строке, расчёта которой роли не отдали.
+
+    Взят бухгалтер с сужённым набором (см. `NARROW_LEDGERS`), а не управляющий:
+    у управляющего нет самого права `payslip.freeze`, и его отказ доказывал бы
+    не то — он бы срабатывал на permissive-политике права, до restrictive-
+    политики регистров (`payslip_freeze_whole_run_insert`), которую здесь и
+    нужно проверить.
+    """
+    narrow_accountant(db)
     with as_app_user(db, USER_ACCOUNTANT) as conn:
         error = freeze_attempt(conn, two_rows["internal"])
         assert "row-level security" in str(error)
@@ -110,7 +145,10 @@ def test_the_same_role_does_not_freeze_a_visible_row_either(two_rows, db):
     маршрут начнёт отвечать по-разному на официальную и внутреннюю строку. Это
     и есть поимённый список: перебирать ничего не нужно, достаточно сравнить
     два ответа. Поэтому отказ одинаков для любой строки.
+
+    Бухгалтер сужена так же, как выше: право у неё есть, отказывает регистр.
     """
+    narrow_accountant(db)
     with as_app_user(db, USER_ACCOUNTANT) as conn:
         error = freeze_attempt(conn, two_rows["official"])
         assert "row-level security" in str(error)
@@ -118,6 +156,7 @@ def test_the_same_role_does_not_freeze_a_visible_row_either(two_rows, db):
 
 def test_the_refusal_does_not_depend_on_what_is_in_the_row(two_rows, db):
     """Два отказа обязаны быть неотличимы: разница в тексте и есть утечка."""
+    narrow_accountant(db)
     with as_app_user(db, USER_ACCOUNTANT) as conn:
         hidden = str(freeze_attempt(conn, two_rows["internal"]))
         shown = str(freeze_attempt(conn, two_rows["official"]))
@@ -130,6 +169,7 @@ def test_releasing_is_refused_the_same_way(two_rows, db):
     from test_payslip_freezing import freeze
 
     freeze(db, two_rows["internal"])
+    narrow_accountant(db)
     with as_app_user(db, USER_ACCOUNTANT) as conn:
         error = rejected(
             conn,
@@ -170,7 +210,12 @@ def test_the_protection_is_the_policy_and_not_luck(two_rows, db):
 
     Без этого теста проверки выше зеленели бы и от того, что материал собран
     неудачно, — а не от того, что запрет работает.
+
+    Важно сузить бухгалтера тем же способом: без этого её полный (после D036)
+    набор регистров и так проходит `app_sees_every_ledger`, и вставка удалась
+    бы независимо от политики — тест зеленел бы не по своей причине.
     """
+    narrow_accountant(db)
     db.execute("drop policy payslip_freeze_whole_run_insert on payslip_freezes")
     try:
         with as_app_user(db, USER_ACCOUNTANT) as conn:
@@ -296,54 +341,80 @@ def production_404(client, url: str, data: dict | None = None):
 @pytest.mark.parametrize("user", ["accountant", "manager"])
 @pytest.mark.parametrize("action", ["freeze", "release"])
 def test_the_route_answers_a_hidden_row_exactly_as_a_random_id(
-    client, calculated_june, action, user
+    client, calculated_june, web_env, action, user
 ):
-    """Оракул существования проверяется буквально, а не «оба не 302»."""
-    login_as(client, user)
-    hidden_url = f"/payslips/{hidden_payslip()}/{action}/"
-    nothing_url = f"/payslips/{RANDOM_ID}/{action}/"
-    hidden = production_404(client, hidden_url, {"reason": "спор"})
-    nothing = production_404(client, nothing_url, {"reason": "спор"})
+    """Оракул существования проверяется буквально, а не «оба не 302».
 
-    assert hidden.status_code == 404, (
-        f"{action}: по невидимой строке ответ {hidden.status_code}, а не 404"
+    Два разных случая роли с неполным набором регистров нарочно проверяются
+    оба: у управляющего (после D036 — единственная такая роль в сиде) права
+    `payslip.freeze` вообще нет, а у бухгалтера оно есть — набор ей сужен
+    здесь искусственно (`narrowed_ledgers`), чтобы получить второй случай:
+    право есть, регистры не все. Маршрут (T101) сначала проверяет регистры
+    роли и только потом ищет строку, поэтому оба случая обязаны прийти к
+    одному и тому же `404` независимо от того, есть ли право.
+    """
+    context = (
+        narrowed_ledgers(web_env, "accountant", ["official"])
+        if user == "accountant" else nullcontext()
     )
-    assert shape(hidden, hidden_url) == shape(nothing, nothing_url), (
-        f"{action}: ответы по существующей и несуществующей строке различимы"
-    )
+    with context:
+        login_as(client, user)
+        hidden_url = f"/payslips/{hidden_payslip()}/{action}/"
+        nothing_url = f"/payslips/{RANDOM_ID}/{action}/"
+        hidden = production_404(client, hidden_url, {"reason": "спор"})
+        nothing = production_404(client, nothing_url, {"reason": "спор"})
 
-
-def test_the_route_answers_a_visible_row_the_same_way_too(client, calculated_june):
-    """Роль либо морозит, либо нет: по своим строкам ответ не отличается."""
-    from django.db import connection
-
-    login_as(client, "accountant")
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """select p.id from payslips p
-                 join payruns r on r.id = p.payrun_id
-                where r.period = %s and p.ledgers = '{official}'::ledger[] limit 1""",
-            [JUNE],
+        assert hidden.status_code == 404, (
+            f"{action}: по невидимой строке ответ {hidden.status_code}, а не 404"
         )
-        visible = str(cursor.fetchone()[0])
-
-    own_url = f"/payslips/{visible}/freeze/"
-    nothing_url = f"/payslips/{RANDOM_ID}/freeze/"
-    own = production_404(client, own_url, {"reason": "спор"})
-    nothing = production_404(client, nothing_url, {"reason": "спор"})
-    assert shape(own, own_url) == shape(nothing, nothing_url)
+        assert shape(hidden, hidden_url) == shape(nothing, nothing_url), (
+            f"{action}: ответы по существующей и несуществующей строке различимы"
+        )
 
 
-def test_nothing_was_written_by_all_those_attempts(client, calculated_june):
-    """Отказ маршрута — не косметика: в базе не должно появиться ни одной заморозки."""
+def test_the_route_answers_a_visible_row_the_same_way_too(client, calculated_june, web_env):
+    """Роль либо морозит, либо нет: по своим строкам ответ не отличается.
+
+    Строка выбрана в точности по набору бухгалтера ('{official}', см.
+    `narrowed_ledgers` ниже): все её регистры роли видны, и всё равно ответ
+    неотличим от несуществующей строки — правило свойство роли, а не строки.
+    """
     from django.db import connection
 
-    login_as(client, "accountant")
-    client.post(f"/payslips/{hidden_payslip()}/freeze/", {"reason": "спор"})
+    with narrowed_ledgers(web_env, "accountant", ["official"]):
+        login_as(client, "accountant")
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """select p.id from payslips p
+                     join payruns r on r.id = p.payrun_id
+                    where r.period = %s and p.ledgers = '{official}'::ledger[] limit 1""",
+                [JUNE],
+            )
+            visible = str(cursor.fetchone()[0])
 
-    with connection.cursor() as cursor:
-        cursor.execute("select count(*) from payslip_freezes")
-        assert cursor.fetchone()[0] == 0
+        own_url = f"/payslips/{visible}/freeze/"
+        nothing_url = f"/payslips/{RANDOM_ID}/freeze/"
+        own = production_404(client, own_url, {"reason": "спор"})
+        nothing = production_404(client, nothing_url, {"reason": "спор"})
+        assert shape(own, own_url) == shape(nothing, nothing_url)
+
+
+def test_nothing_was_written_by_all_those_attempts(client, calculated_june, web_env):
+    """Отказ маршрута — не косметика: в базе не должно появиться ни одной заморозки.
+
+    Бухгалтер сужена до официального: с полным (после D036) набором регистров
+    она прошла бы проверку регистров и запись состоялась бы — тест проверял бы
+    не то.
+    """
+    from django.db import connection
+
+    with narrowed_ledgers(web_env, "accountant", ["official"]):
+        login_as(client, "accountant")
+        client.post(f"/payslips/{hidden_payslip()}/freeze/", {"reason": "спор"})
+
+        with connection.cursor() as cursor:
+            cursor.execute("select count(*) from payslip_freezes")
+            assert cursor.fetchone()[0] == 0
 
 
 def test_the_director_still_freezes_from_the_page(client, calculated_june):
@@ -357,14 +428,23 @@ def test_the_director_still_freezes_from_the_page(client, calculated_june):
     assert released.status_code == 302 and "released=1" in released["Location"]
 
 
-def test_the_accountant_is_not_offered_a_button_she_cannot_use(client, calculated_june):
-    """Кнопка, которая всегда отказывает, — не разграничение, а ловушка для человека."""
-    login_as(client, "accountant")
-    html = body(client.get(period_url(client)))
+def test_the_accountant_is_not_offered_a_button_she_cannot_use(client, calculated_june, web_env):
+    """Кнопка, которая всегда отказывает, — не разграничение, а ловушка для человека.
 
-    assert not re.search(r"/payslips/[0-9a-f-]+/freeze/", html), (
-        "на странице бухгалтера стоит форма заморозки, которой ей нельзя пользоваться"
-    )
+    Взята бухгалтер с искусственно сужённым набором, а не управляющий: у него
+    нет и права `payslip.freeze`, поэтому его отсутствующая кнопка ничего не
+    говорит про регистры отдельно от права (та проверка — в
+    `test_payslip_freezing.py::test_a_role_without_the_right_sees_no_button_
+    but_an_explanation`). Здесь показано, что даже роли, у которой право
+    есть, кнопку не покажут, если её регистры не все.
+    """
+    with narrowed_ledgers(web_env, "accountant", ["official"]):
+        login_as(client, "accountant")
+        html = body(client.get(period_url(client)))
+
+        assert not re.search(r"/payslips/[0-9a-f-]+/freeze/", html), (
+            "на странице бухгалтера стоит форма заморозки, которой ей нельзя пользоваться"
+        )
 
 
 def test_the_director_is_still_offered_the_button(client, calculated_june):

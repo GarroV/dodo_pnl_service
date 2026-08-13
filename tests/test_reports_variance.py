@@ -30,10 +30,17 @@ from decimal import Decimal
 
 import pytest
 
-from conftest import body, login_as, period_url, wipe_payruns
+from conftest import body, login_as, narrowed_ledgers, period_url, wipe_payruns
 
 JUNE = date(2026, 6, 1)
 MAY = date(2026, 5, 1)
+
+# После D036 у бухгалтера набор регистров полон, как у директора, и по
+# умолчанию она про другие регистры знает законно. Там, где проверка именно
+# про D023, роль с её правами и урезанным до этого набором собирается явно
+# `narrowed_ledgers` — только у неё в сиде есть право видеть все точки
+# одновременно с `payrun.calculate`, управляющий (D031) этого не даёт.
+NARROWED_ACCOUNTANT = ["official"]
 
 
 def cells(*rows):
@@ -413,12 +420,20 @@ def test_the_report_keeps_quiet_about_the_change_within_the_threshold(
     assert (name, code) not in {(row[0], row[1]) for row in rows}
 
 
-def test_the_accountant_is_never_told_about_other_ledgers(client, june_and_planted_may):
-    """D023 на новой поверхности: отклонение по чужому регистру — та же утечка."""
-    login_as(client, "accountant")
-    html = body(client.get(variance_url(client)))
-    for name in ("Дополнительный", "Внутренний"):
-        assert name not in html, f"в отчёте бухгалтера есть слово «{name}»"
+def test_the_accountant_is_never_told_about_other_ledgers(
+    client, web_env, june_and_planted_may
+):
+    """D023 на новой поверхности: отклонение по чужому регистру — та же утечка.
+
+    После D036 у настоящей бухгалтерской роли набор регистров полон, и оба
+    слова были бы у неё законны. Роль с урезанным набором собирается явно —
+    см. `NARROWED_ACCOUNTANT`.
+    """
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        login_as(client, "accountant")
+        html = body(client.get(variance_url(client)))
+        for name in ("Дополнительный", "Внутренний"):
+            assert name not in html, f"в отчёте бухгалтера есть слово «{name}»"
 
 
 def test_the_report_of_each_role_matches_what_that_role_sees(client, june_and_planted_may):

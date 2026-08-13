@@ -27,13 +27,14 @@
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import date
 from decimal import Decimal
 
 from .accountant_table import TableRow
 from .dataset import PEOPLE, Person
 
-__all__ = ["DEVIATIONS", "accountant_rows", "sheet_for"]
+__all__ = ["DEVIATIONS", "accountant_rows", "full_slice", "sheet_for"]
 
 D = Decimal
 
@@ -102,6 +103,61 @@ LEFT_BEHIND = TableRow(
 
 def _num(value) -> Decimal:
     return Decimal(str(value or 0))
+
+
+@contextmanager
+def full_slice():
+    """Собрать таблицу бухгалтера полным срезом, кем бы её ни скачивали (T104).
+
+    **Почему это не обход разграничения доступа.** Файл изображает артефакт,
+    который живёт ВНЕ продукта: таблицу бухгалтер ведёт у себя и рассылает
+    остальным. Артефакт, пришедший со стороны, не может зависеть от того, кто его
+    открыл, — иначе один и тот же файл давал бы разным ролям разные расхождения,
+    и экран сверки показывал бы не сверку, а собственный срез. Раньше файл
+    собирался срезом скачивающего, и роли с неполным набором регистров получали
+    404 (issue #88).
+
+    **Чем это ограничено.** Функция живёт в пакете `demo`, и звать её вправе
+    только маршрут демо-стенда: он существует лишь при `DEMO_MODE=1`, а
+    демо-база отдельная и населена выдуманными людьми (D016). Ни один экран
+    продукта её не зовёт и звать не должен — там за строками живые люди.
+
+    **Как это сделано.** Подменяется только ключ контекста `app.user_id`, на
+    время сборки и внутри той же транзакции запроса; роль подключения остаётся
+    `app_user`, то есть политики продолжают действовать — просто под директором
+    демо. Обход RLS владельцем схемы был бы здесь другим по сути: он снял бы
+    проверки вовсе, включая изоляцию тенанта.
+
+    Выставленное перечитывается обратно и возвращается в `finally` — по тому же
+    доводу, что в `web/dbcontext.py`: «выполнили оператор» и «контекст стоит» —
+    разные утверждения, и разошлись бы они молча.
+    """
+    from django.db import connection
+
+    from .seed import det_id
+
+    if not connection.in_atomic_block:
+        raise RuntimeError(
+            "полный срез демо выставляется только внутри транзакции: "
+            "вне её Postgres молча игнорирует set_config(..., true)"
+        )
+
+    who = str(det_id("user", "director"))
+    with connection.cursor() as cursor:
+        cursor.execute("select current_setting('app.user_id', true)")
+        previous = cursor.fetchone()[0] or ""
+        cursor.execute("select set_config('app.user_id', %s, true)", [who])
+        cursor.execute("select current_setting('app.user_id', true)")
+        applied = cursor.fetchone()[0]
+    if applied != who:
+        raise RuntimeError(
+            "полный срез демо не выставился: база отдаёт другой контекст"
+        )
+    try:
+        yield
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("select set_config('app.user_id', %s, true)", [previous])
 
 
 def accountant_rows(period: date) -> list[TableRow]:

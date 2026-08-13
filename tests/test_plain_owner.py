@@ -29,8 +29,8 @@ from conftest import (
     ADMIN_DSN,
     T1,
     T2,
-    USER_ACCOUNTANT,
     USER_DIRECTOR,
+    USER_MANAGER,
     _seed,
     run_manage,
 )
@@ -258,8 +258,13 @@ def test_isolation_holds_without_a_bypass(app_conn, plain_owner):
 
 
 def test_ledger_visibility_holds_without_a_bypass(app_conn, two_ledgers):
-    """Бухгалтеру не видно строк скрытых от неё регистров."""
-    with as_app_user(app_conn, USER_ACCOUNTANT) as conn:
+    """Роли с неполным набором регистров не видно строк скрытого от неё.
+
+    Роль здесь — управляющий точки: после D036 набор бухгалтера полон, и её
+    отказ ничего бы не доказывал. Управляющему не виден внутренний регистр
+    (D031), и проверка стоит на нём.
+    """
+    with as_app_user(app_conn, USER_MANAGER) as conn:
         seen = {row[0] for row in conn.execute("select ledger from pay_components").fetchall()}
     assert seen == {"official"}, seen
 

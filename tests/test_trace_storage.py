@@ -202,11 +202,19 @@ def step_of(conn, ledger: str | None, *, code: str, amount: str = "1000.00") -> 
 
 
 def test_a_stored_step_of_an_invisible_ledger_is_invisible(db):
-    """Шаг чужого регистра не виден роли — ни числом, ни фактом существования."""
+    """Шаг чужого регистра не виден роли — ни числом, ни фактом существования.
+
+    Ролью для проверки взят управляющий, а не бухгалтер. После D036 у
+    бухгалтера в сиде полный набор регистров (изначально проверка стояла на
+    ней) — её выборка сейчас была бы про читаемость всего, а не про сокрытие.
+    Управляющий (D031) — единственная роль сида с неполным набором: видит
+    официальный и дополнительный, но не внутренний, ровно тот случай, который
+    здесь нужен.
+    """
     step_of(db, "official", code="official.one")
     step_of(db, "internal", code="internal.one", amount="200.00")
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         seen = conn.execute("select ledger, applied_value from payslip_steps").fetchall()
     assert [(ledger, value) for ledger, value in seen] == [("official", 1000)]
 
@@ -233,18 +241,24 @@ def test_a_derived_step_is_closed_by_role_not_by_row(db):
     строки, наличие или отсутствие бруто само стало бы поимённым списком тех, у
     кого есть выплаты в закрытом регистре: ровно та утечка, которую закрыла
     миграция 0023.
+
+    Управляющий (D031) — единственная роль сида с неполным набором, и только
+    он должен производную величину не увидеть. Бухгалтер после D036 набором
+    равна директору (обе видят все регистры) и здесь проверена в паре с ним —
+    иначе проверка «не видит» стояла бы на роли, которая после решения D036
+    видит, и была бы неверна по существу, а не молча зелена по формулировке.
     """
     step_of(db, None, code="gross")
 
-    for user in (USER_ACCOUNTANT, USER_MANAGER):
+    with as_app_user(db, USER_MANAGER) as conn:
+        seen = conn.execute(
+            "select count(*) from payslip_steps where ledger is null"
+        ).fetchone()[0]
+    assert seen == 0, "управляющий видит производную величину, а видит не все регистры"
+
+    for user in (USER_DIRECTOR, USER_ACCOUNTANT):
         with as_app_user(db, user) as conn:
             seen = conn.execute(
                 "select count(*) from payslip_steps where ledger is null"
             ).fetchone()[0]
-        assert seen == 0, f"{user} видит производную величину, а видит не все регистры"
-
-    with as_app_user(db, USER_DIRECTOR) as conn:
-        seen = conn.execute(
-            "select count(*) from payslip_steps where ledger is null"
-        ).fetchone()[0]
-    assert seen == 1, "директор видит все регистры, а производной величины не видит"
+        assert seen == 1, f"{user} видит все регистры, а производной величины не видит"

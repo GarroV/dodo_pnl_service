@@ -17,6 +17,7 @@ from conftest import (
     T2,
     USER_ACCOUNTANT,
     USER_DIRECTOR,
+    USER_MANAGER,
     USER_OTHER,
     as_app_user,
     pay_component,
@@ -291,7 +292,13 @@ def test_app_user_cannot_create_shared_rows(db):
 # --- Видимость регистров учёта ----------------------------------------------
 
 def test_ledger_visibility_narrows_not_widens(db):
-    """Бухгалтер видит только официальный регистр.
+    """Роль с неполным набором регистров видит только свои.
+
+    Роль здесь — управляющий точки (официальный и дополнительный, D031). До
+    D036 на этом месте стоял бухгалтер, но её набор теперь полон, и отказ ей
+    не отличить от снятой политики. Проверка обязана стоять на роли, у которой
+    набор действительно неполный, — иначе механизм видимости остался бы без
+    единой проверки.
 
     Дефект, ради которого написан тест: пермиссивные политики Postgres
     объединяет через OR, поэтому политика видимости регистра не сужала выборку
@@ -299,11 +306,12 @@ def test_ledger_visibility_narrows_not_widens(db):
     `as restrictive`.
     """
     pay_component(db, ledger="official", amount="100.00", code="official.one")
+    pay_component(db, ledger="supplementary", amount="30.00", code="supplementary.one")
     pay_component(db, ledger="internal", amount="200.00", code="internal.one")
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         ledgers = {row[0] for row in conn.execute("select ledger from pay_components").fetchall()}
-    assert ledgers == {"official"}
+    assert ledgers == {"official", "supplementary"}
 
 
 def test_ledger_visibility_affects_totals(db):
@@ -312,9 +320,9 @@ def test_ledger_visibility_affects_totals(db):
     pay_component(db, ledger="supplementary", amount="30.00", code="supplementary.one")
     pay_component(db, ledger="internal", amount="200.00", code="internal.one")
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         total = conn.execute("select coalesce(sum(amount), 0) from pay_components").fetchone()[0]
-    assert total == 100
+    assert total == 130  # официальный и дополнительный, без внутреннего
 
     with as_app_user(db, USER_DIRECTOR) as conn:
         total = conn.execute("select coalesce(sum(amount), 0) from pay_components").fetchone()[0]
@@ -333,6 +341,6 @@ def test_ledger_visibility_applies_to_allocation_rules(db):
             (T1, cp, item, ledger),
         )
 
-    with as_app_user(db, USER_ACCOUNTANT) as conn:
+    with as_app_user(db, USER_MANAGER) as conn:
         ledgers = {row[0] for row in conn.execute("select ledger from allocation_rules").fetchall()}
     assert ledgers == {"official"}
