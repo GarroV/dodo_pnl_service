@@ -465,7 +465,10 @@ def test_the_closed_period_stays_byte_for_byte_the_same(web_env, june_approved):
     assert before, "июнь не посчитан — проверять нечего"
 
     bump_rates("2")
-    found = retro.drift(june_approved.id, date(2026, 6, 1))
+    found = retro.drift(
+        june_approved.id, date(2026, 6, 1),
+        visible_ledgers=["official", "supplementary", "internal"],
+    )
     assert found, "правка ставок не дала расхождения — проверять нечего"
 
     target, moved = retro.post(
@@ -516,7 +519,10 @@ def test_a_second_transfer_does_not_double_the_first(web_env, june_approved):
         tenant_id=june_approved.id, source=date(2026, 6, 1), actor_id=None,
         visible_ledgers=["official", "supplementary", "internal"],
     )
-    assert not retro.drift(june_approved.id, date(2026, 6, 1)), (
+    assert not retro.drift(
+        june_approved.id, date(2026, 6, 1),
+        visible_ledgers=["official", "supplementary", "internal"],
+    ), (
         "сразу после переноса расхождение осталось — вторая попытка задвоила бы"
     )
 
@@ -525,16 +531,21 @@ def test_a_second_transfer_does_not_double_the_first(web_env, june_approved):
         tenant_id=june_approved.id, source=date(2026, 6, 1), actor_id=None,
         visible_ledgers=["official", "supplementary", "internal"],
     )
-    assert not retro.drift(june_approved.id, date(2026, 6, 1))
+    assert not retro.drift(
+        june_approved.id, date(2026, 6, 1),
+        visible_ledgers=["official", "supplementary", "internal"],
+    )
 
     # Два переноса вместе равны **одному** расхождению между тем, что июнь
     # хранит, и тем, что он даёт сейчас. Сумма считается независимой дорогой,
     # без вычитания уже перенесённого: иначе проверка повторяла бы саму
     # реализацию. Без накопления вторая разница включила бы первую ещё раз, и
     # сумма оказалась бы больше.
-    fresh, error = retro._fresh(june_approved.id, date(2026, 6, 1))
+    # Срез — все регистры: проверка про сумму переносов, а не про видимость.
+    seen = {"official", "supplementary", "internal"}
+    fresh, error = retro._fresh(june_approved.id, date(2026, 6, 1), seen)
     assert not error
-    stored = retro._stored(june_approved.id, date(2026, 6, 1))
+    stored = retro._stored(june_approved.id, date(2026, 6, 1), seen)
     once = sum(
         (body["amount"] for body in fresh.values()), Decimal(0)
     ) - sum((body["amount"] for body in stored.values()), Decimal(0))
@@ -591,18 +602,45 @@ def test_the_setting_switches_the_product_to_recalculation(web_env, june_approve
         june_approved.save(update_fields=["retro_mode"])
 
 
-def test_the_accountant_cannot_transfer_a_hidden_ledger(web_env, june_approved):
-    """Переносить может тот, кто видит все затронутые регистры — как и считать."""
+def test_the_accountant_is_not_told_that_hidden_ledgers_drifted(web_env, june_approved):
+    """Роль не узнаёт о расхождении в невидимом ей регистре — даже отказом (T085, T086).
+
+    Раньше здесь ждали `LedgerAccessDenied` со списком регистров в поле
+    `ledgers` — и этот отказ **сам был утечкой**: он называл бухгалтеру и имена
+    закрытых от неё регистров, и факт, что у партнёра в них есть данные.
+
+    Правильное поведение другое и проще: в срезе бухгалтера ничего не
+    разошлось, потому что правки задели дополнительный регистр, которого ей не
+    видно. Значит переносить нечего — и отказ говорит ровно это, ни словом не
+    выдавая, что где-то есть ещё.
+    """
     from payrun import retro
-    from payrun.errors import LedgerAccessDenied
 
     bump_rates("2")
-    with pytest.raises(LedgerAccessDenied) as caught:
-        retro.post(
-            tenant_id=june_approved.id, source=date(2026, 6, 1), actor_id=None,
-            visible_ledgers=["official"],
-        )
-    assert "supplementary" in caught.value.ledgers
+
+    full = retro.drift(
+        june_approved.id, date(2026, 6, 1),
+        visible_ledgers=["official", "supplementary", "internal"],
+    )
+    mine = retro.drift(
+        june_approved.id, date(2026, 6, 1), visible_ledgers=["official"],
+    )
+
+    # Директор видит расхождение по всем регистрам — иначе проверять нечего.
+    assert {line.ledger for line in full.lines} > {"official"}, (
+        "правка задела только официальный регистр — тест не про то"
+    )
+
+    # А бухгалтер — только по своему. Ни строки, ни суммы чужого регистра.
+    assert {line.ledger for line in mine.lines} == {"official"}, (
+        f"бухгалтеру видны чужие регистры: {sorted({line.ledger for line in mine.lines})}"
+    )
+    assert mine.total < full.total, (
+        "итог расхождения у бухгалтера равен полному — значит в нём чужие суммы"
+    )
+    assert mine.total == sum(
+        (line.amount for line in full.lines if line.ledger == "official"), Decimal(0)
+    ), "итог бухгалтера не равен сумме её же строк"
 
 
 def test_the_target_is_the_first_period_that_is_not_approved(web_env, june_approved):

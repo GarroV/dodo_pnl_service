@@ -117,8 +117,8 @@ msgstr ""
 "Kod ovog partnera se izmene unazad rade ponovnim obračunom: ponovo otvorite period\n"
 "    uz navođenje razloga i ponovo ga obračunajte."
 
-msgid "Расхождений с сегодняшними данными нет: переносить нечего. Возможно, разницу уже перенесли — посмотрите период-получатель."
-msgstr "Nema odstupanja u odnosu na današnje podatke: nema šta da se prenese. Razlika je možda već preneta — pogledajte period primaoca."
+msgid "Расхождений с сегодняшними данными в доступном вам срезе нет: переносить нечего. Возможно, разницу уже перенесли — посмотрите период-получатель."
+msgstr "U delu koji vam je dostupan nema odstupanja od današnjih podataka: nema šta da se prenese. Razlika je možda već preneta — pogledajte period-primalac."
 
 msgid "Перенос разницы делается только из закрытого месяца. Этот период ещё не утверждён — правьте данные и пересчитывайте его как обычно."
 msgstr "Prenos razlike se radi samo iz zatvorenog meseca. Ovaj period još nije odobren — ispravite podatke i ponovo ga obračunajte kao i obično."
