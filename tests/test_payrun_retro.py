@@ -32,7 +32,6 @@ from conftest import (
     T1,
     U_BG1,
     U_NS1,
-    USER_ACCOUNTANT,
     USER_DIRECTOR,
     USER_MANAGER,
     USER_OTHER,
@@ -131,24 +130,35 @@ def test_the_adjustment_lands_in_the_ledger_it_is_given(db):
     ).fetchone()[0] == "supplementary"
 
 
-def test_the_accountant_does_not_see_a_supplementary_adjustment(db):
+def test_the_manager_does_not_see_an_internal_adjustment(db):
     """Разница живёт в том же регистре, и чужой регистр не виден — как у сумм.
 
-    Иначе бухгалтер увидел бы в переносе то, что скрыто от него в самой
-    ведомости: дополнительный регистр вычитался бы из «строки есть, суммы нет».
+    Была роль бухгалтера — после D036 её набор регистров полон, как у
+    директора, и «дополнительный регистр не виден» перестало бы что-либо
+    доказывать (она увидела бы его законно). Управляющий точки — роль с
+    по-прежнему неполным набором (D031): официальный и дополнительный открыты,
+    внутренний нет, поэтому скрытая строка здесь — внутреннего регистра.
+
+    Оба сотрудника явно приписаны к точке управляющего (NS1, `employ`): иначе
+    отказ по «чужому человеку» (T057) стал бы неотличим от отказа по регистру,
+    а именно регистр здесь и проверяется. Иначе бухгалтер увидел бы в переносе
+    то, что скрыто от него в самой ведомости: скрытый регистр вычитался бы из
+    «строки есть, суммы нет».
     """
     june = payrun_in(db, "calculated")
-    open_one, _ = make_slip(db, june, "retro-vis-official")
-    hidden, _ = make_slip(db, june, "retro-vis-supp", ledger="supplementary")
+    open_one, _ = make_slip(db, june, "retro-vis-official", unit_id=U_NS1)
+    hidden, _ = make_slip(db, june, "retro-vis-internal", ledger="internal", unit_id=U_NS1)
     set_status(db, june, "approved")
-    adjust(db, employee=open_one, ledger="official")
-    adjust(db, employee=hidden, ledger="supplementary")
+    employ(db, open_one, U_NS1)
+    employ(db, hidden, U_NS1)
+    adjust(db, employee=open_one, ledger="official", unit_id=U_NS1)
+    adjust(db, employee=hidden, ledger="internal", unit_id=U_NS1)
 
-    with as_app_user(db, USER_ACCOUNTANT):
+    with as_app_user(db, USER_MANAGER):
         seen = db.execute(
             "select ledger from retro_adjustments order by ledger"
         ).fetchall()
-    assert seen == [("official",)], "бухгалтеру виден дополнительный регистр"
+    assert seen == [("official",)], "управляющему виден внутренний регистр"
 
     with as_app_user(db, USER_DIRECTOR):
         assert len(db.execute("select 1 from retro_adjustments").fetchall()) == 2
@@ -846,18 +856,34 @@ def test_a_month_that_did_not_change_has_no_drift_at_all(web_env, june_approved,
 
 
 def test_the_accountant_sees_exactly_the_official_part_of_the_drift(web_env, june_approved):
-    """Правка задела все регистры — бухгалтер видит свой и ровно его.
+    """Правка задела все регистры — роль с суженным набором видит свой и ровно его.
+
+    После D036 у бухгалтера в сиде набор регистров полон, как у директора: без
+    отдельного условия «мой срез» совпал бы с «целиком», и равенство ниже
+    перестало бы что-либо проверять. Условие «право на перенос есть, регистры
+    неполны» делается явно, тем же помощником, что в `test_payrun.py` и
+    `test_payrun_jobs.py`: бухгалтеру на время теста в базе сужен набор до
+    официального.
+
+    Управляющий для этой подмены не годится: у него, кроме регистров, урезана
+    ещё и точка (D031, T044/T057), и сравнение «моя официальная часть = вся
+    официальная часть директора» рассыпалось бы по точке, а не по регистру —
+    то есть проверяло бы другое. `role_ledgers("accountant")` здесь не
+    используется — он читает список ролей из кода (`ROLES`), а не из базы, и не
+    заметил бы временного сужения; вместо него передаётся тот же список
+    явно, которым сужена роль.
 
     Сумма сверяется с официальной частью расхождения директора: «показали не
     всё» проверяется равенством, а не тем, что чужих слов на экране нет.
     """
+    from conftest import narrowed_ledgers
     from payrun import retro
 
     bump_rates("2")
 
-    with as_role("accountant"):
+    with narrowed_ledgers(web_env, "accountant", ["official"]), as_role("accountant"):
         mine = retro.drift(
-            june_approved.id, date(2026, 6, 1), visible_ledgers=role_ledgers("accountant")
+            june_approved.id, date(2026, 6, 1), visible_ledgers=["official"]
         )
     with as_role("director"):
         whole = retro.drift(
@@ -892,25 +918,34 @@ def test_the_page_of_an_unchanged_month_shows_no_drift_to_anyone(
 def test_the_page_shows_the_accountant_only_his_own_slice(client, web_env, june_approved):
     """Правка была — блок есть, и в нём ни одной чужой строки.
 
+    Та же подмена, что в `test_the_accountant_sees_exactly_the_official_part_of_the_drift`
+    (см. её docstring): после D036 у бухгалтера в сиде набор регистров полон,
+    поэтому набор на время теста сужен до официального прямо в базе
+    (`narrowed_ledgers`) — роль остаётся бухгалтером, а не переезжает на
+    управляющего, у которого вместе с регистрами урезана и точка.
+
     Чужого регистра не должно быть ни строкой, ни словом (D023): проверяется и
     отсутствие названий, и совпадение итога с официальной частью.
     """
+    from conftest import narrowed_ledgers
     from payrun import retro
     from web.format import money
 
     bump_rates("2")
-    login_as(client, "accountant")
-    html = body(client.get(page_of(client, date(2026, 6, 1), june_approved)))
 
-    assert "изменились после утверждения" in html, "своё расхождение показать обязаны"
-    assert "Дополнительный" not in html
-    assert "Внутренний" not in html
+    with narrowed_ledgers(web_env, "accountant", ["official"]):
+        login_as(client, "accountant")
+        html = body(client.get(page_of(client, date(2026, 6, 1), june_approved)))
 
-    with as_role("accountant"):
-        mine = retro.drift(
-            june_approved.id, date(2026, 6, 1), visible_ledgers=role_ledgers("accountant")
-        )
-    assert money(mine.total) in html, "на экране не та сумма, что даёт срез роли"
+        assert "изменились после утверждения" in html, "своё расхождение показать обязаны"
+        assert "Дополнительный" not in html
+        assert "Внутренний" not in html
+
+        with as_role("accountant"):
+            mine = retro.drift(
+                june_approved.id, date(2026, 6, 1), visible_ledgers=["official"]
+            )
+        assert money(mine.total) in html, "на экране не та сумма, что даёт срез роли"
 
 
 def test_the_transfer_moves_only_what_the_role_can_see(web_env, june_approved):

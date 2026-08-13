@@ -317,9 +317,22 @@ def test_the_accountant_does_not_freeze_a_row_although_the_right_is_there(db):
 
     Месяц бухгалтер утверждает по-прежнему: спорная строка его не держит, в
     этом вся T027.
+
+    После D036 у бухгалтера в сиде полный набор регистров — материала «право
+    есть, регистры не все» такая роль больше не даёт. Условие создано здесь
+    явно: набор сужается прямо в транзакции теста тем же владельцем схемы,
+    которым фикстура `db` заводит сид, — правка откатится вместе с ней.
+    Управляющий (D031) для этого не подходит: у него самого права
+    `payslip.freeze` нет, и его отказ проверял бы permissive-политику права,
+    а не эту restrictive-политику регистров.
     """
     payrun_id = payrun_in(db, "calculated")
     payslip = make_payslip(db, payrun_id, "freeze-accountant")
+    db.execute(
+        "update roles set visible_ledgers = '{official,supplementary}'::ledger[]"
+        " where tenant_id = %s and code = 'accountant'",
+        (T1,),
+    )
 
     with as_app_user(db, USER_ACCOUNTANT) as conn:
         error = rejected(

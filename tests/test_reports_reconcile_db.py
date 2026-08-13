@@ -24,16 +24,29 @@ from decimal import Decimal
 import openpyxl
 import pytest
 
-from conftest import PLATA_SAMPLE, body, login_as, period_url, wipe_payruns
+from conftest import PLATA_SAMPLE, body, login_as, narrowed_ledgers, period_url, wipe_payruns
 
 JUNE = "2026-06-01"
 
 # Ориентиры приёмки, снятые на данных сида (те же, что у ведомости, T028).
+#
+# У бухгалтера после D036 набор регистров полон, как у директора (равный
+# доступ), и её точки в сиде тоже не сужены — поэтому её число теперь равно
+# директорскому, а не отдельно снятому срезу. Ниже, где проверка именно про
+# роль с неполным набором, а не про бухгалтера как таковую, набор сужается
+# явно `narrowed_ledgers` — это единственная роль в сиде с правом
+# `payrun.calculate` и правом видеть все точки, поэтому воспроизвести старый
+# срез («видит всё, кроме части регистров») можно только на ней.
 CONTROL = {
     "director": Decimal("1951806.13"),
-    "accountant": Decimal("464752.41"),
+    "accountant": Decimal("1951806.13"),
     "manager": Decimal("891373.32"),
 }
+
+# Набор, до которого сужается бухгалтер там, где тест именно про роль с
+# неполным набором (см. комментарий к CONTROL выше). Значение то же, что был
+# её умолчательный набор до D036 — так контрольные суммы ниже не меняются.
+NARROWED_ACCOUNTANT = ["official"]
 
 HIDDEN_FROM_ACCOUNTANT = ("Дополнительный", "Внутренний", "supplementary", "internal")
 
@@ -245,20 +258,24 @@ def test_the_reconciliation_of_the_reference_table_matches(client, calculated_ju
 
 
 def test_the_reconciliation_never_reports_a_match_it_did_not_make(
-    client, calculated_june
+    client, web_env, calculated_june
 ):
     """Главная проверка T031 под ролью со скрытыми итогами.
 
     Нето, бруто и взносы посчитаны по строке ведомости целиком, поэтому база
-    отдаёт их только роли, которой видны все регистры (T071). У бухгалтера их
-    нет — и сверка обязана сказать это прямо, а не отрапортовать совпадение.
+    отдаёт их только роли, которой видны все регистры (T071). У бухгалтера
+    после D036 они есть — её набор полон, как у директора, — поэтому сюда
+    нужна роль с её же правами, но урезанным набором: он собирается явно
+    `narrowed_ledgers` (см. комментарий у `CONTROL`), а не берётся из умолчаний
+    сида, которых для такого сочетания прав больше нет.
 
     Ловушка, ради которой тест написан: пустое `all()` даёт истину. Строка, в
     которой нечего было сравнивать, без различения «сравнивали» и «сошлось»
-    попадала бы в сошедшиеся, и бухгалтер прочитал бы «сошлось до копейки» по
-    расчёту, которого он не видел.
+    попадала бы в сошедшиеся, и роль прочитала бы «сошлось до копейки» по
+    расчёту, которого не видела.
     """
-    html = reconcile_page(client, "accountant")
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        html = reconcile_page(client, "accountant")
     counts = summary(html)
 
     assert counts["Сверены только входы — деньги не сравнивались"] == 32, (
@@ -300,11 +317,17 @@ def test_the_reconciliation_never_shows_our_numbers_for_a_row_it_cannot_see(
     Поэтому по строке без отданных итогов не показывается **ни одного нашего
     числа**: ни суммы, ни разницы. Проверяется самими числами расчёта, а не
     наличием раздела на странице.
-    """
-    html = reconcile_page(client, "accountant")
 
-    for word in HIDDEN_FROM_ACCOUNTANT:
-        assert word not in html, f"на странице сверки бухгалтера есть «{word}»"
+    Роль с реально урезанным набором собирается явно (см. `CONTROL`): у
+    бухгалтера после D036 набор полон, а у управляющего сужен вместе с точкой,
+    и совпавшую с этим тестом форму — «все точки, часть регистров» — в сиде
+    больше никто не даёт.
+    """
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        html = reconcile_page(client, "accountant")
+
+        for word in HIDDEN_FROM_ACCOUNTANT:
+            assert word not in html, f"на странице сверки бухгалтера есть «{word}»"
 
     hidden = withheld_totals(web_env)
     assert len(hidden) >= 30, f"нечего проверять: итогов в расчёте {len(hidden)}"
@@ -444,13 +467,20 @@ def test_the_payout_export_repeats_the_screen_row_for_row(client, calculated_jun
 
 @pytest.mark.parametrize("kind", ["payout", "pnl", "partner"])
 def test_no_export_of_the_accountant_knows_about_other_ledgers(
-    client, calculated_june, kind
+    client, web_env, calculated_june, kind
 ):
-    """Главная проверка T032: чужого регистра в файле нет ни в каком виде."""
-    text = text_of(download(client, "accountant", kind))
+    """Главная проверка T032: чужого регистра в файле нет ни в каком виде.
 
-    for word in HIDDEN_FROM_ACCOUNTANT:
-        assert word not in text, f"{kind}: в файле бухгалтера есть «{word}»"
+    После D036 у бухгалтера набор регистров полон, и по умолчанию она про
+    другие регистры знает законно. Роль с её же правами и урезанным набором
+    собирается явно `narrowed_ledgers` (см. `CONTROL`) — так же, как выше на
+    сверке того же файла.
+    """
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        text = text_of(download(client, "accountant", kind))
+
+        for word in HIDDEN_FROM_ACCOUNTANT:
+            assert word not in text, f"{kind}: в файле бухгалтера есть «{word}»"
 
 
 def test_the_export_of_a_cut_holds_exactly_that_cut(client, calculated_june):
@@ -467,12 +497,20 @@ def test_the_export_of_a_cut_holds_exactly_that_cut(client, calculated_june):
     )
 
 
-def test_a_cut_the_role_cannot_see_gives_the_same_file_as_no_cut(client, calculated_june):
-    """Подобранный `?ledger=internal` у бухгалтера — её обычная выгрузка."""
-    guessed = download(client, "accountant", "payout", "?ledger=internal")
-    plain = download(client, "accountant", "payout")
+def test_a_cut_the_role_cannot_see_gives_the_same_file_as_no_cut(
+    client, web_env, calculated_june
+):
+    """Подобранный `?ledger=internal` у роли, которой он не виден, — её обычная выгрузка.
 
-    assert text_of(guessed) == text_of(plain)
+    После D036 бухгалтеру внутренний регистр виден, и адрес перестал быть для
+    неё подобранным. Роль с урезанным набором собирается явно `narrowed_ledgers`
+    (см. `CONTROL`), чтобы проверка снова стояла на настоящем ограничении.
+    """
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        guessed = download(client, "accountant", "payout", "?ledger=internal")
+        plain = download(client, "accountant", "payout")
+
+        assert text_of(guessed) == text_of(plain)
 
 
 def test_the_pnl_export_splits_accruals_from_taxes(client, calculated_june):

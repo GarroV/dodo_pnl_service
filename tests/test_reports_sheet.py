@@ -26,18 +26,32 @@ from html.parser import HTMLParser
 
 import pytest
 
-from conftest import body, login_as, period_url, wipe_payruns
+from conftest import body, login_as, narrowed_ledgers, period_url, wipe_payruns
 
 JUNE = "2026-06-01"
 
 # Ориентир приёмки, снятый на данных сида. Три роли перебираются не для
 # полноты: дефект видимости — это всегда расхождение между ролями, и одной
 # ролью он не виден.
+#
+# После D036 у бухгалтера набор регистров полон, как у директора, и её точки
+# в сиде тоже не сужены — её строки и итог теперь равны директорским. Роль с
+# реально урезанным набором собирается ниже явно `narrowed_ledgers`, где
+# проверка именно про ограничение, а не про бухгалтера как таковую (см.
+# `NARROWED_ACCOUNTANT`).
 CONTROL = {
     "director": (60, Decimal("1951806.13")),
-    "accountant": (33, Decimal("464752.41")),
+    "accountant": (60, Decimal("1951806.13")),
     "manager": (24, Decimal("891373.32")),
 }
+
+# Набор, до которого сужается бухгалтер там, где нужна роль с её правами и
+# урезанным набором (единственная в сиде с правом видеть все точки и
+# `payrun.calculate` — управляющий этого сочетания не даёт, см. D031).
+NARROWED_ACCOUNTANT = ["official"]
+# Итог ведомости под этим набором — тот самый, что был её умолчательным
+# итогом до D036 (см. `CONTROL` в `test_reports_reconcile_db.py`).
+NARROWED_ACCOUNTANT_TOTAL = Decimal("464752.41")
 
 HIDDEN_FROM_ACCOUNTANT = ("Дополнительный", "Внутренний")
 
@@ -282,12 +296,18 @@ def test_the_total_equals_the_visible_rows_for_every_role(client, calculated_jun
         assert assert_total_matches_rows(html, user) == total
 
 
-def test_the_accountant_is_never_told_that_other_ledgers_exist(client, calculated_june):
-    """Ни строкой, ни разрезом, ни пустой кнопкой (D023)."""
-    html = page(client, "accountant")
-    assert ledgers_shown(html) == {"Официальный"}
-    for name in HIDDEN_FROM_ACCOUNTANT:
-        assert name not in html, f"на странице бухгалтера есть слово «{name}»"
+def test_the_accountant_is_never_told_that_other_ledgers_exist(client, web_env, calculated_june):
+    """Ни строкой, ни разрезом, ни пустой кнопкой (D023).
+
+    После D036 у бухгалтера набор регистров полон, поэтому проверка держится
+    на роли с её правами, но урезанной явно `narrowed_ledgers` — иначе она
+    проверяла бы обычное поведение равного директору доступа, а не D023.
+    """
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        html = page(client, "accountant")
+        assert ledgers_shown(html) == {"Официальный"}
+        for name in HIDDEN_FROM_ACCOUNTANT:
+            assert name not in html, f"на странице бухгалтера есть слово «{name}»"
 
 
 def test_the_manager_sees_a_switcher_with_exactly_his_two_ledgers(client, calculated_june):
@@ -312,14 +332,22 @@ def test_a_cut_keeps_the_total_equal_to_the_visible_rows(client, calculated_june
     )
 
 
-def test_a_cut_the_role_cannot_see_shows_the_same_page_as_no_cut(client, calculated_june):
-    """Бухгалтер, набравшая `?ledger=internal`, видит свою обычную ведомость."""
-    guessed = page(client, "accountant", "?ledger=internal")
-    plain = page(client, "accountant")
+def test_a_cut_the_role_cannot_see_shows_the_same_page_as_no_cut(
+    client, web_env, calculated_june
+):
+    """Роль без внутреннего регистра, набравшая `?ledger=internal`, видит свою обычную ведомость.
 
-    assert shown_total(guessed) == shown_total(plain) == CONTROL["accountant"][1]
-    for name in HIDDEN_FROM_ACCOUNTANT:
-        assert name not in guessed
+    После D036 у бухгалтера внутренний регистр виден, и адрес перестал быть
+    для неё подобранным — поэтому здесь та же урезанная явно роль, что и в
+    предыдущей проверке, а не её настоящий набор.
+    """
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        guessed = page(client, "accountant", "?ledger=internal")
+        plain = page(client, "accountant")
+
+        assert shown_total(guessed) == shown_total(plain) == NARROWED_ACCOUNTANT_TOTAL
+        for name in HIDDEN_FROM_ACCOUNTANT:
+            assert name not in guessed
 
 
 def test_the_page_total_equals_what_the_database_gives_her_role(client, web_env, calculated_june):

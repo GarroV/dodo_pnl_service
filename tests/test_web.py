@@ -32,6 +32,11 @@ def ledger_rows(web_env):
     Кладём мимо ORM и мимо политик (суперпользователем): здесь проверяется
     показ, а не расчёт, и суммы должны быть узнаваемыми в HTML.
 
+    Сотрудник и строка ведомости — явно на точке NS1 (точка управляющего,
+    см. `test_accountant_does_not_see_other_ledgers`). Без этого случайно
+    выбранный сотрудник другой точки пропал бы у управляющего по видимости
+    точки (T044/T057), и проверка регистров вышла бы зелёной по чужой причине.
+
     Расчёты сносим: в той же базе работает `test_payrun`, и без этого итоги
     зависели бы от того, считал ли кто-то период до нас.
     """
@@ -40,9 +45,15 @@ def ledger_rows(web_env):
     wipe_payruns(web_env)
     with psycopg.connect(web_env, autocommit=True) as conn:
         tenant = conn.execute("select id from tenants where code = 'rs-dev'").fetchone()[0]
+        unit_ns1 = conn.execute(
+            "select id from units where tenant_id = %s and code = 'NS1'", (tenant,)
+        ).fetchone()[0]
         employee = conn.execute(
-            "select id from employees where tenant_id = %s order by external_id limit 1",
-            (tenant,),
+            """select e.id from employees e
+                 join employment_terms t on t.employee_id = e.id
+                where e.tenant_id = %s and t.unit_id = %s
+                order by e.external_id limit 1""",
+            (tenant, unit_ns1),
         ).fetchone()[0]
         payrun = conn.execute(
             """insert into payruns (tenant_id, period) values (%s, %s)
@@ -51,9 +62,9 @@ def ledger_rows(web_env):
             (tenant, JUNE),
         ).fetchone()[0]
         payslip = conn.execute(
-            """insert into payslips (tenant_id, payrun_id, employee_id)
-               values (%s, %s, %s) returning id""",
-            (tenant, payrun, employee),
+            """insert into payslips (tenant_id, payrun_id, employee_id, unit_id)
+               values (%s, %s, %s, %s) returning id""",
+            (tenant, payrun, employee, unit_ns1),
         ).fetchone()[0]
         for ledger, amount in (
             ("official", AMOUNT_OFFICIAL),
@@ -198,10 +209,16 @@ def test_period_page_without_login_sends_to_the_entrance(client):
 
 
 def test_accountant_does_not_see_other_ledgers(client, ledger_rows):
-    """Главная проверка: бухгалтеру не видно ни строк чужих регистров, ни их вклада.
+    """Главная проверка: управляющему не видно строк внутреннего регистра, ни их вклада.
 
-    Итог считается по видимому срезу (D023), поэтому у бухгалтера и у директора
-    он обязан отличаться.
+    Была роль бухгалтера — после D036 её набор регистров полон, как у
+    директора, и «не видит внутреннего» перестало бы что-либо доказывать (она
+    его увидела бы законно). Управляющему точки внутренний регистр не открыт
+    (D031), официальный и дополнительный — открыты, и это тоже проверяется:
+    иначе непонятно, срез это или дырка в другую сторону.
+
+    Итог считается по видимому срезу (D023), поэтому у управляющего и у
+    директора он обязан отличаться.
     """
     from web.format import money
 
@@ -212,12 +229,13 @@ def test_accountant_does_not_see_other_ledgers(client, ledger_rows):
     assert money(AMOUNT_INTERNAL) in director
     assert money(AMOUNT_OFFICIAL + AMOUNT_SUPPLEMENTARY + AMOUNT_INTERNAL) in director
 
-    login_as(client, "accountant")
-    accountant = body(client.get(period_url(client)))
-    assert money(AMOUNT_OFFICIAL) in accountant
-    assert money(AMOUNT_SUPPLEMENTARY) not in accountant
-    assert money(AMOUNT_INTERNAL) not in accountant
-    assert money(AMOUNT_OFFICIAL + AMOUNT_SUPPLEMENTARY + AMOUNT_INTERNAL) not in accountant
+    login_as(client, "manager")
+    manager = body(client.get(period_url(client)))
+    assert money(AMOUNT_OFFICIAL) in manager, "официальный регистр управляющему открыт"
+    assert money(AMOUNT_SUPPLEMENTARY) in manager, "дополнительный регистр управляющему открыт"
+    assert money(AMOUNT_INTERNAL) not in manager
+    assert money(AMOUNT_OFFICIAL + AMOUNT_SUPPLEMENTARY + AMOUNT_INTERNAL) not in manager
+    assert money(AMOUNT_OFFICIAL + AMOUNT_SUPPLEMENTARY) in manager, "итог обязан быть по срезу"
 
 
 def test_switching_user_changes_who_you_are(client):

@@ -28,7 +28,7 @@ from datetime import timedelta
 
 import pytest
 
-from conftest import body, login_as, period_url, wipe_payruns
+from conftest import body, login_as, narrowed_ledgers, period_url, wipe_payruns
 
 JUNE = "2026-06-01"
 
@@ -416,19 +416,30 @@ def test_the_task_rechecks_the_right_to_calculate(clean_payruns):
 
 
 def test_the_task_rechecks_visible_ledgers(clean_payruns):
-    """Бухгалтеру фон не даёт того, чего не даёт синхронный расчёт."""
+    """Роли с неполным набором регистров фон не даёт того, чего не даёт синхронный расчёт.
+
+    После D036 у бухгалтера в сиде набор регистров полон, как у директора, —
+    расчёт ему не откажет вовсе, и проверка перестала бы что-либо доказывать.
+    Управляющий точки набор имеет неполный (D031), но у него нет самого права
+    `payrun.calculate` — тогда отказ пришёл бы от прав, а не от регистров, и
+    тест красил бы не ту причину (см. `test_the_task_rechecks_the_right_to_calculate`
+    ровно об этом). Поэтому условие «право есть, регистры неполны» делается
+    явно: у бухгалтера, у которого право на месте, набор на время теста сужен
+    до официального — так же, как в `test_payrun.py`.
+    """
     from payrun import jobs
 
     dsn = clean_payruns
     tenant_id, users = tenant_and_users(dsn)
     job_id = make_job(dsn, tenant_id=tenant_id, actor_id=users["accountant"])
 
-    jobs.run_job(job_id, users["accountant"])
+    with narrowed_ledgers(dsn, "accountant", ["official"]):
+        jobs.run_job(job_id, users["accountant"])
 
-    row = job_row(dsn, job_id)
-    assert row["status"] == "failed"
-    assert "регистр" in row["error"].lower()
-    assert payslip_count(dsn) == 0
+        row = job_row(dsn, job_id)
+        assert row["status"] == "failed"
+        assert "регистр" in row["error"].lower()
+        assert payslip_count(dsn) == 0
 
 
 def test_an_approved_period_is_not_recalculated_by_the_queue(clean_payruns):
@@ -649,18 +660,27 @@ def test_the_finished_job_stops_the_page_from_polling(client, clean_payruns):
 
 
 def test_the_failed_job_shows_its_reason_on_the_page(client, clean_payruns):
-    """Отказ фоновой задачи виден человеку тем же текстом, что и синхронный."""
+    """Отказ фоновой задачи виден человеку тем же текстом, что и синхронный.
+
+    Та же ловушка, что в `test_the_task_rechecks_visible_ledgers`: после D036
+    бухгалтеру в сиде отказывать по регистрам стало не на чём. Условие «право
+    на расчёт есть, набор регистров сужен» делается явно тем же помощником —
+    роль остаётся бухгалтером (у него есть `payrun.calculate`), только на время
+    теста ей сужен набор до официального.
+    """
     from payrun import jobs
 
     dsn = clean_payruns
     tenant_id, users = tenant_and_users(dsn)
     job_id = make_job(dsn, tenant_id=tenant_id, actor_id=users["accountant"])
-    jobs.run_job(job_id, users["accountant"])
-    assert job_row(dsn, job_id)["status"] == "failed"
 
-    login_as(client, "accountant")
-    html = body(client.get(period_url(client)))
-    assert "регистр" in html.lower()
+    with narrowed_ledgers(dsn, "accountant", ["official"]):
+        jobs.run_job(job_id, users["accountant"])
+        assert job_row(dsn, job_id)["status"] == "failed"
+
+        login_as(client, "accountant")
+        html = body(client.get(period_url(client)))
+        assert "регистр" in html.lower()
 
 
 def test_a_job_of_another_tenant_is_invisible(client, clean_payruns):

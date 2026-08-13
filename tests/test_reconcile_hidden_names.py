@@ -38,9 +38,11 @@
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 import pytest
 
-from conftest import JUNE, PLATA_SAMPLE, body, login_as, period_url, wipe_payruns
+from conftest import JUNE, PLATA_SAMPLE, body, login_as, narrowed_ledgers, period_url, wipe_payruns
 from test_reports_reconcile_db import section_rows, summary
 
 SECTION = "Есть в расчёте, нет в таблице"
@@ -49,10 +51,32 @@ NOT_CHECKED = "не проверялось"
 # Регистры каждой роли сида. Списки разные и снимаются не друг с друга: «чего не
 # видно» — свойство роли, и общая константа однажды объявила бы утечкой её
 # собственные данные.
+#
+# После D036 у бухгалтера в сиде набор полон (как у директора), и она сама
+# больше не демонстрирует случай «расчёт отдан не весь» — держит его теперь
+# только управляющий (D031). Запись для бухгалтера здесь не история, а условие,
+# которое ниже создаётся явно `narrowed_ledgers`: без него в продукте роли с
+# такими правами и таким набором просто нет.
 LEDGERS = {
     "accountant": ["official"],
     "manager": ["official", "supplementary"],
 }
+
+
+@contextmanager
+def role_with_ledgers(web_env, user: str):
+    """Дать роли ровно тот набор регистров, на котором держится этот тест.
+
+    Управляющему сужать нечего — её набор в сиде и так неполон (D031). А у
+    бухгалтера после D036 набор полон, и без явного сужения `narrowed_ledgers`
+    все проверки ниже проверяли бы не утечку, а обычное поведение роли с
+    равным директору доступом.
+    """
+    if user == "accountant":
+        with narrowed_ledgers(web_env, "accountant", LEDGERS[user]):
+            yield
+    else:
+        yield
 
 
 @pytest.fixture
@@ -143,10 +167,11 @@ def names_hidden_from(ledgers: list[str]) -> list[str]:
 
 @pytest.mark.parametrize("user", ["accountant", "manager"])
 def test_the_reconciliation_names_nobody_from_a_ledger_the_role_cannot_see(
-    client, calculated_june, user
+    client, web_env, calculated_june, user
 ):
     """Ровно та утечка, ради которой задача: фамилии людей скрытого регистра."""
-    html = reconcile_page(client, user)
+    with role_with_ledgers(web_env, user):
+        html = reconcile_page(client, user)
     hidden = names_hidden_from(LEDGERS[user])
 
     for name in hidden:
@@ -162,7 +187,7 @@ def test_the_reconciliation_names_nobody_from_a_ledger_the_role_cannot_see(
 
 @pytest.mark.parametrize("user", ["accountant", "manager"])
 def test_every_name_on_the_page_came_from_the_file_the_person_brought(
-    client, calculated_june, user
+    client, web_env, calculated_june, user
 ):
     """Инвариант шире списка курьеров: имя со **своей** стороны не показывается.
 
@@ -170,7 +195,8 @@ def test_every_name_on_the_page_came_from_the_file_the_person_brought(
     рассказывает про расчёт, которого роли не показывали. Кто именно окажется
     в этой разности — вопрос данных, а не устройства.
     """
-    html = reconcile_page(client, user)
+    with role_with_ledgers(web_env, user):
+        html = reconcile_page(client, user)
 
     for name in names_outside_the_file():
         assert name not in html, (
@@ -181,28 +207,30 @@ def test_every_name_on_the_page_came_from_the_file_the_person_brought(
 
 @pytest.mark.parametrize("user", ["accountant", "manager"])
 def test_the_section_about_the_calculation_is_not_shown_to_that_role(
-    client, calculated_june, user
+    client, web_env, calculated_june, user
 ):
     """Раздела нет — ни со строками, ни пустого.
 
     Пустая таблица под этим заголовком читается как «в расчёте нет никого сверх
     вашей таблицы», а это утверждение о расчёте, которого роль не видела.
     """
-    html = reconcile_page(client, user)
+    with role_with_ledgers(web_env, user):
+        html = reconcile_page(client, user)
 
     assert f"<h2>{SECTION}</h2>" not in html, f"{user}: раздел показан"
 
 
 @pytest.mark.parametrize("user", ["accountant", "manager"])
 def test_the_summary_says_plainly_that_this_was_not_checked(
-    client, calculated_june, user
+    client, web_env, calculated_june, user
 ):
     """Молча убрать строку сводки нельзя: пропажа читается как «всё в порядке».
 
     И ноль здесь тоже неправда. Проверяется значением из сводки, а не наличием
     слова на странице: слово могло бы стоять где угодно и ничего не значить.
     """
-    html = reconcile_page(client, user)
+    with role_with_ledgers(web_env, user):
+        html = reconcile_page(client, user)
     counts = summary(html)
 
     assert counts[SECTION] == NOT_CHECKED, (

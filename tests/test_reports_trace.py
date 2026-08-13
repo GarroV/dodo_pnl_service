@@ -26,10 +26,18 @@ from html.parser import HTMLParser
 
 import pytest
 
-from conftest import body, login_as, period_url, wipe_payruns
+from conftest import body, login_as, narrowed_ledgers, period_url, wipe_payruns
 
 JUNE = date(2026, 6, 1)
 MIN_RATE = Decimal("371")
+
+# После D036 у бухгалтера набор регистров полон, как у директора, и она не
+# демонстрирует ограничение по умолчанию. Там, где проверка именно про D023 —
+# что чужой регистр не встречается на следе ни в каком виде — роль с её
+# правами и урезанным до этого набором собирается явно `narrowed_ledgers`:
+# только у неё в сиде есть право видеть все точки одновременно с
+# `payrun.calculate`, а управляющий этого сочетания не даёт (D031).
+NARROWED_ACCOUNTANT = ["official"]
 
 
 # --- материал для проверок без базы ------------------------------------------
@@ -463,16 +471,19 @@ def test_the_trace_page_adds_up_to_the_row_it_came_from(client, calculated_june,
         assert steps_add_up(html, f"{user} / {url}") == row_total
 
 
-def test_the_accountant_never_meets_another_ledger_on_the_trace(client, calculated_june):
+def test_the_accountant_never_meets_another_ledger_on_the_trace(
+    client, web_env, calculated_june
+):
     """Ни в шагах, ни в подписях, ни в производных величинах (D023)."""
-    login_as(client, "accountant")
-    for url, _ in sheet_rows(client, "accountant")[:8]:
-        html = body(client.get(url))
-        for name in ("Дополнительный", "Внутренний"):
-            assert name not in html, f"на следе бухгалтера есть слово «{name}»: {url}"
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        login_as(client, "accountant")
+        for url, _ in sheet_rows(client, "accountant")[:8]:
+            html = body(client.get(url))
+            for name in ("Дополнительный", "Внутренний"):
+                assert name not in html, f"на следе бухгалтера есть слово «{name}»: {url}"
 
 
-def test_the_trace_always_says_which_cut_it_shows(client, calculated_june):
+def test_the_trace_always_says_which_cut_it_shows(client, web_env, calculated_june):
     """T096: подпись разреза не исчезает от подобранного чужого `?ledger=`.
 
     Разрез, которого роли не видно, `_chosen_cut` честно сводит ко «всем
@@ -484,50 +495,61 @@ def test_the_trace_always_says_which_cut_it_shows(client, calculated_june):
 
     Проверяется обоими концами: на своём разрезе подпись называет его, на чужом
     и без параметра — «все видимые», и ни в одном случае не называет чужого
-    регистра (D023).
+    регистра (D023). Регистр «чужой» ровно потому, что роль сужена явно (см.
+    `NARROWED_ACCOUNTANT`): у настоящей бухгалтерской роли после D036 набор
+    полон, и «Дополнительный»/«Внутренний» на её следе были бы законны.
     """
-    login_as(client, "accountant")
-    url, _total = sheet_rows(client, "accountant")[0]
-    base = url.split("?")[0]
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        login_as(client, "accountant")
+        url, _total = sheet_rows(client, "accountant")[0]
+        base = url.split("?")[0]
 
-    plain = body(client.get(base))
-    mine = body(client.get(base + "?ledger=official"))
-    theirs = body(client.get(base + "?ledger=internal"))
+        plain = body(client.get(base))
+        mine = body(client.get(base + "?ledger=official"))
+        theirs = body(client.get(base + "?ledger=internal"))
 
-    assert "разрез: Официальный" in mine
-    for html, what in ((plain, "без параметра"), (theirs, "с чужим разрезом")):
-        assert "разрез:" in html, f"след {what} не говорит, какой срез показывает"
-        assert "разрез: Все регистры" in html, (
-            f"след {what} назвал разрез иначе, чем переключатель ведомости"
+        assert "разрез: Официальный" in mine
+        for html, what in ((plain, "без параметра"), (theirs, "с чужим разрезом")):
+            assert "разрез:" in html, f"след {what} не говорит, какой срез показывает"
+            assert "разрез: Все регистры" in html, (
+                f"след {what} назвал разрез иначе, чем переключатель ведомости"
+            )
+            # Проверяются названия, а не код из адреса: код человек подставил сам,
+            # и он честно возвращается в ссылках переключателя языка. Сообщением
+            # продукта было бы название — его нет ни при каком параметре.
+            for name in ("Внутренний", "Дополнительный"):
+                assert name not in html, f"след {what} назвал «{name}»"
+
+        # И ответ на подобранный чужой разрез неотличим от ответа без него: иначе
+        # перебором параметров узнаётся, какие регистры вообще существуют.
+        csrf = re.compile(r'name="csrfmiddlewaretoken" value="[^"]+"')
+        assert csrf.sub("", theirs.replace("?ledger=internal", "")) == csrf.sub("", plain), (
+            "след с чужим разрезом отличается от следа без разреза"
         )
-        # Проверяются названия, а не код из адреса: код человек подставил сам,
-        # и он честно возвращается в ссылках переключателя языка. Сообщением
-        # продукта было бы название — его нет ни при каком параметре.
-        for name in ("Внутренний", "Дополнительный"):
-            assert name not in html, f"след {what} назвал «{name}»"
-
-    # И ответ на подобранный чужой разрез неотличим от ответа без него: иначе
-    # перебором параметров узнаётся, какие регистры вообще существуют.
-    csrf = re.compile(r'name="csrfmiddlewaretoken" value="[^"]+"')
-    assert csrf.sub("", theirs.replace("?ledger=internal", "")) == csrf.sub("", plain), (
-        "след с чужим разрезом отличается от следа без разреза"
-    )
 
 
 def test_the_trace_of_a_foreign_row_is_indistinguishable_from_a_missing_one(
-    client, calculated_june
+    client, web_env, calculated_june
 ):
-    """Чужая строка и несуществующая отвечают одинаково — 404 без подробностей."""
-    director = sheet_rows(client, "director")
-    accountant = {url.split("/")[2] for url, _ in sheet_rows(client, "accountant")}
-    foreign = next(
-        url for url, _ in director if url.split("/")[2] not in accountant
-    )
+    """Чужая строка и несуществующая отвечают одинаково — 404 без подробностей.
 
-    login_as(client, "accountant")
-    missing = client.get("/payslips/00000000-0000-0000-0000-000000000000/trace/")
-    theirs = client.get(foreign)
-    assert theirs.status_code == missing.status_code == 404
+    После D036 у настоящей бухгалтерской роли строк, ей не видных, не остаётся
+    вовсе (набор полон, как у директора) — искать «чужую» строку было бы негде.
+    Роль с урезанным набором собирается явно (см. `NARROWED_ACCOUNTANT`): у неё,
+    как и у прежней бухгалтерской роли по умолчанию, строки на 100% чужого
+    регистра не попадают даже в её ведомость.
+    """
+    director = sheet_rows(client, "director")
+    with narrowed_ledgers(web_env, "accountant", NARROWED_ACCOUNTANT):
+        accountant = {url.split("/")[2] for url, _ in sheet_rows(client, "accountant")}
+        foreign = next(
+            url for url, _ in director if url.split("/")[2] not in accountant
+        )
+
+        login_as(client, "accountant")
+        missing = client.get("/payslips/00000000-0000-0000-0000-000000000000/trace/")
+        theirs = client.get(foreign)
+        assert theirs.status_code == missing.status_code == 404
 
 
 def test_the_page_says_the_trace_is_rebuilt_and_whether_it_still_agrees(

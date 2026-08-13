@@ -366,18 +366,28 @@ def test_the_form_offers_a_date_that_does_not_touch_the_closed_month(
 def test_the_rules_never_name_a_ledger_the_role_cannot_see(client, sql):
     """Роль без внутреннего регистра не узнаёт о нём из правил.
 
-    Право выдаётся бухгалтеру временно: сегодня `rules.manage` есть только у
+    Право выдаётся управляющему временно: сегодня `rules.manage` есть только у
     администратора, и проверить срез было бы не на ком — а завтра партнёр
-    выдаст правила тому, кто видит один официальный регистр.
+    выдаст правила тому, кто видит не все регистры.
+
+    Роль для подмены раньше была бухгалтером — у него в сиде стоял один
+    официальный регистр. После D036 бухгалтеру открыты все три, как директору,
+    и подмена на нём перестала бы доказывать срез: он увидел бы курьеров
+    (внутренний регистр) законно. Управляющий точки видит официальный и
+    дополнительный, но не внутренний (D031) — единственная роль в сиде с
+    по-прежнему неполным набором. Дополнительный регистр (группа `kitchen`)
+    проверяется отдельно как контроль: он обязан остаться на месте, иначе
+    непонятно, срез это или дырка в другую сторону.
     """
     sql.execute(
         "update roles set permissions = permissions || '[\"rules.manage\"]'::jsonb "
-        "where code = 'accountant' and tenant_id is not null"
+        "where code = 'manager' and tenant_id is not null"
     )
     try:
-        login_as(client, "accountant")
+        login_as(client, "manager")
         html = body(client.get("/rules/"))
         assert "groups.office" in html, "срез отобрал вообще всё — проверять нечего"
+        assert "groups.kitchen" in html, "дополнительный регистр управляющему открыт (D031)"
         assert "couriers" not in html, "внутренний регистр назван в правилах"
         assert "internal" not in html, "внутренний регистр назван в правилах"
         # И по прямому адресу правило чужого регистра не открывается.
@@ -386,7 +396,7 @@ def test_the_rules_never_name_a_ledger_the_role_cannot_see(client, sql):
     finally:
         sql.execute(
             "update roles set permissions = permissions - 'rules.manage' "
-            "where code = 'accountant' and tenant_id is not null"
+            "where code = 'manager' and tenant_id is not null"
         )
 
 
