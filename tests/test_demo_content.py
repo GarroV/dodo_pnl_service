@@ -238,12 +238,20 @@ import io, json
 from datetime import date
 from core.models import Tenant
 from demo.accountant_table import build_accountant_table
+from demo.seed import det_id
 from demo.table import accountant_rows
 from reports.reconcile import reconcile
+from web.dbcontext import db_context
 period = date(2026, 6, 1)
 book = build_accountant_table(accountant_rows(period))
 t = Tenant.objects.get(code="demo")
-r = reconcile(io.BytesIO(book), tenant_id=t.id, period=period)
+# Сверка спрашивает базу, отдан ли роли расчёт целиком (T100), поэтому
+# зовётся с выставленным контекстом — тем же `db_context`, каким ходит
+# фоновая задача. Без контекста ответ базы «расчёта вам не отдали», и
+# сверка молчит о нём: это правильное поведение (D014), но проверять на
+# нём состояния экрана нельзя — посетитель демо всегда кем-то вошёл.
+with db_context(det_id("user", "director")):
+    r = reconcile(io.BytesIO(book), tenant_id=t.id, period=period)
 print(json.dumps({
     "matched": sum(1 for line in r.lines if line.matched),
     "off": sum(1 for line in r.lines
