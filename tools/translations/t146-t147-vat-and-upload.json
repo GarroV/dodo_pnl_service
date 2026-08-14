@@ -1,0 +1,102 @@
+{
+  "«%(label)s»: ставки больше 100%% не бывает.": {
+    "en": "\"%(label)s\": a rate over 100%% is not possible.",
+    "sr": "„%(label)s“: stopa preko 100%% nije moguća."
+  },
+  "В Сербии 20 или 10. Пусто — налог не выделяем: в P&L такая трата пойдёт полной суммой. С заполненной ставкой в P&L по умолчанию поедет сумма без НДС.": {
+    "en": "In Serbia it is 20 or 10. Empty — no tax is split out: the expense goes into the P&L at its full amount. With a rate set, the P&L defaults to the amount excluding VAT.",
+    "sr": "U Srbiji je 20 ili 10. Prazno — porez se ne izdvaja: trošak u P&L ide u punom iznosu. Sa popunjenom stopom u P&L po podrazumevanoj vrednosti ide iznos bez PDV-a."
+  },
+  "В справочнике остались статьи, которых в файле нет: %(codes)s. Продукт их не трогает — закройте датой те, что больше не нужны.": {
+    "en": "The catalog still has items that are not in the file: %(codes)s. The product leaves them as is — close the ones you no longer need with a date.",
+    "sr": "U šifarniku su ostale stavke kojih nema u fajlu: %(codes)s. Proizvod ih ne dira — zatvorite datumom one koje više nisu potrebne."
+  },
+  "В файле не нашлась колонка с названием статьи. Назовите её «Название», «Naziv» или «Name» — по остальным колонкам продукт разберётся сам.": {
+    "en": "The file has no column with the item's name. Name it \"Название\", \"Naziv\" or \"Name\" — the product will work out the rest of the columns itself.",
+    "sr": "U fajlu nije pronađena kolona sa nazivom stavke. Nazovite je „Название“, „Naziv“ ili „Name“ — ostale kolone će proizvod sam prepoznati."
+  },
+  "В файле не нашлось ни одной статьи: под строкой заголовков пусто.": {
+    "en": "The file has no items at all: there is nothing below the header row.",
+    "sr": "U fajlu nije pronađena nijedna stavka: ispod reda sa zaglavljima je prazno."
+  },
+  "Загружено: %(new)s новых, %(same)s без изменений, %(fixed)s обновлено.": {
+    "en": "Uploaded: %(new)s new, %(same)s unchanged, %(fixed)s updated.",
+    "sr": "Učitano: %(new)s novih, %(same)s bez izmena, %(fixed)s ažurirano."
+  },
+  "Загрузить из файла": {
+    "en": "Upload from file",
+    "sr": "Učitaj iz fajla"
+  },
+  "НДС": {
+    "en": "VAT",
+    "sr": "PDV"
+  },
+  "Не загружено.": {
+    "en": "Not uploaded.",
+    "sr": "Nije učitano."
+  },
+  "Не задана — такие строки будут пропущены": {
+    "en": "Not set — such rows will be skipped",
+    "sr": "Nije podešeno — takvi redovi će biti preskočeni"
+  },
+  "Пропущены: %(rows)s.": {
+    "en": "Skipped: %(rows)s.",
+    "sr": "Preskočeno: %(rows)s."
+  },
+  "Список статей бухгалтера книгой Excel. Колонки продукт ищет по названию — «Название», «Код», «Строка P&L», — порядок и лишние колонки значения не имеют. Повторная загрузка того же файла ничего не удвоит: статьи сходятся по коду. Строки справочника, которых в файле нет, останутся — их судьбу решаете вы.": {
+    "en": "The accountant's list of items as an Excel workbook. The product looks for columns by name — \"Название\", \"Код\", \"Строка P&L\" — column order and extra columns do not matter. Uploading the same file again will not duplicate anything: items are matched by code. Catalog rows missing from the file stay in place — their fate is up to you.",
+    "sr": "Spisak stavki knjigovođe kao Excel radna sveska. Proizvod traži kolone po nazivu — „Название“, „Код“, „Строка P&L“ — redosled i suvišne kolone nisu bitni. Ponovno učitavanje istog fajla ništa neće udvostručiti: stavke se poklapaju po šifri. Redovi šifarnika kojih nema u fajlu ostaju — njihovu sudbinu odlučujete vi."
+  },
+  "Ставка НДС": {
+    "en": "VAT rate",
+    "sr": "Stopa PDV-a"
+  },
+  "Ставка НДС, %": {
+    "en": "VAT rate, %",
+    "sr": "Stopa PDV-a, %"
+  },
+  "Статьи действуют с": {
+    "en": "Items are in effect from",
+    "sr": "Stavke važe od"
+  },
+  "Строка P&L для статей, где её нет в файле": {
+    "en": "P&L line for items where it is missing from the file",
+    "sr": "P&L red za stavke kod kojih ga nema u fajlu"
+  },
+  "Строки для P&L с НДС": {
+    "en": "P&L lines with VAT",
+    "sr": "P&L redovi sa PDV-om"
+  },
+  "Сумма из чека — с налогом, если он в ней есть.": {
+    "en": "The amount from the receipt — including tax, if the receipt has it.",
+    "sr": "Iznos sa računa — sa porezom, ako ga račun sadrži."
+  },
+  "Суммы расходов — без НДС.": {
+    "en": "Expense amounts — excluding VAT.",
+    "sr": "Iznosi troškova — bez PDV-a."
+  },
+  "Суммы расходов — с НДС, как в документе.": {
+    "en": "Expense amounts — including VAT, as in the document.",
+    "sr": "Iznosi troškova — sa PDV-om, kao u dokumentu."
+  },
+  "Файл больше %(limit)s МБ — это не список статей.": {
+    "en": "The file is larger than %(limit)s MB — this is not a list of items.",
+    "sr": "Fajl je veći od %(limit)s MB — to nije spisak stavki."
+  },
+  "Файл бухгалтера (.xlsx)": {
+    "en": "The accountant's file (.xlsx)",
+    "sr": "Fajl knjigovođe (.xlsx)"
+  },
+  "Язык названий в файле": {
+    "en": "Language of the names in the file",
+    "sr": "Jezik naziva u fajlu"
+  },
+  "строка P&L не опознана: «%(value)s»": {
+    "en": "P&L line not recognized: \"%(value)s\"",
+    "sr": "P&L red nije prepoznat: „%(value)s“"
+  },
+  "строка P&L у статьи уже другая — поменяйте её на карточке статьи": {
+    "en": "the item already has a different P&L line — change it on the item's card",
+    "sr": "stavka već ima drugačiji P&L red — promenite ga na kartici stavke"
+  }
+}
