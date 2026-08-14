@@ -31,12 +31,17 @@ from datetime import date
 from decimal import Decimal
 
 __all__ = [
+    "EXPENSE_ITEMS",
+    "EXPENSES",
     "MONTHS",
     "PEOPLE",
     "UNITS",
+    "Expense",
+    "ExpenseItem",
     "Month",
     "Person",
     "employment_versions",
+    "expenses",
     "insured_types",
     "months",
     "timesheet_for",
@@ -332,3 +337,105 @@ def rate_at(person: Person, period: date) -> Decimal:
         if valid_from <= period and (valid_to is None or period < valid_to):
             return rate
     return person.base_rate
+
+
+# --- расходы из кассы (T113) ---------------------------------------------------
+#
+# Зачем они в демо. Продукт умеет собирать не только зарплату: расход из кассы —
+# вторая половина того, из чего складывается P&L, и без неё в отчёте дыра ровно
+# там, где деньги тратятся мимо банка. Демо с одной зарплатой показывает
+# половину продукта и молчит об этом.
+#
+# Набор написан явно, как и люди выше, и по той же причине: демо обязано
+# пересобираться в **то же самое** после каждого сброса. Ни одного случайного
+# числа, ни одного генератора.
+
+
+@dataclass(frozen=True)
+class ExpenseItem:
+    """Статья расходов демо: то, чем человек называет трату.
+
+    `spread` — метод разнесения расхода, внесённого без точки. `None` значит,
+    что правила нет вовсе: такой расход остаётся нераспределённым и виден в
+    списке «что мешает закрыть месяц». Это состояние в демо обязано быть — оно
+    и есть ответ продукта на «сумма есть, точка ещё не решена».
+    """
+
+    code: str
+    title: str
+    pnl_code: str
+    spread: str | None = None
+
+
+EXPENSE_ITEMS = [
+    ExpenseItem("water", "Water", "utilities"),
+    ExpenseItem("electricity", "Electricity", "utilities"),
+    ExpenseItem("waste", "Waste removal", "utilities"),
+    # Аренда офиса приходит на юрлицо целиком и разносится поровну: показать
+    # разнесение можно только на статье, у которой правило есть.
+    ExpenseItem("office_rent", "Office rent", "rent", spread="even"),
+    ExpenseItem("courier_fuel", "Courier fuel", "other_opex"),
+    ExpenseItem("repairs", "Small repairs", "other_opex"),
+    # А у этой правила нет намеренно — см. `spread` выше.
+    ExpenseItem("marketing", "Marketing campaign", "other_opex"),
+]
+
+
+@dataclass(frozen=True)
+class Expense:
+    """Одна трата: когда, где, за что, из какого регистра и с чьих слов.
+
+    `unit = None` — расход на всю сеть: точки у него нет, и дальше его судьбу
+    решает правило статьи. Именно так вносят аренду и рекламу.
+    """
+
+    on: date
+    unit: str | None
+    item: str
+    amount: Decimal
+    ledger: str = "official"
+    note: str = ""
+
+
+EXPENSES = [
+    # Июнь — закрытый месяц. Полный набор: по нему видно, что выгрузка «Строки
+    # для P&L» содержит обе части — зарплату и траты.
+    Expense(date(2026, 6, 5), "BG1", "water", D("6200.00"), note="June water bill"),
+    Expense(date(2026, 6, 5), "NS1", "water", D("4800.00"), note="June water bill"),
+    Expense(date(2026, 6, 5), "NS2", "water", D("5100.00"), note="June water bill"),
+    Expense(date(2026, 6, 9), "BG1", "electricity", D("31400.00"), note="June power bill"),
+    Expense(date(2026, 6, 9), "NS1", "electricity", D("22750.00"), note="June power bill"),
+    Expense(date(2026, 6, 9), "NS2", "electricity", D("19900.00"), note="June power bill"),
+    Expense(date(2026, 6, 12), None, "office_rent", D("90000.00"), note="Head office, June"),
+    Expense(date(2026, 6, 18), "BG1", "courier_fuel", D("12400.00"),
+            ledger="supplementary", note="Fuel paid from the till"),
+    # Регистр, которого управляющему не видно: демо показывает не рассказ про
+    # разграничение доступа, а само разграничение.
+    Expense(date(2026, 6, 22), "NS1", "repairs", D("25400.00"),
+            ledger="internal", note="Door handle, cash, no receipt"),
+
+    # Июль — тоже закрытый.
+    Expense(date(2026, 7, 6), "BG1", "water", D("6350.00"), note="July water bill"),
+    Expense(date(2026, 7, 6), "NS1", "water", D("4950.00"), note="July water bill"),
+    Expense(date(2026, 7, 10), "BG1", "electricity", D("33800.00"), note="July power bill"),
+    Expense(date(2026, 7, 10), "NS2", "electricity", D("21300.00"), note="July power bill"),
+    Expense(date(2026, 7, 12), None, "office_rent", D("90000.00"), note="Head office, July"),
+    Expense(date(2026, 7, 20), "NS2", "waste", D("6000.00"), note="Waste removal, July"),
+
+    # Август — открытый месяц: его посетитель может править и дополнять сам.
+    Expense(date(2026, 8, 4), "NS1", "water", D("5050.00"), note="August water bill"),
+    Expense(date(2026, 8, 4), "NS2", "water", D("5300.00"), note="August water bill"),
+    Expense(date(2026, 8, 7), "BG1", "electricity", D("29900.00"), note="August power bill"),
+    Expense(date(2026, 8, 11), None, "office_rent", D("90000.00"), note="Head office, August"),
+    Expense(date(2026, 8, 14), "NS1", "courier_fuel", D("9800.00"),
+            note="Fuel paid from the till"),
+    # Нераспределённое: правила у статьи нет, точки у расхода нет. Сумма висит и
+    # **видна** — за этим и заведена. Молча пропавшая сумма это дыра в P&L,
+    # которая не кричит.
+    Expense(date(2026, 8, 19), None, "marketing", D("150000.00"),
+            note="Summer campaign, whole network"),
+]
+
+
+def expenses() -> list[Expense]:
+    return list(EXPENSES)

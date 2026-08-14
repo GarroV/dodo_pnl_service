@@ -16,6 +16,7 @@
 """
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import date
 from decimal import Decimal
@@ -52,6 +53,12 @@ PNL_ITEMS = [
     ("food_cost", "Food cost", "expense", 20),
     ("labour_cost", "Labour cost", "expense", 40),
     ("payroll_taxes", "Payroll taxes", "expense", 50),
+    # Расходная часть, ради которой продукт собирает траты из кассы (T113).
+    # Строк отчёта единицы, а статей расхода под ними десятки — см.
+    # `dataset.EXPENSE_ITEMS`.
+    ("utilities", "Utilities", "expense", 60),
+    ("rent", "Rent", "expense", 62),
+    ("other_opex", "Other operating costs", "expense", 64),
     ("total", "Result", "subtotal", 90),
 ]
 
@@ -146,6 +153,9 @@ def seed_demo(*, log=None) -> dict:
         _calendar()
         people = _people(tenant, groups)
         say(f"организация и {people} сотрудников готовы")
+        _expense_items(tenant, items)
+        spent = _expenses(tenant)
+        say(f"расходов из кассы: {spent}")
 
     # Расчёт каждого месяца — своей транзакцией, а не общей: `calculate_period`
     # открывает свою и утверждает результат отдельным переходом, у которого
@@ -208,9 +218,20 @@ def wipe() -> None:
     ).update(released_at=now())
 
     for model in (
+        # Факты идут первыми: ссылки на точку, юрлицо и статью у факта
+        # `PROTECT`, и пока факт жив, точку не удалить. Удалять их можно только
+        # **после** отката утверждённых расчётов выше — факт закрытого месяца не
+        # даёт удалить `facts_guard`, а откат расчёта открывает месяц обратно
+        # тем же триггером, которым закрыл. Тот же порядок и по той же причине
+        # стоит в сиде разработки: там он стоил падения на каждом стенде, где
+        # хоть раз внесли расход.
+        models.Fact, models.SourceDocument, models.FactBatch,
         models.PayComponent, models.Payslip, models.Payrun, models.Timesheet,
         models.EmploymentTerm, models.Employee, models.EmployeeGroup,
         models.Membership, models.Role, models.Period, models.AllocationRule,
+        # Статья — после правил разнесения: ссылка правила на статью `PROTECT`
+        # (T111), и правило, оставшееся без статьи, разносило бы неизвестно что.
+        models.ExpenseItem,
         models.Counterparty, models.Unit, models.LegalEntity,
         # Английские подписи правил — тоже данные тенанта, и повторный прогон
         # обязан их пересоздать, а не наткнуться на прежние.
@@ -250,11 +271,18 @@ def _org() -> models.Tenant:
         models.Period.objects.create(
             id=det_id("period", str(month.period)), tenant=tenant,
             period=month.period,
-            # Состояние учётного месяца — не то же, что состояние расчёта
-            # зарплаты, но в демо они согласованы: закрытый месяц показан
-            # закрытым и в списке периодов.
-            status="closed" if month.approved else "open",
-            closed_at=now() if month.approved else None,
+            # **Все месяцы заводятся открытыми, включая те, что станут
+            # закрытыми.** Состояние учётного месяца — следствие состояния
+            # расчёта (T094): его выставляет триггер, когда расчёт утверждают,
+            # и руками его менять запрещено (`period_status_guard`). Раньше
+            # здесь стояло `closed` для утверждаемых месяцев, и это было
+            # безобидно ровно до появления расходов: `facts_guard` не принимает
+            # факт в закрытый месяц ни от кого, включая владельца схемы, — то
+            # есть траты июня и июля наполнение положить бы уже не смогло.
+            # Закрывает их теперь утверждение расчёта, тем же путём, каким это
+            # происходит у партнёра.
+            status="open",
+            closed_at=None,
         )
     return tenant
 
@@ -376,6 +404,95 @@ def _people(tenant, groups: dict) -> int:
                 source="manual",
             )
     return len(PEOPLE)
+
+
+# --- расходы из кассы (T113) ---------------------------------------------------
+
+
+def _expense_items(tenant, items: dict) -> None:
+    """Справочник статей расхода и правила их разнесения.
+
+    У партнёра этот справочник поставляется **пустым** (Q015): список придёт с
+    файла бухгалтера Сербии, а выдуманный дал бы разные названия одной трате.
+    Демо — единственное место, где он наполнен, и это не противоречие: демо
+    показывает продукт наполненным, иначе показывать нечего.
+
+    Названия кладутся сразу тремя языками, а не одним английским. Демо
+    открывается по-английски всегда (`UI_LANGUAGE=en`), но статья — это данные
+    партнёра, и правило «названия по кодам языков интерфейса» проверяется здесь
+    тоже: одноязычная статья в демо скрыла бы поломку выбора языка.
+    """
+    for item in dataset.EXPENSE_ITEMS:
+        row = models.ExpenseItem.objects.create(
+            id=det_id("expense_item", item.code), tenant=tenant, code=item.code,
+            titles={code: item.title for code, _name in settings.LANGUAGES},
+            pnl_item=items[item.pnl_code], valid_from=date(2023, 1, 1),
+        )
+        if item.spread is None:
+            continue
+        models.AllocationRule.objects.create(
+            id=det_id("allocation_rule", item.code), tenant=tenant,
+            expense_item=row, pnl_item=items[item.pnl_code],
+            method=item.spread, ledger="official", valid_from=date(2023, 1, 1),
+        )
+
+
+def _expenses(tenant) -> int:
+    """Траты из кассы — тем же путём, каким их пишет продукт.
+
+    Через `upsert_fact`, а не прямым `insert`: идемпотентность, версионирование
+    и защита закрытого месяца живут в этой функции базы, и второй путь записи
+    обошёл бы их все сразу. Наполнение, которое кладёт данные мимо продукта,
+    рано или поздно кладёт то, чего продукт положить не может, — и демо
+    начинает показывать невозможное.
+
+    Автор у каждой траты настоящий: свою точку заводит её управляющий, остальное
+    — бухгалтер. В демо на это смотрят: «кто это внёс» — первый вопрос к
+    незнакомой сумме.
+    """
+    items = {item.code: item for item in dataset.EXPENSE_ITEMS}
+    written = 0
+    for spending in dataset.expenses():
+        item = items[spending.item]
+        unit_id = det_id("unit", spending.unit) if spending.unit else None
+        payload = {
+            "tenant_id": str(tenant.id),
+            "period": spending.on.replace(day=1).isoformat(),
+            "doc_date": spending.on.isoformat(),
+            "pnl_item_id": str(det_id("pnl_item", item.pnl_code)),
+            "expense_item_id": str(det_id("expense_item", item.code)),
+            "ledger": spending.ledger,
+            "amount": str(spending.amount),
+            "title": item.title,
+            "note": spending.note,
+            "channel": "cash",
+            "source": "manual",
+            # Ключ идемпотентности выводится из самой траты, а не случайный:
+            # повторный `seed_demo` на наполненной базе обязан не удвоить
+            # расходы. Приставка та же, что у формы, — расход демо ничем не
+            # отличается от расхода, внесённого руками.
+            "dedup_key": f"manual:cash:demo-{item.code}-{spending.on:%Y%m%d}"
+                         f"-{spending.unit or 'network'}",
+            "created_by": str(det_id("user", "manager" if spending.unit == "NS1"
+                                     else "accountant")),
+            "allocation": "direct" if unit_id else "pending",
+        }
+        if unit_id:
+            payload["unit_id"] = str(unit_id)
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select fact_id from upsert_fact(%s::jsonb)", [json.dumps(payload)]
+            )
+            fact_id = cursor.fetchone()[0]
+            # Расход на всю сеть разносится сразу при внесении — ровно так же,
+            # как это делает форма (T111). Правила нет — сумма остаётся
+            # нераспределённой и **видимой**; это состояние в демо нужно не
+            # меньше разнесённого.
+            if unit_id is None:
+                cursor.execute("select allocate_fact(%s)", [fact_id])
+        written += 1
+    return written
 
 
 def _approve(tenant, month: Month) -> None:

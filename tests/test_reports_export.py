@@ -62,11 +62,13 @@ def titles(code: str) -> str:
 def build(kind: str, cells=None, cut: str = "", **kw):
     view = slice_cells(list(cells if cells is not None else MATERIAL), cut)
     if kind == "pnl":
-        # Статьи и налоги приезжают из базы; здесь их подставляют явно, чтобы
-        # проверять сборку файла, а не выборку. Путь из базы проверяется
-        # отдельно, на живом стенде и ролью `app_user`.
+        # Статьи, налоги и расходы приезжают из базы; здесь их подставляют
+        # явно, чтобы проверять сборку файла, а не выборку. Путь из базы
+        # проверяется отдельно, на живом стенде и ролью `app_user`
+        # (`test_export_expenses.py` для расходов).
         kw.setdefault("articles", {})
         kw.setdefault("taxes", [])
+        kw.setdefault("expenses", [])
     body, name = getattr(exports, kind)(
         view, tenant_id=None, period=date(2026, 6, 1), title="Июнь 2026",
         ledger_title=titles, **kw,

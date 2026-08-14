@@ -88,7 +88,7 @@ def test_pnl_xlsx_has_no_binary_tail_in_money_values():
     view = slice_cells(list(MATERIAL))
     body, _ = exports.pnl(
         view, tenant_id=None, period=date(2026, 6, 1), title="Июнь 2026",
-        ledger_title=str, articles={}, taxes=[],
+        ledger_title=str, articles={}, taxes=[], expenses=[],
     )
 
     xml = _sheet_xml(body)

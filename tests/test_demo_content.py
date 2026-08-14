@@ -162,6 +162,12 @@ def test_nothing_a_visitor_sees_is_written_in_russian(conn):
         "select first_name from employees",
         "select last_name from employees",
         "select correction_reason from timesheets where correction_reason is not null",
+        # Расходы (T113): и справочник статей, и сами траты. Названия статей —
+        # это то, что посетитель видит в форме внесения и в выгрузке P&L, а
+        # `facts.title` уезжает в файл как «за что деньги».
+        "select jsonb_each_text.value from expense_items, jsonb_each_text(titles)",
+        "select title from facts",
+        "select note from facts where note is not null",
     ):
         seen += [row[0] for row in conn.execute(sql).fetchall() if row[0]]
 
@@ -290,3 +296,97 @@ print(json.dumps({
     assert result["rows"] >= 29
     assert result["columns"] >= 3
     assert len(result["ledgers"]) >= 3, "разрезов по регистрам меньше трёх"
+
+
+# --- расходы из кассы (T113) ---------------------------------------------------
+#
+# Демо без расходов показывает половину продукта и молчит об этом: P&L
+# складывается из зарплаты и трат, и вторая половина у партнёра как раз та,
+# которую сегодня никто не собирает.
+
+
+def test_every_month_has_cash_expenses(conn):
+    """Траты есть в каждом месяце, включая закрытые.
+
+    Закрытые важнее открытого: именно по ним посетитель открывает выгрузку и
+    видит, что в ней обе части. Положить их туда можно только пока месяц
+    открыт — поэтому наполнение пишет траты до утверждения расчёта, а не после.
+    """
+    by_month = dict(conn.execute(
+        """select to_char(period, 'YYYY-MM'), count(*)
+             from facts where source = 'manual' and superseded_at is null
+            group by 1 order by 1"""
+    ).fetchall())
+    assert set(by_month) == {"2026-06", "2026-07", "2026-08"}, by_month
+    assert all(count > 0 for count in by_month.values()), by_month
+
+
+def test_an_expense_of_the_whole_network_is_spread_to_the_kopeck(conn):
+    """Аренда офиса разошлась по трём точкам, и сумма детей равна родителю."""
+    parent, children = conn.execute(
+        """select f.amount,
+                  (select coalesce(sum(c.amount), 0) from facts c
+                    where c.parent_fact_id = f.id and c.superseded_at is null)
+             from facts f
+             join expense_items e on e.id = f.expense_item_id
+            where e.code = 'office_rent' and f.parent_fact_id is null
+              and f.period = '2026-06-01' and f.superseded_at is null"""
+    ).fetchone()
+    assert parent == children, f"разнесение потеряло деньги: {parent} против {children}"
+
+    units = conn.execute(
+        """select count(distinct c.unit_id) from facts c
+             join facts f on f.id = c.parent_fact_id
+             join expense_items e on e.id = f.expense_item_id
+            where e.code = 'office_rent' and c.period = '2026-06-01'"""
+    ).fetchone()[0]
+    assert units == 3, f"аренда легла не на все точки: {units}"
+
+
+def test_something_is_waiting_to_be_allocated(conn):
+    """Нераспределённая сумма в демо есть — и она видна там, где её ищут.
+
+    Состояние «сумма есть, точка ещё не решена» — не поломка, а ответ продукта,
+    и показать его надо. Демо, где всё разнесено, обещает, что так бывает
+    всегда.
+    """
+    waiting = conn.execute(
+        "select title, amount from facts_unallocated order by amount desc"
+    ).fetchall()
+    assert waiting, "в демо нечему быть нераспределённым — экран будет пустым"
+    assert any(amount > 0 for _title, amount in waiting), waiting
+
+
+def test_the_pnl_export_of_a_closed_month_has_both_halves(demo_db):
+    """Выгрузка «Строки для P&L» содержит и зарплату, и траты.
+
+    Это и есть Definition of Done третьей очереди: «расходы попадают в выгрузку
+    рядом с зарплатными строками, в тех же статьях». Проверяется на **закрытом**
+    месяце — том, который бухгалтер отдаёт дальше.
+    """
+    result = report(demo_db, """
+import base64, io, json
+from datetime import date
+from django.utils import translation
+from core.models import Tenant
+from reports.export import pnl
+from reports.sheet import build_slice
+from web.cash import item_title
+t = Tenant.objects.get(code="demo")
+with translation.override("en"):
+    body, name = pnl(
+        build_slice(t.id, date(2026, 6, 1)), tenant_id=t.id, period=date(2026, 6, 1),
+        title="June 2026", item_title=item_title,
+    )
+import openpyxl
+sheet = openpyxl.load_workbook(io.BytesIO(body)).active
+rows = [r for r in sheet.iter_rows(values_only=True) if r and r[3]]
+print(json.dumps({"kinds": sorted({r[3] for r in rows}),
+                  "articles": sorted({r[0] for r in rows if r[3] == "Expense"})},
+                 ensure_ascii=False))
+""")
+    assert "Accrual" in result["kinds"], result
+    assert "Expense" in result["kinds"], f"в выгрузке демо нет расходов: {result}"
+    assert result["articles"], result
+    russian = sorted(a for a in result["articles"] if CYRILLIC.search(a))
+    assert not russian, f"статьи расходов в выгрузке демо по-русски: {russian}"
