@@ -427,13 +427,14 @@ def employee(request, employee_id):
                 reverse("directory-employee", args=[person.id])
                 + f"?saved={saved}{carried}"
             )
-        # Раньше `BadInput`, потому что отказ базы — его частный случай, а
-        # ответить на него обязаны кодом 400: «сохранено» и «отказано» не
-        # должны быть неразличимы для того, кто смотрит на ответ.
+        # Раньше `BadInput`, потому что отказ базы — его частный случай, а слова
+        # у него свои. Код ответа у обоих один и тот же — 400 (`BadInput`
+        # несёт его сам): «сохранено» и «отказано» не должны быть неразличимы
+        # для того, кто смотрит на ответ, а не на разметку (T142, issue #112).
         except ConstraintRefused as refused:
             error, status = refused.message, refused.http_status
         except BadInput as bad:
-            error = bad.message
+            error, status = bad.message, bad.http_status
         except directory.DirectoryRefused as refusal:
             error, status = refusal.message, refusal.http_status
 
@@ -701,7 +702,7 @@ def group(request, group_id=None):
         except ConstraintRefused as refused:
             error, status = refused.message, refused.http_status
         except BadInput as bad:
-            error = bad.message
+            error, status = bad.message, bad.http_status
         except rules.RuleInputRefused as bad:
             error, status = bad.message, bad.http_status
         except permissions.PermissionRefused as refusal:
@@ -894,12 +895,11 @@ def unit(request, unit_id=None):
                 item.save()
             return redirect(reverse("directory-units"))
         except ConstraintRefused as refused:
-            # Отказ базы отвечает 400 — в отличие от разбора ввода выше, у
-            # которого свой (пока 200) код: их коды разводятся задачей, которая
-            # возьмётся за форму целиком, а не этой.
             error, status = refused.message, refused.http_status
         except BadInput as bad:
-            error = bad.message
+            # Тот же код, что у отказа базы выше: разбор ввода и ограничение —
+            # две причины одного события «форма не принята» (T142, issue #112).
+            error, status = bad.message, bad.http_status
 
     return render(request, "web/directory/form.html", {
         "heading": item.title if item else _("Новая точка"),
@@ -978,7 +978,7 @@ def legal_entity(request, entity_id=None):
         except ConstraintRefused as refused:
             error, status = refused.message, refused.http_status
         except BadInput as bad:
-            error = bad.message
+            error, status = bad.message, bad.http_status
 
     return render(request, "web/directory/form.html", {
         "heading": item.title if item else _("Новое юрлицо"),
@@ -1097,7 +1097,7 @@ def calendar_month(request, month=None):
         except ConstraintRefused as refused:
             error, status = refused.message, refused.http_status
         except BadInput as bad:
-            error = bad.message
+            error, status = bad.message, bad.http_status
         except directory.DirectoryRefused as refusal:
             error, status = refusal.message, refusal.http_status
 

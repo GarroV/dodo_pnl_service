@@ -167,7 +167,14 @@ def test_editing_a_unit_saves_and_shows_up(client, sql):
 
 
 def test_a_wrong_date_is_explained_not_swallowed(client, sql):
-    """Ошибка ввода объясняется словами, а введённое не пропадает."""
+    """Ошибка ввода объясняется словами, а введённое не пропадает.
+
+    Код ответа — 400, а не 200 (T142, issue #112). Раньше здесь ожидалось 200,
+    и это ожидание было закреплённым дефектом: человек читал отказ, а всё, что
+    смотрит на код ответа — смоук, журнал сервера, вызов по HTTP, — считало
+    запись удавшейся. Само содержимое страницы проверяется тем же, чем и
+    раньше: отказ обязан остаться словами, а не превратиться в голый код.
+    """
     login_as(client, "admin")
     unit_id = sql.execute(
         "select id from units where code = 'NS2' and tenant_id in "
@@ -177,7 +184,7 @@ def test_a_wrong_date_is_explained_not_swallowed(client, sql):
         "code": "NS2", "title": "Дунавска", "legal_entity": "",
         "opened_at": "первое января", "closed_at": "",
     })
-    assert answer.status_code == 200
+    assert answer.status_code == 400
     html = body(answer)
     assert "первое января" in html, "введённое пропало вместе с отказом"
     assert "2026-06-01" in html, "отказ не показал, как надо"

@@ -23,13 +23,14 @@ Django проверяются **на коммите**, за пределами �
 """
 from __future__ import annotations
 
+from datetime import date
 from uuid import uuid4
 
 import pytest
 from django.db import IntegrityError, transaction
 
 from conftest import body, login_as
-from core.models import Unit
+from core.models import RuleOverride, Unit
 from test_directory import sql  # noqa: F401
 from test_expense_items_screen import expense_line, items_removed  # noqa: F401
 from test_expense_items_screen import form as item_form
@@ -38,6 +39,7 @@ from web.dbrefusal import ConstraintRefused, saving
 ITEMS_NEW = "/directory/expense-items/new/"
 UNITS_NEW = "/directory/units/new/"
 GROUPS_NEW = "/directory/groups/new/"
+NIGHT_PERCENT = "hour_types.night.pay_percent"
 
 TENANT = "(select id from tenants where code = 'rs-dev')"
 
@@ -134,6 +136,51 @@ def test_a_deferred_foreign_key_is_refused_in_words_not_at_commit(web_env, sql):
         assert "Юрлицо" in refused.value.message, refused.value.message
         assert refused.value.http_status == 400
         transaction.set_rollback(True)
+
+
+def test_the_rules_screen_refuses_an_overlap_in_words(client, sql, monkeypatch):  # noqa: F811
+    """Пересечение версий правила — отказ формы, а не белая страница (issue #111).
+
+    Экран правил пишет не через справочники, а через `rules.save_override`, и
+    приём T136 его не касался. Пересечение версий эта логика отсекает сама,
+    поэтому ограничение базы `rule_overrides_no_overlap` стоит там последним
+    рубежом — и проверяется здесь именно рубеж: логику подменяем на
+    ошибающуюся, то есть воспроизводим дефект, ради которого рубеж и нужен.
+
+    Подмена, а не подготовка данных в обход: заведённое мимо приложения
+    пересечение база не приняла бы и от нас — ограничение немедленное, а не
+    отложенное. Единственный способ довести отказ до экрана — ошибиться ровно
+    там, где ошибётся будущая правка.
+    """
+    from web import rules
+
+    def overlapping(tenant_id, path, value, *, valid_from, actor_id=None, effective=None):
+        for start in (date(2026, 9, 1), date(2026, 10, 1)):
+            RuleOverride.objects.create(
+                tenant_id=tenant_id, scope_type=rules.SCOPE, scope_id=None,
+                path=path, value=value, valid_from=start, valid_to=None,
+                created_by=actor_id,
+            )
+        return rules.RuleChange(changed=True, previous=None)
+
+    monkeypatch.setattr(rules, "save_override", overlapping)
+    login_as(client, "admin")
+    try:
+        answer = client.post(
+            f"/rules/{NIGHT_PERCENT}/", {"value": "1.5", "valid_from": "2026-09-01"}
+        )
+        assert answer.status_code == 400, f"ответ {answer.status_code}"
+        html = body(answer)
+        assert "Поправьте даты" in html, f"отказ не сказал, что делать:\n{html[:800]}"
+        for leak in ("Traceback", "ExclusionViolation", "conflicting key", "no_overlap"):
+            assert leak not in html, f"наружу вылезло «{leak}»"
+    finally:
+        client.post("/logout/")
+
+    left = sql.execute(
+        "select count(*) from rule_overrides where path = %s", (NIGHT_PERCENT,)
+    ).fetchone()[0]
+    assert left == 0, "отвергнутая форма оставила за собой версию правила"
 
 
 def test_a_constraint_broken_by_a_defect_still_falls_loudly(web_env, sql):  # noqa: F811

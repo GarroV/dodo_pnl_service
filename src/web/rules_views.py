@@ -41,6 +41,7 @@ from django.utils.translation import gettext as _
 from core.rules import PresetNotFound, load_rules_at
 
 from . import directory, permissions, rules
+from .dbrefusal import ConstraintRefused, saving
 from .principal import get_current_principal
 
 
@@ -216,10 +217,20 @@ def rule(request, path: str):
         try:
             valid_from = _posted_date(request)
             wanted = rules.parse(request.POST.get("value", ""), current, path)
-            change = rules.save_override(
-                who.tenant_id, path, wanted,
-                valid_from=valid_from, actor_id=who.user_id, effective=current,
-            )
+            # Запись целиком внутри `saving()` — тем же приёмом, что на шести
+            # формах справочников (T136, T142). Пересечение версий здесь
+            # отсекает сама `save_override`, поэтому ограничение базы
+            # `rule_overrides_no_overlap` стоит последним рубежом: пока логика
+            # верна, человек его не видит, а ошибётся логика — прочитает
+            # «поправьте даты» вместо белой страницы (issue #111). Внутрь
+            # попадает вся запись одной кнопки: `save_override` закрывает
+            # прежнюю версию и заводит новую, и отвергнутая форма не должна
+            # оставлять за собой закрытую версию без пришедшей ей на смену.
+            with saving():
+                change = rules.save_override(
+                    who.tenant_id, path, wanted,
+                    valid_from=valid_from, actor_id=who.user_id, effective=current,
+                )
             if not change.changed:
                 notice = _("Ничего не изменилось — новая версия не заведена.")
             else:
@@ -237,6 +248,12 @@ def rule(request, path: str):
                     + ("&retro=1" if carried else "")
                     + (f"&from={valid_from.isoformat()}" if shifted else "")
                 )
+        # Раньше `RuleInputRefused`: родства между ними нет, но порядок тот же,
+        # что на справочниках, — сначала отказ базы, потом разбор ввода. Оба
+        # отвечают 400: для того, кто смотрит на код ответа, «набрано не то» и
+        # «база не приняла» — одно событие.
+        except ConstraintRefused as refused:
+            error, status = refused.message, refused.http_status
         except rules.RuleInputRefused as bad:
             error, status = bad.message, bad.http_status
         except directory.DirectoryRefused as refusal:
