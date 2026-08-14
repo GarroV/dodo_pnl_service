@@ -421,15 +421,19 @@ def test_recalculation_skips_a_closed_month_and_says_so(
 # --- кто вправе разносить -----------------------------------------------------
 
 
-def test_the_manager_cannot_spread_an_expense_over_other_units(
+def test_the_manager_cannot_record_an_expense_for_the_whole_network(
     client, sql, item, units, rules_removed, facts_removed,  # noqa: F811
 ):
-    """Управляющий вносит расход на сеть, но разносит его не он — и это база.
+    """Расход юрлица целиком управляющий не вносит вовсе (T130).
 
-    Разнесение пишет строки на чужие точки, а туда управляющему писать нельзя
-    (`unit_visibility` на `facts`). Отказ приходит от политики, а не от проверки
-    в представлении: расход остаётся ждать, и человеку об этом сказано словами.
-    Сломайте политику — и строки лягут на чужие точки, а тест покраснеет.
+    Раньше вносил: сумма ложилась без точки и ждала, пока любой директор нажмёт
+    «Разнести по правилам» и разложит её на три чужие точки. На демо так прошли
+    500 000 (сверка 7, находка 1). Разносить её управляющему и тогда не давали —
+    закрыта была ровно одна половина дыры.
+
+    Отвергает запись политика `unit_visibility` на `facts`, а не проверка в
+    представлении: форма подделывается одним полем, политика — нет. Сломайте её
+    — строка запишется, и тест покраснеет числом строк, а не текстом.
     """
     login_as(client, "admin")
     set_rule(client, item, method="even")
@@ -437,13 +441,45 @@ def test_the_manager_cannot_spread_an_expense_over_other_units(
 
     login_as(client, "manager")
     try:
+        key = entry_key()
+        answer = client.post(NEW, {
+            "date": august_day(), "amount": "100.01", "item": item,
+            "note": "аренда офиса", "unit": NETWORK, "ledger": "official",
+            "entry_key": key,
+        })
+        assert answer.status_code == 400, body(answer)
+        assert facts_of(sql, key) == [], "расход на всю сеть всё-таки записан"
+
+        page = body(answer)
+        assert "ведёт все точки" in page, "человеку не сказано, почему отказ"
+        assert "не найдена" not in page, "отказ безликий: непонятно, что делать"
+
+        # И самого варианта в форме у него нет: список повторяет решение базы,
+        # чтобы форма не предлагала того, что запись не примет.
+        form = body(client.get(NEW))
+        assert f'value="{NETWORK}"' not in form, "«Вся сеть» предложена управляющему"
+    finally:
+        client.post("/logout/")
+
+
+def test_the_director_still_records_an_expense_for_the_whole_network(
+    client, sql, item, units, rules_removed, facts_removed,  # noqa: F811
+):
+    """Контроль к проверке выше: отказ адресный, а не «этого больше нельзя».
+
+    Без него тест выше остался бы зелёным и на сломанном внесении расхода на
+    сеть вообще — а это главный сценарий бухгалтера (спека, user story).
+    """
+    login_as(client, "admin")
+    set_rule(client, item, method="even")
+    client.post("/logout/")
+
+    login_as(client, "director")
+    try:
+        assert f'value="{NETWORK}"' in body(client.get(NEW)), "«Вся сеть» пропала у директора"
         key = network_expense(client, item, amount="100.01")
         rows = facts_of(sql, key)
-        assert [row[1] for row in rows] == [None], f"расход разошёлся по чужим точкам: {rows}"
-        assert rows[0][3] == "pending"
-
-        page = body(client.get(f"{NEW}?saved={current_period():%Y-%m}&refused=0"))
-        assert "ведёт все точки" in page, "человеку не сказано, почему расход ждёт"
-        assert WAITING in page, "не сказано, где искать нераспределённое"
+        assert sorted(row[1] or "—" for row in rows) == ["BG1", "NS1", "NS2", "—"]
+        assert sum(row[2] for row in rows if row[1]) == Decimal("100.01")
     finally:
         client.post("/logout/")
