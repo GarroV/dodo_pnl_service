@@ -205,6 +205,19 @@ msgstr "red nema ime — nije učitan"
 msgid "«%(value)s» в колонке «%(column)s» — не число, строка не загружена"
 msgstr "„%(value)s“ u koloni „%(column)s“ nije broj, red nije učitan"
 
+#, python-format
+msgid "колонка «%(column)s» (%(key)s) не найдена — значения этого поля в загрузку не попали"
+msgstr "kolona „%(column)s“ (%(key)s) nije pronađena — vrednosti tog polja nisu ušle u učitavanje"
+
+msgid "лист не входит в формат PLATA — ни одна его строка не загружена"
+msgstr "list ne odgovara formatu PLATA — nijedan njegov red nije učitan"
+
+msgid "лист формата не найден в файле — сотрудников с него в загрузке нет"
+msgstr "list formata nije pronađen u fajlu — sa njega nema zaposlenih u učitavanju"
+
+msgid "у строки нет имени или фамилии — она не загружена"
+msgstr "red nema ime ili prezime — nije učitan"
+
 msgid "не входит в доступную вам часть расчёта этого периода"
 msgstr "nije u delu obračuna ovog perioda koji vam je dostupan"
 
@@ -698,8 +711,8 @@ msgid " Разнести его по точкам может тот, кто ве
 msgstr " Da ga raspodeli po objektima može samo onaj ko vodi sve objekte: redovi raspodele padaju i na tuđe objekte."
 
 #, python-format
-msgid "%(what)s нельзя изменить: зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
-msgstr "%(what)s se ne može promeniti: plata za %(month)s je već odobrena, a ovo podešavanje nema verzije po datumima — izmena bi retroaktivno prepisala zatvoreni mesec. Podesite ono što vam treba pojedinačnom zaposlenom u uslovima zaposlenja: tamo izmena važi od datuma. Ili ponovo otvorite mesec uz obrazloženje."
+msgid "Правку отклонили: %(what)s нельзя изменить, потому что зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
+msgstr "Izmena je odbijena: %(what)s se ne može promeniti jer je plata za %(month)s već odobrena, a ovo podešavanje nema verzije po datumima — izmena bi retroaktivno prepisala zatvoreni mesec. Podesite ono što vam treba pojedinačnom zaposlenom u uslovima zaposlenja: tamo izmena važi od datuma. Ili ponovo otvorite mesec uz obrazloženje."
 
 #, python-format
 msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: если она изменит его числа, разница ляжет помеченной строкой в ближайший неутверждённый месяц — перенести её можно на странице закрытого."
@@ -716,6 +729,16 @@ msgstr "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mese
 #, python-format
 msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
 msgstr "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mesec je ostao isti: kod ovog partnera se razlika primenjuje ponovnim obračunom — otvorite mesec ponovo uz razlog i obračunajte ga opet."
+
+#, python-format
+msgid "Версия заведена с %(date)s, а действовать начнёт с расчёта за %(starts)s: правила берутся на месяц целиком. %(inside)s останется посчитанным по-прежнему — нужна была правка с начала месяца, заведите версию с %(first)s."
+msgstr "Verzija je zavedena od %(date)s, ali će važiti tek od obračuna za %(starts)s: pravila se uzimaju za mesec u celini. %(inside)s ostaje obračunat kao ranije — ako vam je trebala izmena od početka meseca, zavedite verziju od %(first)s."
+
+msgid "Календарь общий для страны: правка подействует на всех партнёров этой страны, а не только на вашего. У тех, у кого этот месяц уже утверждён, появится своя разница — переносит её каждый у себя."
+msgstr "Kalendar je zajednički za zemlju: izmena će uticati na sve partnere te zemlje, ne samo na vašeg. Kod onih kojima je taj mesec već odobren, pojaviće se sopstvena razlika — svako je prenosi kod sebe."
+
+msgid "Правка календаря подействовала на всех партнёров этой страны, а не только на вашего: календарь общий. У тех, у кого этот месяц утверждён, разница появится на странице месяца — переносит её каждый у себя."
+msgstr "Izmena kalendara je uticala na sve partnere te zemlje, ne samo na vašeg: kalendar je zajednički. Kod onih kojima je taj mesec odobren, razlika će se pojaviti na stranici meseca — svako je prenosi kod sebe."
 
 msgid "Карточка сохранена."
 msgstr "Kartica je sačuvana."
@@ -977,9 +1000,6 @@ msgstr "Novi mesec kalendara"
 
 msgid "← К календарю"
 msgstr "← Na kalendar"
-
-msgid "Календарь общий для страны: его видят все партнёры этой страны."
-msgstr "Kalendar je zajednički za zemlju: vide ga svi partneri te zemlje."
 
 #, python-format
 msgid "«%(label)s»: месяц пишется как 2026-06, а не «%(value)s»."
@@ -2104,8 +2124,8 @@ msgstr "Vrednost dolazi iz pravila zemlje. Prva verzija ispod postaje podešavan
 msgid "Новая версия правила"
 msgstr "Nova verzija pravila"
 
-msgid "С этой даты расчёт берёт новое значение. Месяцы до неё считаются по-прежнему."
-msgstr "Od ovog datuma obračun uzima novu vrednost. Meseci pre njega se i dalje računaju kao ranije."
+msgid "С этой даты расчёт берёт новое значение, месяцы до неё считаются по-прежнему. Правила берутся на месяц целиком, поэтому дата внутри месяца подействует только со следующего: чтобы правка сработала на весь месяц, ставьте первое число."
+msgstr "Od ovog datuma obračun uzima novu vrednost, meseci pre njega se i dalje računaju kao ranije. Pravila se uzimaju za mesec u celini, pa datum unutar meseca deluje tek od sledećeg: da bi izmena važila za ceo mesec, unesite prvi dan."
 
 msgid "Через запятую."
 msgstr "Odvojeno zarezom."

@@ -275,11 +275,23 @@ def test_import_over_edited_row_keeps_days_in_sync(period_restored):
 
 
 def test_import_does_not_move_the_calculation(web_env, period_restored):
-    """Суммы после загрузки эталона — те же, что были приняты на сиде.
+    """Загрузка эталона поверх сида не двигает суммы месяца ни на копейку.
 
-    Ориентир снят на приёмке: директор видит 60 строк ведомости на 1 951 806,13.
     Импорт пишет тот же файл, из которого собран сид, поэтому сдвинуться нечему —
     и если сдвинулось, то не в данных, а в записи.
+
+    **Сравнивается с итогом, снятым здесь же до загрузки, а не с зашитым
+    числом** (issue #69). Пока в обеих проверках стояло 1 951 806,13, тест
+    сторожил не импорт, а состояние общей базы: любой сосед, оставивший
+    изменённой ставку, норму часов или версию правила, красил его — при
+    исправном импорте. Красный не по своей вине хуже отсутствующего теста:
+    настоящую поломку в следующий раз спишут на тот же шум. Хуже того, зелёным
+    он был по стечению обстоятельств — из-за порядка файлов в прогоне, — то
+    есть не проверял ничего.
+
+    Ориентир приёмки (60 строк ведомости директора на 1 951 806,13) при этом не
+    потерян: его сторожат те, кто владеет этим состоянием, —
+    `test_norm_hours.JUNE_TOTAL`, `test_payslip_freezing`, `test_reports_sheet`.
     """
     from django.db.models import Sum
 
@@ -288,20 +300,19 @@ def test_import_does_not_move_the_calculation(web_env, period_restored):
 
     all_ledgers = ["official", "supplementary", "internal"]
 
-    wipe_payruns(web_env)
-    before = calculate_period(tenant_id=_tenant_id(), period=JUNE, visible_ledgers=all_ledgers)
-    total_before = PayComponent.objects.filter(
-        payslip__payrun_id=before.payrun_id
-    ).aggregate(total=Sum("amount"))["total"]
-    assert total_before == Decimal("1951806.13")
+    def total_of_june() -> Decimal:
+        wipe_payruns(web_env)
+        run = calculate_period(tenant_id=_tenant_id(), period=JUNE, visible_ledgers=all_ledgers)
+        return PayComponent.objects.filter(payslip__payrun_id=run.payrun_id).aggregate(
+            total=Sum("amount")
+        )["total"]
+
+    before = total_of_june()
+    assert before, "июнь не посчитался вовсе — сравнивать после загрузки будет не с чем"
 
     _import()
 
-    wipe_payruns(web_env)
-    after = calculate_period(tenant_id=_tenant_id(), period=JUNE, visible_ledgers=all_ledgers)
-    assert PayComponent.objects.filter(
-        payslip__payrun_id=after.payrun_id
-    ).aggregate(total=Sum("amount"))["total"] == Decimal("1951806.13")
+    assert total_of_june() == before
 
 
 def test_unknown_employee_lands_in_unmatched_rows(period_restored):

@@ -324,21 +324,30 @@ def test_compiled_catalog_matches_the_source_one(language):
     )
 
 
-@pytest.mark.skipif(shutil.which("xgettext") is None, reason="нет gettext")
-@pytest.mark.parametrize("language", sorted(TRANSLATED))
-def test_catalog_covers_everything_extracted_from_sources(language, tmp_path):
-    """Каталог покрывает всё, что извлекается из кода и шаблонов сегодня.
+# Извлечённые строки считаются один раз на язык: `makemessages` — это внешний
+# процесс на всё дерево исходников, и гонять его по разу на каждую проверку
+# значило бы платить за одно и то же дважды.
+_EXTRACTED: dict[str, set[str]] = {}
 
-    Проверяется настоящим `makemessages`, а не своим разбором: расхождение
-    между тем, как строки ищет тест, и тем, как их ищет сборка каталога, — это
-    ровно та щель, в которую проваливается новая строка.
+
+def extracted_msgids(language: str) -> set[str]:
+    """Что `makemessages` находит в коде и шаблонах СЕГОДНЯ.
+
+    Настоящим `makemessages`, а не своим разбором: расхождение между тем, как
+    строки ищет тест, и тем, как их ищет сборка каталога, — это ровно та щель, в
+    которую проваливается новая строка.
     """
     import os
+    import tempfile
+
+    if language in _EXTRACTED:
+        return _EXTRACTED[language]
 
     # Извлекаем в копии исходников, а не в самом репозитории: `makemessages`
     # переписывает каталог на месте, и тест, меняющий рабочее дерево, однажды
     # затрёт то, что человек как раз редактировал.
-    work = tmp_path / "repo"
+    holder = tempfile.TemporaryDirectory()
+    work = Path(holder.name) / "repo"
     work.mkdir()
     shutil.copytree(ROOT / "src", work / "src", ignore=shutil.ignore_patterns("locale"))
     shutil.copy(ROOT / "manage.py", work / "manage.py")
@@ -362,14 +371,51 @@ def test_catalog_covers_everything_extracted_from_sources(language, tmp_path):
     )
     assert done.returncode == 0, done.stdout + done.stderr
 
-    extracted = {
+    found = {
         item["msgid"]
         for item in read_po(work / "src" / "locale" / code / "LC_MESSAGES" / "django.po")
         if item["msgid"]
     }
+    holder.cleanup()
+    _EXTRACTED[language] = found
+    return found
+
+
+needs_gettext = pytest.mark.skipif(shutil.which("xgettext") is None, reason="нет gettext")
+
+
+@needs_gettext
+@pytest.mark.parametrize("language", sorted(TRANSLATED))
+def test_catalog_covers_everything_extracted_from_sources(language):
+    """Каталог покрывает всё, что извлекается из кода и шаблонов сегодня."""
     known = {item["msgid"] for item in catalog(language)}
-    lost = extracted - known
+    lost = extracted_msgids(language) - known
     assert not lost, (
         f"{language}: строки есть в коде, но не в каталоге ({len(lost)}):\n"
         + "\n".join(sorted(lost))
+    )
+
+
+@needs_gettext
+@pytest.mark.parametrize("language", sorted(TRANSLATED))
+def test_catalog_holds_nothing_that_is_gone_from_the_sources(language):
+    """Обратная сторона: в каталоге нет записей, которых в коде уже нет (issue #94).
+
+    Проверки локализации были написаны в одну сторону — «каталог покрывает всё,
+    что извлекается». Мёртвую запись такая проверка не краснит, и живёт та
+    вечно, при этом выглядя как действующий перевод: следующий читатель каталога
+    решает, что такой текст в продукте есть. Хуже того, `msgstr` мёртвой записи —
+    готовый донор для `fuzzy`-угадывания при следующем `makemessages`, то есть
+    ровно тот механизм, из-за которого заводился `test_i18n_catalog.py`.
+
+    Чинить красноту здесь нужно **точечным** удалением записи из `.po`, а не
+    прогоном `makemessages` по рабочему каталогу: тот переписывает файл целиком,
+    тасует порядок и подставляет угаданные переводы — так каталог однажды уже
+    испортили (T102).
+    """
+    known = {item["msgid"] for item in catalog(language)}
+    dead = known - extracted_msgids(language)
+    assert not dead, (
+        f"{language}: записи есть в каталоге, но не в коде ({len(dead)}) — "
+        f"удалите их точечно, не запуская makemessages:\n" + "\n".join(sorted(dead))
     )

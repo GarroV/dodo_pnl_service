@@ -73,7 +73,12 @@
 <form class="card" method="post">{% csrf_token %}
   <p class="field">
     {% translate "Действует с" as from_label %}
-    {% translate "С этой даты расчёт берёт новое значение. Месяцы до неё считаются по-прежнему." as from_help %}
+    {% comment %}
+    Подсказка приходит из `web/rules.monthly_help` — тем же местом, откуда
+    берутся слова после правки. Прежняя жила здесь строкой и говорила только про
+    месяцы ДО даты, умалчивая о главном: правила берутся на месяц целиком, и
+    дата внутри месяца на этот месяц не влияет вовсе (issue #99).
+    {% endcomment %}
     {% include "web/components/field.html" with id="valid_from" name="valid_from" label=from_label value=default_from required=True type="date" help=from_help %}
   </p>
   <p class="field">

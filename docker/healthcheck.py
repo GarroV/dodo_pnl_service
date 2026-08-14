@@ -28,7 +28,16 @@ import http.client
 import os
 import sys
 
-PORT = int(os.environ.get("HEALTHCHECK_PORT", "8000"))
+# Порт ВНУТРИ контейнера, а не на хосте, — и поэтому не настройка (issue #107).
+# Приложение в контейнере слушает 8000 всегда: это записано в команде службы и в
+# правой части проброса портов (`docker-compose.yml`), а `APP_PORT` — левая
+# часть, порт снаружи. Пока порт читался из окружения, его правили заодно с
+# `APP_PORT` под второй стенд, и проверка стучалась в 8000-й порт хоста изнутри
+# контейнера: `Connection refused`, `unhealthy` семь часов подряд при
+# работающем продукте. Проверка, краснеющая не по делу, обесценивает себя —
+# на неё перестают смотреть. Равенство трёх чисел сторожит
+# `tests/test_compose_stand.py`.
+PORT = 8000
 PATH = os.environ.get("HEALTHCHECK_PATH", "/")
 TIMEOUT = float(os.environ.get("HEALTHCHECK_TIMEOUT", "5"))
 
