@@ -52,7 +52,12 @@ def values(articles: dict[str, str]) -> set[str]:
 
     from openpyxl import load_workbook
 
-    body, _name = pnl(sheet_of_one(), title="Июнь 2026", articles=articles, taxes=[])
+    # `expenses=[]` рядом с `taxes=[]`, и это не украшение: без них выгрузка
+    # пошла бы в базу за расходами (T113), а проверка здесь про другое — про
+    # то, каким ключом ищется статья. Тест без базы ловит это быстрее и точнее.
+    body, _name = pnl(
+        sheet_of_one(), title="Июнь 2026", articles=articles, taxes=[], expenses=[],
+    )
     sheet = load_workbook(BytesIO(body)).active
     return {str(cell) for row in sheet.iter_rows(values_only=True) for cell in row if cell}
 
