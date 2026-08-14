@@ -368,6 +368,119 @@ check(
   `${managerRows} против ${sheetRows}`,
 );
 
+// --- расходы из кассы: вторая половина того, из чего складывается P&L (T113) ---
+//
+// Демо с одной зарплатой показывает половину продукта и молчит об этом. Здесь
+// проверяется, что посетитель видит траты наполненными, видит нераспределённую
+// сумму (продукт не прячет то, чего не смог разложить) и что срез регистров
+// действует на расходах так же, как на ведомости.
+
+const WIDE = "?from=2026-06-01&to=2026-12-31";
+
+await send("Network.clearBrowserCookies");
+await goto(`${APP}/demo/enter/accountant/`);
+await sleep(1200);
+await goto(`${APP}/expenses/${WIDE}`);
+const spending = await text();
+const spentRows = await evalIn(`document.querySelectorAll("tr[data-fact]").length`);
+check("бухгалтер видит траты наполненными", spentRows >= 10, `строк: ${spentRows}`);
+check(
+  "расходы демо написаны по-английски",
+  !CYRILLIC.test(spending),
+  (spending.match(new RegExp(CYRILLIC.source + "+", "g")) || []).slice(0, 5).join(" "),
+);
+check(
+  "видно, за что деньги, а не только сколько",
+  spending.includes("Electricity") && spending.includes("Office rent"),
+);
+
+await goto(`${APP}/expenses/unallocated/`);
+const waiting = await text();
+check(
+  "нераспределённая сумма показана, а не спрятана",
+  waiting.includes("Marketing campaign"),
+  waiting.slice(0, 200),
+);
+
+// Разнесённая аренда: родитель ушёл в дети по точкам, и в списке трат он один,
+// а не четырьмя строками. Проверяется по сумме списка — она обязана совпасть с
+// итогом, который показывает сам продукт.
+await goto(`${APP}/expenses/${WIDE}`);
+const agreed = await evalIn(`
+  (() => {
+    const rows = [...document.querySelectorAll("tr[data-fact]")]
+      .filter(tr => tr.dataset.state === "active")
+      .reduce((sum, tr) => sum + Number(tr.dataset.amount), 0);
+    const total = Number(document.querySelector("tr[data-total]").dataset.total);
+    return Math.abs(rows - total) < 0.005;
+  })()
+`);
+check("итог списка — сумма показанных строк, а не отдельная выборка", agreed === true);
+
+// Управляющий: своя точка и свои регистры. Расход внутреннего регистра (мелкий
+// ремонт за наличные) ему не виден вовсе — ни строкой, ни вкладом в итог.
+await send("Network.clearBrowserCookies");
+await goto(`${APP}/demo/enter/manager/`);
+await sleep(1200);
+await goto(`${APP}/expenses/${WIDE}`);
+const managerSees = await text();
+check(
+  "управляющий видит только свою точку",
+  !managerSees.includes("BG1") && !managerSees.includes("NS2"),
+  managerSees.slice(0, 200),
+);
+check(
+  "расход невидимого регистра управляющему не виден ни строкой, ни следом",
+  !managerSees.includes("Small repairs") && !managerSees.includes("25,400"),
+);
+
+// Демо не витрина: посетитель вносит трату сам и видит её в списке.
+await goto(`${APP}/expenses/new/`);
+const entered = await evalIn(`
+  (async () => {
+    const form = document.querySelector("form");
+    const token = form.querySelector("[name=csrfmiddlewaretoken]").value;
+    const item = [...form.querySelectorAll("[name=item] option")]
+      .find(o => o.value)?.value;
+    const unit = [...form.querySelectorAll("[name=unit] option")]
+      .find(o => o.value && o.value !== "network")?.value;
+    const body = new URLSearchParams({
+      csrfmiddlewaretoken: token, date: "2026-08-21", amount: "1234.50",
+      item, unit, ledger: "official", note: "Smoke check",
+      entry_key: form.querySelector("[name=entry_key]").value,
+    });
+    const answer = await fetch("/expenses/new/", {
+      method: "POST", body, credentials: "same-origin", redirect: "follow",
+    });
+    return answer.status;
+  })()
+`);
+check("посетитель вносит трату сам", entered === 200, String(entered));
+await goto(`${APP}/expenses/${WIDE}`);
+check("внесённая трата сразу видна в списке", (await text()).includes("Smoke check"));
+
+// Выгрузка «Строки для P&L» скачивается посетителем. Что внутри неё обе части,
+// проверяет тест на демо-базе (`test_the_pnl_export_of_a_closed_month_has_both_halves`):
+// xlsx — это zip, и читать его в браузере значило бы написать здесь второй
+// разборщик книги.
+await send("Network.clearBrowserCookies");
+await goto(`${APP}/demo/enter/accountant/`);
+await sleep(1200);
+await goto(APP + june);
+const exported = await evalIn(`
+  (async () => {
+    const answer = await fetch("export/pnl/", { credentials: "same-origin" });
+    const body = await answer.blob();
+    return { status: answer.status, size: body.size,
+             name: answer.headers.get("content-disposition") || "" };
+  })()
+`);
+check(
+  "выгрузка строк для P&L скачивается посетителем",
+  exported.status === 200 && exported.size > 4000 && exported.name.includes("pnl-2026-06"),
+  JSON.stringify(exported),
+);
+
 // --- демо не притворяется включённым там, где его нет --------------------------
 
 const dead = await evalIn(`
