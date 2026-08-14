@@ -166,6 +166,45 @@ const beaconValue = await evalIn(`
 `);
 check("закрытие страницы прямо из поля не теряет часы", beaconValue === "77.25", beaconValue);
 
+// --- двойной уход со страницы (T123, issue #61) ------------------------------
+// `pagehide` срабатывает не однажды: переход бывает двойным (страница входа,
+// затем форма входа), и тогда с одной ячейки уходили ДВЕ одинаковые досылки
+// подряд — две записи в одну строку табеля в одну секунду. Вторая падала
+// дубликатом ключа, а `sendBeacon` ответа не читает, то есть отказ был
+// молчаливым. Здесь проверяется клиентская половина починки: одно и то же
+// значение уходит один раз. Серверная (две записи в одну строку не роняют друг
+// друга) проверяется гонкой на двух соединениях в
+// `tests/test_timesheets.py::test_two_writers_of_one_cell_go_one_after_another` —
+// браузер двух одновременных досылок не сделает, и подменять этим гонку нельзя.
+
+const doubleHide = await evalIn(`
+  (() => {
+    window.__beacons = [];
+    const real = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = (url, body) => { window.__beacons.push(url); return real(url, body); };
+    const rows = [...document.querySelectorAll('#timesheet-grid tbody tr')];
+    const input = rows[9].querySelector('input.cell');
+    input.focus();
+    input.value = "44.75";
+    return { row: input.dataset.row, kind: input.dataset.kind };
+  })()
+`);
+// Два ухода подряд — ровно то, что делает браузер при двойном переходе.
+await evalIn(`window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }))`);
+await evalIn(`window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }))`);
+await new Promise((r) => setTimeout(r, 1200));
+const beaconCount = await evalIn(`window.__beacons.length`);
+check("второй уход со страницы не шлёт ту же ячейку заново", beaconCount === 1,
+      `досылок: ${beaconCount}`);
+
+await goto(APP + gridHref);
+const doubleValue = await evalIn(`
+  [...document.querySelectorAll('input.cell')]
+    .find(i => i.dataset.row === ${JSON.stringify(doubleHide.row)}
+            && i.dataset.kind === ${JSON.stringify(doubleHide.kind)}).value
+`);
+check("после двойного ухода часы записаны, а не потеряны", doubleValue === "44.75", doubleValue);
+
 // --- подсказка о подозрительных числах (T118) --------------------------------
 // Спека просит её на обоих путях ввода, а была она только у загрузки файла:
 // 400 часов при норме 176 сетка принимала молча. Проверяется живьём именно то,

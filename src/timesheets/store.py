@@ -178,6 +178,25 @@ def _working_days(row: Timesheet) -> list[date]:
     return calendar_working_days(country_of(row.tenant_id), row.period)
 
 
+def lock_row(row: Timesheet) -> None:
+    """Взять строку табеля под блокировку до конца транзакции и перечитать её.
+
+    Записей в одну строку бывает две одновременно, и это не экзотика: сетка
+    досылает несохранённые ячейки на уходе со страницы (`sendBeacon`), а
+    переходов подряд бывает два — тогда одну и ту же ячейку пишут два запроса
+    сразу. Без блокировки обе транзакции видят «дней у строки нет», обе
+    раскладывают дни, и вторая падает на уникальном ключе `timesheet_days_uniq`:
+    человек получает «Server Error» на обычном вводе часов, а досылка ответа не
+    читает — то есть часть ввода теряется молча (issue #61).
+
+    Перечитывание здесь не для удобства: после ожидания на блокировке в
+    `row.hours` лежит то, что было ДО чужой записи. Именно из этих часов
+    считается, шла ли база для взносов за ними, — на устаревшем снимке решение
+    принималось бы по данным, которых в базе уже нет.
+    """
+    row.refresh_from_db(from_queryset=Timesheet.objects.select_for_update())
+
+
 def _write_days(row: Timesheet, hour_type: str, hours: Decimal, days, source: str) -> None:
     """Переписать дни одного типа. Прежние сносятся: правка — это замена."""
     TimesheetDay.objects.filter(timesheet=row, hour_type=hour_type).delete()
@@ -225,6 +244,11 @@ def set_cell(*, timesheet: Timesheet, hour_type: str, hours: Decimal,
             timesheet.tenant_id, timesheet.period, country_of(timesheet.tenant_id)
         )
     check_cell(hour_type, hours, known)
+
+    # Дальше идёт «прочитать состояние строки — записать дни заново», и делать
+    # это одновременно нельзя: см. `lock_row`. Блокировка берётся ПОСЛЕ проверок,
+    # чтобы отказ по значению не держал строку и не ждал чужой транзакции.
+    lock_row(timesheet)
 
     # База для взносов шла за часами? Проверяется ДО записи: после неё сумма
     # часов уже другая, и связь было бы не отличить от совпадения.
@@ -341,6 +365,13 @@ def store_row(*, timesheet: Timesheet, want: RowInput,
         )
     for kind, hours in want.hours.items():
         check_cell(kind, hours, known)
+
+    # Та же блокировка и по той же причине, что в `set_cell`: загрузка таблицы
+    # пишет в те же строки и те же дни, а идти она может одновременно с вводом
+    # с экрана — два пути записи договариваться между собой не обязаны.
+    # Берётся до `row_differs`: иначе решение «ничего не изменилось» принималось
+    # бы по снимку, устаревшему к моменту записи.
+    lock_row(timesheet)
 
     if want.manual_correction is not None and (actor_id is None or not reason.strip()):
         # То же требование, что у ограничения базы (`timesheets_correction_trace_check`,
