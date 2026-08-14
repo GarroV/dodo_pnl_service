@@ -22,6 +22,7 @@ from reports import export as exports
 from reports.reconcile import reconcile
 from reports.sheet import build_slice
 
+from . import runslice
 from .cash import item_title
 from .format import ledger_title, money
 from .labels import labeller
@@ -266,6 +267,14 @@ def period_export(request, period_id, kind):
     book, name = build(
         view, tenant_id=period.tenant_id, period=period.period,
         title=month_title(period.period), ledger_title=ledger_title,
+        # Отдан ли смотрящему весь расчёт партнёра (T141). Нужно файлу P&L:
+        # без налоговой части он обязан сказать, почему её нет, а «итоги вашей
+        # роли не отданы» — утверждение о правах, и спрашивается оно у тех же
+        # функций, на которых стоят политики базы (D014). Передаётся всем трём
+        # выгрузкам одним набором аргументов — по тому же доводу, что и
+        # `item_title`: развилка «этому виду передаём, тому нет» и есть место,
+        # где однажды передадут не туда.
+        whole_run=runslice.sees_whole_run(period.tenant_id),
         # Колонки файла названы на языке страницы — тем же способом, что на
         # экране (T092): выгрузка обязана читаться так же, как то, из чего её
         # сделали.
