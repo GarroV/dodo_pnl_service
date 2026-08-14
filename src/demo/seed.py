@@ -145,6 +145,7 @@ def seed_demo(*, log=None) -> dict:
         _calendar()
         people = _people(tenant, groups)
         say(f"организация и {people} сотрудников готовы")
+        _tills(tenant)
         _expense_items(tenant, items)
         spent = _expenses(tenant)
         say(f"расходов из кассы: {spent}")
@@ -218,6 +219,12 @@ def wipe() -> None:
         # стоит в сиде разработки: там он стоил падения на каждом стенде, где
         # хоть раз внесли расход.
         models.Fact, models.SourceDocument, models.FactBatch,
+        # Касса — после фактов и раньше точек: ссылка факта на кассу `PROTECT`,
+        # ссылка кассы на точку тоже. Тот же порядок и тот же довод, что у
+        # статей расходов; ошибиться в нём — значит, что сброс демо перестанет
+        # работать в тот день, когда в демо появится первая касса, и заметят это
+        # по протухшему стенду, а не по красному тесту (T145).
+        models.Till,
         models.PayComponent, models.Payslip, models.Payrun, models.Timesheet,
         models.EmploymentTerm, models.Employee, models.EmployeeGroup,
         models.Membership, models.Role, models.Period, models.AllocationRule,
@@ -401,6 +408,24 @@ def _people(tenant, groups: dict) -> int:
 # --- расходы из кассы (T113) ---------------------------------------------------
 
 
+def _tills(tenant) -> None:
+    """Кассы точек (T145, D039). Регистр расхода следует из кассы, а не из формы.
+
+    В демо их четыре, и у NS1 их две — обычная и внутренняя. Одна касса на точку
+    показала бы поле, но не показала бы правило: расход из внутренней кассы
+    уходит во внутренний регистр сам.
+
+    Остатка по кассе в демо нет, потому что его нет в продукте (D040): касса —
+    источник денег и признак регистра, а не кассовая книга.
+    """
+    for till in dataset.TILLS:
+        models.Till.objects.create(
+            id=det_id("till", till.code), tenant=tenant, code=till.code,
+            title=till.title, ledger=till.ledger,
+            unit_id=det_id("unit", till.unit),
+        )
+
+
 def _expense_items(tenant, items: dict) -> None:
     """Справочник статей расхода и правила их разнесения.
 
@@ -471,6 +496,14 @@ def _expenses(tenant) -> int:
         }
         if unit_id:
             payload["unit_id"] = str(unit_id)
+        if spending.till:
+            # Касса кладётся как есть, а регистр остаётся в поле рядом: в демо
+            # видно и то, откуда деньги, и что регистр с кассой сходится (D039).
+            payload["till_id"] = str(det_id("till", spending.till))
+        if spending.vat:
+            # Только ставка: сумму налога считает база (T146), и второй расчёт
+            # рядом с первым разошёлся бы с ним на копейку.
+            payload["vat_rate"] = spending.vat
 
         with connection.cursor() as cursor:
             cursor.execute(

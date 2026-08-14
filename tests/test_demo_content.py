@@ -390,3 +390,62 @@ print(json.dumps({"kinds": sorted({r[3] for r in rows}),
     assert result["articles"], result
     russian = sorted(a for a in result["articles"] if CYRILLIC.search(a))
     assert not russian, f"статьи расходов в выгрузке демо по-русски: {russian}"
+
+
+# --- касса и НДС (T145, T146) ---------------------------------------------------
+
+
+def test_the_demo_shows_tills_and_the_ledger_that_follows_them(conn):
+    """Демо показывает кассы и то, ради чего они заведены (D039).
+
+    Не «поле есть», а правило видно: у одной точки две кассы разных регистров, и
+    расход из внутренней кассы лежит во внутреннем регистре. С одной кассой на
+    точку это выглядело бы лишним полем в форме.
+    """
+    tills = conn.execute(
+        "select t.code, u.code, t.ledger::text from tills t join units u on u.id = t.unit_id"
+    ).fetchall()
+    assert len(tills) >= 4, tills
+
+    by_unit = {}
+    for _code, unit, ledger in tills:
+        by_unit.setdefault(unit, []).append(ledger)
+    assert any(len(ledgers) > 1 for ledgers in by_unit.values()), (
+        "у всех точек по одной кассе — правило «регистр следует из кассы» не показано"
+    )
+
+    paid = conn.execute(
+        """select f.ledger::text, t.ledger::text
+             from facts f join tills t on t.id = f.till_id
+            where f.superseded_at is null"""
+    ).fetchall()
+    assert paid, "ни один расход демо не оплачен из кассы"
+    assert all(fact == till for fact, till in paid), paid
+
+
+def test_the_demo_has_expenses_with_vat_and_without(conn):
+    """В демо есть и траты с выделенным налогом, и без него (D042).
+
+    Оба состояния законные, и оба должны быть видны: с налогом — чтобы в P&L
+    было видно разницу между суммой документа и суммой без НДС, без него — чтобы
+    было видно, что пустая ставка не превращает сумму в ноль.
+    """
+    rows = conn.execute(
+        """select count(*) filter (where vat_rate is not null),
+                  count(*) filter (where vat_rate is null),
+                  coalesce(sum(vat_amount), 0)
+             from facts where superseded_at is null and source = 'manual'"""
+    ).fetchone()
+    with_vat, without_vat, total_vat = rows
+    assert with_vat > 0, "в демо нет ни одной траты с НДС"
+    assert without_vat > 0, "в демо все траты с НДС — состояние «налог не выделен» не показано"
+    assert total_vat > 0, "ставка есть, а сумма налога не посчиталась"
+
+
+def test_the_net_amount_is_smaller_exactly_by_the_vat(conn):
+    """Сумма без НДС отличается от суммы документа ровно на налог, и не иначе."""
+    off = conn.execute(
+        """select count(*) from pnl_lines
+            where amount_net <> amount - coalesce(vat_amount, 0)"""
+    ).fetchone()[0]
+    assert off == 0, f"{off} строк, где сумма без НДС не сходится с суммой документа"

@@ -382,11 +382,44 @@ EXPENSE_ITEMS = [
 
 
 @dataclass(frozen=True)
+class Till:
+    """Касса точки: коробка, из которой платят наличными (T145, D039).
+
+    В демо их четыре, и это не полнота ради полноты: у NS1 их **две** — обычная
+    и внутренняя, — потому что весь смысл кассы в том, что регистр учёта расхода
+    следует из неё. С одной кассой на точку это выглядело бы как лишнее поле.
+    """
+
+    code: str
+    unit: str
+    ledger: str
+    title: str
+
+
+TILLS = [
+    Till("BG1-main", "BG1", "official", "BG1 main till"),
+    Till("NS1-main", "NS1", "official", "NS1 main till"),
+    # Вторая касса той же точки, другого регистра: расход из неё уходит во
+    # внутренний регистр сам, без выбора руками (D039).
+    Till("NS1-side", "NS1", "internal", "NS1 side till"),
+    Till("NS2-main", "NS2", "official", "NS2 main till"),
+]
+
+
+@dataclass(frozen=True)
 class Expense:
     """Одна трата: когда, где, за что, из какого регистра и с чьих слов.
 
     `unit = None` — расход на всю сеть: точки у него нет, и дальше его судьбу
     решает правило статьи. Именно так вносят аренду и рекламу.
+
+    `till` — из какой кассы платили (T145). Пусто — трата мимо кассы: так
+    внесены расходы, у которых источник денег не наличные, и так же выглядят все
+    строки, заведённые до появления справочника касс.
+
+    `vat` — ставка НДС в процентах (T146, D042). Пусто — налог не выделен, и в
+    P&L такая трата идёт полной суммой. Заполнено — в P&L по умолчанию едет
+    сумма без налога, а полная достаётся отдельной кнопкой.
     """
 
     on: date
@@ -395,15 +428,20 @@ class Expense:
     amount: Decimal
     ledger: str = "official"
     note: str = ""
+    till: str | None = None
+    vat: str | None = None
 
 
 EXPENSES = [
     # Июнь — закрытый месяц. Полный набор: по нему видно, что выгрузка «Строки
     # для P&L» содержит обе части — зарплату и траты.
-    Expense(date(2026, 6, 5), "BG1", "water", D("6200.00"), note="June water bill"),
-    Expense(date(2026, 6, 5), "NS1", "water", D("4800.00"), note="June water bill"),
+    Expense(date(2026, 6, 5), "BG1", "water", D("6200.00"), note="June water bill",
+            till="BG1-main", vat="20"),
+    Expense(date(2026, 6, 5), "NS1", "water", D("4800.00"), note="June water bill",
+            till="NS1-main", vat="20"),
     Expense(date(2026, 6, 5), "NS2", "water", D("5100.00"), note="June water bill"),
-    Expense(date(2026, 6, 9), "BG1", "electricity", D("31400.00"), note="June power bill"),
+    Expense(date(2026, 6, 9), "BG1", "electricity", D("31400.00"), note="June power bill",
+            till="BG1-main", vat="20"),
     Expense(date(2026, 6, 9), "NS1", "electricity", D("22750.00"), note="June power bill"),
     Expense(date(2026, 6, 9), "NS2", "electricity", D("19900.00"), note="June power bill"),
     Expense(date(2026, 6, 12), None, "office_rent", D("90000.00"), note="Head office, June"),
@@ -412,11 +450,14 @@ EXPENSES = [
     # Регистр, которого управляющему не видно: демо показывает не рассказ про
     # разграничение доступа, а само разграничение.
     Expense(date(2026, 6, 22), "NS1", "repairs", D("25400.00"),
-            ledger="internal", note="Door handle, cash, no receipt"),
+            ledger="internal", note="Door handle, cash, no receipt",
+            # Регистр здесь не выбран руками — он приехал из кассы (D039).
+            till="NS1-side"),
 
     # Июль — тоже закрытый.
     Expense(date(2026, 7, 6), "BG1", "water", D("6350.00"), note="July water bill"),
-    Expense(date(2026, 7, 6), "NS1", "water", D("4950.00"), note="July water bill"),
+    Expense(date(2026, 7, 6), "NS1", "water", D("4950.00"), note="July water bill",
+            till="NS1-main", vat="10"),
     Expense(date(2026, 7, 10), "BG1", "electricity", D("33800.00"), note="July power bill"),
     Expense(date(2026, 7, 10), "NS2", "electricity", D("21300.00"), note="July power bill"),
     Expense(date(2026, 7, 12), None, "office_rent", D("90000.00"), note="Head office, July"),
