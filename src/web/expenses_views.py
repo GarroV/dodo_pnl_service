@@ -35,6 +35,7 @@ from django.http import Http404, HttpResponseNotAllowed
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from core.models import ExpenseItem, Fact, Unit
 
@@ -128,7 +129,12 @@ def filters_from(request) -> dict:
     return chosen
 
 
-LABELS = {"from": _("С даты"), "to": _("По дату")}
+# `gettext_lazy`, а не `gettext`: словарь собирается при импорте модуля, то есть
+# ОДИН раз и на том языке, который был активен в тот момент. С обычным gettext
+# подписи фильтров навсегда застывали русскими — на англоязычном демо было видно
+# «С даты» и «По дату» рядом с полностью английской страницей. Ленивый перевод
+# откладывает выбор языка до показа, то есть до запроса конкретного человека.
+LABELS = {"from": gettext_lazy("С даты"), "to": gettext_lazy("По дату")}
 
 
 def _day(raw: str, name: str) -> date:

@@ -429,16 +429,32 @@ check(
   !managerSees.includes("BG1") && !managerSees.includes("NS2"),
   managerSees.slice(0, 200),
 );
+// Смотреть надо СТРОКИ СПИСКА, а не весь текст страницы: название статьи
+// «Small repairs» законно стоит в выпадающем фильтре — справочник статей общий
+// на партнёра и от регистров не зависит, как строки P&L или группы сотрудников.
+// Первая редакция проверки искала строку по всей странице и краснела на
+// исправном продукте; утечкой было бы другое — сам расход или его сумма.
+const hiddenLeak = await evalIn(`
+  (() => {
+    const rows = [...document.querySelectorAll("tr[data-fact]")]
+      .map(tr => tr.textContent);
+    return rows.some(t => t.includes("Small repairs") || t.includes("25,400"));
+  })()
+`);
 check(
-  "расход невидимого регистра управляющему не виден ни строкой, ни следом",
-  !managerSees.includes("Small repairs") && !managerSees.includes("25,400"),
+  "расход невидимого регистра управляющему не виден ни строкой, ни суммой",
+  hiddenLeak === false && !managerSees.includes("25,400"),
 );
 
 // Демо не витрина: посетитель вносит трату сам и видит её в списке.
 await goto(`${APP}/expenses/new/`);
 const entered = await evalIn(`
   (async () => {
-    const form = document.querySelector("form");
+    // Именно форма расхода, а не первая форма страницы: первой в разметке идёт
+    // форма выхода из шапки, и на ней нет ни одного нужного поля — проверка
+    // падала на чтении её csrf-поля, не дойдя до самого сценария.
+    const form = [...document.querySelectorAll("form")]
+      .find(f => f.querySelector("[name=entry_key]"));
     const token = form.querySelector("[name=csrfmiddlewaretoken]").value;
     const item = [...form.querySelectorAll("[name=item] option")]
       .find(o => o.value)?.value;
