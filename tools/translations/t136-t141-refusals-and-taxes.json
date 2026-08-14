@@ -1,0 +1,54 @@
+{
+  "Налоговая часть в этот файл не вошла: налог и взносы считаются по строке ведомости целиком, и разрезу по регистру они не принадлежат. Для P&L с налогами возьмите файл без разреза.": {
+    "en": "The tax part is not included in this file: tax and contributions are calculated for the payslip row as a whole, and they do not belong to a view by ledger. For a P&L with taxes, take the file without a view.",
+    "sr": "Poreski deo nije ušao u ovaj fajl: porez i doprinosi se obračunavaju za red obračunske liste u celini, i ne pripadaju prikazu po knjizi. Za P&L sa porezima uzmite fajl bez prikaza."
+  },
+  "Налоговая часть в этот файл не вошла: налог и взносы считаются по строке ведомости целиком, а итоги расчёта вашей роли не отданы. Собранный по этому файлу P&L окажется без налогов на зарплату — возьмите файл у того, кому отдан весь расчёт.": {
+    "en": "The tax part is not included in this file: tax and contributions are calculated for the payslip row as a whole, and the calculation's totals are not released to your role in full. A P&L built from this file will come out without payroll taxes — get the file from whoever the whole calculation is released to.",
+    "sr": "Poreski deo nije ušao u ovaj fajl: porez i doprinosi se obračunavaju za red obračunske liste u celini, a rezultati obračuna nisu ustupljeni vašoj ulozi u celini. P&L sastavljen na osnovu ovog fajla biće bez poreza na zarade — uzmite fajl od onoga kome je ceo obračun ustupljen."
+  },
+  "Налоговая часть в этот файл не вошла: налог и взносы в расчёте этого месяца не посчитаны.": {
+    "en": "The tax part is not included in this file: tax and contributions have not been calculated for this month at all.",
+    "sr": "Poreski deo nije ušao u ovaj fajl: porez i doprinosi u obračunu ovog meseca uopšte nisu obračunati."
+  },
+  "Контрагент": {
+    "en": "Counterparty",
+    "sr": "Kontrahent"
+  },
+  "Роль": {
+    "en": "Role",
+    "sr": "Uloga"
+  },
+  "Такая запись уже есть: %(fields)s не повторяется. Задайте другое значение.": {
+    "en": "This record already exists: %(fields)s cannot repeat. Set a different value.",
+    "sr": "Ovaj zapis već postoji: %(fields)s se ne ponavlja. Podesite drugu vrednost."
+  },
+  "%(fields)s: строка не найдена. Выберите значение из списка.": {
+    "en": "%(fields)s: row not found. Choose a value from the list.",
+    "sr": "%(fields)s: red nije pronađen. Izaberite vrednost sa liste."
+  },
+  "Этот период уже занят другой версией (%(fields)s). Поправьте даты.": {
+    "en": "This period is already taken by another version (%(fields)s). Fix the dates.",
+    "sr": "Ovaj period je već zauzet drugom verzijom (%(fields)s). Ispravite datume."
+  },
+  "Сквозной ключ": {
+    "en": "External ID",
+    "sr": "Eksterni ID"
+  },
+  "Дата курса": {
+    "en": "Rate date",
+    "sr": "Datum kursa"
+  },
+  "Страна": {
+    "en": "Country",
+    "sr": "Zemlja"
+  },
+  "Расчёт": {
+    "en": "Calculation",
+    "sr": "Obračun"
+  },
+  "Строка ведомости": {
+    "en": "Payslip row",
+    "sr": "Red obračunske liste"
+  }
+}

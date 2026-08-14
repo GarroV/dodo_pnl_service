@@ -29,6 +29,7 @@ from django.views.decorators.http import require_POST
 from core.models import Calendar, Payrun, Payslip, Period, Tenant, Timesheet
 from payrun import freezing, jobs, lifecycle, retro
 from payrun.errors import PayrunRefused
+from reports import export as exports
 from reports.sheet import build_slice
 from reports.trace import TraceNotFound, build_trace
 from reports.variance import ThresholdsMissing, build_variance
@@ -359,6 +360,17 @@ def period_page(
             # Разбивка по регистрам показывается, только когда регистров больше
             # одного: иначе она слово в слово повторяет подвал ведомости.
             "show_ledger_totals": len(sheet.ledger_totals) > 1,
+            # Чего не будет в файле «Строки для P&L» и почему (T141). Сказано
+            # рядом с кнопкой, а не только внутри файла: узнать об этом, уже
+            # собрав P&L, — поздно. Причина и слова к ней живут в `reports`
+            # вместе с самим файлом: две формулировки одного и того же —
+            # экранная и файловая — разъехались бы молча.
+            "exports_note": exports.taxes_note(exports.taxes_missing(
+                has_taxes=exports.taxes_exist(period.tenant_id, period.period),
+                has_rows=bool(sheet.rows),
+                cut=view.cut,
+                whole_run=whole_run,
+            )),
             "total": money(sheet.total) if sheet else money(None),
             "calculated_at": payrun.calculated_at if payrun else None,
             "employees": timesheets.count(),

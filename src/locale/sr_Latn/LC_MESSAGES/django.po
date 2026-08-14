@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 10:30+0000\n"
+"POT-Creation-Date: 2026-08-14 13:33+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -152,6 +152,15 @@ msgstr "obračunski red zamrznut"
 #, python-format
 msgid "человек: %(count)s"
 msgstr "osoba: %(count)s"
+
+msgid "Налоговая часть в этот файл не вошла: налог и взносы считаются по строке ведомости целиком, и разрезу по регистру они не принадлежат. Для P&L с налогами возьмите файл без разреза."
+msgstr "Poreski deo nije ušao u ovaj fajl: porez i doprinosi se obračunavaju za red obračunske liste u celini, i ne pripadaju prikazu po knjizi. Za P&L sa porezima uzmite fajl bez prikaza."
+
+msgid "Налоговая часть в этот файл не вошла: налог и взносы считаются по строке ведомости целиком, а итоги расчёта вашей роли не отданы. Собранный по этому файлу P&L окажется без налогов на зарплату — возьмите файл у того, кому отдан весь расчёт."
+msgstr "Poreski deo nije ušao u ovaj fajl: porez i doprinosi se obračunavaju za red obračunske liste u celini, a rezultati obračuna nisu ustupljeni vašoj ulozi u celini. P&L sastavljen na osnovu ovog fajla biće bez poreza na zarade — uzmite fajl od onoga kome je ceo obračun ustupljen."
+
+msgid "Налоговая часть в этот файл не вошла: налог и взносы в расчёте этого месяца не посчитаны."
+msgstr "Poreski deo nije ušao u ovaj fajl: porez i doprinosi u obračunu ovog meseca uopšte nisu obračunati."
 
 msgid "Без статьи"
 msgstr "Bez stavke"
@@ -636,6 +645,9 @@ msgstr "Objekat nije pronađen."
 msgid "Месяц закрылся, пока расход вносили. Откройте форму заново."
 msgstr "Mesec je zatvoren dok je trošak unošen. Otvorite formu ponovo."
 
+msgid "Расход на всю сеть вносит тот, кто ведёт все точки партнёра. Выберите свою точку."
+msgstr "Trošak za celu mrežu unosi onaj ko vodi sve objekte partnera. Izaberite svoj objekat."
+
 msgid "Месяц закрылся, пока расход удаляли. Откройте список заново."
 msgstr "Mesec je zatvoren dok je trošak brisan. Otvorite listu ponovo."
 
@@ -709,6 +721,67 @@ msgstr " Trošak je raspodeljen po objektima pravilom stavke: redova — %(count
 
 msgid " Разнести его по точкам может тот, кто ведёт все точки: строки разнесения ложатся и на чужие точки."
 msgstr " Da ga raspodeli po objektima može samo onaj ko vodi sve objekte: redovi raspodele padaju i na tuđe objekte."
+
+msgid "Код"
+msgstr "Šifra"
+
+msgid "Название"
+msgstr "Naziv"
+
+msgid "Сквозной ключ"
+msgstr "Eksterni ID"
+
+msgid "Месяц"
+msgstr "Mesec"
+
+msgid "Действует с"
+msgstr "Od"
+
+msgid "Дата курса"
+msgstr "Datum kursa"
+
+msgid "Страна"
+msgstr "Zemlja"
+
+msgid "Юрлицо"
+msgstr "Pravno lice"
+
+msgid "Группа"
+msgstr "Grupa"
+
+msgid "Строка P&L"
+msgstr "P&L red"
+
+msgid "Контрагент"
+msgstr "Kontrahent"
+
+msgid "Роль"
+msgstr "Uloga"
+
+msgid "Пользователь"
+msgstr "Korisnik"
+
+msgid "Расчёт"
+msgstr "Obračun"
+
+msgid "Строка ведомости"
+msgstr "Red obračunske liste"
+
+#, python-format
+msgid "Такая запись уже есть: %(fields)s не повторяется. Задайте другое значение."
+msgstr "Ovaj zapis već postoji: %(fields)s se ne ponavlja. Podesite drugu vrednost."
+
+#, python-format
+msgid "%(fields)s: строка не найдена. Выберите значение из списка."
+msgstr "%(fields)s: red nije pronađen. Izaberite vrednost sa liste."
+
+#, python-format
+msgid "Этот период уже занят другой версией (%(fields)s). Поправьте даты."
+msgstr "Ovaj period je već zauzet drugom verzijom (%(fields)s). Ispravite datume."
+
+#, python-format
+msgid "«%(field)s»"
+msgstr "\"%(field)s\""
 
 #, python-format
 msgid "Правку отклонили: %(what)s нельзя изменить, потому что зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
@@ -806,9 +879,6 @@ msgstr "Pretraga po imenu ili eksternom ključu"
 msgid "Внешний ключ"
 msgstr "Eksterni ključ"
 
-msgid "Группа"
-msgstr "Grupa"
-
 msgid "Уволен"
 msgstr "Otpušten"
 
@@ -829,9 +899,6 @@ msgstr "Primljen"
 
 msgid "Дата увольнения раньше даты приёма."
 msgstr "Datum otpuštanja je pre datuma prijema."
-
-msgid "Действует с"
-msgstr "Od"
 
 msgid "Ставка"
 msgstr "Stopa"
@@ -862,12 +929,6 @@ msgstr "Grupa određuje podrazumevanu šemu obračuna i knjigu. Kod pojedinačne
 
 msgid "Завести группу"
 msgstr "Dodaj grupu"
-
-msgid "Код"
-msgstr "Šifra"
-
-msgid "Название"
-msgstr "Naziv"
 
 msgid "Чем меряется работа"
 msgstr "Mera rada"
@@ -913,9 +974,6 @@ msgstr "Troškovi se raspoređuju na objekat, a ne na pravno lice. Zatvoren obje
 
 msgid "Завести точку"
 msgstr "Dodaj objekat"
-
-msgid "Юрлицо"
-msgstr "Pravno lice"
 
 msgid "Открыта"
 msgstr "Otvoren"
@@ -977,9 +1035,6 @@ msgstr "Norma časova meseca se uzima odavde — prikazuje je stranica meseca. A
 msgid "Завести месяц"
 msgstr "Dodaj mesec"
 
-msgid "Месяц"
-msgstr "Mesec"
-
 msgid "Норма часов"
 msgstr "Norma sati"
 
@@ -1019,9 +1074,6 @@ msgstr "Kako se troškovi nazivaju i u koji red P&L-a spadaju."
 
 msgid "Завести статью"
 msgstr "Dodaj stavku troška"
-
-msgid "Строка P&L"
-msgstr "P&L red"
 
 msgid "Статей расходов нет."
 msgstr "Nema stavki troškova."
@@ -1618,9 +1670,6 @@ msgstr ""
 "Dugme automatski unosi lozinku test seed naloga i ide istim putem kao ručni\n"
 "  unos — poseban način prijave ne postoji. Isključuje se promenljivom okruženja\n"
 "  <code>DEV_LOGIN=0</code>; sesije koje je izdalo tada prestaju da važe."
-
-msgid "Пользователь"
-msgstr "Korisnik"
 
 msgid "Смена пароля"
 msgstr "Promena lozinke"
@@ -2543,6 +2592,3 @@ msgstr "ručno uneto"
 
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
-
-msgid "Расход на всю сеть вносит тот, кто ведёт все точки партнёра. Выберите свою точку."
-msgstr "Trošak za celu mrežu unosi onaj ko vodi sve objekte partnera. Izaberite svoj objekat."

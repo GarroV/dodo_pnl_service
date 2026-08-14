@@ -42,6 +42,7 @@ from core.models import ExpenseItem, PnlItem, Unit
 
 from . import allocation, cash, directory
 from .cash import item_title
+from .dbrefusal import saving
 from .directory_views import (
     LEDGER_CODES,
     BadInput,
@@ -215,14 +216,20 @@ def expense_item(request, item_id=None):
                 item = ExpenseItem(tenant_id=who.tenant_id)
             item.code, item.titles, item.pnl_item_id = code, titles, pnl_item_id
             item.valid_from, item.valid_to = valid_from, valid_to
-            item.save()
+            # Статья и её правило разнесения — одной точкой сохранения (T136):
+            # повторный код (issue #109) и пересечение версий правила обязаны
+            # стать отказом формы, а не оборванным запросом, и отвергнутая форма
+            # не должна оставлять за собой статью без правила.
+            #
             # Куда уходит человек, решает `_after_save`: правка правила
             # разнесения запускает пересчёт, и его итог показывается на карточке
             # (T111). К этому добавляется признак `retro=1`, если дата задела
             # утверждённый месяц (T121): промолчать тут нельзя — человек решит,
             # что месяц переписан. Своего механизма сообщений в продукте нет,
             # поэтому признак едет параметром адреса, как у экрана сотрудника.
-            target = _after_save(request, who, item)
+            with saving():
+                item.save()
+                target = _after_save(request, who, item)
             if touches_closed:
                 target += ("&" if "?" in target else "?") + "retro=1"
             return redirect(target)
