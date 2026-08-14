@@ -351,6 +351,44 @@ class ExpenseItem(models.Model):
         ]
 
 
+class Till(models.Model):
+    """Касса точки: коробка, из которой платят наличными (T145, D039).
+
+    **Почему справочник, а не поле у расхода.** Регистр учёта задумывался
+    свойством операции — «этот расход официальный, а тот внутренний». Владелец
+    поправил: «Из кассы берем только официально. Но есть чёрная касса, где по
+    дефолту идёт в чёрную». Человек на точке не выбирает регистр учёта, он
+    берёт деньги из одной коробки или из другой, и регистр следует за коробкой.
+    Значит коробок у точки несколько, у каждой свой регистр — и это справочник.
+
+    **Остатка здесь нет и не будет** (D040). Остаток требовал бы прихода
+    наличными, то есть выручки из Dodo IS, и превращал бы продукт в кассовую
+    книгу. Касса нужна как источник денег и признак регистра.
+
+    **Закрывается датой, а не удалением.** На кассу ссылаются факты закрытых
+    месяцев (`Fact.till` — `PROTECT`), поэтому закончившаяся касса получает
+    `closed_at` и уходит из списков выбора, оставаясь в истории.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    # Точка у кассы обязательна: касса без точки — это не источник денег, а
+    # неизвестно что, и расход из неё некуда было бы отнести.
+    unit = models.ForeignKey(Unit, on_delete=models.PROTECT, db_column="unit_id")
+    code = models.TextField()
+    title = models.TextField()
+    ledger = ledger_field(db_default="official")
+    closed_at = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "tills"
+        constraints = [
+            models.UniqueConstraint(fields=["tenant", "code"], name="tills_tenant_code_uniq"),
+        ]
+
+
 class Counterparty(models.Model):
     """Контрагент. Знание «как его пишут в разных системах» — это данные, не память."""
 
@@ -1408,6 +1446,12 @@ class Fact(models.Model):
     expense_item = models.ForeignKey(
         "ExpenseItem", on_delete=models.PROTECT, null=True, blank=True,
         db_column="expense_item_id",
+    )
+    # Из какой кассы платили (T145, D039). Пусто у всего, что мимо кассы —
+    # зарплаты, выручки, фактур, — и у расходов, внесённых до появления
+    # справочника касс: это законное состояние, регистр у них уже проставлен.
+    till = models.ForeignKey(
+        "Till", on_delete=models.PROTECT, null=True, blank=True, db_column="till_id",
     )
     ledger = ledger_field(db_default="official")
     counterparty = models.ForeignKey(

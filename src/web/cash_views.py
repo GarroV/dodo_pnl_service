@@ -113,14 +113,42 @@ def parse_expense(request, who) -> dict:
     if amount == 0:
         raise BadInput(_("«%(label)s»: расход на ноль не вносится.") % {"label": _("Сумма")})
 
+    till_id, till = _till(request)
     return {
         "on": on,
         "amount": amount,
         "item": _item(request, who, on),
-        "unit_id": _unit(request, who),
-        "ledger": _ledger(request, who),
+        "unit_id": _unit(request, who, till),
+        "till_id": till_id,
+        "ledger": _ledger(request, who, till),
         "note": _text(request, "note", _("Комментарий"), required=False),
     }
+
+
+def _till(request):
+    """Касса из формы: её номер и сама строка, если она роли видна (T145).
+
+    Номер возвращается **всегда**, а строка — только когда касса видна. Разница
+    существенная: номер уходит в базу как есть и отвергается там политикой
+    `till_visibility` на `facts` (D014), а строка нужна лишь затем, чтобы взять
+    из неё точку и регистр. То есть невидимая касса не превращается здесь в
+    отказ — она превращается в отказ базы, и по нему нельзя понять, существует
+    ли касса (D023).
+
+    Единственное, что отвергается на месте, — значение, которое номером не
+    является вовсе: такой кассы не может быть ни у кого, и говорить о ней
+    отдельными словами нечего. Тот же приём, что у точки.
+    """
+    from core.models import Till
+
+    raw = (request.POST.get("till") or "").strip()
+    if not raw:
+        return None, None
+    try:
+        till_id = UUID(raw)
+    except ValueError:
+        raise cash.TillRefused() from None
+    return till_id, Till.objects.filter(pk=till_id).first()
 
 
 def _item(request, who, on: date):
@@ -157,14 +185,33 @@ def _uuid_or_refuse(raw: str, label: str) -> UUID:
         raise BadInput(_("«%(label)s»: такого варианта нет.") % {"label": label}) from None
 
 
-def _unit(request, who):
+def _unit(request, who, till=None):
     """Точка расхода — как её прислал запрос, без проверки списком.
 
     Пусто и человек ограничен одной точкой — подставляем её: выбирать ему не из
     чего, и требовать выбор было бы лишним шагом. Всё остальное уходит в базу
     как есть: чужую точку отвергнет политика, а не эта функция (D014).
+
+    **Касса задаёт точку** (T145). Касса стоит на точке, поэтому расход из неё —
+    расход этой точки, и второго ответа на этот вопрос быть не может. Если в
+    форме пришла другая точка, продукт отказывает словами, а не выбирает за
+    человека одно из двух: молчаливый выбор означал бы, что расход лёг не туда,
+    куда он думал. Это не проверка доступа — оба поля человек видит на экране,
+    и сравниваются они между собой, а не с правами.
     """
     raw = (request.POST.get("unit") or "").strip()
+    if till is not None:
+        if raw == cash.NETWORK_UNIT:
+            raise BadInput(_(
+                "Расход на всю сеть из кассы не оплачивается: у кассы есть точка. "
+                "Уберите кассу или выберите её точку."
+            ))
+        if raw and raw != str(till.unit_id):
+            raise BadInput(
+                _("Касса «%(till)s» стоит на точке %(unit)s — выберите её или уберите кассу.")
+                % {"till": till.title, "unit": till.unit.code}
+            )
+        return till.unit_id
     if raw == cash.NETWORK_UNIT:
         # Расход юрлица целиком: аренда офиса, реклама на сеть. Точки у него нет
         # не по недосмотру — её выбирает правило разнесения (T111).
@@ -181,8 +228,13 @@ def _unit(request, who):
         raise cash.UnitRefused() from None
 
 
-def _ledger(request, who) -> str:
-    """Регистр учёта. Умолчание — официальный (Q013), выбор — из видимых роли.
+def _ledger(request, who, till=None) -> str:
+    """Регистр учёта: из кассы умолчанием, руками — по желанию (T145, D039).
+
+    Пусто в форме означает «из кассы»: официальная касса — официальный регистр,
+    внутренняя — внутренний. Кассы нет — остаётся прежнее умолчание,
+    официальный. Явно выбранное значение побеждает всегда: ручная правка
+    регистра остаётся возможной, она лишь перестаёт быть главным способом.
 
     Невидимый регистр отвергается здесь, а не базой, и это не обход правила про
     точку: список регистров — не справочник, а три значения, и отказ по ним
@@ -192,7 +244,7 @@ def _ledger(request, who) -> str:
     """
     raw = (request.POST.get("ledger") or "").strip()
     if not raw:
-        return "official"
+        return till.ledger if till is not None else "official"
     return _choice(
         request, "ledger", _("Регистр учёта"),
         [code for code in LEDGER_CODES if code in who.visible_ledgers],
@@ -237,18 +289,52 @@ def expense_fields(who, entered) -> list[dict]:
                    "выдумывать название на месте нельзя, иначе одна трата "
                    "назовётся по-разному."),
         ),
+        *_till_field(entered),
         *_unit_field(who, entered),
         _select(
             "ledger", _("Регистр учёта"),
             [(code, ledger_title(code)) for code in LEDGER_CODES
              if code in who.visible_ledgers],
-            entered.get("ledger") or "official", required=True,
+            entered.get("ledger") or "", required=False,
+            empty_label=_("Из кассы"),
+            help=_("Пусто — регистр берётся из выбранной кассы; без кассы это "
+                   "официальный. Выбранное здесь значение сильнее кассы."),
         ),
         {"kind": "text", "name": "note", "label": _("Комментарий"),
          "value": entered.get("note", ""),
          "help": _("Зачем потратили. Через месяц это единственное, по чему "
                    "строку узнают.")},
     ]
+
+
+def _till_field(entered) -> list[dict]:
+    """Касса, из которой платили (T145). Список — только видимые роли кассы.
+
+    Срез делает база: политики `unit_visibility` и `ledger_visibility` на
+    `tills` (D014). Закрытые кассы в список не идут — предлагать к новой трате
+    коробку, которой больше нет, незачем, — но та, что уже выбрана у правимой
+    записи, остаётся: иначе правка старого расхода молча снимала бы с него кассу.
+
+    Поля нет вовсе, когда касс не заведено ни одной: пустой выбор из ничего
+    только мешает, а расход без кассы — законное состояние (так внесены все
+    расходы до этой задачи).
+    """
+    from .tills_views import visible_tills
+
+    chosen = str(entered.get("till") or "")
+    rows = [
+        (till.id, f"{till.code} · {till.unit.code} · {ledger_title(till.ledger)}")
+        for till in visible_tills()
+        if till.closed_at is None or str(till.id) == chosen
+    ]
+    if not rows:
+        return []
+    return [_select(
+        "till", _("Касса"), rows, chosen, required=False,
+        empty_label=_("Без кассы"),
+        help=_("Откуда взяли деньги. Регистр учёта расхода приезжает из кассы, "
+               "а точка — та, на которой она стоит."),
+    )]
 
 
 def _closed_hint(who, on: date) -> str:

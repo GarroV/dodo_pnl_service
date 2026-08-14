@@ -1,0 +1,82 @@
+{
+  "Без кассы": {
+    "en": "No till",
+    "sr": "Bez kase"
+  },
+  "В него по умолчанию попадёт расход, оплаченный из этой кассы. Поменять регистр у отдельной траты по-прежнему можно.": {
+    "en": "By default, an expense paid from this till will land in it. The ledger can still be changed for an individual expense.",
+    "sr": "U nju će po podrazumevanoj vrednosti pasti trošak plaćen iz ove kase. Knjigu za pojedinačni trošak i dalje je moguće promeniti."
+  },
+  "Завести кассу": {
+    "en": "Add till",
+    "sr": "Dodaj kasu"
+  },
+  "Из кассы": {
+    "en": "From till",
+    "sr": "Iz kase"
+  },
+  "Касс нет.": {
+    "en": "No tills.",
+    "sr": "Nema kasa."
+  },
+  "Касса": {
+    "en": "Till",
+    "sr": "Kasa"
+  },
+  "Касса «%(till)s» стоит на точке %(unit)s — выберите её или уберите кассу.": {
+    "en": "The till \"%(till)s\" is assigned to unit %(unit)s — choose that unit or remove the till.",
+    "sr": "Kasa „%(till)s“ je na objektu %(unit)s — izaberite ga ili uklonite kasu."
+  },
+  "Касса закрывается датой, а не удалением: закрытые месяцы на неё ссылаются.": {
+    "en": "A till is closed with a date, not by deleting it: closed months refer to it.",
+    "sr": "Kasa se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na nju."
+  },
+  "Касса не найдена.": {
+    "en": "Till not found.",
+    "sr": "Kasa nije pronađena."
+  },
+  "Касса стоит на точке, и расход из неё — расход этой точки.": {
+    "en": "A till is assigned to a unit, and an expense from it is that unit's expense.",
+    "sr": "Kasa je na objektu, i trošak iz nje je trošak tog objekta."
+  },
+  "Кассы": {
+    "en": "Tills",
+    "sr": "Kase"
+  },
+  "Коробки, из которых платят наличными. Регистр учёта расхода приезжает из кассы, а не выбирается к каждой трате.": {
+    "en": "Boxes cash is paid from. The expense's ledger comes from the till, rather than being chosen for each expense.",
+    "sr": "Kutije iz kojih se plaća gotovinom. Knjiga troška dolazi iz kase, a ne bira se za svaki trošak posebno."
+  },
+  "Коробки, из которых платят наличными: точка и регистр учёта": {
+    "en": "Boxes cash is paid from: unit and ledger",
+    "sr": "Kutije iz kojih se plaća gotovinom: objekat i knjiga"
+  },
+  "Короткий код кассы, например NS1-main.": {
+    "en": "A short till code, for example NS1-main.",
+    "sr": "Kratka šifra kase, na primer NS1-main."
+  },
+  "Новая касса": {
+    "en": "New till",
+    "sr": "Nova kasa"
+  },
+  "Откуда взяли деньги. Регистр учёта расхода приезжает из кассы, а точка — та, на которой она стоит.": {
+    "en": "Where the money came from. The expense's ledger comes from the till, and the unit is the one the till is assigned to.",
+    "sr": "Odakle je novac uzet. Knjiga troška dolazi iz kase, a objekat je onaj na kome je kasa."
+  },
+  "Пока кассы не заведены, расход вносится без неё, а регистр учёта выбирается руками.": {
+    "en": "Until tills are set up, an expense is entered without one, and the ledger is chosen by hand.",
+    "sr": "Dok kase nisu zavedene, trošak se unosi bez nje, a knjiga se bira ručno."
+  },
+  "Пусто — регистр берётся из выбранной кассы; без кассы это официальный. Выбранное здесь значение сильнее кассы.": {
+    "en": "Empty — the ledger is taken from the chosen till; without a till it is official. A value chosen here overrides the till.",
+    "sr": "Prazno — knjiga se uzima iz izabrane kase; bez kase je to zvanična. Vrednost izabrana ovde jača je od kase."
+  },
+  "Расход на всю сеть из кассы не оплачивается: у кассы есть точка. Уберите кассу или выберите её точку.": {
+    "en": "A network-wide expense cannot be paid from a till: a till has a unit. Remove the till or choose its unit.",
+    "sr": "Trošak za celu mrežu se ne plaća iz kase: kasa ima objekat. Uklonite kasu ili izaberite njen objekat."
+  },
+  "← К кассам": {
+    "en": "← To the tills",
+    "sr": "← Na kase"
+  }
+}

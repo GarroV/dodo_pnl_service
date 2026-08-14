@@ -41,6 +41,7 @@
       <th>{% translate "Точка" %}</th>
       <th>{% translate "Статья" %}</th>
       <th class="num">{% translate "Сумма" %}</th>
+      <th>{% translate "Касса" %}</th>
       <th>{% translate "Регистр" %}</th>
       <th>{% translate "Комментарий" %}</th>
       <th>{% translate "Состояние" %}</th>
@@ -53,6 +54,7 @@
       <td>{{ row.unit }}</td>
       <td>{{ row.item }}</td>
       <td class="num">{{ row.amount_text }}</td>
+      <td>{{ row.till }}</td>
       <td>{{ row.ledger }}</td>
       <td>{{ row.note }}</td>
       <td>{{ row.state_title }}{% if row.landed_in %} <span class="note">{% blocktranslate with month=row.landed_in %}учтён в {{ month }}{% endblocktranslate %}</span>{% endif %}</td>
@@ -63,7 +65,7 @@
     <tr data-total="{{ total_raw }}">
       <th colspan="3">{% blocktranslate count counter=counted %}Итого по {{ counter }} строке{% plural %}Итого по {{ counter }} строкам{% endblocktranslate %}</th>
       <th class="num">{{ total_text }}</th>
-      <th colspan="3"></th>
+      <th colspan="4"></th>
     </tr>
   </tfoot>
 </table>{% endscroll %}

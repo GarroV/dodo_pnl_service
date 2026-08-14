@@ -290,3 +290,51 @@ def test_seed_survives_an_allocation_rule(seeded, conn):
     assert conn.execute("select count(*) from allocation_rules").fetchone()[0] == 0
     assert conn.execute("select count(*) from expense_items").fetchone()[0] == 0
     assert conn.execute("select count(*) from employees").fetchone()[0] > 0
+
+
+def test_seed_survives_a_till(seeded, conn):
+    """Третий раз тот же случай — теперь касса (T145).
+
+    Ссылка кассы на точку `PROTECT`, ссылка факта на кассу тоже. Порядок уборки
+    в сиде — единственная защита: живая касса не даёт удалить точку, а значит и
+    пересобрать тенант. Дважды это ловил смоук на живом стенде (T109 — расход,
+    T111 — правило разнесения), и оба раза ломался не продукт, а способ вернуть
+    стенд к эталону. На третий раз проверка написана заранее.
+
+    Касса кладётся вместе с расходом из неё: удалить их порознь тоже нельзя, и
+    проверять надо ровно ту пару ссылок, которая появляется в продукте.
+    """
+    from psycopg.types.json import Jsonb
+
+    tenant, unit = conn.execute(
+        """select t.id, u.id from tenants t join units u on u.tenant_id = t.id
+            where t.code = 'rs-dev' order by u.code limit 1"""
+    ).fetchone()
+    line = conn.execute("select id from pnl_items where code = 'food_cost'").fetchone()[0]
+    item = conn.execute(
+        """insert into expense_items (tenant_id, code, titles, pnl_item_id, valid_from)
+           values (%s, 'seed-till-water', %s, %s, '2020-01-01') returning id""",
+        (tenant, Jsonb({"ru": "Вода"}), line),
+    ).fetchone()[0]
+    till = conn.execute(
+        """insert into tills (tenant_id, unit_id, code, title, ledger)
+           values (%s, %s, 'seed-till', 'Касса сида', 'official') returning id""",
+        (tenant, unit),
+    ).fetchone()[0]
+    conn.execute(
+        "select upsert_fact(%s)",
+        (Jsonb({
+            "tenant_id": str(tenant), "period": "2026-06-01", "unit_id": str(unit),
+            "pnl_item_id": str(line), "expense_item_id": str(item),
+            "till_id": str(till),
+            "amount": "100.00", "title": "Вода", "source": "manual",
+            "channel": "cash", "dedup_key": "manual:cash:seed-till-test",
+        }),),
+    )
+    conn.commit()
+
+    run_manage(seeded, "seed_dev")
+
+    assert conn.execute("select count(*) from tills").fetchone()[0] == 0
+    assert conn.execute("select count(*) from facts").fetchone()[0] == 0
+    assert conn.execute("select count(*) from employees").fetchone()[0] > 0

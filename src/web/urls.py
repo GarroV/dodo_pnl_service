@@ -9,6 +9,7 @@ from . import (
     expenses_views,
     reports_views,
     rules_views,
+    tills_views,
     views,
 )
 
@@ -124,6 +125,11 @@ urlpatterns = [
         expense_items_views.expense_item,
         name="directory-expense-item",
     ),
+    # Кассы (T145). Седьмой справочник, тот же префикс и то же право
+    # `directory.manage`: касса — словарь, а не первичные данные.
+    path("directory/tills/", tills_views.tills, name="directory-tills"),
+    path("directory/tills/new/", tills_views.till, name="directory-till-new"),
+    path("directory/tills/<uuid:till_id>/", tills_views.till, name="directory-till"),
     # Внесение расхода из кассы (T109). Не под префиксом справочников: это
     # внесение первичных данных, а не ведение словаря, и делают это все роли,
     # кроме администратора сети, — у которого как раз справочники и есть.

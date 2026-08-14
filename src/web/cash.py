@@ -175,6 +175,21 @@ class UnitRefused(Exception):
         super().__init__(self.message)
 
 
+class TillRefused(UnitRefused):
+    """Касса не принята базой (T145). Один текст на чужую и несуществующую.
+
+    Наследник `UnitRefused` не ради удобства: отказ по кассе приходит из тех же
+    трёх мест, что отказ по точке (форма внесения, карточка расхода, вызов по
+    HTTP), и все три уже ловят `UnitRefused`. Отдельный класс без родства
+    остался бы неперехваченным ровно там, где перехватывать некому, — то есть
+    стал бы пятисоткой. Своё имя нужно, чтобы человек читал про кассу, когда
+    ошибся в кассе, а не искал ошибку в точке, которую заполнил правильно.
+    """
+
+    def __init__(self):
+        super().__init__(_("Касса не найдена."))
+
+
 def record_expense(
     who,
     *,
@@ -182,6 +197,7 @@ def record_expense(
     amount,
     item: ExpenseItem,
     unit_id,
+    till_id,
     ledger: str,
     note: str,
     entry_key: str,
@@ -206,6 +222,10 @@ def record_expense(
         "unit_id": str(unit_id) if unit_id else None,
         "pnl_item_id": str(item.pnl_item_id),
         "expense_item_id": str(item.id),
+        # Из какой кассы платили (T145). Уходит в базу как есть — ровно как
+        # точка: чужую кассу отвергает политика `till_visibility` на `facts`, а
+        # не проверка здесь (D014).
+        "till_id": str(till_id) if till_id else None,
         "ledger": ledger,
         "amount": str(amount),
         # Название позиции — снимок названия статьи на момент записи. Читать его
@@ -288,7 +308,7 @@ def _upsert(payload: dict) -> tuple[str, str]:
         # 23503 — такой строки нет вовсе. Ответ у них один и тот же намеренно:
         # по нему нельзя понять, существует ли точка (D023).
         if state in ("42501", "23503"):
-            raise _unit_refusal(payload) from refusal
+            raise _refusal(payload) from refusal
         if state == "P0001":
             # Закрытый месяц. Сюда почти не попадают — период выбирается заранее,
             # — но период мог закрыться между выбором и записью.
@@ -298,8 +318,8 @@ def _upsert(payload: dict) -> tuple[str, str]:
         raise
 
 
-def _unit_refusal(payload: dict) -> UnitRefused:
-    """Отказ базы по точке — словами того, что человек на самом деле просил.
+def _refusal(payload: dict) -> UnitRefused:
+    """Отказ базы — словами того, что человек на самом деле просил.
 
     Отказ один и тот же (`42501`), а просили разного: строку своей точки —
     значит точка не подошла; строку без точки — значит расход на всю сеть, а
@@ -307,15 +327,36 @@ def _unit_refusal(payload: dict) -> UnitRefused:
     «Точка не найдена» на второй случай отправляла бы человека искать ошибку в
     поле, которое он заполнил правильно.
 
+    Касса спрашивается **первой** (T145): её отказ перекрывает отказ по точке,
+    потому что точка у расхода из кассы берётся из самой кассы — и если кассы
+    не видно, то и точка в запросе взялась не из неё.
+
     Это не проверка прав в приложении: решает по-прежнему политика
-    `unit_visibility` на `facts`, здесь только перевод её отказа в слова.
+    (`unit_visibility` или `till_visibility` на `facts`), здесь только перевод
+    её отказа в слова. Ответ у чужой кассы и у несуществующей один и тот же
+    намеренно: по нему нельзя понять, существует ли касса (D023).
     """
+    if payload.get("till_id") and not _till_is_visible(payload["till_id"]):
+        return TillRefused()
     if payload.get("unit_id"):
         return UnitRefused()
     return UnitRefused(_(
         "Расход на всю сеть вносит тот, кто ведёт все точки партнёра. "
         "Выберите свою точку."
     ))
+
+
+def _till_is_visible(till_id) -> bool:
+    """Видна ли роли эта касса. Спрашивается **после** отказа, ради слов.
+
+    Выбором отказа это не управляет: запись уже отвергнута базой, и вопрос
+    здесь один — про какое поле сказать человеку. Выборка идёт под теми же
+    политиками `tills`, что и списки на экранах, поэтому чужая касса и
+    несуществующая отвечают одинаково.
+    """
+    from core.models import Till
+
+    return Till.objects.filter(pk=till_id).exists()
 
 
 # Приставки исправлений. Правка и удаление расхода **закрытого** месяца не могут
@@ -350,6 +391,7 @@ def revise_expense(
     amount,
     item: ExpenseItem,
     unit_id,
+    till_id,
     ledger: str,
     note: str,
 ) -> Recorded:
@@ -378,13 +420,13 @@ def revise_expense(
     if not month_is_closed(who.tenant_id, fact.period):
         return record_expense(
             who, on=on, amount=amount, item=item, unit_id=unit_id,
-            ledger=ledger, note=note, entry_key=key,
+            till_id=till_id, ledger=ledger, note=note, entry_key=key,
         )
 
     storno_expense(who, fact)
     return record_expense(
         who, on=on, amount=amount, item=item, unit_id=unit_id,
-        ledger=ledger, note=note, entry_key=key + FIX_SUFFIX,
+        till_id=till_id, ledger=ledger, note=note, entry_key=key + FIX_SUFFIX,
     )
 
 
@@ -433,6 +475,9 @@ def storno_expense(who, fact) -> Recorded:
         "unit_id": str(fact.unit_id) if fact.unit_id else None,
         "pnl_item_id": str(fact.pnl_item_id),
         "expense_item_id": str(fact.expense_item_id) if fact.expense_item_id else None,
+        # Касса копируется вместе с остальным: сторно обязано отменять ровно то,
+        # что записано, включая источник денег.
+        "till_id": str(fact.till_id) if fact.till_id else None,
         "ledger": fact.ledger,
         "amount": str(-fact.amount),
         "title": fact.title,

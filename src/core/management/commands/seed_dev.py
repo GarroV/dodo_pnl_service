@@ -274,6 +274,11 @@ class Command(BaseCommand):
         # в Python и сам ничего не переставляет.
         for model in (
             models.Fact, models.SourceDocument, models.FactBatch,
+            # Кассы — после фактов и раньше точек: ссылка факта на кассу
+            # `PROTECT`, ссылка кассы на точку тоже. Тот же порядок и тот же
+            # довод, что у статей расходов; ошибиться в нём — значит уронить
+            # сид на любом стенде, где хоть раз завели кассу (T109, T111).
+            models.Till,
             models.AllocationRule, models.ExpenseItem,
             models.PayComponent, models.Payslip, models.Payrun, models.Timesheet,
             models.EmploymentTerm, models.Employee, models.EmployeeGroup,

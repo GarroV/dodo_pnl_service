@@ -43,6 +43,7 @@ from core.models import (
     EmploymentTerm,
     ExpenseItem,
     LegalEntity,
+    Till,
     Unit,
 )
 
@@ -170,6 +171,15 @@ def _sections(who) -> list[dict]:
             # Счётчик считает то же, что покажет раздел: статьи тенанта целиком.
             # Регистра у статьи нет — она словарь названий, а не данные о деньгах.
             "count": ExpenseItem.objects.count(),
+        },
+        {
+            "url": reverse("directory-tills"),
+            "title": _("Кассы"),
+            "about": _("Коробки, из которых платят наличными: точка и регистр учёта"),
+            # Считается ровно то, что человек увидит в разделе: политики
+            # `tills` уже сузили выборку по точке и регистру. Иначе цифра сама
+            # становится утечкой (D023).
+            "count": Till.objects.count(),
         },
         {
             "url": reverse("directory-calendar"),

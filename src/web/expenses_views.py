@@ -195,7 +195,7 @@ def rows_for(who, chosen: dict, *, window: tuple[int, int] | None = None) -> lis
     месяц, и половина месяца ему бесполезна.
     """
     found = (
-        Fact.objects.select_related("unit", "expense_item")
+        Fact.objects.select_related("unit", "expense_item", "till")
         .filter(
             source=cash.MANUAL_SOURCE,
             channel=cash.CASH_CHANNEL,
@@ -246,6 +246,9 @@ def row_of(fact) -> dict:
         "unit": fact.unit.code if fact.unit else (EMPTY if fact.unit_id else _("Вся сеть")),
         "item": cash.item_title(fact.expense_item.titles) if fact.expense_item
                 else fact.title,
+        # Из какой кассы платили (T145). Прочерк — расход мимо кассы: так внесены
+        # все расходы до появления справочника, и это законное состояние.
+        "till": fact.till.code if fact.till else EMPTY,
         "amount": fact.amount,
         # Машиночитаемая сумма строкой, а не числом: числа в шаблоне Django
         # локализует (`100,00`), и приёмка сверяла бы итог с отформатированным
@@ -480,7 +483,7 @@ def expense_or_404(fact_id) -> Fact:
     править их здесь нечем.
     """
     fact = (
-        Fact.objects.select_related("expense_item", "unit")
+        Fact.objects.select_related("expense_item", "unit", "till")
         .filter(pk=fact_id, source=cash.MANUAL_SOURCE, channel=cash.CASH_CHANNEL)
         .exclude(allocation="allocated")
         .first()
@@ -530,6 +533,7 @@ def _entered(fact) -> dict:
         "amount": str(fact.amount),
         "item": str(fact.expense_item_id or ""),
         "unit": str(fact.unit_id or ""),
+        "till": str(fact.till_id or ""),
         "ledger": fact.ledger,
         "note": fact.note or "",
     }
