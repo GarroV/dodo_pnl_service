@@ -171,7 +171,25 @@ services:
       # а не живости приложения.
       migrate:
         condition: service_completed_successfully
-    environment: *app-env
+    environment:
+      <<: *app-env
+      # Единственное отличие от окружения продукта — роль подключения, и она
+      # третья (T124, issue #66). Рабочий процесс читает очередь соединением
+      # напрямую, без `set local role`, а роль продукта на очереди умеет ровно
+      # одно — поставить задачу (`0047_queue_privileges`): полезная нагрузка ей
+      # не нужна. Одной ролью на обе службы это не сходится — очередь падала бы
+      # `permission denied for table django_q_ormq`.
+      #
+      # Логин-роль очереди на площадке состоит в двух ролях: `queue_worker`
+      # (разбирать очередь) и `app_user` (работать с данными внутри задачи —
+      # `db_context` делает `set local role app_user`). Роль веба членом
+      # `queue_worker` не делается: иначе защита полезной нагрузки держалась бы
+      # на дисциплине кода, а не на правах базы.
+      #
+      # Пусто — берётся роль продукта, а если пусто и там, то владелец схемы:
+      # локально все три роли совпадают, и заводить вторую и третью ради
+      # разработки незачем.
+      DATABASE_URL: postgresql://${QUEUE_DB_USER:-${APP_DB_USER:-${POSTGRES_USER}}}:${QUEUE_DB_PASSWORD:-${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}}@db:5432/${POSTGRES_DB}
     command: ["python", "manage.py", "qcluster"]
     healthcheck:
       # Живость проверяется по самой очереди, а не по процессу: процесс бывает

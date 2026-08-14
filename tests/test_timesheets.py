@@ -388,6 +388,98 @@ def test_calculation_survives_materialization(web_env, period_restored):
     assert after.components == before.components
 
 
+# =============================================================================
+# 2в. Две одновременные записи одной ячейки (T123, issue #61)
+# =============================================================================
+# Досылка несохранённых ячеек уходит на `pagehide` через `sendBeacon`, а
+# переходов подряд бывает два (страница входа, затем форма входа) — тогда одну
+# и ту же ячейку пишут два запроса одновременно. Обе транзакции видят «дней у
+# строки нет», обе раскладывают дни, вторая падает на уникальном ключе
+# `timesheet_days_uniq` — человек получает «Server Error» на обычном вводе
+# часов, а `sendBeacon` ответа не читает, поэтому потеря ввода молчалива.
+#
+# Проверка обязана быть НАСТОЯЩЕЙ гонкой: два соединения, обе транзакции
+# открыты одновременно. Два последовательных вызова проходят и на сломанном
+# коде — их проверяет `test_repeated_save_changes_nothing` выше, и дефекта он
+# не видит.
+
+
+def test_two_writers_of_one_cell_go_one_after_another(one_row):
+    """Вторая запись ждёт первую, а не падает дубликатом ключа.
+
+    Первый писатель останавливается внутри своей транзакции — до того, как
+    записал дни, — и в это окно пускается второй. На сломанном коде второй
+    проходит насквозь и коммитит свои дни, а первый, продолжив, падает
+    `IntegrityError: duplicate key value violates unique constraint
+    "timesheet_days_uniq"`. На починенном второй ждёт на блокировке строки и
+    записывает своё значение после.
+    """
+    import threading
+    from unittest import mock
+
+    from django.db import connections
+
+    from core.models import Timesheet
+    from timesheets import store
+
+    row_id = one_row.pk
+    inside = threading.Event()   # первый писатель дошёл до записи дней
+    go = threading.Event()       # ему разрешено продолжать
+    slow_thread: threading.Thread | None = None
+    errors: dict[str, BaseException] = {}
+    real_spread = store.spread
+
+    def spread_with_pause(*args, **kwargs):
+        # Пауза ровно у первого писателя и ровно один раз: он замирает внутри
+        # открытой транзакции, уже прочитав состояние строки, но ещё ничего не
+        # записав. Это и есть окно гонки — держать его руками надёжнее, чем
+        # надеяться на совпадение по времени.
+        if threading.current_thread() is slow_thread and not inside.is_set():
+            inside.set()
+            go.wait(timeout=10)
+        return real_spread(*args, **kwargs)
+
+    def write(name: str, hours: Decimal) -> None:
+        try:
+            store.set_cell(
+                # Своя строка на каждый поток: объект модели — это данные, а
+                # соединение у потока своё, как у двух запросов продукта.
+                timesheet=Timesheet.objects.get(pk=row_id),
+                hour_type="sick", hours=hours,
+            )
+        except BaseException as exc:  # noqa: BLE001 — потоку некому его отдать
+            errors[name] = exc
+        finally:
+            connections.close_all()
+
+    slow = threading.Thread(target=write, args=("первый", Decimal("8.00")))
+    fast = threading.Thread(target=write, args=("второй", Decimal("12.00")))
+    slow_thread = slow
+
+    with mock.patch.object(store, "spread", spread_with_pause):
+        slow.start()
+        assert inside.wait(timeout=10), "первый писатель не дошёл до записи дней"
+        fast.start()
+        fast.join(timeout=1.0)
+        # Снимается до `go.set()`: после него второй пойдёт дальше в любом случае.
+        blocked = fast.is_alive()
+        go.set()
+        slow.join(timeout=20)
+        fast.join(timeout=20)
+
+    assert not errors, f"одновременная запись упала: {errors}"
+    assert blocked, (
+        "вторая запись прошла, не дождавшись первой — строка не берётся под "
+        "блокировку, и дубликат ключа остаётся вопросом везения"
+    )
+    assert not slow.is_alive() and not fast.is_alive()
+
+    row = Timesheet.objects.get(pk=row_id)
+    # Записалось значение того, кто коммитил последним, а не смесь двух.
+    assert Decimal(row.hours["sick"]) == Decimal("12.00")
+    assert store.daily_totals(row)["sick"] == Decimal("12.00")
+
+
 def _component_totals(payrun_id) -> dict:
     from django.db.models import Sum
 
