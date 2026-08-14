@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-13 20:52+0000\n"
+"POT-Creation-Date: 2026-08-14 07:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,9 +30,6 @@ msgstr "U pravilima zemlje nema načina merenja rada: %(measures)s. Ispravite po
 
 msgid "база для взносов не сходится с часами табеля. По ней считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы верным. Проверьте колонку «База взносов» в табеле."
 msgstr "Osnovica doprinosa se ne poklapa sa satima iz evidencije sati. Iz nje se računaju doprinosi i bruto, zato bi obračun po zastareloj osnovici izgledao ispravno. Proverite kolonu „Osnovica doprinosa“ u evidenciji sati."
-
-msgid "Кто именно не прошёл проверку, видно тому, кому отдан весь расчёт партнёра, — спросите бухгалтера или оперативного директора."
-msgstr "Ko tačno nije prošao proveru vidi onaj kome je dat ceo obračun partnera — pitajte računovođu ili operativnog direktora."
 
 msgid "Ведомость этого периода попадает в регистры учёта, недоступные вашей роли. Запустить расчёт может тот, кто видит их все."
 msgstr "Obračunska lista ovog perioda spada u knjige koje nisu dostupne vašoj ulozi. Obračun može pokrenuti samo onaj ko vidi sve knjige."
@@ -225,22 +222,6 @@ msgstr "U pravilima zemlje nisu podešeni pragovi odstupanja. Izveštaj bez njih
 msgid "Часы точки %(unit)s за %(month)s закрыты. Чтобы их править, точку нужно открыть заново."
 msgstr "Sati objekta %(unit)s za %(month)s su zatvoreni. Da biste ih izmenili, objekat treba ponovo otvoriti."
 
-#, python-format
-msgid "%(who)s: отрицательные часы (%(kinds)s)"
-msgstr "%(who)s: negativni sati (%(kinds)s)"
-
-#, python-format
-msgid "%(who)s: в файле нет ни одного часа — строка табеля будет пустой"
-msgstr "%(who)s: u fajlu nema nijednog sata — red evidencije sati će biti prazan"
-
-#, python-format
-msgid "%(who)s: %(total)s ч при норме %(norm)s ч"
-msgstr "%(who)s: %(total)s h pri normi od %(norm)s h"
-
-#, python-format
-msgid "%(who)s: уволен %(date)s, а в файле %(total)s ч за этот месяц"
-msgstr "%(who)s: otpušten %(date)s, a u fajlu je %(total)s h za ovaj mesec"
-
 msgid "такого сотрудника нет в справочнике партнёра"
 msgstr "ovaj zaposleni ne postoji u partnerovom imeniku"
 
@@ -284,12 +265,37 @@ msgid "ручную правку нельзя записать без следа
 msgstr "ručna izmena se ne može sačuvati bez traga: potreban je autor i razlog"
 
 #, python-format
+msgid "%(who)s: отрицательные часы (%(kinds)s)"
+msgstr "%(who)s: negativni sati (%(kinds)s)"
+
+#, python-format
+msgid "%(who)s: ни одного часа за этот месяц — строка табеля пустая"
+msgstr "%(who)s: nijedan sat ovog meseca — red evidencije je prazan"
+
+#, python-format
+msgid "%(who)s: %(total)s ч при норме %(norm)s ч"
+msgstr "%(who)s: %(total)s h pri normi od %(norm)s h"
+
+#, python-format
+msgid "%(who)s: уволен %(date)s, а часов за этот месяц %(total)s"
+msgstr "%(who)s: otpušten %(date)s, a ima %(total)s sati ovog meseca"
+
+msgid "Стоит посмотреть до расчёта"
+msgstr "Vredi pogledati pre obračuna"
+
+msgid "Ни одно из этих чисел не ошибка само по себе — но незамеченными они и становятся неверной зарплатой. Сохранению они не мешают."
+msgstr "Nijedan od ovih brojeva sam po sebi nije greška — ali neprimećeni upravo tako postaju pogrešna zarada. Ne sprečavaju čuvanje reda."
+
+#, python-format
 msgid "По часам табеля в базу для взносов входит %(declared)s ч, а записано %(recorded)s ч. Пока числа не сойдутся, период не считается."
 msgstr "Prema satima iz evidencije sati, u osnovicu doprinosa treba da uđe %(declared)s h, a upisano je %(recorded)s h. Dok se brojevi ne poklope, period se ne obračunava."
 
 #, python-format
 msgid "по часам %(declared)s"
 msgstr "po satima: %(declared)s"
+
+msgid "проверьте"
+msgstr "proverite"
 
 #, python-format
 msgid "Табель · %(title)s"
@@ -437,17 +443,20 @@ msgstr "Izmenjeno"
 msgid "Без изменений"
 msgstr "Bez izmena"
 
+msgid "Сопоставлено, но не загружено"
+msgstr "Upareno, ali nije učitano"
+
 msgid "Не сопоставлено"
 msgstr "Nije upareno"
 
 msgid "Файл разобран целиком, подозрительного не нашлось."
 msgstr "Fajl je u potpunosti obrađen, ništa sumnjivo nije pronađeno."
 
-msgid "Не загружено: некому записать"
-msgstr "Nije učitano: nema kome da se upiše"
+msgid "Не загружено: человек найден, а строка не записана"
+msgstr "Nije učitano: osoba je pronađena, ali red nije upisan"
 
-msgid "Эти строки в файле есть, а в табеле их нет."
-msgstr "Ovi redovi postoje u fajlu, ali ih nema u evidenciji sati."
+msgid "Этих людей продукт узнал, но записывать было некуда — причина у каждой строки своя."
+msgstr "Ove osobe su prepoznate, ali red nije imao gde da se upiše — razlog stoji uz svaki red."
 
 msgid "Лист"
 msgstr "List"
@@ -457,6 +466,12 @@ msgstr "Ko"
 
 msgid "Почему"
 msgstr "Zašto"
+
+msgid "Не загружено: некому записать"
+msgstr "Nije učitano: nema kome da se upiše"
+
+msgid "Этих людей в справочнике партнёра нет — неизвестно, о ком строка."
+msgstr "Ovih osoba nema u šifarniku partnera — ne zna se na koga se red odnosi."
 
 msgid "Не разобрано в файле"
 msgstr "Nije obrađeno u fajlu"
@@ -500,16 +515,179 @@ msgstr "Fajl je veći od %(limit)s MB — ovo nije platna tabela."
 msgid "Файл не удалось прочитать как книгу Excel: %(reason)s"
 msgstr "Fajl nije moguće pročitati kao Excel radnu svesku: %(reason)s"
 
+msgid "Поровну между точками"
+msgstr "Podjednako između objekata"
+
+msgid "Пропорционально выручке"
+msgstr "Proporcionalno prihodu"
+
+msgid "На одну точку"
+msgstr "Na jedan objekat"
+
+msgid "Спрашивать каждый раз"
+msgstr "Pitaj svaki put"
+
+#, python-format
+msgid "«%(label)s»: такого варианта нет."
+msgstr "„%(label)s“: takva opcija ne postoji."
+
+msgid "Разнесение"
+msgstr "Raspodela"
+
+#, python-format
+msgid "Для разнесения «%(method)s» нужно выбрать точку."
+msgstr "Za raspodelu „%(method)s“ potrebno je izabrati objekat."
+
+#, python-format
+msgid "Правило уже действует с %(from)s: новая версия не может начинаться раньше. Возьмите дату позже."
+msgstr "Pravilo već važi od %(from)s: nova verzija ne može početi ranije. Izaberite kasniji datum."
+
+#, python-format
+msgid "Правило действует с %(from)s: убрать его можно только более поздней датой."
+msgstr "Pravilo važi od %(from)s: ukloniti ga je moguće samo kasnijim datumom."
+
+#, python-format
+msgid "Этот вызов принимает только %(methods)s."
+msgstr "Ovaj poziv prihvata samo %(methods)s."
+
+msgid "Сначала войдите."
+msgstr "Prvo se prijavite."
+
+msgid "Вас ещё не завели ни к одному партнёру."
+msgstr "Još niste dodati ni jednom partneru."
+
+msgid "Расход не найден."
+msgstr "Trošak nije pronađen."
+
+msgid "Тело запроса не разобрано как JSON."
+msgstr "Telo zahteva nije moglo da se parsira kao JSON."
+
+msgid "Тело запроса должно быть объектом JSON."
+msgstr "Telo zahteva mora biti JSON objekat."
+
+#, python-format
+msgid "«limit» больше %(max)s не бывает: спросите страницами."
+msgstr "„limit“ ne može biti veći od %(max)s: tražite po stranicama."
+
+msgid "«limit» должен быть больше нуля."
+msgstr "„limit“ mora biti veći od nule."
+
+#, python-format
+msgid "«%(name)s»: это целое число, а не «%(value)s»."
+msgstr "„%(name)s“ mora biti ceo broj, a ne „%(value)s“."
+
+msgid "Эта строка уже заменена: правьте ту, что действует."
+msgstr "Ovaj red je već zamenjen: uredite onaj koji je važeći."
+
+msgid "Укажите месяц пересчёта: «period» в виде 2026-08, по одному за вызов."
+msgstr "Navedite mesec za ponovni obračun: „period“ u obliku 2026-08, jedan po pozivu."
+
+#, python-format
+msgid "«period»: месяц пишется как 2026-08, а не «%(value)s»."
+msgstr "„period“: mesec se piše kao 2026-08, a ne „%(value)s“."
+
+#, python-format
+msgid "Месяц %(month)s закрыт, и текущий месяц %(current)s тоже — расход записать некуда. Откройте месяц заново с причиной."
+msgstr "Mesec %(month)s je zatvoren, a i tekući mesec %(current)s — nema gde da se upiše trošak. Ponovo otvorite mesec sa razlogom."
+
+msgid "Точка не найдена."
+msgstr "Objekat nije pronađen."
+
+msgid "Месяц закрылся, пока расход вносили. Откройте форму заново."
+msgstr "Mesec je zatvoren dok je trošak unošen. Otvorite formu ponovo."
+
+msgid "Месяц закрылся, пока расход удаляли. Откройте список заново."
+msgstr "Mesec je zatvoren dok je trošak brisan. Otvorite listu ponovo."
+
+msgid "Форма устарела или испорчена. Откройте её заново и внесите расход ещё раз."
+msgstr "Forma je zastarela ili oštećena. Otvorite je ponovo i unesite trošak još jednom."
+
+msgid "Вас ещё не завели ни к одному партнёру, поэтому вносить расход некуда. Попросите администратора сети добавить вас."
+msgstr "Još niste dodati ni jednom partneru, pa nema gde da se unese trošak. Zamolite administratora mreže da vas doda."
+
+msgid "Дата расхода"
+msgstr "Datum troška"
+
+#, python-format
+msgid "«%(label)s»: расход на ноль не вносится."
+msgstr "„%(label)s“: trošak sa iznosom nula se ne unosi."
+
+msgid "Комментарий"
+msgstr "Komentar"
+
+#, python-format
+msgid "Поле «%(label)s» обязательно."
+msgstr "Polje „%(label)s“ je obavezno."
+
+msgid "Статья расхода"
+msgstr "Stavka troška"
+
+msgid "Статья не найдена."
+msgstr "Stavka troška nije pronađena."
+
+#, python-format
+msgid "Статья «%(title)s» на %(date)s не действует: выберите другую или поправьте её в справочнике."
+msgstr "Stavka troška „%(title)s“ nije važeća na %(date)s: izaberite drugu ili je ispravite u imeniku."
+
+msgid "Регистр учёта"
+msgstr "Knjiga"
+
+msgid "Когда деньги вышли из кассы. Месяц уже закрыт — расход ляжет в текущий, а эта дата останется при нём."
+msgstr "Kada je novac izašao iz kase. Ako je mesec već zatvoren, trošak upada u tekući mesec, a ovaj datum ostaje uz njega."
+
+msgid "Статьи ведёт администратор сети. Нужной нет — попросите завести: выдумывать название на месте нельзя, иначе одна трата назовётся по-разному."
+msgstr "Stavke troškova održava administrator mreže. Ako nedostaje ona koja vam treba, zamolite ga da je doda — nije dozvoljeno smišljati naziv u hodu, jer bi se isti trošak svaki put zvao drugačije."
+
+msgid "Зачем потратили. Через месяц это единственное, по чему строку узнают."
+msgstr "Zašto je potrošeno. Za mesec dana to je jedino po čemu će se red prepoznati."
+
+msgid "Вся сеть"
+msgstr "Cela mreža"
+
+msgid "«Вся сеть» — расход юрлица целиком (аренда офиса, реклама): он разойдётся по точкам правилом статьи."
+msgstr "„Cela mreža“ — trošak celog pravnog lica (kirija kancelarije, reklama): raspodeliće se po objektima pravilom stavke."
+
+#, python-format
+msgid "Расход записан в месяц %(month)s."
+msgstr "Trošak je zapisan za %(month)s."
+
+#, python-format
+msgid "Месяц %(closed)s закрыт, поэтому расход записан в %(month)s — с исходной датой и не сдвинув закрытый месяц."
+msgstr "Mesec %(closed)s je zatvoren, zato je trošak zapisan za %(month)s — sa originalnim datumom i bez pomeranja zatvorenog meseca."
+
+#, python-format
+msgid " Точки у расхода нет, поэтому он ждёт разнесения — и виден в списке нераспределённых: %(url)s"
+msgstr " Trošak nema objekat, pa čeka raspodelu — i vidljiv je na listi neraspoređenog: %(url)s"
+
+#, python-format
+msgid " Расход разнесён по точкам правилом статьи: строк — %(count)s."
+msgstr " Trošak je raspodeljen po objektima pravilom stavke: redova — %(count)s."
+
+msgid " Разнести его по точкам может тот, кто ведёт все точки: строки разнесения ложатся и на чужие точки."
+msgstr " Da ga raspodeli po objektima može samo onaj ko vodi sve objekte: redovi raspodele padaju i na tuđe objekte."
+
+msgid " Правила разнесения у статьи нет."
+msgstr " Stavka nema pravilo raspodele."
+
 #, python-format
 msgid "%(what)s нельзя изменить: зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
 msgstr "%(what)s se ne može promeniti: plata za %(month)s je već odobrena, a ovo podešavanje nema verzije po datumima — izmena bi retroaktivno prepisala zatvoreni mesec. Podesite ono što vam treba pojedinačnom zaposlenom u uslovima zaposlenja: tamo izmena važi od datuma. Ili ponovo otvorite mesec uz obrazloženje."
 
 #, python-format
-msgid "%(what)s нельзя изменить с %(from)s: зарплата за %(month)s уже утверждена, и правка переписала бы закрытый месяц задним числом. Возьмите дату позже %(edge)s или откройте месяц заново с причиной."
-msgstr "%(what)s ne može se promeniti od %(from)s: plata za %(month)s je već odobrena, a izmena bi retroaktivno prepisala zatvoren mesec. Izaberite datum kasnije od %(edge)s ili ponovo otvorite mesec sa razlogom."
+msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: если она изменит его числа, разница ляжет помеченной строкой в ближайший неутверждённый месяц — перенести её можно на странице закрытого."
+msgstr "Zarada je odobrena zaključno sa %(edge)s. Izmena sa ranijim datumom se prihvata, ali ne prepisuje zatvoreni mesec: ako promeni njegove brojeve, razlika ulazi označenom stavkom u prvi neodobreni mesec — prenesite je na stranici zatvorenog meseca."
 
-msgid "условия найма"
-msgstr "uslovi zapošljavanja"
+#, python-format
+msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
+msgstr "Zarada je odobrena zaključno sa %(edge)s. Izmena sa ranijim datumom se prihvata, ali ne prepisuje zatvoreni mesec: kod ovog partnera se razlika primenjuje ponovnim obračunom — otvorite mesec ponovo uz razlog i obračunajte ga opet."
+
+#, python-format
+msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним до копейки: если правка изменила его числа, разница видна на странице этого месяца и переносится оттуда помеченной строкой в ближайший неутверждённый."
+msgstr "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mesec je ostao isti do dinara: ako je izmena promenila njegove brojeve, razlika se vidi na stranici tog meseca i odatle se prenosi označenom stavkom u prvi neodobreni mesec."
+
+#, python-format
+msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
+msgstr "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mesec je ostao isti: kod ovog partnera se razlika primenjuje ponovnim obračunom — otvorite mesec ponovo uz razlog i obračunajte ga opet."
 
 msgid "Карточка сохранена."
 msgstr "Kartica je sačuvana."
@@ -544,15 +722,17 @@ msgstr "Pravna lica"
 msgid "С кем работает бухгалтерия: название и налоговый номер"
 msgstr "Sa kim radi računovodstvo: naziv i poreski broj"
 
+msgid "Статьи расходов"
+msgstr "Stavke troškova"
+
+msgid "Чем называют траты и в какую строку P&L они попадают"
+msgstr "Kako se troškovi nazivaju i u koji red P&L-a spadaju"
+
 msgid "Производственный календарь"
 msgstr "Proizvodni kalendar"
 
 msgid "Норма часов и рабочие дни месяца — отсюда их берёт страница месяца"
 msgstr "Norma časova i radni dani meseca — odavde ih uzima stranica meseca"
-
-#, python-format
-msgid "Поле «%(label)s» обязательно."
-msgstr "Polje „%(label)s“ je obavezno."
 
 #, python-format
 msgid "«%(label)s»: дата пишется как 2026-06-01, а не «%(value)s»."
@@ -565,10 +745,6 @@ msgstr "„%(label)s“: potreban je broj, a ne „%(value)s“."
 #, python-format
 msgid "«%(label)s»: отрицательное значение."
 msgstr "„%(label)s“: negativna vrednost."
-
-#, python-format
-msgid "«%(label)s»: такого варианта нет."
-msgstr "„%(label)s“: takva opcija ne postoji."
 
 msgid "Карточки заводятся вместе с данными партнёра, а не здесь: имя, коэффициент и ставку приносит загрузка таблицы. Править — можно."
 msgstr "Kartice se zavode zajedno sa podacima partnera, a ne ovde: ime, koeficijent i stopu donosi učitavanje tabele. Izmena je moguća."
@@ -614,9 +790,6 @@ msgstr "Koeficijent"
 
 msgid "Схема расчёта"
 msgstr "Šema obračuna"
-
-msgid "Регистр учёта"
-msgstr "Knjiga"
 
 msgid "Сквозной ключ между системами, например JMBG. По нему сходится загрузка табеля."
 msgstr "Ključ zajednički za sve sisteme, na primer JMBG. Po njemu se poklapa učitavanje evidencije sati."
@@ -771,9 +944,6 @@ msgstr "Kalendar je prazan."
 msgid "Пока месяца нет в календаре, норма часов на его странице — прочерк, и недоработку считать не от чего."
 msgstr "Dok mesec nije u kalendaru, norma časova na njegovoj stranici je crta, i nema od čega da se računa manjak."
 
-msgid "производственный календарь"
-msgstr "proizvodni kalendar"
-
 msgid "Новый месяц календаря"
 msgstr "Novi mesec kalendara"
 
@@ -792,6 +962,139 @@ msgstr "Nešto se pokvarilo na našoj strani"
 
 msgid "Мы записали это в журнал. Попробуйте ещё раз через минуту, а если повторится — скажите тому, кто ведёт сервис."
 msgstr "Zabeležili smo to u dnevnik. Pokušajte ponovo za minut, a ako se ponovi — javite onome ko vodi servis."
+
+msgid "Нужно хотя бы одно название статьи — без него её не выбрать глазами."
+msgstr "Potreban je bar jedan naziv stavke — bez njega se ne može prepoznati očima."
+
+msgid "Чем называют траты и в какую строку P&L они попадают."
+msgstr "Kako se troškovi nazivaju i u koji red P&L-a spadaju."
+
+msgid "Завести статью"
+msgstr "Dodaj stavku troška"
+
+msgid "Строка P&L"
+msgstr "P&L red"
+
+msgid "Статей расходов нет."
+msgstr "Nema stavki troškova."
+
+msgid "Справочник поставляется пустым намеренно: список статей придёт с файла бухгалтера, а не выдумывается здесь — иначе одна и та же трата называлась бы по-разному у нас и у неё."
+msgstr "Imenik se isporučuje prazan namerno: spisak stavki će stići iz fajla računovođe, a ne izmišljati se ovde — inače bi se isti trošak kod nas i kod nje zvao drugačije."
+
+msgid "Дата закрытия раньше или равна дате начала действия."
+msgstr "Datum zatvaranja je pre datuma početka ili je isti kao on."
+
+msgid "строка P&L статьи расходов"
+msgstr "P&L red stavke troška"
+
+msgid "Новая статья"
+msgstr "Nova stavka troška"
+
+msgid "← К статьям расходов"
+msgstr "← Na stavke troškova"
+
+msgid "По нему статья сходится с файлом бухгалтера при загрузке."
+msgstr "Po njemu se stavka poklapa sa fajlom računovođe pri uvozu."
+
+#, python-format
+msgid "Название (%(language)s)"
+msgstr "Naziv (%(language)s)"
+
+msgid "Статья закрывается датой, а не удалением: закрытые месяцы на неё ссылаются."
+msgstr "Stavka troška se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na nju."
+
+msgid "Точка разнесения"
+msgstr "Objekat raspodele"
+
+msgid "Правило действует с"
+msgstr "Pravilo važi od"
+
+msgid "Разнесение расхода без точки"
+msgstr "Raspodela troška bez objekta"
+
+msgid "Правила нет — расход будет ждать"
+msgstr "Nema pravila — trošak će čekati"
+
+msgid "Как разложить по точкам расход, внесённый на всю сеть (аренда офиса, реклама). Без правила он остаётся в списке нераспределённых и в разрез по точкам не попадает."
+msgstr "Kako da se po objektima raspodeli trošak unet na celu mrežu (kirija kancelarije, reklama). Bez pravila ostaje na listi neraspoređenog i ne ulazi u razrez po objektima."
+
+msgid "Не выбрана"
+msgstr "Nije izabran"
+
+msgid "Нужна только для разнесения на одну точку."
+msgstr "Potreban je samo za raspodelu na jedan objekat."
+
+msgid "Регистр учёта правила"
+msgstr "Knjiga pravila"
+
+msgid "У одной статьи законно по правилу на регистр: одна и та же трата бывает и официальной, и из кассы."
+msgstr "Jedna stavka legalno ima pravilo po knjizi: isti trošak može biti i zvaničan i iz kase."
+
+msgid "Смена правила — новая версия с этой даты, а не правка прежней: закрытые месяцы обязаны считаться тем правилом, которым были посчитаны."
+msgstr "Promena pravila je nova verzija od ovog datuma, a ne izmena prethodne: zatvoreni meseci moraju biti obračunati onim pravilom kojim su i obračunati."
+
+msgid "Версии правила"
+msgstr "Verzije pravila"
+
+#, python-format
+msgid "%(method)s%(unit)s, %(ledger)s, с %(from)s%(to)s"
+msgstr "%(method)s%(unit)s, %(ledger)s, od %(from)s%(to)s"
+
+#, python-format
+msgid " по %(date)s"
+msgstr " do %(date)s"
+
+msgid "По ним видно, каким правилом посчитан закрытый месяц."
+msgstr "Iz njih se vidi kojim pravilom je obračunat zatvoreni mesec."
+
+msgid "Вас ещё не завели ни к одному партнёру, поэтому расходов у вас нет. Попросите администратора сети добавить вас."
+msgstr "Još niste dodati ni jednom partneru, pa nemate troškove. Zamolite administratora mreže da vas doda."
+
+msgid "Конец периода раньше начала: поправьте даты."
+msgstr "Kraj perioda je pre početka: ispravite datume."
+
+msgid "С даты"
+msgstr "Od datuma"
+
+msgid "По дату"
+msgstr "Do datuma"
+
+msgid "удалён"
+msgstr "Uklonjen"
+
+msgid "заменён"
+msgstr "Zamenjen"
+
+msgid "сторно"
+msgstr "Storno"
+
+msgid "исправление"
+msgstr "Ispravka"
+
+msgid "Все точки"
+msgstr "Svi objekti"
+
+msgid "Все статьи"
+msgstr "Sve stavke"
+
+msgid "Пересчёт прошёл: менять было нечего, ни одна строка не тронута."
+msgstr "Ponovni obračun je izvršen: nije bilo šta da se menja, ni jedan red nije dodirnut."
+
+#, python-format
+msgid "Пересчёт прошёл: строк изменено — %(count)s."
+msgstr "Ponovni obračun je izvršen: izmenjeno redova — %(count)s."
+
+#, python-format
+msgid "Закрытые месяцы не пересчитывались: %(months)s. Чтобы пересчитать их, месяц придётся открыть заново с причиной."
+msgstr "Zatvoreni meseci nisu ponovo obračunati: %(months)s. Da biste ih ponovo obračunali, mesec morate ponovo otvoriti sa razlogom."
+
+#, python-format
+msgid "Эти месяцы не пересчитаны: %(months)s — разносит расходы по точкам тот, кто ведёт все точки партнёра."
+msgstr "Ovi meseci nisu ponovo obračunati: %(months)s — troškove po objektima raspodeljuje onaj ko vodi sve objekte partnera."
+
+#, python-format
+msgid "Месяц %(closed)s закрыт: строку в нём не изменить. Правка ляжет в %(month)s двумя строками — сторно этой записи и новая, — а закрытый месяц не сдвинется ни на копейку."
+msgstr "Mesec %(closed)s je zatvoren: red u njemu se ne može izmeniti. Izmena upada u %(month)s kao dva reda — storno ovog zapisa i novi — a zatvoreni mesec se neće pomeriti ni za paru."
 
 msgid "Официальный"
 msgstr "Zvanična"
@@ -941,9 +1244,6 @@ msgstr "„%(label)s“: potrebno je „da“ ili „ne“, a ne „%(value)s“
 msgid "«%(label)s»: значение обязательно."
 msgstr "„%(label)s“: vrednost je obavezna."
 
-msgid "правило расчёта"
-msgstr "pravilo obračuna"
-
 msgid "Правила расчёта"
 msgstr "Pravila obračuna"
 
@@ -960,8 +1260,112 @@ msgstr "Polje „Od“ je obavezno."
 msgid "«Действует с»: дата пишется как 2026-06-01, а не «%(value)s»."
 msgstr "„Od“: datum se piše kao 2026-06-01, a ne „%(value)s“."
 
+msgid "Кто именно не прошёл проверку, видно тому, кому отдан весь расчёт партнёра, — спросите бухгалтера или оперативного директора."
+msgstr "Ko tačno nije prošao proveru vidi onaj kome je dat ceo obračun partnera — pitajte računovođu ili operativnog direktora."
+
 msgid "Периоды"
 msgstr "Periodi"
+
+msgid "Внести расход"
+msgstr "Unesi trošak"
+
+msgid "Наличные из кассы точки: что потратили, сколько и на что. Расход попадёт в P&L строкой своей статьи."
+msgstr "Gotovina iz kase objekta: šta je potrošeno, koliko i na šta. Trošak ulazi u P&L kao red svoje stavke."
+
+msgid "Записано."
+msgstr "Zapisano."
+
+msgid "Не записано."
+msgstr "Nije zapisano."
+
+msgid "Записать расход"
+msgstr "Sačuvaj trošak"
+
+msgid "Расход"
+msgstr "Trošak"
+
+msgid "← К расходам"
+msgstr "← Na troškove"
+
+msgid "Месяц закрыт."
+msgstr "Mesec zatvoren."
+
+msgid "Удалённый расход не стирается: строка останется в списке помеченной, а из итога выйдет."
+msgstr "Obrisan trošak nije izbrisan bez traga: red ostaje u listi, obeležen, i izlazi iz ukupnog iznosa."
+
+msgid "Удалить расход"
+msgstr "Obriši trošak"
+
+msgid "Строка больше не действует."
+msgstr "Red više nije važeći."
+
+msgid "Эта версия записи заменена: правьте ту, которая действует сейчас."
+msgstr "Ova verzija zapisa je zamenjena: uredite onu koja je trenutno važeća."
+
+msgid "Расходы"
+msgstr "Troškovi"
+
+msgid "Наличные из кассы: что потратили и на что. Итог внизу — сумма показанных действующих строк, её и сверяют с кассой."
+msgstr "Gotovina iz kase: šta je potrošeno i na šta. Zbir ispod je zbir prikazanih važećih redova — baš se on poredi sa kasom."
+
+msgid "Не показано."
+msgstr "Nije prikazano."
+
+msgid "Показать"
+msgstr "Prikaži"
+
+msgid "Дата"
+msgstr "Datum"
+
+msgid "Статья"
+msgstr "Stavka"
+
+msgid "Состояние"
+msgstr "Stanje"
+
+#, python-format
+msgid "учтён в %(month)s"
+msgstr "obračunato za %(month)s"
+
+#, python-format
+msgid "Итого по %(counter)s строке"
+msgid_plural "Итого по %(counter)s строкам"
+msgstr[0] "Ukupno za %(counter)s red"
+msgstr[1] "Ukupno za %(counter)s reda"
+msgstr[2] "Ukupno za %(counter)s redova"
+
+msgid "Расходов нет."
+msgstr "Nema troškova."
+
+msgid "За выбранный период и по выбранному отбору расходов не найдено."
+msgstr "Za izabrani period i izabrane filtere nije pronađen nijedan trošak."
+
+msgid "Нераспределённое"
+msgstr "Neraspoređeno"
+
+msgid "Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по сети, но её нет ни на одной точке."
+msgstr "Troškovi bez objekta: čekaju pravilo raspodele. Dok čekaju, iznos postoji za mrežu, ali ga nema na nijednom objektu."
+
+msgid "Пересчёт разнесения."
+msgstr "Ponovni obračun raspodele."
+
+msgid "Разнести по правилам"
+msgstr "Raspodeli po pravilima"
+
+msgid "Что это"
+msgstr "Šta je to"
+
+msgid "Откуда"
+msgstr "Poreklo"
+
+msgid "Итого ждёт разнесения"
+msgstr "Ukupno čeka raspodelu"
+
+msgid "Нераспределённого нет."
+msgstr "Nema neraspoređenog."
+
+msgid "Все расходы лежат на точках: закрывать месяц ничто не держит."
+msgstr "Svi troškovi su na objektima: ništa ne sprečava zatvaranje meseca."
 
 msgid "В таблице"
 msgstr "U tabeli"
@@ -1070,23 +1474,19 @@ msgstr "Prethodna verzija se zatvara danom početka nove i ostaje u istoriji. Ak
 msgid "Завести версию"
 msgstr "Dodaj verziju"
 
+msgid "Сохранено."
+msgstr "Sačuvano."
+
 msgid "Из чего расчёт берёт людей, ставки, точки и норму часов."
 msgstr "Odakle obračun uzima ljude, stope, objekte i normu časova."
 
 msgid "Часть месяцев уже закрыта"
 msgstr "Deo meseci je već zatvoren"
 
-#, python-format
 msgid ""
-"Зарплата утверждена по %(edge)s включительно. Правки, которые изменили бы\n"
-"  расчёт этих месяцев — ставка, схема группы, норма часов, — будут отклонены:\n"
-"  ведомость за них уже на руках. Чтобы всё-таки поправить, откройте месяц заново\n"
-"  с причиной на его странице."
-msgstr ""
-"Plata je odobrena zaključno sa %(edge)s. Izmene koje bi promenile\n"
-"  obračun ovih meseci — stopa, šema grupe, norma časova — biće odbijene:\n"
-"  obračunska lista za njih je već u rukama. Da biste ipak ispravili, ponovo otvorite mesec\n"
-"  sa razlogom na njegovoj stranici."
+"Схему расчёта и регистр группы это не касается: версий по датам у них нет\n"
+"  вовсе, и такая правка задним числом по-прежнему отклоняется."
+msgstr "Ovo se ne odnosi na šemu obračuna i registar grupe: one uopšte nemaju verzije po datumima, pa se takva izmena unazad i dalje odbija."
 
 msgid "Справочник"
 msgstr "Imenik"
@@ -1214,9 +1614,6 @@ msgstr "Red je zamrznut. Ponovni obračun ga zaobilazi, ostali se računaju kao 
 
 msgid "Заморозка снята. Человек вернулся в общий расчёт."
 msgstr "Zamrzavanje je uklonjeno. Osoba se vratila u zajednički obračun."
-
-msgid "Состояние"
-msgstr "Stanje"
 
 msgid "Расчёт зарплаты"
 msgstr "Obračun zarade"
@@ -1512,22 +1909,31 @@ msgid ""
 "Деньги не сравнивались: ни одна строка файла не сопоставлена с\n"
 "          расчётом этого периода. Дело не в доступе — сверять было нечего;\n"
 "          что именно не сопоставилось, видно в разделах ниже."
-msgstr "Iznosi nisu upoređivani: nijedan red fajla nije povezan sa obračunom ovog\n          perioda. Nije stvar u pristupu — nije imalo šta da se uporedi;\n          šta tačno nije povezano vidi se u odeljcima ispod."
+msgstr ""
+"Iznosi nisu upoređivani: nijedan red fajla nije povezan sa obračunom ovog\n"
+"          perioda. Nije stvar u pristupu — nije imalo šta da se uporedi;\n"
+"          šta tačno nije povezano vidi se u odeljcima ispod."
 
 msgid ""
 "Деньги не сравнивались: итогов расчёта по этим людям нет в самом\n"
 "          расчёте. Доступ здесь ни при чём — период посчитан не по ним."
-msgstr "Iznosi nisu upoređivani: u samom obračunu nema ukupnih iznosa za ove\n          ljude. Pristup tu nije u pitanju — period za njih nije obračunat."
+msgstr ""
+"Iznosi nisu upoređivani: u samom obračunu nema ukupnih iznosa za ove\n"
+"          ljude. Pristup tu nije u pitanju — period za njih nije obračunat."
 
 msgid ""
 "Деньги не сравнивались: в файле нет ни одного числа, которое сверка\n"
 "          сравнивает, — ни к выплате, ни бруто, ни взносов."
-msgstr "Iznosi nisu upoređivani: u fajlu nema nijednog broja koji usaglašavanje\n          poredi — ni za isplatu, ni bruto, ni doprinose."
+msgstr ""
+"Iznosi nisu upoređivani: u fajlu nema nijednog broja koji usaglašavanje\n"
+"          poredi — ni za isplatu, ni bruto, ni doprinose."
 
 msgid ""
 "Деньги не сравнивались: числа есть с обеих сторон, но ни разу не\n"
 "          встретились в одной строке."
-msgstr "Iznosi nisu upoređivani: brojevi postoje na obe strane, ali se nijednom nisu\n          našli u istom redu."
+msgstr ""
+"Iznosi nisu upoređivani: brojevi postoje na obe strane, ali se nijednom nisu\n"
+"          našli u istom redu."
 
 msgid "Всё сошлось до копейки, и файл прочитан целиком."
 msgstr "Sve se poklopilo do pare, i fajl je pročitan u celosti."
@@ -1571,12 +1977,18 @@ msgid ""
 "  по строке ведомости целиком, и база показывает их только роли, которой видны\n"
 "  все регистры учёта. Поэтому <strong>деньги здесь не сравнивались</strong> — ни\n"
 "  одного нашего числа по ним не показано, и совпадением это не считается."
-msgstr "Ukupni iznosi obračuna za ove redove vam nisu dati: neto, bruto i doprinosi se računaju\n  za obračunski red u celini, a baza ih prikazuje samo ulozi kojoj su vidljive\n  sve knjige. Zato <strong>iznosi ovde nisu upoređeni</strong> — nijedan\n  naš broj za njih nije prikazan, i to se ne smatra poklapanjem."
+msgstr ""
+"Ukupni iznosi obračuna za ove redove vam nisu dati: neto, bruto i doprinosi se računaju\n"
+"  za obračunski red u celini, a baza ih prikazuje samo ulozi kojoj su vidljive\n"
+"  sve knjige. Zato <strong>iznosi ovde nisu upoređeni</strong> — nijedan\n"
+"  naš broj za njih nije prikazan, i to se ne smatra poklapanjem."
 
 msgid ""
 "Сверено то, что от регистра не зависит: часы, ставка, коэффициент. Расхождение\n"
 "  чаще всего сидит именно там."
-msgstr "Upoređeno je ono što ne zavisi od knjige: sati, stopa, koeficijent. Odstupanje\n  najviše leži baš tu."
+msgstr ""
+"Upoređeno je ono što ne zavisi od knjige: sati, stopa, koeficijent. Odstupanje\n"
+"  najviše leži baš tu."
 
 msgid "Что со входами"
 msgstr "Šta je sa ulazima"
@@ -1617,13 +2029,6 @@ msgstr "Zemlja dolazi sa spremnim skupom pravila. Partner menja samo razlike —
 msgid "Действующие на"
 msgstr "Na dan"
 
-msgid "Показать"
-msgstr "Prikaži"
-
-#, python-format
-msgid "Зарплата утверждена по %(edge)s включительно: правило можно завести только с более поздней даты либо открыв месяц заново с причиной."
-msgstr "Plata je odobrena zaključno sa %(edge)s: pravilo se može dodati samo od kasnijeg datuma ili ponovnim otvaranjem meseca sa razlogom."
-
 #, python-format
 msgid "Набор правил: %(code)s (%(country)s)"
 msgstr "Skup pravila: %(code)s (%(country)s)"
@@ -1633,9 +2038,6 @@ msgstr "Pravilo"
 
 msgid "Значение"
 msgstr "Vrednost"
-
-msgid "Откуда"
-msgstr "Poreklo"
 
 msgid "Правил расчёта для этой страны на эту дату в базе нет."
 msgstr "Za ovu zemlju na ovaj datum u bazi nema pravila obračuna."
@@ -1665,10 +2067,6 @@ msgstr "Vrednost dolazi iz pravila zemlje. Prva verzija ispod postaje podešavan
 
 msgid "Новая версия правила"
 msgstr "Nova verzija pravila"
-
-#, python-format
-msgid "Зарплата утверждена по %(edge)s включительно: дата раньше этого дня переписала бы закрытый месяц, и правка будет отклонена."
-msgstr "Plata je odobrena zaključno sa %(edge)s: datum pre tog dana bi prepisao zatvoreni mesec, i izmena će biti odbijena."
 
 msgid "С этой даты расчёт берёт новое значение. Месяцы до неё считаются по-прежнему."
 msgstr "Od ovog datuma obračun uzima novu vrednost. Meseci pre njega se i dalje računaju kao ranije."
@@ -2089,495 +2487,3 @@ msgstr "ručno uneto"
 
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
-
-#, python-format
-msgid ""
-"нет условий найма на этот месяц: %(count)s чел. Расчёт без них выглядел бы "
-"верным, поэтому не выполняется."
-msgstr ""
-"Nema uslova zapošljavanja za ovaj mesec: %(count)s osoba. Obračun bez njih "
-"bi izgledao ispravno, zato se ne izvršava."
-
-#, python-format
-msgid ""
-"база для взносов не сходится с часами табеля: %(count)s чел. По ней "
-"считаются взносы и бруто, поэтому расчёт по устаревшей базе выглядел бы "
-"верным. Проверьте колонку «База взносов» в табеле."
-msgstr ""
-"Osnovica doprinosa se ne poklapa sa satima iz evidencije sati: %(count)s "
-"osoba. Iz nje se računaju doprinosi i bruto, zato bi obračun po zastareloj "
-"osnovici izgledao ispravno. Proverite kolonu „Osnovica doprinosa“ u "
-"evidenciji sati."
-
-#, python-format
-msgid ""
-"Месяц %(month)s закрыт, и текущий месяц %(current)s тоже — расход записать "
-"некуда. Откройте месяц заново с причиной."
-msgstr "Mesec %(month)s je zatvoren, a i tekući mesec %(current)s — nema gde da se upiše trošak. Ponovo otvorite mesec sa razlogom."
-
-msgid "Точка не найдена."
-msgstr "Objekat nije pronađen."
-
-msgid "Месяц закрылся, пока расход вносили. Откройте форму заново."
-msgstr "Mesec je zatvoren dok je trošak unošen. Otvorite formu ponovo."
-
-msgid ""
-"Форма устарела или испорчена. Откройте её заново и внесите расход ещё раз."
-msgstr "Forma je zastarela ili oštećena. Otvorite je ponovo i unesite trošak još jednom."
-
-msgid ""
-"Вас ещё не завели ни к одному партнёру, поэтому вносить расход некуда. "
-"Попросите администратора сети добавить вас."
-msgstr "Još niste dodati ni jednom partneru, pa nema gde da se unese trošak. Zamolite administratora mreže da vas doda."
-
-msgid "Дата расхода"
-msgstr "Datum troška"
-
-#, python-format
-msgid "«%(label)s»: расход на ноль не вносится."
-msgstr "„%(label)s“: trošak sa iznosom nula se ne unosi."
-
-msgid "Комментарий"
-msgstr "Komentar"
-
-msgid "Статья расхода"
-msgstr "Stavka troška"
-
-msgid "Статья не найдена."
-msgstr "Stavka troška nije pronađena."
-
-#, python-format
-msgid ""
-"Статья «%(title)s» на %(date)s не действует: выберите другую или поправьте "
-"её в справочнике."
-msgstr "Stavka troška „%(title)s“ nije važeća na %(date)s: izaberite drugu ili je ispravite u imeniku."
-
-msgid ""
-"Когда деньги вышли из кассы. Месяц уже закрыт — расход ляжет в текущий, а "
-"эта дата останется при нём."
-msgstr "Kada je novac izašao iz kase. Ako je mesec već zatvoren, trošak upada u tekući mesec, a ovaj datum ostaje uz njega."
-
-msgid ""
-"Статьи ведёт администратор сети. Нужной нет — попросите завести: выдумывать "
-"название на месте нельзя, иначе одна трата назовётся по-разному."
-msgstr "Stavke troškova održava administrator mreže. Ako nedostaje ona koja vam treba, zamolite ga da je doda — nije dozvoljeno smišljati naziv u hodu, jer bi se isti trošak svaki put zvao drugačije."
-
-msgid "Зачем потратили. Через месяц это единственное, по чему строку узнают."
-msgstr "Zašto je potrošeno. Za mesec dana to je jedino po čemu će se red prepoznati."
-
-msgid "Ваша точка. Расход пойдёт на неё."
-msgstr "Vaš objekat. Trošak će biti knjižen na njega."
-
-#, python-format
-msgid "Расход записан в месяц %(month)s."
-msgstr "Trošak je zapisan za %(month)s."
-
-#, python-format
-msgid ""
-"Месяц %(closed)s закрыт, поэтому расход записан в %(month)s — с исходной "
-"датой и не сдвинув закрытый месяц."
-msgstr "Mesec %(closed)s je zatvoren, zato je trošak zapisan za %(month)s — sa originalnim datumom i bez pomeranja zatvorenog meseca."
-
-msgid "Статьи расходов"
-msgstr "Stavke troškova"
-
-msgid "Чем называют траты и в какую строку P&L они попадают"
-msgstr "Kako se troškovi nazivaju i u koji red P&L-a spadaju"
-
-msgid "Нужно хотя бы одно название статьи — без него её не выбрать глазами."
-msgstr "Potreban je bar jedan naziv stavke — bez njega se ne može prepoznati očima."
-
-msgid "статья расходов"
-msgstr "stavka troška"
-
-msgid "Чем называют траты и в какую строку P&L они попадают."
-msgstr "Kako se troškovi nazivaju i u koji red P&L-a spadaju."
-
-msgid "Завести статью"
-msgstr "Dodaj stavku troška"
-
-msgid "Строка P&L"
-msgstr "P&L red"
-
-msgid "Статей расходов нет."
-msgstr "Nema stavki troškova."
-
-msgid ""
-"Справочник поставляется пустым намеренно: список статей придёт с файла "
-"бухгалтера, а не выдумывается здесь — иначе одна и та же трата называлась бы "
-"по-разному у нас и у неё."
-msgstr "Imenik se isporučuje prazan namerno: spisak stavki će stići iz fajla računovođe, a ne izmišljati se ovde — inače bi se isti trošak kod nas i kod nje zvao drugačije."
-
-msgid "Дата закрытия раньше или равна дате начала действия."
-msgstr "Datum zatvaranja je pre datuma početka ili je isti kao on."
-
-msgid "строка P&L статьи расходов"
-msgstr "P&L red stavke troška"
-
-msgid "Новая статья"
-msgstr "Nova stavka troška"
-
-msgid "← К статьям расходов"
-msgstr "← Na stavke troškova"
-
-msgid "По нему статья сходится с файлом бухгалтера при загрузке."
-msgstr "Po njemu se stavka poklapa sa fajlom računovođe pri uvozu."
-
-#, python-format
-msgid "Название (%(language)s)"
-msgstr "Naziv (%(language)s)"
-
-msgid ""
-"Статья закрывается датой, а не удалением: закрытые месяцы на неё ссылаются."
-msgstr "Stavka troška se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na nju."
-
-msgid "Ставка за час"
-msgstr "Stopa po satu"
-
-msgid "Внести расход"
-msgstr "Unesi trošak"
-
-msgid ""
-"Наличные из кассы точки: что потратили, сколько и на что. Расход попадёт в "
-"P&L строкой своей статьи."
-msgstr "Gotovina iz kase objekta: šta je potrošeno, koliko i na šta. Trošak ulazi u P&L kao red svoje stavke."
-
-msgid "Записано."
-msgstr "Zapisano."
-
-msgid "Не записано."
-msgstr "Nije zapisano."
-
-msgid "Записать расход"
-msgstr "Sačuvaj trošak"
-
-msgid ""
-"Итоги расчёта по этим строкам вам не отданы: нето, бруто и взносы посчитаны\n"
-"  по строке ведомости целиком, и база показывает их только роли, которой "
-"видны\n"
-"  все регистры учёта. Поэтому <strong>деньги здесь не сравнивались</strong> "
-"— ни\n"
-"  одного нашего числа по ним не показано, и совпадением это не считается.\n"
-"  Сверено то, что от регистра не зависит: часы, ставка, коэффициент. "
-"Расхождение\n"
-"  чаще всего сидит именно там."
-msgstr ""
-"Ukupni iznosi obračuna za ove redove vam nisu dati: neto, bruto i doprinosi "
-"se računaju\n"
-"  za obračunski red u celini, a baza ih prikazuje samo ulozi kojoj su "
-"vidljive\n"
-"  sve knjige. Zato <strong>iznosi ovde nisu upoređeni</strong> — nijedan\n"
-"  naš broj za njih nije prikazan, i to se ne smatra poklapanjem.\n"
-"  Upoređeno je ono što ne zavisi od knjige: sati, stopa, koeficijent. "
-"Odstupanje\n"
-"  najviše leži baš tu."
-
-#, python-format
-msgid "%(who)s: ни одного часа за этот месяц — строка табеля пустая"
-msgstr "%(who)s: nijedan sat ovog meseca — red evidencije je prazan"
-
-#, python-format
-msgid "%(who)s: уволен %(date)s, а часов за этот месяц %(total)s"
-msgstr "%(who)s: otpušten %(date)s, a ima %(total)s sati ovog meseca"
-
-msgid "Стоит посмотреть до расчёта"
-msgstr "Vredi pogledati pre obračuna"
-
-msgid "Ни одно из этих чисел не ошибка само по себе — но незамеченными они и становятся неверной зарплатой. Сохранению они не мешают."
-msgstr "Nijedan od ovih brojeva sam po sebi nije greška — ali neprimećeni upravo tako postaju pogrešna zarada. Ne sprečavaju čuvanje reda."
-
-msgid "проверьте"
-msgstr "proverite"
-
-msgid "Сопоставлено, но не загружено"
-msgstr "Upareno, ali nije učitano"
-
-msgid "Не загружено: человек найден, а строка не записана"
-msgstr "Nije učitano: osoba je pronađena, ali red nije upisan"
-
-msgid "Этих людей продукт узнал, но записывать было некуда — причина у каждой строки своя."
-msgstr "Ove osobe su prepoznate, ali red nije imao gde da se upiše — razlog stoji uz svaki red."
-
-msgid "Этих людей в справочнике партнёра нет — неизвестно, о ком строка."
-msgstr "Ovih osoba nema u šifarniku partnera — ne zna se na koga se red odnosi."
-
-#, python-format
-msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: если она изменит его числа, разница ляжет помеченной строкой в ближайший неутверждённый месяц — перенести её можно на странице закрытого."
-msgstr "Zarada je odobrena zaključno sa %(edge)s. Izmena sa ranijim datumom se prihvata, ali ne prepisuje zatvoreni mesec: ako promeni njegove brojeve, razlika ulazi označenom stavkom u prvi neodobreni mesec — prenesite je na stranici zatvorenog meseca."
-
-#, python-format
-msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
-msgstr "Zarada je odobrena zaključno sa %(edge)s. Izmena sa ranijim datumom se prihvata, ali ne prepisuje zatvoreni mesec: kod ovog partnera se razlika primenjuje ponovnim obračunom — otvorite mesec ponovo uz razlog i obračunajte ga opet."
-
-#, python-format
-msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним до копейки: если правка изменила его числа, разница видна на странице этого месяца и переносится оттуда помеченной строкой в ближайший неутверждённый."
-msgstr "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mesec je ostao isti do dinara: ako je izmena promenila njegove brojeve, razlika se vidi na stranici tog meseca i odatle se prenosi označenom stavkom u prvi neodobreni mesec."
-
-#, python-format
-msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
-msgstr "Izmena je dotakla zaradu odobrenu zaključno sa %(edge)s. Zatvoreni mesec je ostao isti: kod ovog partnera se razlika primenjuje ponovnim obračunom — otvorite mesec ponovo uz razlog i obračunajte ga opet."
-
-msgid ""
-"Схему расчёта и регистр группы это не касается: версий по датам у них нет\n"
-"  вовсе, и такая правка задним числом по-прежнему отклоняется."
-msgstr "Ovo se ne odnosi na šemu obračuna i registar grupe: one uopšte nemaju verzije po datumima, pa se takva izmena unazad i dalje odbija."
-
-msgid "Поровну между точками"
-msgstr "Podjednako između objekata"
-
-msgid "Пропорционально выручке"
-msgstr "Proporcionalno prihodu"
-
-msgid "На одну точку"
-msgstr "Na jedan objekat"
-
-msgid "Спрашивать каждый раз"
-msgstr "Pitaj svaki put"
-
-msgid "Разнесение"
-msgstr "Raspodela"
-
-#, python-format
-msgid "Для разнесения «%(method)s» нужно выбрать точку."
-msgstr "Za raspodelu „%(method)s“ potrebno je izabrati objekat."
-
-msgid "правило разнесения статьи расходов"
-msgstr "pravilo raspodele stavke troškova"
-
-#, python-format
-msgid ""
-"Правило уже действует с %(from)s: новая версия не может начинаться раньше. "
-"Возьмите дату позже."
-msgstr "Pravilo već važi od %(from)s: nova verzija ne može početi ranije. Izaberite kasniji datum."
-
-#, python-format
-msgid ""
-"Правило действует с %(from)s: убрать его можно только более поздней датой."
-msgstr "Pravilo važi od %(from)s: ukloniti ga je moguće samo kasnijim datumom."
-
-msgid "Месяц закрылся, пока расход удаляли. Откройте список заново."
-msgstr "Mesec je zatvoren dok je trošak brisan. Otvorite listu ponovo."
-
-msgid "Вся сеть"
-msgstr "Cela mreža"
-
-msgid ""
-"«Вся сеть» — расход юрлица целиком (аренда офиса, реклама): он разойдётся по "
-"точкам правилом статьи."
-msgstr "„Cela mreža“ — trošak celog pravnog lica (kirija kancelarije, reklama): raspodeliće se po objektima pravilom stavke."
-
-#, python-format
-msgid ""
-" Точки у расхода нет, поэтому он ждёт разнесения — и виден в списке "
-"нераспределённых: %(url)s"
-msgstr " Trošak nema objekat, pa čeka raspodelu — i vidljiv je na listi neraspoređenog: %(url)s"
-
-#, python-format
-msgid " Расход разнесён по точкам правилом статьи: строк — %(count)s."
-msgstr " Trošak je raspodeljen po objektima pravilom stavke: redova — %(count)s."
-
-msgid ""
-" Разнести его по точкам может тот, кто ведёт все точки: строки разнесения "
-"ложатся и на чужие точки."
-msgstr " Da ga raspodeli po objektima može samo onaj ko vodi sve objekte: redovi raspodele padaju i na tuđe objekte."
-
-msgid " Правила разнесения у статьи нет."
-msgstr " Stavka nema pravilo raspodele."
-
-msgid "Точка разнесения"
-msgstr "Objekat raspodele"
-
-msgid "Правило действует с"
-msgstr "Pravilo važi od"
-
-msgid "Разнесение расхода без точки"
-msgstr "Raspodela troška bez objekta"
-
-msgid "Правила нет — расход будет ждать"
-msgstr "Nema pravila — trošak će čekati"
-
-msgid ""
-"Как разложить по точкам расход, внесённый на всю сеть (аренда офиса, "
-"реклама). Без правила он остаётся в списке нераспределённых и в разрез по "
-"точкам не попадает."
-msgstr "Kako da se po objektima raspodeli trošak unet na celu mrežu (kirija kancelarije, reklama). Bez pravila ostaje na listi neraspoređenog i ne ulazi u razrez po objektima."
-
-msgid "Не выбрана"
-msgstr "Nije izabran"
-
-msgid "Нужна только для разнесения на одну точку."
-msgstr "Potreban je samo za raspodelu na jedan objekat."
-
-msgid "Регистр учёта правила"
-msgstr "Knjiga pravila"
-
-msgid ""
-"У одной статьи законно по правилу на регистр: одна и та же трата бывает и "
-"официальной, и из кассы."
-msgstr "Jedna stavka legalno ima pravilo po knjizi: isti trošak može biti i zvaničan i iz kase."
-
-msgid ""
-"Смена правила — новая версия с этой даты, а не правка прежней: закрытые "
-"месяцы обязаны считаться тем правилом, которым были посчитаны."
-msgstr "Promena pravila je nova verzija od ovog datuma, a ne izmena prethodne: zatvoreni meseci moraju biti obračunati onim pravilom kojim su i obračunati."
-
-msgid "Версии правила"
-msgstr "Verzije pravila"
-
-#, python-format
-msgid "%(method)s%(unit)s, %(ledger)s, с %(from)s%(to)s"
-msgstr "%(method)s%(unit)s, %(ledger)s, od %(from)s%(to)s"
-
-#, python-format
-msgid " по %(date)s"
-msgstr " do %(date)s"
-
-msgid "По ним видно, каким правилом посчитан закрытый месяц."
-msgstr "Iz njih se vidi kojim pravilom je obračunat zatvoreni mesec."
-
-msgid ""
-"Вас ещё не завели ни к одному партнёру, поэтому расходов у вас нет. "
-"Попросите администратора сети добавить вас."
-msgstr "Još niste dodati ni jednom partneru, pa nemate troškove. Zamolite administratora mreže da vas doda."
-
-msgid "Конец периода раньше начала: поправьте даты."
-msgstr "Kraj perioda je pre početka: ispravite datume."
-
-msgid "С даты"
-msgstr "Od datuma"
-
-msgid "По дату"
-msgstr "Do datuma"
-
-msgid "удалён"
-msgstr "Uklonjen"
-
-msgid "заменён"
-msgstr "Zamenjen"
-
-msgid "сторно"
-msgstr "Storno"
-
-msgid "исправление"
-msgstr "Ispravka"
-
-msgid "Все точки"
-msgstr "Svi objekti"
-
-msgid "Все статьи"
-msgstr "Sve stavke"
-
-msgid "Пересчёт прошёл: менять было нечего, ни одна строка не тронута."
-msgstr "Ponovni obračun je izvršen: nije bilo šta da se menja, ni jedan red nije dodirnut."
-
-#, python-format
-msgid "Пересчёт прошёл: строк изменено — %(count)s."
-msgstr "Ponovni obračun je izvršen: izmenjeno redova — %(count)s."
-
-#, python-format
-msgid ""
-"Закрытые месяцы не пересчитывались: %(months)s. Чтобы пересчитать их, месяц "
-"придётся открыть заново с причиной."
-msgstr "Zatvoreni meseci nisu ponovo obračunati: %(months)s. Da biste ih ponovo obračunali, mesec morate ponovo otvoriti sa razlogom."
-
-#, python-format
-msgid ""
-"Эти месяцы не пересчитаны: %(months)s — разносит расходы по точкам тот, кто "
-"ведёт все точки партнёра."
-msgstr "Ovi meseci nisu ponovo obračunati: %(months)s — troškove po objektima raspodeljuje onaj ko vodi sve objekte partnera."
-
-#, python-format
-msgid ""
-"Месяц %(closed)s закрыт: строку в нём не изменить. Правка ляжет в %(month)s "
-"двумя строками — сторно этой записи и новая, — а закрытый месяц не сдвинется "
-"ни на копейку."
-msgstr "Mesec %(closed)s je zatvoren: red u njemu se ne može izmeniti. Izmena upada u %(month)s kao dva reda — storno ovog zapisa i novi — a zatvoreni mesec se neće pomeriti ni za paru."
-
-msgid "Эта строка уже заменена: правьте ту, что действует."
-msgstr "Ovaj red je već zamenjen: uredite onaj koji je važeći."
-
-msgid "Расход"
-msgstr "Trošak"
-
-msgid "← К расходам"
-msgstr "← Na troškove"
-
-msgid "Месяц закрыт."
-msgstr "Mesec zatvoren."
-
-msgid ""
-"Удалённый расход не стирается: строка останется в списке помеченной, а из "
-"итога выйдет."
-msgstr "Obrisan trošak nije izbrisan bez traga: red ostaje u listi, obeležen, i izlazi iz ukupnog iznosa."
-
-msgid "Удалить расход"
-msgstr "Obriši trošak"
-
-msgid "Строка больше не действует."
-msgstr "Red više nije važeći."
-
-msgid "Эта версия записи заменена: правьте ту, которая действует сейчас."
-msgstr "Ova verzija zapisa je zamenjena: uredite onu koja je trenutno važeća."
-
-msgid "Расходы"
-msgstr "Troškovi"
-
-msgid ""
-"Наличные из кассы: что потратили и на что. Итог внизу — сумма показанных "
-"действующих строк, её и сверяют с кассой."
-msgstr "Gotovina iz kase: šta je potrošeno i na šta. Zbir ispod je zbir prikazanih važećih redova — baš se on poredi sa kasom."
-
-msgid "Не показано."
-msgstr "Nije prikazano."
-
-msgid "Дата"
-msgstr "Datum"
-
-msgid "Статья"
-msgstr "Stavka"
-
-#, python-format
-msgid "учтён в %(month)s"
-msgstr "obračunato za %(month)s"
-
-#, python-format
-msgid "Итого по %(counter)s строке"
-msgid_plural "Итого по %(counter)s строкам"
-msgstr[0] "Ukupno za %(counter)s red"
-msgstr[1] "Ukupno za %(counter)s reda"
-msgstr[2] "Ukupno za %(counter)s redova"
-
-msgid "Расходов нет."
-msgstr "Nema troškova."
-
-msgid "За выбранный период и по выбранному отбору расходов не найдено."
-msgstr "Za izabrani period i izabrane filtere nije pronađen nijedan trošak."
-
-msgid "Нераспределённое"
-msgstr "Neraspoređeno"
-
-msgid ""
-"Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по "
-"сети, но её нет ни на одной точке."
-msgstr "Troškovi bez objekta: čekaju pravilo raspodele. Dok čekaju, iznos postoji za mrežu, ali ga nema na nijednom objektu."
-
-msgid "Пересчёт разнесения."
-msgstr "Ponovni obračun raspodele."
-
-msgid "Разнести по правилам"
-msgstr "Raspodeli po pravilima"
-
-msgid "Что это"
-msgstr "Šta je to"
-
-msgid "Итого ждёт разнесения"
-msgstr "Ukupno čeka raspodelu"
-
-msgid "Нераспределённого нет."
-msgstr "Nema neraspoređenog."
-
-msgid "Все расходы лежат на точках: закрывать месяц ничто не держит."
-msgstr "Svi troškovi su na objektima: ništa ne sprečava zatvaranje meseca."
-
-msgid "Сохранено."
-msgstr "Sačuvano."

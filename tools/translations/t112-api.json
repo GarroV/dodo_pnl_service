@@ -1,0 +1,46 @@
+{
+  "«%(name)s»: это целое число, а не «%(value)s».": {
+    "en": "\"%(name)s\" must be a whole number, not \"%(value)s\".",
+    "sr": "„%(name)s“ mora biti ceo broj, a ne „%(value)s“."
+  },
+  "«limit» больше %(max)s не бывает: спросите страницами.": {
+    "en": "\"limit\" cannot be more than %(max)s: ask for it in pages.",
+    "sr": "„limit“ ne može biti veći od %(max)s: tražite po stranicama."
+  },
+  "«limit» должен быть больше нуля.": {
+    "en": "\"limit\" must be greater than zero.",
+    "sr": "„limit“ mora biti veći od nule."
+  },
+  "«period»: месяц пишется как 2026-08, а не «%(value)s».": {
+    "en": "\"period\": the month is written as 2026-08, not \"%(value)s\".",
+    "sr": "„period“: mesec se piše kao 2026-08, a ne „%(value)s“."
+  },
+  "Вас ещё не завели ни к одному партнёру.": {
+    "en": "You have not been added to any partner yet.",
+    "sr": "Još niste dodati ni jednom partneru."
+  },
+  "Расход не найден.": {
+    "en": "Expense not found.",
+    "sr": "Trošak nije pronađen."
+  },
+  "Сначала войдите.": {
+    "en": "Sign in first.",
+    "sr": "Prvo se prijavite."
+  },
+  "Тело запроса должно быть объектом JSON.": {
+    "en": "The request body must be a JSON object.",
+    "sr": "Telo zahteva mora biti JSON objekat."
+  },
+  "Тело запроса не разобрано как JSON.": {
+    "en": "The request body could not be parsed as JSON.",
+    "sr": "Telo zahteva nije moglo da se parsira kao JSON."
+  },
+  "Укажите месяц пересчёта: «period» в виде 2026-08, по одному за вызов.": {
+    "en": "Specify the month to recalculate: \"period\" as 2026-08, one per call.",
+    "sr": "Navedite mesec za ponovni obračun: „period“ u obliku 2026-08, jedan po pozivu."
+  },
+  "Этот вызов принимает только %(methods)s.": {
+    "en": "This call only accepts %(methods)s.",
+    "sr": "Ovaj poziv prihvata samo %(methods)s."
+  }
+}
