@@ -26,6 +26,7 @@ D023 («ни строк, ни следа») здесь читается букв
 from __future__ import annotations
 
 import io
+import json
 from collections import namedtuple
 from datetime import date
 from decimal import Decimal
@@ -41,6 +42,15 @@ from reports.sheet import ALL, SheetSlice
 # Строка блока налогов: статья, точка и два числа. Кортеж, а не словарь: у него
 # фиксированный порядок полей, и перепутать местами налог и взносы нельзя.
 TaxLine = namedtuple("TaxLine", "article unit tax contributions")
+
+# Строка расхода в файле P&L (T113): статья отчёта, точка, регистр, за что
+# именно потрачено и сколько. Тем же кортежем и по тому же доводу, что налоги.
+ExpenseLine = namedtuple("ExpenseLine", "article unit ledger title amount")
+
+# Точка у расхода, который ещё не разнесён. Прочерк, а не пустая ячейка: пустая
+# читается как «забыли заполнить», прочерк — как «точка ещё не решена». Разница в
+# том, будет ли эта сумма кем-то найдена.
+NO_UNIT = "—"
 
 # Человек, у которого не заведена статья P&L, обязан быть виден в файле, а не
 # пропасть из него: пропавшая строка — это не найденная позже недостача.
@@ -166,8 +176,15 @@ def _titled(title: str, view: SheetSlice, ledger_title) -> str:
 
 
 def payout(view: SheetSlice, *, tenant_id=None, period=None, title="",
-           ledger_title=str, component_title=None) -> tuple[bytes, str]:
-    """Ведомость к выплате: ровно то, что человек видит на экране, файлом."""
+           ledger_title=str, component_title=None, item_title=None) -> tuple[bytes, str]:
+    """Ведомость к выплате: ровно то, что человек видит на экране, файлом.
+
+    `item_title` здесь не нужен и не используется: ведомость — про зарплату, а
+    статьи расхода в ней нет. Он в подписи потому, что все три выгрузки
+    вызываются **одним** набором аргументов (`EXPORTS` в `web/reports_views.py`
+    — словарь, а не разбор вида файла): развилка «этому виду передаём, тому
+    нет» и есть то место, где однажды передадут не туда.
+    """
     book = openpyxl.Workbook()
     ws = book.active
     ws.title = "K isplati"
@@ -258,9 +275,75 @@ def collect_taxes(tenant_id: UUID, period: date, articles: dict[str, str]) -> li
     ]
 
 
+def collect_expenses(tenant_id: UUID, period: date, cut: str,
+                     item_title=None) -> list[ExpenseLine]:
+    """Расходы периода строками для P&L — из представления `pnl_lines` (T113).
+
+    **Читается представление, а не таблица.** В нём уже записано, что такое
+    строка P&L: действующая версия (не заменённая) и не родитель разнесения
+    (`split` исключён, вместо него в отчёт идут дети по точкам). Повторить эти
+    два условия выборкой здесь было бы третьей копией одного правила в этом
+    блоке — а две предыдущие разъехались молча (`allocate_fact` терял статью,
+    `allocation_plan` строил план по половине точек).
+
+    **Срез делает база.** Ни одного условия про права здесь нет: `pnl_lines`
+    объявлено `security_invoker`, то есть политики `facts` действуют внутри него
+    (D014). Разрез по регистру только **сужает** видимое.
+
+    **Зарплата отсюда не берётся.** Зарплатная половина файла приезжает из
+    ведомости — того самого среза, который человек видел на экране. Факты с
+    источником `payroll` пропускаются, и это не осторожность на всякий случай:
+    проводка зарплаты в факты отложена (журнал блока `facts`, T107 и T113), и в
+    день, когда её сделают, файл не должен начать считать одни и те же деньги
+    дважды.
+
+    Переводы (`kind = 'transfer'`) пропускаются по той же причине, по какой их
+    не считают `pnl_by_unit` и `pnl_by_network`: пополнение кассы — не расход.
+    """
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """select l.pnl_title,
+                      coalesce(l.unit_code, ''),
+                      l.ledger::text,
+                      l.title,
+                      -- `::text` не для красоты: Django ставит psycopg свой
+                      -- загрузчик jsonb, который отдаёт сырую строку (разбирать
+                      -- её — дело `JSONField`, а его тут нет). Сырым курсором
+                      -- значение приходит то строкой, то словарём в зависимости
+                      -- от того, кто настроил соединение; явное приведение
+                      -- делает ответ одним всегда.
+                      e.titles::text,
+                      sum(l.amount)
+                 from pnl_lines l
+                 left join expense_items e on e.id = l.expense_item_id
+                where l.tenant_id = %s
+                  and l.period = %s
+                  and l.kind <> 'transfer'
+                  and l.source <> 'payroll'
+                  and (%s = '' or l.ledger::text = %s)
+                group by 1, 2, 3, 4, 5
+                order by 1, 2, 4""",
+            [str(tenant_id), period, cut, cut],
+        )
+        found = cursor.fetchall()
+
+    return [
+        ExpenseLine(
+            article, unit, ledger,
+            # Название на языке файла — из статьи; её нет (расход не из кассы,
+            # а, скажем, фактура) — остаётся снимок, замороженный записью.
+            (item_title(json.loads(titles)) if item_title and titles else "") or snapshot,
+            amount,
+        )
+        for article, unit, ledger, snapshot, titles, amount in found
+    ]
+
+
 def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
-        ledger_title=str, articles=None, taxes=None,
-        component_title=None) -> tuple[bytes, str]:
+        ledger_title=str, articles=None, taxes=None, expenses=None,
+        component_title=None, item_title=None) -> tuple[bytes, str]:
     """Строки для P&L: начисления и налоги раздельно, по статье и точке.
 
     Итоговой строки в файле нет намеренно: это заготовка строк для сборки P&L,
@@ -268,6 +351,10 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
     """
     if articles is None:
         articles = collect_articles(tenant_id)
+    if expenses is None:
+        # Разрез сужает и расходы тоже: файл одного регистра, где зарплата
+        # своего регистра, а траты всех, не сходится ни с чем.
+        expenses = collect_expenses(tenant_id, period, view.cut, item_title)
     # Разрез — это один регистр, а налог посчитан по строке ведомости целиком.
     # Приписать его регистру нельзя, поэтому в разрезе налогов нет вовсе — и это
     # решается здесь, а не тем, что вызывающий их не передал.
@@ -304,6 +391,16 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
     for (article, unit, ledger, _code, column_title), amount in sorted(accruals.items()):
         ws.append([article, unit, ledger_title(ledger), _("Начисление"), column_title, amount])
 
+    # Расходы — рядом с начислениями и в тех же статьях, а не отдельным листом:
+    # файл собирают в P&L одним разбором, и вторая таблица со своими колонками
+    # для этого бесполезна ровно так же, как её отсутствие.
+    spent: dict[tuple[str, str, str, str], Decimal] = {}
+    for line in expenses:
+        key = (line.article, line.unit or NO_UNIT, line.ledger, line.title)
+        spent[key] = spent.get(key, Decimal(0)) + line.amount
+    for (article, unit, ledger, spent_on), amount in sorted(spent.items()):
+        ws.append([article, unit, ledger_title(ledger), _("Расход"), spent_on, amount])
+
     for line in taxes:
         # Регистра у налога нет, и прочерк здесь честнее пустой ячейки: пустая
         # читается как «забыли заполнить».
@@ -319,7 +416,8 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
 
 
 def partner(view: SheetSlice, *, tenant_id=None, period=None, title="",
-            ledger_title=str, component_title=None) -> tuple[bytes, str]:
+            ledger_title=str, component_title=None,
+            item_title=None) -> tuple[bytes, str]:
     """Тот же расчёт, разложенный так, как привык читать бухгалтер партнёра.
 
     Привычное здесь — две вещи: **лист на точку** (в его таблице лист на точку

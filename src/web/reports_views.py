@@ -22,6 +22,7 @@ from reports import export as exports
 from reports.reconcile import reconcile
 from reports.sheet import build_slice
 
+from .cash import item_title
 from .format import ledger_title, money
 from .labels import labeller
 from .views import find_period, month_title
@@ -271,6 +272,11 @@ def period_export(request, period_id, kind):
         component_title=labeller(
             period.tenant_id, period.tenant.country_code, period.period
         ),
+        # Название статьи расхода — на языке страницы, тем же правилом, что в
+        # списке расходов (T108). Правило приезжает **параметром**, а не
+        # импортом внутри `reports`: отчёты не знают про интерфейс, и подписи
+        # регистров уже устроены так же.
+        item_title=item_title,
     )
 
     response = HttpResponse(
