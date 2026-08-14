@@ -47,6 +47,7 @@ from core.models import (
 )
 
 from . import directory, permissions, rules
+from .dbrefusal import BadInput, ConstraintRefused, saving
 from .format import hours, ledger_title
 from .i18n import month_title
 from .principal import get_current_principal
@@ -197,14 +198,12 @@ def index(request):
 # --- разбор ввода -------------------------------------------------------------
 
 
-class BadInput(Exception):
-    """Введено не то. Отдельно от `DirectoryRefused`: там данные, здесь форма."""
-
-    http_status = 400
-
-    def __init__(self, message: str):
-        self.message = message
-        super().__init__(message)
+# `BadInput` живёт в `web/dbrefusal.py` и берётся оттуда (см. импорт выше).
+# Переехал он туда вместе с отказом базы: совпадение уникального ключа и ссылка
+# в никуда — тот же «введено не то», только сказанный базой, а модуль отказа
+# базы не может импортировать этот, потому что этот зовёт его. Адрес
+# `directory_views.BadInput` остался рабочим намеренно: его знают шесть форм,
+# вызов по HTTP и разбор ввода расхода.
 
 
 def _text(request, name: str, label: str, *, required: bool = True) -> str:
@@ -411,11 +410,15 @@ def employee(request, employee_id):
     if request.method == "POST":
         try:
             carried = ""
-            if request.POST.get("what") == "person":
-                _save_person(request, person)
-                saved = "person"
-            else:
-                saved, carried = _save_terms(request, who, person)
+            # Запись целиком внутри `saving()`: отказ базы по ограничению
+            # (повторный сквозной ключ, ссылка в никуда) становится отказом
+            # формы, а не оборванным запросом (T136, issue #109 и #98).
+            with saving():
+                if request.POST.get("what") == "person":
+                    _save_person(request, person)
+                    saved = "person"
+                else:
+                    saved, carried = _save_terms(request, who, person)
             # Перенаправление после записи: обновление страницы не сохраняет
             # второй раз. Что именно случилось, уезжает в адрес кодом, а не
             # готовой фразой: фраза в адресе не переводится и подставляется
@@ -424,6 +427,11 @@ def employee(request, employee_id):
                 reverse("directory-employee", args=[person.id])
                 + f"?saved={saved}{carried}"
             )
+        # Раньше `BadInput`, потому что отказ базы — его частный случай, а
+        # ответить на него обязаны кодом 400: «сохранено» и «отказано» не
+        # должны быть неразличимы для того, кто смотрит на ответ.
+        except ConstraintRefused as refused:
+            error, status = refused.message, refused.http_status
         except BadInput as bad:
             error = bad.message
         except directory.DirectoryRefused as refusal:
@@ -684,9 +692,14 @@ def group(request, group_id=None):
             if item is None:
                 item = EmployeeGroup(tenant_id=who.tenant_id)
             item.code, item.title, item.scheme, item.ledger = code, title, scheme, ledger
-            item.save()
-            _save_measure(request, who, item, preset)
+            # Группа и её мера — одной точкой сохранения: отвергнутая форма не
+            # оставляет за собой группу без меры (T136).
+            with saving():
+                item.save()
+                _save_measure(request, who, item, preset)
             return redirect(reverse("directory-groups"))
+        except ConstraintRefused as refused:
+            error, status = refused.message, refused.http_status
         except BadInput as bad:
             error = bad.message
         except rules.RuleInputRefused as bad:
@@ -861,7 +874,7 @@ def unit(request, unit_id=None):
         if item is None:
             raise Http404("точка не найдена")
 
-    error = ""
+    error, status = "", 200
     if request.method == "POST":
         try:
             code = _text(request, "code", _("Код"))
@@ -877,8 +890,14 @@ def unit(request, unit_id=None):
             item.code, item.title = code, title
             item.legal_entity_id = entity_id
             item.opened_at, item.closed_at = opened_at, closed_at
-            item.save()
+            with saving():
+                item.save()
             return redirect(reverse("directory-units"))
+        except ConstraintRefused as refused:
+            # Отказ базы отвечает 400 — в отличие от разбора ввода выше, у
+            # которого свой (пока 200) код: их коды разводятся задачей, которая
+            # возьмётся за форму целиком, а не этой.
+            error, status = refused.message, refused.http_status
         except BadInput as bad:
             error = bad.message
 
@@ -907,7 +926,7 @@ def unit(request, unit_id=None):
              "help": _("Точка закрывается датой, а не удалением: "
                        "закрытые месяцы ссылаются на неё.")},
         ],
-    })
+    }, status=status)
 
 
 @login_required
@@ -945,7 +964,7 @@ def legal_entity(request, entity_id=None):
         if item is None:
             raise Http404("юрлицо не найдено")
 
-    error = ""
+    error, status = "", 200
     if request.method == "POST":
         try:
             title = _text(request, "title", _("Название"))
@@ -953,8 +972,11 @@ def legal_entity(request, entity_id=None):
             if item is None:
                 item = LegalEntity(tenant_id=who.tenant_id)
             item.title, item.tax_number = title, tax_number or None
-            item.save()
+            with saving():
+                item.save()
             return redirect(reverse("directory-legal-entities"))
+        except ConstraintRefused as refused:
+            error, status = refused.message, refused.http_status
         except BadInput as bad:
             error = bad.message
 
@@ -970,7 +992,7 @@ def legal_entity(request, entity_id=None):
             {"kind": "text", "name": "tax_number", "label": _("Налоговый номер"),
              "value": (item.tax_number if item else "") or ""},
         ],
-    })
+    }, status=status)
 
 
 # --- производственный календарь -----------------------------------------------
@@ -1055,13 +1077,16 @@ def calendar_month(request, month=None):
             # строкой. Человеку об этом говорится словами — до правки на самой
             # форме и после неё на странице календаря.
             carried = directory.touches_closed_month(who.tenant_id, wanted)
-            Calendar.objects.update_or_create(
-                country_code=country, period=wanted,
-                defaults={"norm_hours": norm, "working_days": int(days)},
-            )
+            with saving():
+                Calendar.objects.update_or_create(
+                    country_code=country, period=wanted,
+                    defaults={"norm_hours": norm, "working_days": int(days)},
+                )
             return redirect(
                 reverse("directory-calendar") + ("?retro=1" if carried else "")
             )
+        except ConstraintRefused as refused:
+            error, status = refused.message, refused.http_status
         except BadInput as bad:
             error = bad.message
         except directory.DirectoryRefused as refusal:
