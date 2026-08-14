@@ -101,7 +101,17 @@ def switcher(request) -> dict:
     current = translation.get_language()
     return {
         "languages": [
-            {"code": code, "title": title, "current": code == current}
+            # `short` — то, что видно в шапке: «RU», а не «Русский». Полное
+            # название остаётся подсказкой у кнопки. Три полных названия занимали
+            # четверть верхней строки и разворачивали шапку на две — то есть
+            # ручка, которой пользуются раз в жизни, отодвигала вниз данные,
+            # ради которых человек пришёл.
+            {
+                "code": code,
+                "title": title,
+                "short": code.split("-")[0].upper(),
+                "current": code == current,
+            }
             for code, title in settings.LANGUAGES
         ],
         "current_language": current,

@@ -155,17 +155,23 @@
   {% endcomment %}
   <a class="btn" href="{% url 'timesheets' period.id %}">{% translate "Табель" %}</a>
   <a class="btn" href="{% url 'period-variance' period.id %}">{% translate "Расхождения" %}</a>
-  {% if can_calculate %}
-  <span class="note">
-    {% if background_calculation %}
-    {% translate "Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама." %}
-    {% else %}
-    {% translate "Считается сразу." %}
-    {% endif %}
-    {% translate "Повторный запуск пересобирает ведомость заново." %}
-  </span>
-  {% endif %}
 </div>
+{% comment %}
+Пояснение к расчёту стоит ПОД кнопками, а не в их строке. В строке оно занимало
+больше места, чем сами кнопки, и главное действие экрана переставало быть
+главным по весу. Смысл тот же, слова короче: что будет после нажатия, человек
+всё равно увидит через секунду.
+{% endcomment %}
+{% if can_calculate %}
+<p class="note under">
+  {% if background_calculation %}
+  {% translate "Расчёт уйдёт в очередь, страница обновится сама." %}
+  {% else %}
+  {% translate "Считается сразу." %}
+  {% endif %}
+  {% translate "Повторный запуск пересобирает ведомость заново." %}
+</p>
+{% endif %}
 
 {% comment %}
 Утверждение и откат (T025). Действие предлагается, только когда цикл его

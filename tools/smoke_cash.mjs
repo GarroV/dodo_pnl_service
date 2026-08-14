@@ -152,14 +152,15 @@ await goto(APP + "/expenses/new/");
 check("в шапке есть путь к расходам",
   await evalIn(`!!document.querySelector('nav a[href="/expenses/"]')`));
 check("управляющему показана его точка", (await text()).includes("NS1"));
-// С T111 у поля точки есть второй вариант — «вся сеть» (расход юрлица
-// целиком), поэтому у управляющего это список, а не надпись. Чужих точек в
-// нём по-прежнему нет, и это здесь и проверяется.
-check("управляющему предлагают только его точку и всю сеть", await evalIn(`
+// В T111 у поля точки появился второй вариант — «вся сеть», расход юрлица
+// целиком. В T130 его у управляющего забрали: «строка без точки» стала значить
+// трату юрлица, а её роль с урезанным набором точек не ведёт. Значит у него в
+// списке ровно одна его точка — ни чужих, ни сети.
+check("управляющему предлагают только его точку", await evalIn(`
   (() => {
     const options = [...document.querySelectorAll('[name=unit] option')]
       .map(o => o.textContent.trim());
-    return options.length === 2 && options.includes("NS1") && !options.includes("BG1");
+    return options.length === 1 && options.includes("NS1") && !options.includes("BG1");
   })()
 `));
 check("внутренний регистр управляющему не предлагают", !(await evalIn(`

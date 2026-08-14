@@ -18,17 +18,24 @@
 {% endcomment %}
 {% block title %}{% translate "Расходы" %}{% endblock %}
 {% block content %}
-<h1>{% translate "Расходы" %}</h1>
-<p class="sub">{% translate "Наличные из кассы: что потратили и на что. Итог внизу — сумма показанных действующих строк, её и сверяют с кассой." %}</p>
+{% comment %}
+Заголовок и главное действие — одной строкой. «Внести расход» было ссылкой в
+отдельном абзаце и не выглядело главным действием экрана, хотя ради него сюда и
+приходят; подзаголовок объяснял устройство итога — это место справки, а не
+шапки экрана.
+{% endcomment %}
+<div class="head">
+  <h1>{% translate "Расходы" %}</h1>
+  <a class="btn primary" href="{{ add_url }}">{% translate "Внести расход" %}</a>
+</div>
+<p class="sub">{% translate "Наличные из кассы точек." %}</p>
 
 {% if error %}
 {% translate "Не показано." as failed %}
 {% notice "alert" title=failed %}{{ error }}{% endnotice %}
 {% endif %}
 
-<p><a class="btn" href="{{ add_url }}">{% translate "Внести расход" %}</a></p>
-
-<form class="search" method="get">
+<form class="search row" method="get">
   {% include "web/directory/fields.html" with fields=filters %}
   <button type="submit">{% translate "Показать" %}</button>
 </form>

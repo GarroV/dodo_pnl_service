@@ -2556,14 +2556,6 @@ msgstr "Periods"
 msgid "Внести расход"
 msgstr "Record expense"
 
-#: src/web/templates/web/cash/expense.html:22
-msgid ""
-"Наличные из кассы точки: что потратили, сколько и на что. Расход попадёт в "
-"P&L строкой своей статьи."
-msgstr ""
-"Cash from the unit's till: what was spent, how much, and on what. The "
-"expense lands in P&L as a line of its item."
-
 #: src/web/templates/web/cash/expense.html:25
 msgid "Записано."
 msgstr "Recorded."
@@ -2612,14 +2604,6 @@ msgstr ""
 #: src/web/templates/web/components/header.html:51
 msgid "Расходы"
 msgstr "Expenses"
-
-#: src/web/templates/web/cash/expenses.html:22
-msgid ""
-"Наличные из кассы: что потратили и на что. Итог внизу — сумма показанных "
-"действующих строк, её и сверяют с кассой."
-msgstr ""
-"Cash from the till: what was spent and on what. The total below is the sum "
-"of the active rows shown — that is what gets checked against the till."
 
 #: src/web/templates/web/cash/expenses.html:25
 msgid "Не показано."
@@ -2671,16 +2655,6 @@ msgstr "No expenses found for the selected period and filters."
 #: src/web/templates/web/cash/unallocated.html:16
 msgid "Нераспределённое"
 msgstr "Unallocated"
-
-#: src/web/templates/web/cash/unallocated.html:17
-msgid ""
-"Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по "
-"сети, но её нет ни на одной точке. У каждой строки написано, что именно "
-"мешает её разнести."
-msgstr ""
-"Expenses without a unit: they are waiting for an allocation rule. While they "
-"wait, the amount exists for the network but is on none of the units. Each "
-"row states exactly what is blocking it from being allocated."
 
 #: src/web/templates/web/cash/unallocated.html:20
 msgid "Пересчёт разнесения."
@@ -3146,12 +3120,6 @@ msgstr "Timesheet"
 msgid "Расхождения"
 msgstr "Discrepancies"
 
-#: src/web/templates/web/period.html:165
-msgid "Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама."
-msgstr ""
-"The calculation will go into the queue: the page will show progress and "
-"refresh itself."
-
 #: src/web/templates/web/period.html:167
 msgid "Считается сразу."
 msgstr "Calculated immediately."
@@ -3375,10 +3343,6 @@ msgstr ""
 "the period. The payroll sheet\n"
 "    will appear right here: one row per employee in every ledger visible to\n"
 "    your role."
-
-#: src/web/templates/web/periods.html:5
-msgid "Учётные месяцы партнёра и их состояние."
-msgstr "The partner's accounting months and their status."
 
 #: src/web/templates/web/periods.html:16
 msgid "Откройте месяц — работа идёт внутри него."
@@ -4372,3 +4336,15 @@ msgstr "entered manually"
 #: src/web/views.py:1294
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
+
+msgid "Расход попадёт в P&L строкой своей статьи."
+msgstr "The expense goes into P&L as a line of its item."
+
+msgid "Наличные из кассы точек."
+msgstr "Cash from the units’ tills."
+
+msgid "Расходы без точки: сумма есть по сети, но её нет ни на одной точке."
+msgstr "Expenses with no unit: the amount exists network-wide but not at any single unit."
+
+msgid "Расчёт уйдёт в очередь, страница обновится сама."
+msgstr "The calculation goes to the queue; the page refreshes itself."

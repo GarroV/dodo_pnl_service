@@ -78,7 +78,13 @@ const look = () => evalIn(`
     const boxes = [...document.querySelectorAll(".scroll")]
       .map(box => box.scrollWidth - box.clientWidth);
     // Подписи, которые видны не текстом: подсказки и метки для читалки экрана.
+    //
+    // Кроме переключателя языка: там подсказка — название языка на нём самом
+    // («Русский», «Srpski»), и это не непереведённая строка, а норма — язык
+    // называют так, как он называет себя, иначе его не узнает тот, кто пришёл
+    // за ним. Кнопка подписана кодом, полное название живёт подсказкой.
     const attrs = [...document.querySelectorAll("[title],[aria-label],[placeholder]")]
+      .filter(el => !el.closest("form.lang"))
       .flatMap(el => [el.getAttribute("title"), el.getAttribute("aria-label"), el.getAttribute("placeholder")])
       .filter(Boolean);
     return {

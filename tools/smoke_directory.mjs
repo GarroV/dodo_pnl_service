@@ -351,7 +351,11 @@ await sleep(1500);
 
 await logout();
 await login("admin");
-for (const [language, label] of [["en", "English"], ["sr", "Srpski"]]) {
+// Кнопка языка подписана кодом («EN», «SR»), а не названием: три полных
+// названия разворачивали шапку на вторую строку. Полное название осталось
+// подсказкой у кнопки — по нему её и находим, чтобы проверка не зависела от
+// того, как коротко подписана кнопка сегодня.
+for (const [language, label] of [["en", "EN"], ["sr", "SR"]]) {
   await goto(`${APP}/directory/`);
   const switched = await clickOn("form.lang button", label);
   check(`${language}: язык переключается кнопкой в шапке`, switched);

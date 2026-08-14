@@ -50,8 +50,18 @@
   .brand { font-weight: 600; letter-spacing: .02em; text-decoration: none; color: var(--ink); }
   nav a { color: var(--accent); text-decoration: none; margin-right: 16px; }
   nav a:hover, .brand:hover { text-decoration: underline; }
-  .who { margin-left: auto; display: flex; align-items: baseline; gap: 12px; color: var(--muted); font-size: 13px; }
+  .who { margin-left: auto; display: flex; align-items: baseline; gap: 10px; color: var(--muted); font-size: 12px; }
+  /* Шапка обязана держаться в ОДНУ строку. Служебное (кем вошли, что видно, чем
+     переключить язык) стоит выше содержания страницы, и когда его столько, что
+     оно переносится на вторую строку, оно начинает спорить с данными, ради
+     которых человек пришёл. Отсюда 12px, короткие подписи языков и метка
+     dev-входа точкой, а не рамкой. */
+  .who .cut { white-space: nowrap; }
   .who strong { color: var(--ink); font-weight: 600; }
+  /* Метка dev-входа: маленькая и без рамки-кричалки. Она сообщает о настройке
+     стенда, а не о состоянии данных, — и не должна перетягивать взгляд с роли,
+     под которой человек смотрит. */
+  .badge.dot { letter-spacing: .04em; padding: 1px 5px; border: 0; background: #f6f2ee; }
   .badge {
     font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
     color: var(--warn); background: var(--warn-bg);
@@ -70,6 +80,14 @@
   tfoot td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; }
   .empty { color: var(--muted); background: #fff; border: 1px dashed var(--line); padding: 24px; }
   .note { color: var(--muted); font-size: 13px; margin-top: 24px; }
+  /* Подсказка поля живёт в разметке всегда, а показывается, когда человек в это
+     поле пришёл. Причина простая: у половины полей объяснение длиннее самого
+     поля, и форма из шести полей растягивалась на два экрана — читать её
+     целиком приходилось каждый раз, даже когда всё понятно. Скрыт только показ:
+     текст остаётся в DOM, поэтому его по-прежнему видят и экранный диктор по
+     `aria-describedby`, и проверки. */
+  form.card .field > .note { display: none; margin: 4px 0 0; font-size: 12px; }
+  form.card .field:focus-within > .note { display: block; }
   button, .btn {
     font: inherit; color: var(--accent); background: none;
     border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer;
@@ -77,7 +95,15 @@
   button:hover, .btn:hover { border-color: var(--accent); }
   button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   form.inline { display: inline; }
-  dl.facts { display: grid; grid-template-columns: max-content auto; gap: 6px 20px; margin: 0 0 28px; }
+  /* Ключ и значение рядом, а не по краям экрана: при `auto` во второй колонке
+     значение уезжало к правому краю, и глаз проходил три сотни пустых пикселей
+     от подписи до числа.
+
+     Слова подписей здесь не цитируются намеренно: этот лист встроен в страницу,
+     то есть комментарий уезжает к человеку и попадает в её текст. Проверка,
+     которая ищет подпись и берёт следующее значение, нашла её в комментарии и
+     вернула чужое число — поймано сразу, но починка была бы неочевидной. */
+  dl.facts { display: grid; grid-template-columns: max-content max-content; gap: 6px 24px; margin: 0 0 24px; }
   dl.facts dt { color: var(--muted); }
   dl.facts dd { margin: 0; }
   /* Откуда взялось число: подпись мельче самой строки — она поясняет, а не спорит. */
@@ -159,11 +185,39 @@
   /* Формы входа и смены пароля: одна колонка, поле шире подписи — читается
      сверху вниз без метаний глазом. */
   form.card { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 18px 22px; max-width: 420px; }
+  /* Форма справочника — две колонки на широком экране: шесть полей в одну
+     колонку уводили кнопку сохранения за нижний край, а справа оставалось
+     полтора экрана пустоты. Вход и смена пароля остаются узкими (`max-width`
+     выше): там полей два, и колонка шириной в экран читалась бы хуже. */
+  form.card.wide { max-width: 860px; display: grid; gap: 0 28px; grid-template-columns: 1fr 1fr; }
+  form.card.wide > p, form.card.wide > .field { margin-bottom: 14px; }
+  form.card.wide > .full, form.card.wide > .actions { grid-column: 1 / -1; }
   form.card p { margin: 0 0 16px; }
   form.card p:last-child { margin-bottom: 0; }
   form.card label { color: var(--muted); font-size: 13px; }
-  form.card input { font: inherit; width: 100%; padding: 7px 10px; margin-top: 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
-  form.card input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  form.card input, form.card select { font: inherit; width: 100%; padding: 7px 10px; margin-top: 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
+  form.card input:focus-visible, form.card select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* Поле — всегда «подпись сверху, ввод под ней». Половина полей раскладывалась
+     иначе (подпись слева, объяснение обтеканием справа) просто потому, что
+     `select` — строчный элемент: получалась не разница стилей, а сломанная
+     вёрстка. */
+  form.card .field { display: block; margin: 0 0 14px; }
+  form.card .field > label { display: block; }
+  /* Заголовок экрана и его главное действие — одной строкой: действие, ради
+     которого на экран пришли, не должно искаться глазами ниже фильтров. */
+  .head { display: flex; align-items: center; gap: 16px; margin: 0 0 4px; }
+  .head h1 { margin: 0; }
+  .head .btn { margin-left: auto; }
+  a.btn.primary { color: #fff; background: var(--accent); border-color: var(--accent); text-decoration: none; }
+  a.btn.primary:hover { background: #1740b4; }
+  /* Фильтры — одной строкой над таблицей. Столбиком они занимали четверть
+     экрана до первой строки данных, хотя пять коротких полей встают в ряд. */
+  form.search.row { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 16px; margin: 0 0 18px; }
+  form.search.row .field { display: flex; flex-direction: column; margin: 0; }
+  form.search.row .field > label { font-size: 12px; color: var(--muted); }
+  form.search.row .field > .note { display: none; }
+  form.search.row input, form.search.row select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
+  p.note.under { margin: -14px 0 22px; font-size: 12px; }
   .alert, .ok { padding: 12px 16px; border-radius: 4px; margin: 0 0 20px; }
   .alert { color: var(--warn); background: var(--warn-bg); border: 1px solid #f3d3bf; }
   .alert .details { color: var(--ink); font-size: 13px; margin-top: 6px; }
@@ -218,7 +272,7 @@
      нажимается — как и выбранный разрез ведомости, по той же причине. */
   form.lang { display: flex; gap: 4px; margin: 0; }
   .lang-option {
-    font-size: 12px; padding: 2px 8px; color: var(--muted);
+    font-size: 11px; letter-spacing: .04em; padding: 2px 6px; color: var(--muted);
     border: 1px solid var(--line); border-radius: 3px; background: #fff;
   }
   .lang-option:hover { color: var(--accent); border-color: var(--accent); }
@@ -233,11 +287,17 @@
     background: #fff; border: 1px solid var(--line); border-radius: 4px; overflow: hidden;
   }
   ol.steps li {
-    flex: 1 1 220px; padding: 12px 18px; border-right: 1px solid var(--line);
-    color: var(--muted); font-size: 13px;
+    flex: 1 1 220px; padding: 9px 16px; border-right: 1px solid var(--line);
+    color: var(--muted); font-size: 12px;
   }
   ol.steps li:last-child { border-right: none; }
-  ol.steps .name { display: block; color: var(--ink); font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  ol.steps .name { display: block; color: var(--ink); font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+  /* Объяснение шага нужно тому, кто на нём стоит. Пройденный шаг объяснять
+     поздно, будущий — рано: полоса из трёх абзацев занимала 90 пикселей и
+     повторялась на каждом экране месяца, хотя читают её один раз в жизни.
+     Текст остаётся в разметке — он нужен экранному диктору и проверкам. */
+  ol.steps li:not(.now) .what { display: none; }
+  ol.steps li:not(.now) .name { margin-bottom: 0; }
   ol.steps li.done { background: #f7fbf8; }
   ol.steps li.done .name::after { content: " ✓"; color: #14532d; }
   ol.steps li.now { background: #f6f8ff; box-shadow: inset 3px 0 0 var(--accent); }

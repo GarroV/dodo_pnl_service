@@ -55,12 +55,12 @@
       <button type="submit" name="language" value="{{ language.code }}"
               class="lang-option{% if language.current %} current{% endif %}"
               {% if language.current %}aria-current="true"{% endif %}
-              lang="{{ language.code }}">{{ language.title }}</button>
+              lang="{{ language.code }}" title="{{ language.title }}">{{ language.short }}</button>
       {% endfor %}
     </form>
     {% endif %}
     {% if dev_login %}
-      <span class="badge" title="{% translate "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)" %}">{% translate "dev-вход" %}</span>
+      <span class="badge dot" title="{% translate "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)" %}" aria-label="{% translate "dev-вход" %}">dev</span>
     {% endif %}
     {% if principal %}
       {% comment %}У учёток сида имя человека совпадает с названием роли — не повторяем его дважды.{% endcomment %}

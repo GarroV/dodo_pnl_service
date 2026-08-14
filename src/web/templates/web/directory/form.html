@@ -39,8 +39,8 @@
 {% notice "ok" title=saved %}{{ notice }}{% endnotice %}
 {% endif %}
 
-<form class="card" method="post">{% csrf_token %}
+<form class="card wide" method="post">{% csrf_token %}
   {% include "web/directory/fields.html" with fields=fields %}
-  <button type="submit" class="primary">{{ submit_label }}</button>
+  <p class="actions"><button type="submit" class="primary">{{ submit_label }}</button></p>
 </form>
 {% endblock %}

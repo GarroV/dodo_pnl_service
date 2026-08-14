@@ -23,7 +23,7 @@
   <li class="{% if step.done %}done{% elif step.now %}now{% endif %}"
       {% if step.now %}aria-current="step"{% endif %}>
     <span class="name">{{ step.name }}</span>
-    {{ step.hint }}
+    <span class="what">{{ step.hint }}</span>
   </li>
   {% endfor %}
 </ol>

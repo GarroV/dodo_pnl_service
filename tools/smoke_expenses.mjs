@@ -196,8 +196,15 @@ check("правка прошла заменой версии, действующ
 check("в истории осталась прежняя версия",
   sql(`select count(*) from facts where dedup_key like 'manual:cash:%'`).trim() === "2");
 
-// Расход на всю сеть: управляющий его вносит, но разнести не может — и об этом
-// сказано словами, а не молчанием.
+// Расход на всю сеть вносит тот, кто ведёт все точки партнёра (T130): у «строки
+// без точки» новый смысл — трата юрлица целиком, и роль с урезанным набором
+// точек её не видит и завести не может. Раньше этот кусок шёл управляющим и
+// проверял слова про разнесение; теперь он проверяет ДРУГОЕ и в другом порядке:
+// сначала что управляющему такого варианта не предлагают вовсе, потом весь
+// сетевой сценарий — директором.
+check("управляющему не предлагают «вся сеть»", !(await pick("unit", "network")));
+await logout();
+check("вход директором", await login("director"));
 await goto(APP + "/expenses/new/");
 await fill("date", "2026-08-06");
 await fill("amount", "100.01");
@@ -207,20 +214,28 @@ await evalIn(`
     select.value = [...select.options].find(o => o.value).value;
   })()
 `);
-check("управляющему предлагают вариант «вся сеть»", await pick("unit", "network"));
+check("директору предлагают вариант «вся сеть»", await pick("unit", "network"));
 check("расход на сеть записан", await clickButton("Записать расход"));
 
+// У статьи есть правило, и разносит продукт сразу — молчать об этом нельзя:
+// человек внёс одну строку, а в P&L их появилось три.
 const saidNetwork = await evalIn(`(document.querySelector(".ok") || {}).innerText || ""`);
-check("продукт сказал, что разносит не он",
-  saidNetwork.includes("ведёт все точки"), saidNetwork);
-check("расход остался ждать разнесения",
+check("продукт сказал, что разнёс по точкам",
+  saidNetwork.includes("разнесён"), saidNetwork);
+check("родитель помечен разнесённым",
   sql(`select allocation from facts where amount = 100.01
-        and superseded_at is null`).trim() === "pending");
-check("на чужие точки ничего не легло",
-  sql(`select count(*) from facts where parent_fact_id is not null`).trim() === "0");
+        and superseded_at is null`).trim() === "split");
+const kids = sql(`select count(*) from facts
+   where parent_fact_id is not null and superseded_at is null`).trim();
+check("дети встали по точкам", Number(kids) >= 2, kids);
+check("сумма детей сошлась с родителем до копейки",
+  sql(`select coalesce(sum(amount), 0) from facts
+        where parent_fact_id = (select id from facts
+                                 where amount = 100.01 and superseded_at is null)
+          and superseded_at is null`).trim() === "100.01");
 
 await goto(APP + "/expenses/unallocated/");
-check("нераспределённое видно управляющему", (await text()).includes("100,01"), await text());
+check("разнесённого в ожидающих нет", !(await text()).includes("100,01"), await text());
 
 // Удаление: строка не исчезает, а выходит из итога.
 //
@@ -256,11 +271,10 @@ check("удалённая строка осталась видимой",
   rows.some((r) => r.state === "removed"), JSON.stringify(rows));
 check("удалённое вышло из итога", (await total()) === "100.01", await total());
 
-await logout();
+// Директором уже вошли выше — на сетевом расходе; входить заново нечем.
 
 // --- директор: чужие строки, фильтр и разнесение ------------------------------
 
-check("вход оперативным директором", await login("director"));
 await goto(APP + "/expenses/" + WIDE);
 rows = await shown();
 check("директор видит и расход сети, и удалённую строку управляющего",
@@ -315,15 +329,29 @@ await evalIn(`
 check("директор вносит июньский расход", await clickButton("Записать расход"));
 
 await goto(APP + "/periods/");
+// Именно ИЮНЬ, а не первый месяц списка. Пока расходов не было, месяц в списке
+// был один; теперь внесённый расход заводит ещё и текущий, он встаёт первым — и
+// смоук уходил считать август, где часов нет вовсе. Расчёт отказывался, кнопки
+// утверждения не появлялось, а выглядело это как «продукт не утверждает месяц».
 const periodHref = await evalIn(`
   (() => {
-    const link = [...document.querySelectorAll('a[href^="/periods/"]')]
-      .find(a => /^\\/periods\\/[0-9a-f-]{8,}\\/$/.test(a.getAttribute("href")));
+    const row = [...document.querySelectorAll('tr')]
+      .find(tr => /Июнь|June|Jun\\b/.test(tr.textContent));
+    const link = row && row.querySelector('a[href^="/periods/"]');
     return link ? link.getAttribute("href") : "";
   })()
 `);
+check("июньский месяц нашёлся в списке", !!periodHref, periodHref);
 await goto(APP + periodHref);
 check("директор считает июнь нажатием", await clickButton("Посчитать период"));
+// Расчёт уходит в очередь (PAYRUN_BACKGROUND=1 — умолчание стенда), и кнопка
+// утверждения появляется только на посчитанном месяце. Раньше между нажатиями
+// хватало времени случайно; с тех пор расход стал ещё и разноситься, и «случайно»
+// перестало хватать — ждём состояния, а не секунд.
+await waitFor(async () => {
+  await goto(APP + periodHref);
+  return (await text()).includes("Утвердить период");
+}, "месяц не посчитался за отведённое время");
 check("директор утверждает июнь нажатием", await clickButton("Утвердить период"));
 const closedTotal = juneTotal();
 check("июнь закрыт",
@@ -372,4 +400,12 @@ check("в журнале консоли нет исключений",
   !logs.some((line) => String(line).startsWith("EXCEPTION")),
   JSON.stringify(logs).slice(0, 300));
 
-report();
+report();async function waitFor(ready, complaint, tries = 160) {
+  for (let i = 0; i < tries; i++) {
+    if (await ready()) return true;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error(complaint);
+}
+
+

@@ -19,7 +19,7 @@
 {% block title %}{% translate "Внести расход" %}{% endblock %}
 {% block content %}
 <h1>{% translate "Внести расход" %}</h1>
-<p class="sub">{% translate "Наличные из кассы точки: что потратили, сколько и на что. Расход попадёт в P&L строкой своей статьи." %}</p>
+<p class="sub">{% translate "Расход попадёт в P&L строкой своей статьи." %}</p>
 
 {% if notice %}
 {% translate "Записано." as saved %}
@@ -31,9 +31,9 @@
 {% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
 {% endif %}
 
-<form class="card" method="post">{% csrf_token %}
+<form class="card wide" method="post">{% csrf_token %}
   <input type="hidden" name="entry_key" value="{{ entry_key }}">
   {% include "web/directory/fields.html" with fields=fields %}
-  <button type="submit" class="primary">{% translate "Записать расход" %}</button>
+  <p class="actions"><button type="submit" class="primary">{% translate "Записать расход" %}</button></p>
 </form>
 {% endblock %}

@@ -2527,14 +2527,6 @@ msgstr "Periodi"
 msgid "Внести расход"
 msgstr "Unesi trošak"
 
-#: src/web/templates/web/cash/expense.html:22
-msgid ""
-"Наличные из кассы точки: что потратили, сколько и на что. Расход попадёт в "
-"P&L строкой своей статьи."
-msgstr ""
-"Gotovina iz kase objekta: šta je potrošeno, koliko i na šta. Trošak ulazi u "
-"P&L kao red svoje stavke."
-
 #: src/web/templates/web/cash/expense.html:25
 msgid "Записано."
 msgstr "Zapisano."
@@ -2582,14 +2574,6 @@ msgstr "Ova verzija zapisa je zamenjena: uredite onu koja je trenutno važeća."
 #: src/web/templates/web/components/header.html:51
 msgid "Расходы"
 msgstr "Troškovi"
-
-#: src/web/templates/web/cash/expenses.html:22
-msgid ""
-"Наличные из кассы: что потратили и на что. Итог внизу — сумма показанных "
-"действующих строк, её и сверяют с кассой."
-msgstr ""
-"Gotovina iz kase: šta je potrošeno i na šta. Zbir ispod je zbir prikazanih "
-"važećih redova — baš se on poredi sa kasom."
 
 #: src/web/templates/web/cash/expenses.html:25
 msgid "Не показано."
@@ -2642,16 +2626,6 @@ msgstr "Za izabrani period i izabrane filtere nije pronađen nijedan trošak."
 #: src/web/templates/web/cash/unallocated.html:16
 msgid "Нераспределённое"
 msgstr "Neraspoređeno"
-
-#: src/web/templates/web/cash/unallocated.html:17
-msgid ""
-"Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по "
-"сети, но её нет ни на одной точке. У каждой строки написано, что именно "
-"мешает её разнести."
-msgstr ""
-"Troškovi bez objekta: čekaju pravilo raspodele. Dok čekaju, iznos postoji za "
-"mrežu, ali ga nema na nijednom objektu. Kod svakog reda piše šta tačno "
-"sprečava njegovu raspodelu."
 
 #: src/web/templates/web/cash/unallocated.html:20
 msgid "Пересчёт разнесения."
@@ -3112,11 +3086,6 @@ msgstr "Evidencija sati"
 msgid "Расхождения"
 msgstr "Odstupanja"
 
-#: src/web/templates/web/period.html:165
-msgid "Расчёт уйдёт в очередь: страница покажет ход работы и обновится сама."
-msgstr ""
-"Obračun ide u red čekanja: stranica će prikazati tok rada i sama se osvežiti."
-
 #: src/web/templates/web/period.html:167
 msgid "Считается сразу."
 msgstr "Računa se odmah."
@@ -3337,10 +3306,6 @@ msgstr ""
 "lista će se pojaviti\n"
 "    ovde: red za svakog zaposlenog u svakoj knjizi koja je vidljiva\n"
 "    vašoj ulozi."
-
-#: src/web/templates/web/periods.html:5
-msgid "Учётные месяцы партнёра и их состояние."
-msgstr "Obračunski meseci partnera i njihovo stanje."
 
 #: src/web/templates/web/periods.html:16
 msgid "Откройте месяц — работа идёт внутри него."
@@ -4312,3 +4277,15 @@ msgstr "ručno uneto"
 #: src/web/views.py:1294
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
+
+msgid "Расход попадёт в P&L строкой своей статьи."
+msgstr "Trošak ulazi u P&L kao stavka svoje kategorije."
+
+msgid "Наличные из кассы точек."
+msgstr "Gotovina iz kasa objekata."
+
+msgid "Расходы без точки: сумма есть по сети, но её нет ни на одной точке."
+msgstr "Troškovi bez objekta: iznos postoji na nivou mreže, ali ni na jednom objektu."
+
+msgid "Расчёт уйдёт в очередь, страница обновится сама."
+msgstr "Obračun ide u red čekanja; stranica se sama osvežava."

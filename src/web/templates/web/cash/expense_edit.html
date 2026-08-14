@@ -33,7 +33,7 @@
 {% endif %}
 
 {% if editable %}
-<form class="card" method="post">{% csrf_token %}
+<form class="card wide" method="post">{% csrf_token %}
   {% include "web/directory/fields.html" with fields=fields %}
   <button type="submit" class="primary">{% translate "Сохранить" %}</button>
 </form>
