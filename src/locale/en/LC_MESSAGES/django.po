@@ -205,6 +205,19 @@ msgstr "the row has no name — it was not loaded"
 msgid "«%(value)s» в колонке «%(column)s» — не число, строка не загружена"
 msgstr "“%(value)s” in column “%(column)s” is not a number, the row was not loaded"
 
+#, python-format
+msgid "колонка «%(column)s» (%(key)s) не найдена — значения этого поля в загрузку не попали"
+msgstr "column “%(column)s” (%(key)s) was not found — this field’s values did not make it into the upload"
+
+msgid "лист не входит в формат PLATA — ни одна его строка не загружена"
+msgstr "the sheet does not fit the PLATA format — none of its rows were loaded"
+
+msgid "лист формата не найден в файле — сотрудников с него в загрузке нет"
+msgstr "the format’s sheet was not found in the file — there are no employees from it in the upload"
+
+msgid "у строки нет имени или фамилии — она не загружена"
+msgstr "the row has no first or last name — it was not loaded"
+
 msgid "не входит в доступную вам часть расчёта этого периода"
 msgstr "not in the part of this period's calculation available to you"
 
@@ -698,8 +711,8 @@ msgid " Разнести его по точкам может тот, кто ве
 msgstr " Only someone who manages every unit can allocate it across units: allocation rows land on other people's units too."
 
 #, python-format
-msgid "%(what)s нельзя изменить: зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
-msgstr "%(what)s cannot be changed: payroll for %(month)s is already approved, and this setting has no dated versions — the change would rewrite a closed month retroactively. Override what you need for the individual person in their employment terms: there a change takes effect from a date. Or reopen the month with a reason."
+msgid "Правку отклонили: %(what)s нельзя изменить, потому что зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
+msgstr "The edit was rejected: %(what)s cannot be changed because payroll for %(month)s is already approved, and this setting has no dated versions — the change would rewrite a closed month retroactively. Override what you need for the individual person in their employment terms: there a change takes effect from a date. Or reopen the month with a reason."
 
 #, python-format
 msgid "Зарплата утверждена по %(edge)s включительно. Правку с более ранней датой продукт примет, но закрытый месяц ею не переписывается: если она изменит его числа, разница ляжет помеченной строкой в ближайший неутверждённый месяц — перенести её можно на странице закрытого."
@@ -716,6 +729,16 @@ msgstr "The edit touched payroll approved through %(edge)s. The closed month is 
 #, python-format
 msgid "Правка задела зарплату, утверждённую по %(edge)s. Закрытый месяц остался прежним: у этого партнёра разница применяется пересчётом — откройте месяц заново с причиной и посчитайте его снова."
 msgstr "The edit touched payroll approved through %(edge)s. The closed month is unchanged: for this partner the difference is applied by recalculation — reopen the month with a reason and calculate it again."
+
+#, python-format
+msgid "Версия заведена с %(date)s, а действовать начнёт с расчёта за %(starts)s: правила берутся на месяц целиком. %(inside)s останется посчитанным по-прежнему — нужна была правка с начала месяца, заведите версию с %(first)s."
+msgstr "The version is dated %(date)s, but it will only take effect starting with the %(starts)s payroll: rules are taken for the whole month. %(inside)s stays calculated as before — if you needed the edit from the start of the month, create a version dated %(first)s instead."
+
+msgid "Календарь общий для страны: правка подействует на всех партнёров этой страны, а не только на вашего. У тех, у кого этот месяц уже утверждён, появится своя разница — переносит её каждый у себя."
+msgstr "The calendar is shared for the country: the edit affects every partner in that country, not just yours. Partners whose month is already approved will get their own difference — each carries it over on their own."
+
+msgid "Правка календаря подействовала на всех партнёров этой страны, а не только на вашего: календарь общий. У тех, у кого этот месяц утверждён, разница появится на странице месяца — переносит её каждый у себя."
+msgstr "The calendar edit affected every partner in that country, not just yours: the calendar is shared. Partners whose month is approved will see the difference on the month's page — each carries it over on their own."
 
 msgid "Карточка сохранена."
 msgstr "Card saved."
@@ -977,9 +1000,6 @@ msgstr "New calendar month"
 
 msgid "← К календарю"
 msgstr "← To the calendar"
-
-msgid "Календарь общий для страны: его видят все партнёры этой страны."
-msgstr "The calendar is shared for the country: all partners in that country see it."
 
 #, python-format
 msgid "«%(label)s»: месяц пишется как 2026-06, а не «%(value)s»."
@@ -2103,8 +2123,8 @@ msgstr "The value comes from the country rules. The first version below becomes 
 msgid "Новая версия правила"
 msgstr "New version of the rule"
 
-msgid "С этой даты расчёт берёт новое значение. Месяцы до неё считаются по-прежнему."
-msgstr "From this date the calculation takes the new value. Months before it are still calculated as before."
+msgid "С этой даты расчёт берёт новое значение, месяцы до неё считаются по-прежнему. Правила берутся на месяц целиком, поэтому дата внутри месяца подействует только со следующего: чтобы правка сработала на весь месяц, ставьте первое число."
+msgstr "From this date the calculation takes the new value; months before it are still calculated as before. Rules are taken for the whole month, so a date in the middle of a month only takes effect from the next one — to make the edit apply to the whole month, use the first day."
 
 msgid "Через запятую."
 msgstr "Comma-separated."

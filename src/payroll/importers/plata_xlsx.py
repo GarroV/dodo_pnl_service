@@ -5,6 +5,14 @@
 и сверять движок с их расчётом. Формат сербский, поэтому лежит в importers —
 у другого партнёра будет свой.
 
+**Находки — текст продукта, а не данные файла (T140, issue #96).** Поэтому они
+переводятся, как и всё остальное на экране: раздел «Не разобрано в файле»
+показывается и на английской странице сверки, и на демо-стенде, который
+англоязычен целиком (D035). Django-шный `gettext` здесь не нарушает правила
+«движок остаётся чистым Python без ORM»: перевод — не ORM, а альтернатива
+означала бы либо русский абзац на английской странице, либо второй словарь
+находок в веб-слое, который разъедется с этим файлом.
+
 **Разбор обязан быть громким (T021).** Файл партнёра — это чужая таблица,
 которую правят руками: лист переименуют, колонку добавят, в часы напишут
 словами. Раньше всё это проходило молча: чужой лист пропускался, ненайденная
@@ -21,6 +29,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import openpyxl
+from django.utils.translation import gettext as _
 
 from ..engine import Employee, Timesheet, d
 
@@ -150,13 +159,22 @@ def _read_sheet(ws, sheet: str, scheme: str, group: str, default_rate,
     where = sheet.strip()
     cols = _map_columns(ws, scheme)
 
+    def place(row: int) -> str:
+        # Место в файле — ОДНОЙ строкой перевода с подстановками, а не склейкой
+        # `f"{лист}, строка {r}"`: склеенное переводится наполовину — имя листа
+        # приезжает из файла, а слово «строка» остаётся русским навсегда. У
+        # порядка слов в языках свои правила. Тот же msgid, что в
+        # `reports/own_export.py`: один текст — одна запись каталога.
+        return _("%(sheet)s, строка %(row)s") % {"sheet": where, "row": row}
+
     # Ненайденная колонка — не мелочь: часы стали бы нулём, ставка — умолчанием,
     # и расчёт прошёл бы. Поэтому о каждой говорим отдельно и по имени.
     for key in sorted((set(FIELDS) | {"exp_gross"}) - set(cols)):
         out.findings.append(Finding(
             "column", where,
-            f"колонка «{_title_of(key, scheme)}» ({key}) не найдена — "
-            f"значения этого поля в загрузку не попали",
+            _("колонка «%(column)s» (%(key)s) не найдена — значения этого поля "
+              "в загрузку не попали")
+            % {"column": _title_of(key, scheme), "key": key},
         ))
 
     # До самой последней заполненной строки, а не до 19-й: прежний предел
@@ -168,15 +186,15 @@ def _read_sheet(ws, sheet: str, scheme: str, group: str, default_rate,
         if not isinstance(ws.cell(r, 1).value, (int, float)):
             if named:
                 out.findings.append(Finding(
-                    "row", f"{where}, строка {r}",
-                    "строка не пронумерована и не загружена: "
-                    f"«{str(first or '').strip()} {str(last or '').strip()}»".strip(),
+                    "row", place(r),
+                    _("строка не пронумерована и не загружена: «%(name)s»")
+                    % {"name": f"{str(first or '').strip()} {str(last or '').strip()}".strip()},
                 ))
             continue
         if not first or not last:
             out.findings.append(Finding(
-                "row", f"{where}, строка {r}",
-                "у строки нет имени или фамилии — она не загружена",
+                "row", place(r),
+                _("у строки нет имени или фамилии — она не загружена"),
             ))
             continue
 
@@ -187,9 +205,10 @@ def _read_sheet(ws, sheet: str, scheme: str, group: str, default_rate,
             # значит посчитать зарплату по числу, которого в таблице нет.
             for key, value in bad:
                 out.findings.append(Finding(
-                    "value", f"{where}, строка {r}",
-                    f"«{value}» в колонке «{_title_of(key, scheme)}» — не число, "
-                    f"строка не загружена",
+                    "value", place(r),
+                    _("«%(value)s» в колонке «%(column)s» — не число, "
+                      "строка не загружена")
+                    % {"value": value, "column": _title_of(key, scheme)},
                 ))
             continue
 
@@ -236,14 +255,14 @@ def read_plata_file(path: Path | str, default_rate: Decimal | float = 371) -> Pl
         if name not in SHEET_MAP:
             out.findings.append(Finding(
                 "sheet", name,
-                "лист не входит в формат PLATA — ни одна его строка не загружена",
+                _("лист не входит в формат PLATA — ни одна его строка не загружена"),
             ))
 
     for sheet, (scheme, group) in SHEET_MAP.items():
         if sheet not in wb.sheetnames:
             out.findings.append(Finding(
                 "sheet", sheet.strip(),
-                "лист формата не найден в файле — сотрудников с него в загрузке нет",
+                _("лист формата не найден в файле — сотрудников с него в загрузке нет"),
             ))
             continue
         _read_sheet(wb[sheet], sheet, scheme, group, default_rate, out)

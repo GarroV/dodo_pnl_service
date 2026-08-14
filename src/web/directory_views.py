@@ -1020,13 +1020,17 @@ def calendar(request):
             "Пока месяца нет в календаре, норма часов на его странице — прочерк, "
             "и недоработку считать не от чего."
         ),
-        # Правка задела утверждённый месяц: сказать, что с ним стало и где
-        # искать разницу (T121). Признак приезжает адресом, а не готовой
-        # фразой: фраза в адресе не переводится и подставляется кем угодно.
-        "notice": (
-            directory.closed_month_notice(who.tenant_id)
-            if request.GET.get("retro") == "1" else ""
-        ),
+        # Что случилось с правкой — одним ответом на один вопрос: кого она
+        # задела (T139) и что стало с утверждённым месяцем (T121). Признаки
+        # приезжают адресом, а не готовой фразой: фраза в адресе не переводится
+        # и подставляется кем угодно.
+        "notice": " ".join(filter(None, [
+            directory.shared_calendar_notice() if request.GET.get("shared") == "1" else "",
+            (
+                directory.closed_month_notice(who.tenant_id)
+                if request.GET.get("retro") == "1" else ""
+            ),
+        ])),
     })
 
 
@@ -1059,8 +1063,13 @@ def calendar_month(request, month=None):
                 country_code=country, period=wanted,
                 defaults={"norm_hours": norm, "working_days": int(days)},
             )
+            # `shared=1` — всегда: календарь общий для страны при любой дате, и
+            # человек обязан прочитать, что задел не только своего партнёра
+            # (T139, issue #100). Признаки едут адресом, а не готовой фразой:
+            # фраза в адресе не переводится и подставляется кем угодно.
             return redirect(
-                reverse("directory-calendar") + ("?retro=1" if carried else "")
+                reverse("directory-calendar")
+                + "?shared=1" + ("&retro=1" if carried else "")
             )
         except BadInput as bad:
             error = bad.message
@@ -1073,11 +1082,15 @@ def calendar_month(request, month=None):
         "back_label": _("← К календарю"),
         "error": error,
         "closed_note": directory.closed_month_warning(who.tenant_id),
+        # Сказано на обеих формах — и нового месяца, и правки существующего.
+        # Раньше строка про общий календарь стояла подсказкой у поля месяца, то
+        # есть только при заведении: тот, кто правил норму часов уже заведённого
+        # месяца, о соседях по стране не читал ничего (issue #100).
+        "shared_note": directory.shared_calendar_warning(),
         "submit_label": _("Сохранить"),
         "fields": ([] if period else [
             {"kind": "month", "name": "month", "label": _("Месяц"), "required": True,
-             "value": "",
-             "help": _("Календарь общий для страны: его видят все партнёры этой страны.")},
+             "value": ""},
         ]) + [
             {"kind": "number", "name": "norm_hours", "label": _("Норма часов"), "required": True,
              "value": item.norm_hours if item else ""},

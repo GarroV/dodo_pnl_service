@@ -26,6 +26,7 @@ from django.db import connection, transaction
 from django.utils.timezone import now
 
 from core import models
+from core.roles import ROLE_ORDER, ROLE_SHAPES
 from core.rules import import_presets
 from payrun.calc import calculate_period
 from payrun.lifecycle import approve
@@ -75,39 +76,30 @@ PNL_ITEMS = [
 DEMO_LANGUAGE = "en"
 
 # Роли демо. Коды те же, что у продукта, — на них стоят политики базы и права;
-# по-английски здесь только подписи. Набор регистров и точка повторяют роли
-# сида разработки намеренно: демо должно показывать ту же разницу видимости,
-# которую партнёр получит у себя, а не выдуманную.
+# по-английски здесь только подписи. Форма роли (регистры, точка, права) НЕ
+# переписывается рядом, а берётся из `core.roles`: демо обязано показывать ту же
+# разницу видимости, которую партнёр получит у себя, а не выдуманную.
+#
+# Пока форма была записана здесь второй раз, обещание разъехалось с делом
+# (issue #91): у администратора сети в продукте все три регистра (T089), а в
+# демо остался один официальный. Демо показывало сломанное состояние продукта —
+# администратора, которому некому поменять ставку курьеру. Найдено чтением
+# комментария, а не проверкой: два списка одного и того же расходятся молча.
+ROLE_TITLES = {
+    "director": "Operations director",
+    "accountant": "Accountant",
+    "manager": "Unit manager (Novi Sad Bulevar)",
+    "admin": "Network administrator",
+}
+
 ROLES = [
     (
-        "director", "Operations director", ALL_LEDGERS, None,
-        [
-            "timesheet.edit", "payrun.calculate", "period.approve",
-            "period.reopen", "payslip.freeze", "retro.post", "unit.close",
-        ],
-    ),
-    (
-        # Все три регистра, как у директора (D036): бухгалтер и оперативный
-        # директор равны. Демо обязано показывать то же, что получит партнёр, —
-        # иначе сценарий сверки у бухгалтера упирается в пустую выгрузку.
-        "accountant", "Accountant", ALL_LEDGERS, None,
-        # И тот же набор прав, что у директора (D036, T115): откат утверждения
-        # и закрытие часов точки в том числе. Демо показывает то, что получит
-        # партнёр, а не роль, которой урезали половину цикла месяца.
-        [
-            "timesheet.edit", "payrun.calculate", "period.approve",
-            "period.reopen", "payslip.freeze", "retro.post", "unit.close",
-        ],
-    ),
-    (
-        "manager", "Unit manager (Novi Sad Bulevar)",
-        ["official", "supplementary"], "NS1",
-        ["timesheet.edit", "unit.close"],
-    ),
-    (
-        "admin", "Network administrator", ["official"], None,
-        ["directory.manage", "rules.manage", "roles.manage"],
-    ),
+        code, ROLE_TITLES[code],
+        list(ROLE_SHAPES[code].ledgers),
+        ROLE_SHAPES[code].unit,
+        list(ROLE_SHAPES[code].permissions),
+    )
+    for code in ROLE_ORDER
 ]
 
 

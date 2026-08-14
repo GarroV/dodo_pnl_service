@@ -111,14 +111,29 @@ def _no_rules_notice(request, who, on_date, *, heading):
 
 
 def _carried_notice(request, who) -> str:
-    """Слова о том, что версия задела утверждённый месяц (T121).
+    """Слова о том, что случилось с только что заведённой версией.
 
-    Признак приезжает адресом, а не готовой фразой: фраза в адресе не
-    переводится и подставляется кем угодно.
+    Двое, и оба про охват правки: задет ли утверждённый месяц (T121) и с какого
+    месяца версия подействует на самом деле (T139, issue #99). Складываются
+    одной строкой — человеку это один ответ на один вопрос «что я сейчас
+    сделал», а не две плашки.
+
+    Признаки приезжают адресом, а не готовой фразой: фраза в адресе не
+    переводится и подставляется кем угодно. Дата — это данные, и разбирается она
+    строго: мусор в адресе молчит, а не рождает фразу о месяце, которого не было.
     """
-    if request.GET.get("retro") != "1":
-        return ""
-    return directory.closed_month_notice(who.tenant_id)
+    parts = []
+    if request.GET.get("retro") == "1":
+        parts.append(directory.closed_month_notice(who.tenant_id))
+    raw = (request.GET.get("from") or "").strip()
+    if raw:
+        try:
+            started = datetime.strptime(raw, "%Y-%m-%d").date()
+        except ValueError:
+            started = None
+        if started is not None:
+            parts.append(rules.effective_month_notice(started))
+    return " ".join(filter(None, parts))
 
 
 @login_required
@@ -213,9 +228,14 @@ def rule(request, path: str):
                 # молча этого не делаем — признак уезжает адресом, и список
                 # правил объясняет случившееся словами.
                 carried = directory.touches_closed_month(who.tenant_id, valid_from)
+                # Дата уезжает в адрес только тогда, когда о ней есть что
+                # сказать: версия с первого числа работает ровно так, как человек
+                # и ожидал, и предупреждение о ней обесценило бы остальные.
+                shifted = rules.effective_month(valid_from) != valid_from
                 return redirect(
                     f"{reverse('rules')}?on={on_date.isoformat()}"
                     + ("&retro=1" if carried else "")
+                    + (f"&from={valid_from.isoformat()}" if shifted else "")
                 )
         except rules.RuleInputRefused as bad:
             error, status = bad.message, bad.http_status
@@ -247,6 +267,9 @@ def rule(request, path: str):
             {"code": "false", "title": _("нет"), "selected": current is False},
         ],
         "default_from": _default_from(who, on_date),
+        # Подсказка под полем даты приходит готовой — из того же места, что и
+        # слова после правки. Две формулировки одного правила разъехались бы.
+        "from_help": rules.monthly_help(),
         "versions": [
             {
                 "from": row.valid_from.isoformat(),
