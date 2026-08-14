@@ -47,6 +47,7 @@ from test_cash_expense import (  # noqa: F401
     units,
 )
 from test_directory import payruns_restored, sql  # noqa: F401
+from test_expenses_allocation import rules_removed, set_rule  # noqa: F401
 
 D = Decimal
 JUNE = "2026-06-01"
@@ -268,3 +269,53 @@ def test_payroll_facts_do_not_land_in_the_file_a_second_time(
     assert money_of(rows) == [D("100")], (
         f"зарплатный факт приехал в файл вторым разом: {rows}"
     )
+
+
+def test_a_spread_expense_is_counted_once_by_its_children(
+    client, sql, tenant, item, units, rules_removed, facts_removed,  # noqa: F811
+):
+    """Расход на сеть уходит в файл детьми по точкам, а не дважды.
+
+    Родитель разнесённого расхода остаётся в базе со состоянием `split` — он и
+    есть та строка, которую человек внёс, и она никуда не девается. В отчёт
+    вместо него идут дети: у `pnl_lines` это записано условием `allocation <>
+    'split'`, и повторять его выборкой отчёта нельзя — тогда сумма аренды
+    попала бы в P&L и целиком, и по точкам сразу.
+    """
+    login_as(client, "admin")
+    set_rule(client, item, method="even")
+    client.post("/logout/")
+
+    login_as(client, "director")
+    form = payload(item, units, entry_key=entry_key(), date=JUNE_DAY,
+                   amount="100.01", unit="network")
+    assert client.post(NEW, form).status_code == 302
+
+    rows = expense_rows(client, june_export_url(sql, tenant))
+    assert sorted(str(row[1]) for row in rows) == ["BG1", "NS1", "NS2"], rows
+    assert sum(money_of(rows)) == D("100.01"), rows
+
+
+def test_a_removed_expense_leaves_the_file(
+    client, sql, tenant, item, units, facts_removed,  # noqa: F811
+):
+    """Удалённый расход в P&L не считается — как и в итоге на экране (T110).
+
+    В базе он остаётся видимым со состоянием «удалён»: деньги, пропавшие
+    бесследно, через месяц не проверить ничем. Но в заготовку P&L он не идёт.
+    """
+    login_as(client, "director")
+    key = entry_key()
+    form = payload(item, units, entry_key=key, date=JUNE_DAY,
+                   amount="42.00", unit=units["NS1"])
+    assert client.post(NEW, form).status_code == 302
+
+    url = june_export_url(sql, tenant)
+    assert money_of(expense_rows(client, url)) == [D("42")]
+
+    fact_id = sql.execute(
+        "select id from facts where dedup_key = %s and superseded_at is null",
+        (f"manual:cash:{key}",),
+    ).fetchone()[0]
+    assert client.post(f"/expenses/{fact_id}/delete/").status_code == 302
+    assert expense_rows(client, url) == [], "удалённый расход остался в файле"
