@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 13:15+0000\n"
+"POT-Creation-Date: 2026-08-14 13:33+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -765,6 +765,10 @@ msgstr "%(fields)s: row not found. Choose a value from the list."
 #, python-format
 msgid "Этот период уже занят другой версией (%(fields)s). Поправьте даты."
 msgstr "This period is already taken by another version (%(fields)s). Fix the dates."
+
+#, python-format
+msgid "«%(field)s»"
+msgstr "\"%(field)s\""
 
 #, python-format
 msgid "%(what)s нельзя изменить: зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."

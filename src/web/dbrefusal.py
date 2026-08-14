@@ -164,7 +164,7 @@ def _words_for(refusal: DatabaseError) -> str | None:
         # падает громко и чинится, а не притворяется ошибкой человека.
         return None
 
-    fields = ", ".join(f"«{title}»" for title in columns)
+    fields = ", ".join(_quoted(title) for title in columns)
     if state == UNIQUE:
         return _(
             "Такая запись уже есть: %(fields)s не повторяется. "
@@ -197,6 +197,18 @@ def _columns_of(table: str, constraint: str) -> list[str]:
 
     typed = [column for column in columns if _root(column) not in NOT_TYPED_BY_A_HUMAN]
     return [_title(column) for column in (typed or columns)]
+
+
+def _quoted(title: str) -> str:
+    """Название поля в кавычках — тех, что приняты в языке страницы.
+
+    Кавычки внутри переводимой строки, а не приписаны в коде: у остальных
+    отказов продукта они переводятся вместе с фразой («Поле «%(label)s»
+    обязательно.» → `The "%(label)s" field is required.`), и приписанные снаружи
+    ёлочки торчали бы на английской странице русской типографикой. Найдено
+    смоуком: `already exists: «Code» cannot repeat`.
+    """
+    return _("«%(field)s»") % {"field": title}
 
 
 def _root(column: str) -> str:
