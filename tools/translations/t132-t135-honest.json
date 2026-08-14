@@ -1,0 +1,58 @@
+{
+  "«%(label)s»: это номер из списка, а не «%(value)s».": {
+    "en": "\"%(label)s\" must be an ID from the list, not \"%(value)s\".",
+    "sr": "„%(label)s“ mora biti ID sa liste, a ne „%(value)s“."
+  },
+  "«Пропорционально выручке» пока не разносит ничего: выручки в продукте нет — она появится с коннектором Dodo IS.": {
+    "en": "\"Proportionally to revenue\" does not allocate anything yet: there is no revenue in the product — it will appear with the Dodo IS connector.",
+    "sr": "„Proporcionalno prihodu“ trenutno ne raspodeljuje ništa: prihoda u proizvodu nema — pojaviće se sa konektorom Dodo IS."
+  },
+  "«Спрашивать каждый раз» означает, что точку у такого расхода выбирают руками, в самом расходе: отдельного экрана вопроса нет.": {
+    "en": "\"Ask every time\" means the unit for such an expense is chosen by hand, in the expense itself: there is no separate question screen.",
+    "sr": "„Pitaj svaki put“ znači da se objekat za takav trošak bira ručno, u samom trošku: posebnog ekrana za pitanje nema."
+  },
+  "Когда деньги вышли из кассы.": {
+    "en": "When the money left the cash register.",
+    "sr": "Kada je novac izašao iz kase."
+  },
+  "Месяц %(closed)s закрыт: расход ляжет в %(month)s, а эта дата останется при нём.": {
+    "en": "Month %(closed)s is closed: the expense lands in %(month)s, and this date stays with it.",
+    "sr": "Mesec %(closed)s je zatvoren: trošak upada u %(month)s, a ovaj datum ostaje uz njega."
+  },
+  "Пересчёт прошёл: ни одна строка не изменилась, а ждут разнесения %(count)s. Что мешает каждой — в колонке «Почему ждёт».": {
+    "en": "Recalculation completed: not a single row changed, and %(count)s are waiting for allocation. What's blocking each one is in the \"Why it is waiting\" column.",
+    "sr": "Ponovni obračun je izvršen: nijedan red se nije promenio, a čeka raspodelu %(count)s. Šta sprečava svaki red piše u koloni „Zašto čeka“."
+  },
+  "Почему ждёт": {
+    "en": "Why it is waiting",
+    "sr": "Zašto čeka"
+  },
+  "Правила разнесения у статьи нет: заведите его в карточке статьи или укажите точку в самом расходе.": {
+    "en": "The item has no allocation rule: set one up on the item's card, or specify the unit in the expense itself.",
+    "sr": "Stavka nema pravilo raspodele: podesite ga na kartici stavke ili navedite objekat u samom trošku."
+  },
+  "Правило статьи — «Пропорционально выручке», но выручки в продукте пока нет: она появится с коннектором Dodo IS. Пока укажите точку руками или смените правило.": {
+    "en": "The item's rule is \"Proportionally to revenue\", but there is no revenue in the product yet: it will appear with the Dodo IS connector. For now, specify the unit by hand or change the rule.",
+    "sr": "Pravilo stavke je „Proporcionalno prihodu“, ali prihoda u proizvodu još nema: pojaviće se sa konektorom Dodo IS. Za sada navedite objekat ručno ili promenite pravilo."
+  },
+  "Правило статьи — «Спрашивать каждый раз»: точку у такого расхода выбирают руками. Откройте расход и укажите её.": {
+    "en": "The item's rule is \"Ask every time\": the unit for such an expense is chosen by hand. Open the expense and specify it.",
+    "sr": "Pravilo stavke je „Pitaj svaki put“: objekat za takav trošak se bira ručno. Otvorite trošak i navedite ga."
+  },
+  "Правило у статьи есть — нажмите «Разнести по правилам».": {
+    "en": "The item has a rule — click \"Allocate by the rules\".",
+    "sr": "Stavka ima pravilo — kliknite „Raspodeli po pravilima“."
+  },
+  "Правило у статьи есть, но разносить не на что: ни одна точка не подошла под него в этом месяце.": {
+    "en": "The item has a rule, but there is nothing to allocate to: no unit matched it this month.",
+    "sr": "Stavka ima pravilo, ali nema šta da se raspodeli: nijedan objekat mu nije odgovarao ovog meseca."
+  },
+  "Разносит расходы по точкам тот, кто ведёт все точки партнёра.": {
+    "en": "Expenses are allocated across units by whoever manages all of the partner's units.",
+    "sr": "Troškove po objektima raspodeljuje onaj ko vodi sve objekte partnera."
+  },
+  "Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по сети, но её нет ни на одной точке. У каждой строки написано, что именно мешает её разнести.": {
+    "en": "Expenses without a unit: they are waiting for an allocation rule. While they wait, the amount exists for the network but is on none of the units. Each row states exactly what is blocking it from being allocated.",
+    "sr": "Troškovi bez objekta: čekaju pravilo raspodele. Dok čekaju, iznos postoji za mrežu, ali ga nema na nijednom objektu. Kod svakog reda piše šta tačno sprečava njegovu raspodelu."
+  }
+}

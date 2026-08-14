@@ -168,8 +168,11 @@ def _listing(request, who) -> JsonResponse:
     `sum(amount)` был бы вторым источником истины и разошёлся бы с показанным
     молча.
     """
+    # Отбор разбирается тем же `filters_from`, что у экрана, целиком — включая
+    # `?ledger=`. Своя строка разбора здесь стояла до T133, и ровно из-за неё
+    # один и тот же адрес отвечал экраном и вызовом по-разному: экран параметр
+    # не читал вовсе. Второй разбор рядом с первым расходится молча.
     chosen = expenses_views.filters_from(request)
-    chosen["ledger"] = (request.GET.get("ledger") or "").strip()
     limit, offset = _window(request)
 
     rows = expenses_views.rows_for(who, chosen, window=(offset, limit + 1))
@@ -246,8 +249,13 @@ def _record(request, who) -> JsonResponse:
     if entered["unit_id"] is None:
         # Расход на всю сеть разносится сразу, как и с экрана: узнать через
         # месяц, что сумма висела нераспределённой, — худший из ответов.
-        state, rows = cash.spread_now(recorded.fact_id)
-        answer["allocation"] = {"state": state, "rows": rows}
+        outcome = cash.spread_now(recorded.fact_id)
+        # `reason` — разбираемый машиной код причины ожидания (T132), а не
+        # переведённая фраза: бот обязан отличать «правила нет» от «правило есть,
+        # но выручки в продукте пока нет», а по словам этого не сделать.
+        answer["allocation"] = {
+            "state": outcome.state, "rows": outcome.rows, "reason": outcome.reason,
+        }
     return _json(answer)
 
 
