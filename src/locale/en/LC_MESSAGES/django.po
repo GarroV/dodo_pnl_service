@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 10:30+0000\n"
+"POT-Creation-Date: 2026-08-14 13:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -152,6 +152,15 @@ msgstr "payslip frozen"
 #, python-format
 msgid "человек: %(count)s"
 msgstr "people: %(count)s"
+
+msgid "Налоговая часть в этот файл не вошла: налог и взносы считаются по строке ведомости целиком, и разрезу по регистру они не принадлежат. Для P&L с налогами возьмите файл без разреза."
+msgstr "The tax part is not included in this file: tax and contributions are calculated for the payslip row as a whole, and they do not belong to a view by ledger. For a P&L with taxes, take the file without a view."
+
+msgid "Налоговая часть в этот файл не вошла: налог и взносы считаются по строке ведомости целиком, а итоги расчёта вашей роли не отданы. Собранный по этому файлу P&L окажется без налогов на зарплату — возьмите файл у того, кому отдан весь расчёт."
+msgstr "The tax part is not included in this file: tax and contributions are calculated for the payslip row as a whole, and the calculation's totals are not released to your role in full. A P&L built from this file will come out without payroll taxes — get the file from whoever the whole calculation is released to."
+
+msgid "Налоговая часть в этот файл не вошла: налог и взносы в расчёте этого месяца не посчитаны."
+msgstr "The tax part is not included in this file: tax and contributions have not been calculated for this month at all."
 
 msgid "Без статьи"
 msgstr "No line item"
@@ -623,6 +632,9 @@ msgstr "Unit not found."
 msgid "Месяц закрылся, пока расход вносили. Откройте форму заново."
 msgstr "The month was closed while the expense was being entered. Reopen the form and try again."
 
+msgid "Расход на всю сеть вносит тот, кто ведёт все точки партнёра. Выберите свою точку."
+msgstr "A network-wide expense is entered by whoever runs all the partner's units. Choose your own unit."
+
 msgid "Месяц закрылся, пока расход удаляли. Откройте список заново."
 msgstr "The month was closed while the expense was being deleted. Reopen the list and try again."
 
@@ -696,6 +708,63 @@ msgstr " The expense was allocated across units by the item's rule: rows — %(c
 
 msgid " Разнести его по точкам может тот, кто ведёт все точки: строки разнесения ложатся и на чужие точки."
 msgstr " Only someone who manages every unit can allocate it across units: allocation rows land on other people's units too."
+
+msgid "Код"
+msgstr "Code"
+
+msgid "Название"
+msgstr "Name"
+
+msgid "Сквозной ключ"
+msgstr "External ID"
+
+msgid "Месяц"
+msgstr "Month"
+
+msgid "Действует с"
+msgstr "From"
+
+msgid "Дата курса"
+msgstr "Rate date"
+
+msgid "Страна"
+msgstr "Country"
+
+msgid "Юрлицо"
+msgstr "Legal entity"
+
+msgid "Группа"
+msgstr "Group"
+
+msgid "Строка P&L"
+msgstr "P&L line"
+
+msgid "Контрагент"
+msgstr "Counterparty"
+
+msgid "Роль"
+msgstr "Role"
+
+msgid "Пользователь"
+msgstr "User"
+
+msgid "Расчёт"
+msgstr "Calculation"
+
+msgid "Строка ведомости"
+msgstr "Payslip row"
+
+#, python-format
+msgid "Такая запись уже есть: %(fields)s не повторяется. Задайте другое значение."
+msgstr "This record already exists: %(fields)s cannot repeat. Set a different value."
+
+#, python-format
+msgid "%(fields)s: строка не найдена. Выберите значение из списка."
+msgstr "%(fields)s: row not found. Choose a value from the list."
+
+#, python-format
+msgid "Этот период уже занят другой версией (%(fields)s). Поправьте даты."
+msgstr "This period is already taken by another version (%(fields)s). Fix the dates."
 
 #, python-format
 msgid "%(what)s нельзя изменить: зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
@@ -783,9 +852,6 @@ msgstr "Search by name or external key"
 msgid "Внешний ключ"
 msgstr "External key"
 
-msgid "Группа"
-msgstr "Group"
-
 msgid "Уволен"
 msgstr "Terminated"
 
@@ -806,9 +872,6 @@ msgstr "Hired"
 
 msgid "Дата увольнения раньше даты приёма."
 msgstr "The termination date is earlier than the hire date."
-
-msgid "Действует с"
-msgstr "From"
 
 msgid "Ставка"
 msgstr "Rate"
@@ -839,12 +902,6 @@ msgstr "The group sets the default calculation scheme and ledger. For an individ
 
 msgid "Завести группу"
 msgstr "Add group"
-
-msgid "Код"
-msgstr "Code"
-
-msgid "Название"
-msgstr "Name"
 
 msgid "Чем меряется работа"
 msgstr "Unit of work"
@@ -890,9 +947,6 @@ msgstr "Expenses are allocated to the unit, not the legal entity. A closed unit 
 
 msgid "Завести точку"
 msgstr "Add unit"
-
-msgid "Юрлицо"
-msgstr "Legal entity"
 
 msgid "Открыта"
 msgstr "Opened"
@@ -954,9 +1008,6 @@ msgstr "The month's standard hours are taken from here — the month page shows 
 msgid "Завести месяц"
 msgstr "Add month"
 
-msgid "Месяц"
-msgstr "Month"
-
 msgid "Норма часов"
 msgstr "Standard hours"
 
@@ -999,9 +1050,6 @@ msgstr "What expenses are called and which P&L line they fall into."
 
 msgid "Завести статью"
 msgstr "Add expense item"
-
-msgid "Строка P&L"
-msgstr "P&L line"
 
 msgid "Статей расходов нет."
 msgstr "No expense items."
@@ -1597,9 +1645,6 @@ msgstr ""
 "The button fills in the password of the test seed account and follows the same\n"
 "  path as typing it by hand — it has no separate way to log in. It's turned off with the\n"
 "  environment variable <code>DEV_LOGIN=0</code>; sessions it issued then stop working."
-
-msgid "Пользователь"
-msgstr "User"
 
 msgid "Смена пароля"
 msgstr "Password change"
@@ -2522,6 +2567,3 @@ msgstr "entered manually"
 
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
-
-msgid "Расход на всю сеть вносит тот, кто ведёт все точки партнёра. Выберите свою точку."
-msgstr "A network-wide expense is entered by whoever runs all the partner's units. Choose your own unit."
