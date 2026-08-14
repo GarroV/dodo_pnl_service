@@ -176,16 +176,29 @@ def test_a_role_limited_to_its_own_unit_cannot_allocate(db):
     этого отказа разнесение не сломалось бы, а **тихо** положило бы всю сумму
     сети на его единственную точку. Два человека, нажавших одну и ту же кнопку,
     получали бы разные числа и не узнали бы об этом.
+
+    **Чем именно отвергается — с T130 другим рубежом.** Разносится всегда факт
+    без точки (`pending` без точки — требование схемы), а такой факт роли с
+    урезанным набором точек больше не виден вовсе: она получает «факт не
+    найден» ещё до охраны разнесения. Охрана осталась и снята не будет — она
+    вторая линия и единственная, что удержит вызов, если завтра видимость
+    сузят иначе. Поэтому здесь проверяется исход, общий для обоих рубежей:
+    отказ и ни одной строки на чужих точках.
     """
     item_id = expense_item(db)
     item_rule(db, item_id)
     fact_id = waiting_expense(db, item_id, amount="100.01")
 
-    db.execute("set local role app_user")
-    db.execute("select set_config('app.user_id', %s, true)", (USER_MANAGER,))
-    with pytest.raises(psycopg.errors.InsufficientPrivilege):
-        db.execute("select allocate_fact(%s)", (fact_id,))
-    db.rollback()
+    with as_app_user(db, USER_MANAGER) as conn:
+        # Точка сохранения, а не откат всей транзакции: после отката проверять
+        # было бы нечего — материал теста уехал бы вместе с отказом.
+        with pytest.raises(psycopg.Error), conn.transaction():
+            conn.execute("select allocate_fact(%s)", (fact_id,))
+
+    assert children_of(db, fact_id) == [], "расход разошёлся по чужим точкам"
+    assert db.execute(
+        "select allocation from facts where id = %s", (fact_id,)
+    ).fetchone()[0] == "pending"
 
 
 def test_a_role_with_every_unit_allocates(db):

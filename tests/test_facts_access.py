@@ -12,6 +12,8 @@ level security`, а суперпользователь обходит её вс�
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 import psycopg
 import pytest
 
@@ -130,25 +132,81 @@ def test_accountant_sees_every_unit(db):
     assert keys == {"ns1", "bg1"}
 
 
-def test_unallocated_fact_is_visible_to_everyone_in_the_tenant(db):
-    """Факт без точки ничей: он ждёт разнесения, и терять его нельзя.
+def test_a_network_fact_is_visible_only_to_whoever_runs_every_unit(db):
+    """Факт без точки — трата юрлица целиком, а не ничья строка (T130).
 
-    Управляющий его видит намеренно — разносит не он, но сумма, исчезнувшая с
-    экрана, исчезает и из проверки «всё ли разнесено».
+    Так было записано наоборот: «строка без точки видна всем в тенанте»
+    (`app_unit_is_visible`, миграция `0011`). Правило писалось тогда, когда
+    фактов без точки в продукте не существовало и null означал «точку удалили».
+    С появлением расхода на всю сеть (T111) тот же null стал значить «аренда
+    офиса, реклама на сеть» — и старое правило открыло управляющему точки
+    расходы юрлица: на демо в его списке стояли `Marketing campaign 150 000` и
+    `Office rent 90 000`, а итог «для сверки с кассой» был завышен в семнадцать
+    раз (сверка 7, находка 1).
+
+    Спека прямо обратного мнения: управляющий «видит СВОИ расходы за месяц».
     """
     upsert_fact(
         db,
         fact_payload(unit=None, allocation="pending", counterparty=CP_EPS,
-                     amount="500.00", key="waiting"),
+                     amount="500.00", key="network"),
     )
 
-    for user in (USER_MANAGER, USER_ACCOUNTANT):
+    with as_app_user(db, USER_MANAGER) as conn:
+        assert conn.execute("select count(*) from facts").fetchone()[0] == 0
+        assert conn.execute("select count(*) from facts_unallocated").fetchone()[0] == 0
+        # И следа в суммах тоже нет: спрятать строку, оставив её слагаемым, —
+        # тот же показ чужих денег, только одним числом (D023).
+        assert conn.execute(
+            "select coalesce(sum(amount), 0) from pnl_lines"
+        ).fetchone()[0] == 0
+
+    # Контроль: тот, кто ведёт партнёра целиком, видит его как раньше — иначе
+    # проверка выше была бы зелёной и на потерянной строке (D036).
+    for user in (USER_DIRECTOR, USER_ACCOUNTANT):
         with as_app_user(db, user) as conn:
-            keys = {
-                row[0]
-                for row in conn.execute("select fact_id from facts_unallocated").fetchall()
-            }
-        assert len(keys) == 1, f"нераспределённый факт не виден пользователю {user}"
+            assert conn.execute(
+                "select count(*) from facts_unallocated"
+            ).fetchone()[0] == 1, f"нераспределённый факт не виден пользователю {user}"
+
+
+def test_a_role_with_limited_units_cannot_write_a_network_fact(db):
+    """Внести расход на всю сеть — то же самое, что записать на чужие точки.
+
+    Иначе управляющий кладёт сумму, которую любой директор потом разнесёт по
+    трём точкам: на демо так прошли 500 000 (сверка 7, находка 1).
+    """
+    with as_app_user(db, USER_MANAGER) as conn:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
+            upsert_fact(conn, fact_payload(unit=None, allocation="pending",
+                                           key="network-by-manager"))
+
+
+def test_a_role_with_limited_units_cannot_change_or_remove_a_network_fact(db):
+    """Не только просмотр: правка и удаление сетевой строки тоже не его.
+
+    Проверяется числом изменённых строк, а не отсутствием ошибки: политика не
+    отказывает на `update`, она просто не показывает строку — и правка молча
+    проходит мимо цели. Именно так и выглядел дефект: POST на карточку чужого
+    сетевого расхода отвечал 302, а сумма 999,99 становилась 1,00.
+    """
+    fact_id, _ = upsert_fact(
+        db, fact_payload(unit=None, allocation="pending", amount="999.99",
+                         key="network-money"),
+    )
+
+    with as_app_user(db, USER_MANAGER) as conn:
+        changed = conn.execute(
+            "update facts set amount = 1.00 where id = %s", (fact_id,)
+        ).rowcount
+        removed = conn.execute(
+            "update facts set superseded_at = now() where id = %s", (fact_id,)
+        ).rowcount
+    assert (changed, removed) == (0, 0)
+
+    assert db.execute(
+        "select amount, superseded_at from facts where id = %s", (fact_id,)
+    ).fetchone() == (Decimal("999.99"), None)
 
 
 # --- регистры учёта ----------------------------------------------------------
