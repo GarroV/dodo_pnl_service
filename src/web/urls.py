@@ -2,6 +2,7 @@
 from django.urls import path
 
 from . import (
+    api,
     cash_views,
     directory_views,
     expense_items_views,
@@ -146,6 +147,25 @@ urlpatterns = [
         "expenses/<uuid:fact_id>/delete/",
         expenses_views.expense_delete,
         name="expense-delete",
+    ),
+    # Расходы по HTTP (T112). Отдельный префикс `api/`, а не те же адреса с
+    # другим заголовком: два разных ответа на один адрес разъезжаются молча — и
+    # разъезжаться будут именно там, где их никто не смотрит глазами. Роль и
+    # тенант в адресах не участвуют вовсе: срез делает контекст базы, тот же,
+    # что рисует страницы (спека, «API и будущая MCP-обёртка», условие 1).
+    #
+    # Разрез по регистру — `?ledger=` у списка, а не свой маршрут (условие 2).
+    # Постоянные адреса идут раньше адреса по номеру записи, иначе `allocate`
+    # разбирался бы как номер.
+    path("api/expenses/", api.expenses, name="api-expenses"),
+    path("api/expenses/unallocated/", api.unallocated, name="api-expenses-unallocated"),
+    # Пересчёт разнесения: только POST и по одному месяцу за вызов (условие 5).
+    path("api/expenses/allocate/", api.allocate, name="api-expenses-allocate"),
+    path("api/expenses/<uuid:fact_id>/", api.expense, name="api-expense"),
+    path(
+        "api/expenses/<uuid:fact_id>/delete/",
+        api.expense_delete,
+        name="api-expense-delete",
     ),
     # Правила расчёта (T090). Отдельный префикс, а не раздел справочников:
     # право другое (`rules.manage`), и партнёр вправе развести ведение

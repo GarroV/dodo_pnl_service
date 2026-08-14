@@ -40,7 +40,7 @@ from core.models import ExpenseItem, Fact, Unit
 
 from . import cash
 from .cash_views import expense_fields, parse_expense
-from .directory_views import BadInput, _select
+from .directory_views import LEDGER_CODES, BadInput, _select
 from .format import EMPTY, ledger_title, money
 from .i18n import month_title
 from .principal import get_current_principal
@@ -59,12 +59,12 @@ def expenses(request):
 
     error, status = "", 200
     try:
-        chosen = _filters(request)
+        chosen = filters_from(request)
     except BadInput as bad:
         error, status = bad.message, bad.http_status
-        chosen = _filters_default()
+        chosen = filters_default()
 
-    rows = _rows(who, chosen) if not error else []
+    rows = rows_for(who, chosen) if not error else []
     total = sum((row["amount"] for row in rows if row["state"] == ACTIVE), Decimal("0"))
     return render(request, "web/cash/expenses.html", {
         "error": error,
@@ -91,23 +91,29 @@ def _no_membership(request):
 # --- отбор --------------------------------------------------------------------
 
 
-def _filters_default() -> dict:
-    """Умолчание — текущий месяц: с ним человек и сверяет кассу."""
+def filters_default() -> dict:
+    """Умолчание — текущий месяц: с ним человек и сверяет кассу.
+
+    `ledger` здесь пуст всегда: срез по регистру — параметр вызова по HTTP
+    (T112), у экрана его нет. Ключ тем не менее живёт в общем наборе отбора, а
+    не приезжает вторым способом: два набора отбора рядом расходятся молча, и
+    тогда экран и вызов начинают показывать разное, называя это одним списком.
+    """
     first = date.today().replace(day=1)
-    return {"from": first, "to": _last_day(first), "unit": "", "item": ""}
+    return {"from": first, "to": _last_day(first), "unit": "", "item": "", "ledger": ""}
 
 
 def _last_day(first: date) -> date:
     return (first.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
 
-def _filters(request) -> dict:
+def filters_from(request) -> dict:
     """Что человек выбрал в адресе. Неразобранная дата — отказ, а не тихое умолчание.
 
     Тихое умолчание означало бы, что человек смотрит не тот период, чем думает,
     и сверяет кассу с чужим числом.
     """
-    chosen = _filters_default()
+    chosen = filters_default()
     for name in ("from", "to"):
         raw = (request.GET.get(name) or "").strip()
         if raw:
@@ -145,8 +151,14 @@ def _looks_like_id(raw: str) -> bool:
     return True
 
 
-def _rows(who, chosen: dict) -> list[dict]:
-    """Строки списка. Выборка одна: из неё же считается итог."""
+def rows_for(who, chosen: dict, *, window: tuple[int, int] | None = None) -> list[dict]:
+    """Строки списка. Выборка одна: из неё же считается итог.
+
+    `window` — «с какой строки и сколько», нужен вызову по HTTP: страница
+    показывает месяц целиком, а вызову неограниченную выборку отдавать нельзя
+    (T112). У экрана окна нет, и это не забывчивость: человек сверяет кассу за
+    месяц, и половина месяца ему бесполезна.
+    """
     found = (
         Fact.objects.select_related("unit", "expense_item")
         .filter(
@@ -164,10 +176,27 @@ def _rows(who, chosen: dict) -> list[dict]:
         found = found.filter(unit_id=chosen["unit"])
     if chosen["item"]:
         found = found.filter(expense_item_id=chosen["item"])
-    return [_row(fact) for fact in found]
+
+    cut = chosen.get("ledger") or ""
+    if cut:
+        if cut not in LEDGER_CODES:
+            # Регистр — нативный enum базы, и выдуманное слово оборвало бы
+            # запрос ошибкой приведения типа. Оборванный запрос — это отличимый
+            # ответ: по нему видно, что слово не из списка, а значит перебором
+            # значений составляется список регистров партнёра. Поэтому неизвестное
+            # значение отвечает ровно тем же, чем невидимый регистр, — пустотой
+            # (D023). Это не проверка доступа в приложении: что видно из
+            # существующих регистров, по-прежнему решают политики.
+            return []
+        found = found.filter(ledger=cut)
+
+    if window is not None:
+        offset, size = window
+        found = found[offset:offset + size]
+    return [row_of(fact) for fact in found]
 
 
-def _row(fact) -> dict:
+def row_of(fact) -> dict:
     state = ACTIVE
     if fact.superseded_at is not None:
         state = REPLACED if fact.superseded_by is not None else REMOVED
@@ -189,9 +218,12 @@ def _row(fact) -> dict:
         "amount_raw": f"{fact.amount}",
         "amount_text": money(fact.amount),
         "ledger": ledger_title(fact.ledger),
+        # Код регистра рядом с названием: название переводится и годится только
+        # глазам, а вызову по HTTP нужен разбираемый машиной ответ (T112).
+        "ledger_code": fact.ledger,
         "note": fact.note or "",
         "state": state,
-        "state_title": _state_title(fact, state),
+        "state_title": state_title(fact, state),
         # Месяц учёта называется только тогда, когда он **не** совпадает с
         # месяцем траты: человек, вводивший июньскую дату в августе, обязан
         # знать, где искать строку. В обычном случае это шум.
@@ -203,7 +235,7 @@ def _row(fact) -> dict:
     }
 
 
-def _state_title(fact, state: str) -> str:
+def state_title(fact, state: str) -> str:
     if state == REMOVED:
         return _("удалён")
     if state == REPLACED:
@@ -263,7 +295,7 @@ def unallocated(request):
         spread = cash.reallocate(who.tenant_id, cash.periods_waiting(who.tenant_id))
         return redirect(reverse("expenses-unallocated") + spread_query(spread))
 
-    rows = _waiting_rows(who)
+    rows = waiting_rows(who)
     total = sum((row["amount"] for row in rows), Decimal("0"))
     return render(request, "web/cash/unallocated.html", {
         "rows": rows,
@@ -275,7 +307,7 @@ def unallocated(request):
     })
 
 
-def _waiting_rows(who) -> list[dict]:
+def waiting_rows(who) -> list[dict]:
     from django.db import connection
 
     with connection.cursor() as cursor:
@@ -358,7 +390,7 @@ def _month_or_none(raw: str) -> date | None:
 # --- карточка расхода ---------------------------------------------------------
 
 
-def _expense_or_404(fact_id) -> Fact:
+def expense_or_404(fact_id) -> Fact:
     """Расход по номеру — под политиками базы.
 
     Чужой расход и несуществующий отвечают одинаково: по ответу нельзя понять,
@@ -384,7 +416,7 @@ def expense(request, fact_id):
     if who is None or who.tenant_id is None:
         return _no_membership(request)
 
-    fact = _expense_or_404(fact_id)
+    fact = expense_or_404(fact_id)
     error, status = "", 200
     entered = request.POST if request.method == "POST" else _entered(fact)
 
@@ -402,9 +434,9 @@ def expense(request, fact_id):
         "error": error,
         "fields": expense_fields(who, entered),
         "fact": fact,
-        "editable": _editable(fact),
-        "closed_notice": _closed_notice(who, fact),
-        "state": _row(fact)["state"],
+        "editable": editable(fact),
+        "closed_notice": closed_notice(who, fact),
+        "state": row_of(fact)["state"],
         "delete_url": reverse("expense-delete", args=[fact.id]),
         "back_url": reverse("expenses"),
     }, status=status)
@@ -422,7 +454,7 @@ def _entered(fact) -> dict:
     }
 
 
-def _editable(fact) -> bool:
+def editable(fact) -> bool:
     """Заменённую строку не правят: правят ту, что действует.
 
     Иначе из истории вырастала бы вторая ветка версий, и «какая строка сейчас
@@ -431,7 +463,7 @@ def _editable(fact) -> bool:
     return fact.superseded_at is None
 
 
-def _closed_notice(who, fact) -> str:
+def closed_notice(who, fact) -> str:
     """Куда уйдёт правка, если месяц строки уже закрыт. Молчать здесь нельзя."""
     if not cash.month_is_closed(who.tenant_id, fact.period):
         return ""
@@ -447,7 +479,7 @@ def _closed_notice(who, fact) -> str:
 
 
 def _save(request, who, fact) -> str:
-    if not _editable(fact):
+    if not editable(fact):
         raise BadInput(
             _("Эта строка уже заменена: правьте ту, что действует.")
         )
@@ -467,8 +499,8 @@ def expense_delete(request, fact_id):
     if who is None or who.tenant_id is None:
         return _no_membership(request)
 
-    fact = _expense_or_404(fact_id)
-    if not _editable(fact):
+    fact = expense_or_404(fact_id)
+    if not editable(fact):
         # Заменённую строку удалять нечего: она уже вышла из счёта.
         return redirect(reverse("expenses"))
 

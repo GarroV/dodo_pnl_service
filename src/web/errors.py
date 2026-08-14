@@ -114,6 +114,11 @@ def csrf_failure(request, reason: str = "", template_name: str = "") -> HttpResp
     return _page(request, "web/errors/403_csrf.html", 403)
 
 
+def _kind(response) -> str:
+    """Тип содержимого ответа без параметров: `text/html; charset=utf-8` → `text/html`."""
+    return (response.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+
+
 class HumanErrorPagesMiddleware:
     """Показать страницу продукта на 404 и при включённой отладке тоже.
 
@@ -144,6 +149,14 @@ class HumanErrorPagesMiddleware:
         if not settings.DEBUG or response.status_code != 404:
             return response
         if getattr(response, MARK, False):
+            return response
+        # Ответ, который не страница, страницей и не подменяется (T112). Вызов
+        # по HTTP получает `{"error": ...}` и 404, и подсунутая вместо него
+        # разметка на 40 килобайт — это не «красивее», а неразбираемый ответ:
+        # обёртка прочитает его как данные. Проверка по типу содержимого, а не
+        # по адресу: правило обязано действовать и для маршрутов, которых ещё
+        # нет, — иначе следующий такой ответ снова окажется страницей.
+        if _kind(response) != "text/html":
             return response
         # Ответ на догрузку куска страницы — не страница: подменять его целым
         # экраном значит вставить шапку внутрь ячейки табеля. Такие ответы
