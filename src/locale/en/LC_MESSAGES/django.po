@@ -2486,3 +2486,6 @@ msgstr "entered manually"
 
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
+
+msgid "Расход на всю сеть вносит тот, кто ведёт все точки партнёра. Выберите свою точку."
+msgstr "A network-wide expense is entered by whoever runs all the partner's units. Choose your own unit."

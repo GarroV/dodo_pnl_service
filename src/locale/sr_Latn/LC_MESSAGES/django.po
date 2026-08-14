@@ -2487,3 +2487,6 @@ msgstr "ručno uneto"
 
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
+
+msgid "Расход на всю сеть вносит тот, кто ведёт все точки партнёра. Выберите свою точку."
+msgstr "Trošak za celu mrežu unosi onaj ko vodi sve objekte partnera. Izaberite svoj objekat."
