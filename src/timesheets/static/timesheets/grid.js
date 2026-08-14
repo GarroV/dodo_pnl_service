@@ -156,6 +156,23 @@
     if (event.target.classList.contains("cell")) hideRefusal();
   });
 
+  // Подмена вне цели не вырывает поле из-под курсора.
+  //
+  // Ответ на правку часов подменяет заодно колонку «База взносов» той же
+  // строки: часы могли сдвинуть базу, и оставить на экране прежнее число
+  // значило бы показывать не то, что в базе. С T143 в этой колонке стоит поле
+  // ввода, и путь до него короткий: Tab с последней ячейки часов ведёт прямо
+  // туда. Человек успевает начать печатать раньше, чем прилетит ответ на
+  // предыдущую ячейку, — и без этой отмены набранное стёрлось бы.
+  //
+  // Отменяется ровно этот кусок подмены, а не ответ целиком: итоги строки и
+  // колонок обновляются как обычно. То, что не обновилось, человек сейчас
+  // вводит сам — и увидит подтверждение своей же записи.
+  document.body.addEventListener("htmx:oobBeforeSwap", function (event) {
+    const target = event.detail.target;
+    if (target && target.contains(document.activeElement)) event.preventDefault();
+  });
+
   document.body.addEventListener("htmx:beforeRequest", function (event) {
     const input = event.detail.elt;
     if (!input.classList.contains("cell")) return;

@@ -282,6 +282,9 @@ msgstr "hour type \"%(kind)s\" is not in the country rules"
 msgid "отрицательных часов не бывает"
 msgstr "hours cannot be negative"
 
+msgid "отрицательной базы для взносов не бывает"
+msgstr "the contribution base cannot be negative"
+
 #, python-format
 msgid "больше %(limit)s часов в месяце не бывает"
 msgstr "there cannot be more than %(limit)s hours in a month"
@@ -292,6 +295,13 @@ msgstr "a manual edit cannot be saved without a trace: an author and a reason ar
 #, python-format
 msgid "%(who)s: отрицательные часы (%(kinds)s)"
 msgstr "%(who)s: negative hours (%(kinds)s)"
+
+msgid "кто поставил, не записано"
+msgstr "who entered this is not recorded"
+
+#, python-format
+msgid "поставил %(who)s, %(when)s"
+msgstr "entered by %(who)s, %(when)s"
 
 #, python-format
 msgid "%(who)s: ни одного часа за этот месяц — строка табеля пустая"
@@ -442,6 +452,13 @@ msgid ""
 msgstr ""
 "Arrows move between cells, Enter — down, Tab — right. Each cell\n"
 "  is sent to the server as soon as you leave it."
+
+msgid ""
+"Наведите на ячейку — увидите, кто поставил это число и когда. «Не записано»\n"
+"  значит, что часы попали в табель не с этого экрана и не загрузкой файла."
+msgstr ""
+"Hover over a cell to see who entered the number and when. “Not recorded”\n"
+"  means these hours came into the timesheet from somewhere other than this screen or a file upload."
 
 #, python-format
 msgid "Загрузка таблицы · %(title)s"

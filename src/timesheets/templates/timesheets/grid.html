@@ -233,9 +233,17 @@
             этом нельзя — человек, набравший 168 часов, ждёт за них начисления.
             Поэтому ячейка помечена и объясняет себя.
             {% endcomment %}
+            {% comment %}
+            Кто поставил эти часы и когда — подсказкой мыши у самой ячейки
+            (T143, issue #52). Вопрос задают именно про ячейку («кто поставил
+            176»), поэтому и ответ стоит у неё, а не отдельным столбцом: ещё
+            одна колонка на экране в 210 ячеек стоила бы дороже, чем ответ на
+            вопрос, который задают несколько раз в месяц.
+            {% endcomment %}
+            {% author_note_of row column as cell_author %}
             {% if can_edit and not row.closed %}
             <td class="cellbox {% if row.piecework %}unpaid{% endif %}"
-                title="{% if row.piecework %}{% translate "Эти часы не оплачиваются: работа группы меряется сдельно" %}{% endif %}">
+                title="{% if row.piecework %}{% translate "Эти часы не оплачиваются: работа группы меряется сдельно" %} · {% endif %}{{ cell_author }}">
               <input class="cell" type="text" inputmode="decimal" name="hours"
                      value="{{ row.cells|get:column.code|cell_value }}"
                      data-row="{{ row.timesheet_id }}" data-kind="{{ column.code }}"
@@ -251,7 +259,7 @@
             всё равно приглашает в себя щёлкнуть и печатать. Часы показаны тем же
             форматом, что и остальные числа сетки.
             {% endcomment %}
-            <td class="num">{{ row.cells|get:column.code|hours }}</td>
+            <td class="num" title="{{ cell_author }}">{{ row.cells|get:column.code|hours }}</td>
             {% endif %}
           {% endfor %}
           {% if grid.has_piecework %}
@@ -265,10 +273,11 @@
             выплата»): без неё в столбике стоит голое число, а 120 доставок и
             120 динаров — разные деньги.
             {% endcomment %}
+            {% author_note row.edited_by_name row.edited_at as row_author %}
             {% if not row.piecework %}
               <td class="num muted" title="{% translate "Работа этой группы меряется часами" %}">—</td>
             {% elif can_edit and not row.closed %}
-            <td class="cellbox piece">
+            <td class="cellbox piece" title="{{ row_author }}">
               <input class="cell" type="text" inputmode="decimal" name="piece"
                      value="{{ row.piece_value|cell_value }}"
                      data-row="{{ row.timesheet_id }}" data-field="piece"
@@ -281,7 +290,7 @@
               <span class="hint">{{ row.measure_title }}</span>
             </td>
             {% else %}
-            <td class="num">{{ row.piece_value|hours }} <span class="hint">{{ row.measure_title }}</span></td>
+            <td class="num" title="{{ row_author }}">{{ row.piece_value|hours }} <span class="hint">{{ row.measure_title }}</span></td>
             {% endif %}
           {% endif %}
           {% include "timesheets/_row_total.html" with row=row oob=False %}
@@ -309,7 +318,17 @@
 <p class="note">
   {% blocktranslate %}Стрелки — переход между ячейками, Enter — вниз, Tab — вправо. Каждая ячейка
   уходит на сервер сразу, как только вы её покинули.{% endblocktranslate %}
+</p>{% endif %}
+{% comment %}
+Сказано и тому, кто правит, и тому, кто смотрит: вопрос «кто поставил эти часы»
+задаёт не только вводивший (T143). Про пустой ответ сказано отдельно — иначе
+подсказка «не записано» читается как поломка, а не как честное «не знаем».
+{% endcomment %}
+<p class="note">
+  {% blocktranslate %}Наведите на ячейку — увидите, кто поставил это число и когда. «Не записано»
+  значит, что часы попали в табель не с этого экрана и не загрузкой файла.{% endblocktranslate %}
 </p>
+{% if can_edit %}
 {% comment %}
 Отказ показывается у самой ячейки, а не внизу документа: при 35 строках низ
 страницы почти всегда за экраном, и объяснение, которого не видно, — это

@@ -14,6 +14,9 @@ urlpatterns = [
     # Сдельная величина — свой адрес, а не род ячейки скрытым полем у записи
     # часов (T075): это другая величина с другими правилами.
     path("<uuid:period_id>/piece/", views.piece, name="timesheet-piece"),
+    # База для взносов — тоже свой адрес и по той же причине: это не тип часов,
+    # и род ячейки не должен решаться скрытым полем (T143).
+    path("<uuid:period_id>/insured/", views.insured, name="timesheet-insured"),
     path("<uuid:period_id>/import/", views.import_table, name="timesheet-import"),
     # Закрытие и открытие — разные адреса, а не значение поля в общей форме:
     # два действия с разными последствиями не должны отличаться содержимым

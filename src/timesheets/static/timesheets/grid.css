@@ -149,3 +149,59 @@ form.import {
 }
 form.import label { color: var(--muted); font-size: 13px; }
 form.import .hint { color: var(--muted); font-size: 12px; }
+
+/* База для взносов правится с экрана (T143), но остаётся служебной колонкой:
+   поле тише соседних, пока число сходится с часами. Разошлось — цвет и
+   начертание те же, что у остальных предупреждений сетки: колонка обязана
+   вычитываться из ряда, потому что на ней остановится расчёт периода. */
+table.grid td.insured input.cell { color: var(--muted); }
+table.grid td.insured.insured-mismatch input.cell {
+  color: var(--warn);
+  font-weight: 600;
+}
+/* У ячейки с полем отступов нет (`td.cellbox`), и подпись расхождения без этой
+   строки прилипала бы к краю столбца. */
+table.grid td.insured.cellbox .hint { padding: 0 10px 4px; }
+
+/* Панель точек: закрытие часов по точке (T022, оформление — T144, issue #71).
+   Точки идут в ряд, а не вертикальным списком: их у партнёра три-пять, и ряд
+   читается как «состояние сети», а список — как перечень дел. Каждая точка —
+   карточка: у неё есть код, число людей, состояние и действие, и без границы
+   эти четыре вещи сливались с соседними. */
+section.units {
+  display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 20px;
+}
+section.units .unit {
+  display: flex; align-items: baseline; gap: 10px;
+  background: #fff; border: 1px solid var(--line); border-radius: 4px;
+  padding: 10px 14px;
+}
+/* Код точки — главное в карточке: по нему её узнают в таблице и в отчёте. */
+section.units .unit-code { font-weight: 600; letter-spacing: .02em; }
+section.units .unit .hint { color: var(--muted); font-size: 12px; }
+
+/* Состояние показано начертанием и рамкой, а не только словами: у остального
+   продукта состояния читаются глазом (метка регистра, «Закрыт» у периода), и
+   одна панель, где всё отличается только текстом, читается как незаконченная. */
+section.units .unit-state {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  border-radius: 3px; padding: 2px 7px;
+  color: var(--muted); background: var(--bg); border: 1px solid var(--line);
+}
+/* Закрытые часы — не ошибка и не тревога, а законченный шаг, поэтому зелёный
+   той же семьи, что у плашки `.ok` в общем листе, а не оранжевый предупреждения. */
+section.units .unit.is-closed { border-color: #bbf7d0; background: #f7fefa; }
+section.units .unit-state.closed {
+  color: #14532d; background: #f0fdf4; border-color: #bbf7d0;
+  text-transform: none; letter-spacing: 0; font-size: 12px;
+}
+/* Кнопка стоит в строке с подписью, а не под ней: действие относится к этой
+   точке, и перенос вниз разрывал бы карточку пополам. */
+section.units form.action { margin: 0; }
+section.units .note { margin: 0; flex-basis: 100%; }
+/* «Открыть заново» — обратное действие, и выглядеть как «Закрыть часы точки»
+   оно не должно: закрытие двигает месяц вперёд, открытие возвращает его назад.
+   Класс `secondary` живёт ровно здесь (больше его не просит никто), поэтому и
+   правило стоит в листе табеля, а не в общем. */
+section.units button.secondary { color: var(--muted); }
+section.units button.secondary:hover { color: var(--accent); border-color: var(--accent); }

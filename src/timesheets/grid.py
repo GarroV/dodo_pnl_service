@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -22,6 +22,7 @@ from payrun.calc import terms_in_force
 from payrun.rules import select_rules
 
 from . import suspicion
+from .authorship import Author, cell_authors, display_names
 from .closing import open_closures
 from .store import country_of
 
@@ -67,6 +68,15 @@ class Row:
     # правило общее с загрузкой файла (`timesheets/suspicion.py`), и разметка
     # его знать не должна.
     hints: list = field(default_factory=list)
+    # Кто поставил часы каждого типа (T143, issue #52). Ключ — код типа часов,
+    # то есть колонка сетки: вопрос задают про ячейку («кто поставил 176»), а не
+    # про строку. Типа нет в словаре — автора не записано, и разметка говорит об
+    # этом словами.
+    authors: dict[str, Author] = field(default_factory=dict)
+    # Кто последним правил величины самой строки: сдельную величину и базу для
+    # взносов. У них дня нет, поэтому и след свой.
+    edited_by_name: str = ""
+    edited_at: datetime | None = None
 
     @property
     def suspicious(self) -> bool:
@@ -197,8 +207,14 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
     closed = set(open_closures(tenant_id, period))
     terms = terms_in_force(tenant_id, period)
 
+    # След правки читается двумя запросами на всю сетку, а не по запросу на
+    # ячейку: ячеек 210, а разных ответов среди них два-три (T143).
+    authors = cell_authors(tenant_id, period)
+    sheets = list(visible_rows(tenant_id, period, unit_ids))
+    row_editors = display_names(sheet.edited_by for sheet in sheets)
+
     rows = []
-    for sheet in visible_rows(tenant_id, period, unit_ids):
+    for sheet in sheets:
         stored = sheet.hours or {}
         measure, measure_title = measure_of(rules, terms.get(sheet.employee_id))
         name = f"{sheet.employee.last_name} {sheet.employee.first_name}".strip()
@@ -233,6 +249,13 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                     period=period,
                     piecework=measure != HOURS,
                 ),
+                authors={
+                    code: authors[(sheet.id, code)]
+                    for code in codes
+                    if (sheet.id, code) in authors
+                },
+                edited_by_name=row_editors.get(sheet.edited_by, ""),
+                edited_at=sheet.edited_at,
             )
         )
     return Grid(columns=columns, rows=rows)

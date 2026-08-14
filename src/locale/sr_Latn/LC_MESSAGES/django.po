@@ -282,6 +282,9 @@ msgstr "vrsta sati „%(kind)s“ ne postoji u pravilima zemlje"
 msgid "отрицательных часов не бывает"
 msgstr "sati ne mogu biti negativni"
 
+msgid "отрицательной базы для взносов не бывает"
+msgstr "osnovica doprinosa ne može biti negativna"
+
 #, python-format
 msgid "больше %(limit)s часов в месяце не бывает"
 msgstr "ne može biti više od %(limit)s sati u mesecu"
@@ -292,6 +295,13 @@ msgstr "ručna izmena se ne može sačuvati bez traga: potreban je autor i razlo
 #, python-format
 msgid "%(who)s: отрицательные часы (%(kinds)s)"
 msgstr "%(who)s: negativni sati (%(kinds)s)"
+
+msgid "кто поставил, не записано"
+msgstr "ko je ovo uneo nije zabeleženo"
+
+#, python-format
+msgid "поставил %(who)s, %(when)s"
+msgstr "uneo %(who)s, %(when)s"
 
 #, python-format
 msgid "%(who)s: ни одного часа за этот месяц — строка табеля пустая"
@@ -442,6 +452,13 @@ msgid ""
 msgstr ""
 "Strelice — prelazak između ćelija, Enter — dole, Tab — desno. Svaka ćelija\n"
 "  se šalje na server čim je napustite."
+
+msgid ""
+"Наведите на ячейку — увидите, кто поставил это число и когда. «Не записано»\n"
+"  значит, что часы попали в табель не с этого экрана и не загрузкой файла."
+msgstr ""
+"Pređite mišem preko ćelije da vidite ko je uneo broj i kada. „Nije zabeleženo“\n"
+"  znači da su sati u tabel stigli nekim putem osim ovog ekrana ili učitavanja fajla."
 
 #, python-format
 msgid "Загрузка таблицы · %(title)s"

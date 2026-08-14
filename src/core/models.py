@@ -704,6 +704,17 @@ class Timesheet(models.Model):
     correction_reason = models.TextField(null=True, blank=True)
     corrected_by = models.UUIDField(null=True, blank=True)
     corrected_at = models.DateTimeField(null=True, blank=True)
+    # Кто последним правил строку и когда (T143, issue #52). След **строки**, а
+    # не ячейки: здесь лежат величины, у которых дня нет и быть не может —
+    # сдельная величина, база для взносов, норма, удержание, наличные. След
+    # самих часов живёт на дне (`TimesheetDay` ниже): «кто поставил 176 ночных»
+    # по строке не ответить, если ночные и обычные ставили двое.
+    #
+    # Пусто — это ответ, а не пробел: строку не правили из продукта ни разу
+    # (сид, обслуживание). Выдуманный автор хуже отсутствующего — его не
+    # перепроверяют.
+    edited_by = models.UUIDField(null=True, blank=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
     source = models.TextField(db_default="manual")  # manual | dodo_is | import
     created_at = models.DateTimeField(db_default=now_default())
 
@@ -767,6 +778,16 @@ class TimesheetDay(models.Model):
     # дат за ней нет, и когда придут подневные данные из Dodo IS, отличить их от
     # раскладки надо будет по этому полю, а не по догадке.
     source = models.TextField(db_default="spread")  # spread | manual | dodo_is
+    # Кто поставил часы этого типа и когда (T143, issue #52). Дни одного типа
+    # пишутся одной операцией (`store._write_days` сносит прежние и создаёт
+    # заново), поэтому пара «строка + тип часов» — это ровно то, что человек
+    # видит ячейкой сетки, и след отвечает на тот вопрос, который задают:
+    # «кто поставил 176».
+    #
+    # У ровной раскладки (`source = 'spread'`) автора нет намеренно: её никто не
+    # вводил, это разложенный по дням прежний месячный итог.
+    edited_by = models.UUIDField(null=True, blank=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(db_default=now_default())
 
     class Meta:

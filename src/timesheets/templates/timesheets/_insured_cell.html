@@ -1,13 +1,26 @@
 {% load timesheet_extras i18n %}{% comment %}
 Колонка «База взносов» одной строки.
 
-Общая для сетки и для ответа на запись ячейки: после правки часов база могла
-поехать, и человек обязан увидеть новое число сразу, а не после перезагрузки.
-Два места с одной разметкой разъехались бы на первой же правке, поэтому она
-здесь одна, а ответ подставляет `oob`.
+Общая для сетки и для двух ответов сервера — на запись часов и на запись самой
+базы. После правки часов база могла поехать, и человек обязан увидеть новое
+число сразу, а не после перезагрузки; после правки базы обязана обновиться
+пометка расхождения. Три места с одной разметкой разъехались бы на первой же
+правке, поэтому она здесь одна, а ответ подставляет `oob`.
 
 База — вход движка наравне с часами: по ней считаются взносы и бруто. Когда она
 не сходится с часами, которые в неё входят, строка помечается, а расчёт периода
 на этом отказывает (`payrun.calc.check_insured_base`). Молча посчитать по
 устаревшей базе нельзя: получилось бы правдоподобное неверное число.
-{% endcomment %}{% with declared=row.insured_declared|hours|default:"0,00" recorded=row.insured_hours|hours|default:"0,00" %}<td id="insured-{{ row.timesheet_id }}"{% if oob %} hx-swap-oob="true"{% endif %} class="num insured{% if not row.insured_matches %} insured-mismatch{% endif %}"{% if not row.insured_matches %} title="{% blocktranslate %}По часам табеля в базу для взносов входит {{ declared }} ч, а записано {{ recorded }} ч. Пока числа не сойдутся, период не считается.{% endblocktranslate %}"{% endif %}>{% if row.insured_matches %}{{ row.insured_hours|hours }}{% else %}{{ row.insured_hours|hours|default:"0,00" }}<span class="hint warn">{% blocktranslate %}по часам {{ declared }}{% endblocktranslate %}</span>{% endif %}</td>{% endwith %}
+
+**Поле ввода, а не только число (T143, issue #54).** У бухгалтера база — своя
+колонка, и она может быть задана независимо от отработанного (Q005). Пока поля
+не было, такую базу правили в самой базе данных — то есть мимо права, мимо
+закрытой точки и мимо следа правки. Поле даётся тому же, кому даётся правка
+часов: это тот же табель, и второго права ему не заводят. Закрытая точка и роль
+на чтение видят число, а не поле, — по тому же доводу, что у часов: поле,
+которое не примет ввод, всё равно приглашает в себя щёлкнуть и печатать.
+
+Подсказка мыши говорит две вещи сразу: сходится ли база с часами и кто её
+поставил (T143). Обе — про одно и то же число, и разводить их по двум местам
+экрана значило бы заставлять человека собирать ответ самому.
+{% endcomment %}{% with declared=row.insured_declared|hours|default:"0,00" recorded=row.insured_hours|hours|default:"0,00" %}{% if row.insured_matches %}{% translate "Вход расчёта наравне с часами: по ней считаются взносы и бруто" as state_note %}{% else %}{% blocktranslate asvar state_note %}По часам табеля в базу для взносов входит {{ declared }} ч, а записано {{ recorded }} ч. Пока числа не сойдутся, период не считается.{% endblocktranslate %}{% endif %}{% author_note row.edited_by_name row.edited_at as author_note %}<td id="insured-{{ row.timesheet_id }}"{% if oob %} hx-swap-oob="true"{% endif %} class="num insured{% if not row.insured_matches %} insured-mismatch{% endif %}{% if can_edit and not row.closed %} cellbox{% endif %}" title="{{ state_note }} · {{ author_note }}">{% if can_edit and not row.closed %}<input class="cell" type="text" inputmode="decimal" name="insured" value="{{ row.insured_hours|cell_value }}" data-row="{{ row.timesheet_id }}" data-field="insured" data-url="{% url 'timesheet-insured' period.id %}" hx-post="{% url 'timesheet-insured' period.id %}" hx-trigger="change" hx-swap="none" hx-vals='{"row": "{{ row.timesheet_id }}"}' aria-label="{{ row.employee }} — {% translate "База взносов" %}">{% else %}{{ row.insured_hours|hours }}{% endif %}{% if not row.insured_matches %}<span class="hint warn">{% blocktranslate %}по часам {{ declared }}{% endblocktranslate %}</span>{% endif %}</td>{% endwith %}

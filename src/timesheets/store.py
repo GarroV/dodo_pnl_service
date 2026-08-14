@@ -22,6 +22,14 @@
 Вместе с часами здесь держится и база для взносов (`insured_hours`) — вход
 движка наравне с ними. Правило узкое: связь, которая была, сохраняется. Подробно
 объяснено в `set_cell`.
+
+**След правки (T143, issue #52).** Кто поставил число и когда, записывается
+здесь же и на всех путях сразу — по той же причине, по которой здесь держится
+инвариант: путей записи три, и договариваться между собой они не обязаны.
+Автор кладётся туда, где живёт само число: часы — на дни (`_write_days`),
+величины строки — на строку. Автора **не выдумываем**: правка мимо продукта
+приходит без него и остаётся без него, а ровная раскладка прежнего итога не
+получает автора никогда — её никто не вводил.
 """
 from __future__ import annotations
 
@@ -44,8 +52,8 @@ from .spread import calendar_working_days, spread
 
 __all__ = [
     "CellRefused", "RowInput", "daily_totals", "hour_types", "insured_base",
-    "materialize", "parse_hours", "parse_piece", "row_differs", "set_cell",
-    "set_piece", "store_row", "timesheet_for",
+    "materialize", "parse_hours", "parse_insured", "parse_piece", "row_differs",
+    "set_cell", "set_insured", "set_piece", "store_row", "timesheet_for",
 ]
 
 # Часы с двумя знаками — как в колонке. Больше не принимаем не из вредности:
@@ -123,7 +131,8 @@ def check_piece(value: Decimal) -> None:
 
 
 @transaction.atomic
-def set_piece(*, timesheet: Timesheet, value: Decimal) -> Decimal:
+def set_piece(*, timesheet: Timesheet, value: Decimal,
+              actor_id: UUID | None = None) -> Decimal:
     """Записать сдельную величину строки табеля (T075). Возвращает записанное.
 
     По дням не раскладывается, в отличие от часов: за месячным числом доставок
@@ -137,8 +146,64 @@ def set_piece(*, timesheet: Timesheet, value: Decimal) -> Decimal:
     правка не рвёт и не создаёт.
     """
     check_piece(value)
-    Timesheet.objects.filter(pk=timesheet.pk).update(piece_value=value)
-    timesheet.piece_value = value
+    changes = _stamp({"piece_value": value}, actor_id)
+    Timesheet.objects.filter(pk=timesheet.pk).update(**changes)
+    for name, stored in changes.items():
+        setattr(timesheet, name, stored)
+    return value
+
+
+# --- база для взносов ---------------------------------------------------------
+
+
+def parse_insured(raw: str) -> Decimal:
+    """Строка из поля ввода → база для взносов. Разбор тот же, что у часов.
+
+    Намеренно та же функция: база измеряется в часах, и запятая вместо точки,
+    лишний пробел и мусор вместо числа обязаны вести себя в этой колонке ровно
+    так же, как в соседних. Отличаются только слова о границах — они ниже.
+    """
+    return parse_hours(raw)
+
+
+def check_insured(value: Decimal) -> None:
+    if value < 0:
+        raise CellRefused(_("отрицательной базы для взносов не бывает"))
+    if value > MAX_HOURS:
+        raise CellRefused(
+            _("больше %(limit)s часов в месяце не бывает") % {"limit": f"{MAX_HOURS:.0f}"}
+        )
+
+
+@transaction.atomic
+def set_insured(*, timesheet: Timesheet, value: Decimal,
+                actor_id: UUID | None = None) -> Decimal:
+    """Записать базу для взносов строки табеля (T143, issue #54).
+
+    **Зачем это вообще правится с экрана.** По базе движок считает взносы и
+    бруто, а связь «база идёт за часами» бережётся только там, где она была
+    (см. `set_cell`). Значит база, пришедшая мимо экрана — загрузкой, сидом,
+    правкой в базе, — может разойтись с часами, и расчёт периода на этом
+    остановится (`payrun.calc.check_insured_base`). Пока поля не было, снять
+    такой отказ можно было только правкой в самой базе, то есть мимо продукта —
+    мимо права, мимо закрытой точки и мимо следа правки.
+
+    **Чего эта функция не решает.** Законно ли база может отличаться от
+    отработанного и по какому правилу — вопрос к бухгалтеру (Q005). Здесь
+    человек ставит число; отказ расчёта на расхождении остаётся прежним и снят
+    не будет, пока правило не названо.
+
+    По дням не раскладывается — по той же причине, что сдельная величина: за
+    месячным числом базы настоящих дат нет.
+    """
+    check_insured(value)
+    # Та же блокировка и по той же причине, что в `set_cell`: в строку пишут
+    # два пути сразу, и правка базы не должна ложиться поверх чужой записи.
+    lock_row(timesheet)
+    changes = _stamp({"insured_hours": value}, actor_id)
+    Timesheet.objects.filter(pk=timesheet.pk).update(**changes)
+    for name, stored in changes.items():
+        setattr(timesheet, name, stored)
     return value
 
 
@@ -197,19 +262,41 @@ def lock_row(row: Timesheet) -> None:
     row.refresh_from_db(from_queryset=Timesheet.objects.select_for_update())
 
 
-def _write_days(row: Timesheet, hour_type: str, hours: Decimal, days, source: str) -> None:
-    """Переписать дни одного типа. Прежние сносятся: правка — это замена."""
+def _write_days(row: Timesheet, hour_type: str, hours: Decimal, days, source: str,
+                actor_id: UUID | None = None) -> None:
+    """Переписать дни одного типа. Прежние сносятся: правка — это замена.
+
+    Автор и время ставятся на все дни этого типа сразу — и это не небрежность:
+    человек ввёл одно месячное число, дни за ним придумала раскладка, поэтому
+    ответ «кто поставил» один на весь тип. Пусто — тоже ответ: так пишет
+    раскладка прежнего итога (`materialize`) и запись мимо продукта.
+    """
     TimesheetDay.objects.filter(timesheet=row, hour_type=hour_type).delete()
     parts = spread(hours, days)
     if not parts:
         return
+    edited_at = now() if actor_id is not None else None
     TimesheetDay.objects.bulk_create([
         TimesheetDay(
             tenant_id=row.tenant_id, timesheet=row, work_date=day,
             hour_type=hour_type, hours=value, source=source,
+            edited_by=actor_id, edited_at=edited_at,
         )
         for day, value in parts.items()
     ])
+
+
+def _stamp(changes: dict, actor_id: UUID | None) -> dict:
+    """Дописать в правку строки след автора, если автор известен.
+
+    Отдельной функцией, а не строкой в каждом месте: путей записи в строку три
+    (ячейка, сдельная величина, загрузка), и забытый след на одном из них — это
+    дыра в истории ровно там, где её никто не заметит. Неизвестный автор
+    прежнего следа **не стирает**: «правку сделал никто» — это не факт, а потеря.
+    """
+    if actor_id is None:
+        return changes
+    return {**changes, "edited_by": actor_id, "edited_at": now()}
 
 
 @transaction.atomic
@@ -232,7 +319,8 @@ def materialize(row: Timesheet) -> bool:
 
 @transaction.atomic
 def set_cell(*, timesheet: Timesheet, hour_type: str, hours: Decimal,
-             known: dict[str, dict] | None = None) -> Decimal:
+             known: dict[str, dict] | None = None,
+             actor_id: UUID | None = None) -> Decimal:
     """Записать одну ячейку сетки. Возвращает записанное значение.
 
     Порядок именно такой: сначала проверка, потом перевод строки на дни, потом
@@ -256,8 +344,11 @@ def set_cell(*, timesheet: Timesheet, hour_type: str, hours: Decimal,
         d(timesheet.insured_hours) == insured_base(timesheet.hours or {}, known)
     )
 
+    # Раскладка прежнего итога идёт без автора: её никто не вводил (см. шапку
+    # модуля). Автор ставится только на тот тип часов, который человек правил.
     materialize(timesheet)
-    _write_days(timesheet, hour_type, hours, _working_days(timesheet), source="manual")
+    _write_days(timesheet, hour_type, hours, _working_days(timesheet),
+                source="manual", actor_id=actor_id)
 
     # Месячный итог пересобирается из дней, а не досчитывается: только так
     # инвариант остаётся утверждением о данных, а не о порядке вызовов.
@@ -285,7 +376,10 @@ def set_cell(*, timesheet: Timesheet, hour_type: str, hours: Decimal,
         timesheet.insured_hours = changes["insured_hours"]
 
     timesheet.hours = kept
+    changes = _stamp(changes, actor_id)
     Timesheet.objects.filter(pk=timesheet.pk).update(**changes)
+    for name, stored in changes.items():
+        setattr(timesheet, name, stored)
     return hours
 
 
@@ -387,7 +481,10 @@ def store_row(*, timesheet: Timesheet, want: RowInput,
     materialize(timesheet)
     days = _working_days(timesheet)
     for kind, hours in want.hours.items():
-        _write_days(timesheet, kind, hours, days, source=source)
+        # Автор тот же, что у ручной правки: загрузка — второй равноправный путь
+        # ввода, и след у неё обязан быть таким же. Без этого история была бы с
+        # дырами ровно там, где в табель попадает больше всего чисел.
+        _write_days(timesheet, kind, hours, days, source=source, actor_id=actor_id)
 
     # Итог пересобирается из дней — тем же способом, что в `set_cell`: источник
     # месячного числа один, иначе инвариант становится утверждением о порядке
@@ -407,6 +504,7 @@ def store_row(*, timesheet: Timesheet, want: RowInput,
         changes["corrected_by"] = actor_id
         changes["corrected_at"] = now()
 
+    changes = _stamp(changes, actor_id)
     Timesheet.objects.filter(pk=timesheet.pk).update(**changes)
     for name, value in changes.items():
         setattr(timesheet, name, value)

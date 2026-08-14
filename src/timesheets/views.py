@@ -34,9 +34,17 @@ from .closing import (
 )
 from .grid import build_grid, visible_rows
 from .importer import import_partner_table
-from .store import CellRefused, parse_hours, parse_piece, set_cell, set_piece
+from .store import (
+    CellRefused,
+    parse_hours,
+    parse_insured,
+    parse_piece,
+    set_cell,
+    set_insured,
+    set_piece,
+)
 
-__all__ = ["cell", "close", "grid", "import_table", "piece", "reopen"]
+__all__ = ["cell", "close", "grid", "import_table", "insured", "piece", "reopen"]
 
 # Больше этого файл зарплатной таблицы не бывает: восемь листов на несколько
 # сотен человек — это сотни килобайт. Ограничение не про безопасность, а про
@@ -177,7 +185,11 @@ def cell(request, period_id):
         # построении страницы: точку могли закрыть после того, как страница
         # открылась, и ячейка уходит на сервер уже в закрытый табель.
         refuse_if_closed(row)
-        set_cell(timesheet=row, hour_type=hour_type, hours=hours)
+        # Автор правки записывается вместе с числом (T143, issue #52): вопрос
+        # «кто поставил 176» задают тогда, когда числа разошлись, и ответить на
+        # него задним числом уже нечем.
+        set_cell(timesheet=row, hour_type=hour_type, hours=hours,
+                 actor_id=who.user_id)
         table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
     except CellRefused as refusal:
         return _refused(REFUSED, str(refusal), _hours_of(row, hour_type))
@@ -199,6 +211,15 @@ def cell(request, period_id):
         "timesheets/_totals.html",
         {
             "grid": table,
+            # Период нужен колонке базы для взносов: у её поля свой адрес, и
+            # собирается он от периода (`{% url 'timesheet-insured' %}`).
+            "period": period,
+            # Право правки сюда доехало проверенным выше: без него этот запрос
+            # не дошёл бы досюда. Передаётся оно потому, что колонка базы для
+            # взносов — поле ввода у того, кто правит, и число у остальных
+            # (T143). Без него подмена вне цели заменила бы поле на число, и
+            # база переставала бы правиться после первой же правки часов.
+            "can_edit": True,
             # Строка целиком, а не её итог числом: ответу нужны и база для
             # взносов (`_insured_cell.html`), и подсказка о подозрительных
             # числах (`_row_total.html`, T118) — обе считаются по строке.
@@ -255,13 +276,76 @@ def piece(request, period_id):
         # здесь, а не только при построении страницы, — точку могли закрыть уже
         # после того, как страница открылась.
         refuse_if_closed(row)
-        set_piece(timesheet=row, value=value)
+        set_piece(timesheet=row, value=value, actor_id=who.user_id)
     except CellRefused as refusal:
         return _refused(REFUSED, str(refusal), row.piece_value)
     except ClosureRefused as refusal:
         return _refused(refusal.http_status, refusal.message, row.piece_value)
 
     response = HttpResponse("", content_type="text/plain; charset=utf-8")
+    response["X-Cell-Value"] = f"{value:.2f}"
+    return response
+
+
+@login_required
+@require_POST
+def insured(request, period_id):
+    """Записать базу для взносов строки табеля (T143, issue #54).
+
+    Свой адрес, как у сдельной величины и по той же причине: это не тип часов, и
+    род ячейки не должен решаться скрытым полем.
+
+    Отвечает **колонкой базы целиком** — тем же фрагментом, каким её присылает
+    ответ на правку часов. Причина: у колонки есть не только число, но и
+    пометка расхождения с часами, а она — единственное, что говорит человеку,
+    почему период не считается. Оставить её прежней значило бы показывать не то,
+    что в базе. Поле под курсором при этом не вырывается: подмена вне цели
+    отменяется скриптом, если в заменяемом месте стоит курсор (`grid.js`).
+    """
+    period = find_period(period_id)
+    who = _context(request, period)
+
+    try:
+        permissions.check(who, permissions.TIMESHEET_EDIT)
+    except permissions.PermissionRefused as refusal:
+        return HttpResponse(
+            refusal.message,
+            status=refusal.http_status,
+            content_type="text/plain; charset=utf-8",
+        )
+
+    row = (
+        visible_rows(period.tenant_id, period.period, who.unit_ids)
+        .filter(pk=request.POST.get("row") or None)
+        .first()
+    )
+    if row is None:
+        return HttpResponseNotFound("строка табеля не найдена")
+
+    try:
+        value = parse_insured(request.POST.get("insured", ""))
+        # Тот же запрет, что у часов: закрытую точку не правят. База для взносов
+        # входит в расчёт наравне с ними, и оставить её правимой после закрытия
+        # значило бы закрывать часы, но не деньги.
+        refuse_if_closed(row)
+        set_insured(timesheet=row, value=value, actor_id=who.user_id)
+        table = build_grid(period.tenant_id, period.period, unit_ids=who.unit_ids)
+    except CellRefused as refusal:
+        return _refused(REFUSED, str(refusal), row.insured_hours)
+    except ClosureRefused as refusal:
+        return _refused(refusal.http_status, refusal.message, row.insured_hours)
+    except PayrunRefused as refusal:
+        # Та же ветка и по той же причине, что у записи часов: колонки сетки —
+        # правила страны, и они могли перестать действовать после того, как
+        # страница открылась (T073).
+        return _refused(refusal.http_status, refusal.message, row.insured_hours)
+
+    changed = next((item for item in table.rows if item.timesheet_id == row.id), None)
+    response = render(
+        request,
+        "timesheets/_insured_cell.html",
+        {"row": changed, "oob": True, "can_edit": True, "period": period},
+    )
     response["X-Cell-Value"] = f"{value:.2f}"
     return response
 

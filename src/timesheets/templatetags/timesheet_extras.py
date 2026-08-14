@@ -4,6 +4,9 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django import template
+from django.utils.formats import date_format
+from django.utils.timezone import localtime
+from django.utils.translation import gettext as _
 
 from web.format import money
 
@@ -35,6 +38,42 @@ def cell_value(value) -> str:
 def get(mapping, key):
     """Значение словаря по ключу-переменной: в языке шаблонов этого нет."""
     return mapping.get(key)
+
+
+@register.simple_tag
+def author_note(who: str, when) -> str:
+    """Кто поставил число и когда — одной фразой (T143, issue #52).
+
+    Тегом, а не разметкой в каждом месте: подсказка нужна и ячейкам часов, и
+    колонке базы для взносов, и сдельной величине, а фраза у них одна. Две копии
+    разъехались бы на первой правке, и одна из них осталась бы непереведённой.
+
+    **Пусто — это ответ, а не пустая подсказка.** Автора нет у ровной раскладки
+    прежнего итога и у всего, что пришло мимо продукта. Молчание в этом месте
+    читалось бы как поломка, а не как «этого мы не знаем».
+
+    Время показывается форматом языка страницы (`DATETIME_FORMAT`) и в часовом
+    поясе читателя: в базе оно в UTC, и показанное «09:33» вместо «12:33»
+    выглядело бы правкой, сделанной не тогда, когда её сделали.
+    """
+    if not who or when is None:
+        return _("кто поставил, не записано")
+    return _("поставил %(who)s, %(when)s") % {
+        "who": who,
+        "when": date_format(localtime(when), "DATETIME_FORMAT"),
+    }
+
+
+@register.simple_tag
+def author_note_of(row, column) -> str:
+    """То же, но для ячейки часов: автор берётся по коду колонки.
+
+    Отдельным тегом, потому что в языке шаблонов нет выборки из словаря по
+    переменной, а склеивать два фильтра ради одной подсказки — значит писать
+    в разметке то, что и так знает строка.
+    """
+    found = (row.authors or {}).get(column.code)
+    return author_note(found.name if found else "", found.at if found else None)
 
 
 @register.filter
