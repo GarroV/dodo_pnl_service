@@ -275,6 +275,37 @@ def collect_taxes(tenant_id: UUID, period: date, articles: dict[str, str]) -> li
     ]
 
 
+# Что считается строкой расхода периода. Одним куском, потому что спрашивают его
+# дважды: сами строки (`collect_expenses`) и набор их регистров (`fact_ledgers`,
+# из него собирается переключатель разрезов). Разъехавшись, эти два условия дали
+# бы разрез, которому нечего сужать, — или наоборот, спрятанный разрез с
+# деньгами внутри (T137, issue #108). Пользовательских значений здесь нет:
+# кусок подставляется в запрос как есть, а данные по-прежнему идут параметрами.
+EXPENSE_LINES = "l.kind <> 'transfer' and l.source <> 'payroll'"
+
+
+def fact_ledgers(tenant_id: UUID, period: date) -> list[str]:
+    """Регистры, в которых у периода есть расходы (T137).
+
+    Нужны переключателю разрезов: до этого он знал только регистры ведомости, и
+    трата в регистре без зарплаты разрезом не отделялась (issue #108).
+
+    Срез делает база: `pnl_lines` объявлено `security_invoker`, поэтому регистр,
+    которого роль не видит, отсюда не приезжает — а значит и кнопки с его
+    названием на экране не появляется (D023).
+    """
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""select distinct l.ledger::text
+                  from pnl_lines l
+                 where l.tenant_id = %s and l.period = %s and {EXPENSE_LINES}""",
+            [str(tenant_id), period],
+        )
+        return [row[0] for row in cursor.fetchall()]
+
+
 def collect_expenses(tenant_id: UUID, period: date, cut: str,
                      item_title=None) -> list[ExpenseLine]:
     """Расходы периода строками для P&L — из представления `pnl_lines` (T113).
@@ -304,7 +335,7 @@ def collect_expenses(tenant_id: UUID, period: date, cut: str,
 
     with connection.cursor() as cursor:
         cursor.execute(
-            """select l.pnl_title,
+            f"""select l.pnl_title,
                       coalesce(l.unit_code, ''),
                       l.ledger::text,
                       l.title,
@@ -320,8 +351,7 @@ def collect_expenses(tenant_id: UUID, period: date, cut: str,
                  left join expense_items e on e.id = l.expense_item_id
                 where l.tenant_id = %s
                   and l.period = %s
-                  and l.kind <> 'transfer'
-                  and l.source <> 'payroll'
+                  and {EXPENSE_LINES}
                   and (%s = '' or l.ledger::text = %s)
                 group by 1, 2, 3, 4, 5
                 order by 1, 2, 4""",
