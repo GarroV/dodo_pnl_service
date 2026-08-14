@@ -230,15 +230,44 @@ def record_expense(
     return Recorded(fact_id=str(fact_id), action=action, landing=landing)
 
 
+def ensure_period(tenant_id, period: date) -> bool:
+    """Завести месяц учёта, если строки такого месяца ещё нет (T135).
+
+    **Почему сам, а не кнопкой «завести месяц».** В заведении месяца нет ни
+    одного решения человека: месяц определяется датой траты. Кнопка добавила бы
+    шаг, на котором нечего выбирать, — и ровно этот шаг до T135 отсутствовал:
+    расход сегодняшней датой ложился в период текущего месяца, строки которого
+    в продукте не было, а выгрузка адресуется периодом. Человек вносил трату,
+    она сохранялась — и не появлялась ни в одном файле.
+
+    **Обойти закрытый месяц этим нельзя (D020).** Заводится только месяц, строки
+    которого нет вовсе, и заводится он **открытым**. У закрытого месяца строка
+    есть по определению — иначе его нечем было бы закрыть, — поэтому запись,
+    датированная внутри него, по-прежнему уезжает в текущий (`landing_for`), а
+    сам он не двигается. Права здесь тоже не расширяются: строку периода пишет
+    та же роль `app_user` под той же изоляцией тенанта, что и всё остальное.
+
+    Возвращает «месяц завёлся», чтобы вызывающему было о чём сказать в журнале.
+    """
+    _, created = Period.objects.get_or_create(tenant_id=tenant_id, period=period)
+    return created
+
+
 def _upsert(payload: dict) -> tuple[str, str]:
     """Вызов `upsert_fact` с отказом базы, переведённым в отказ продукта.
 
     Точка сохранения (`transaction.atomic`) обязательна: весь запрос идёт одной
     транзакцией (`DbContextMiddleware`), и отказ политики без точки сохранения
     оборвал бы её целиком — человек вместо объяснения увидел бы 500.
+
+    Месяц учёта заводится здесь же и внутри той же точки сохранения: это
+    **единственный** путь записи факта из продукта, и месяц, заведённый в другом
+    месте, однажды оказался бы забыт на новом пути. Внутри точки сохранения —
+    чтобы отвергнутая запись не оставляла за собой пустой месяц.
     """
     try:
         with transaction.atomic(), connection.cursor() as cursor:
+            ensure_period(payload["tenant_id"], date.fromisoformat(payload["period"]))
             cursor.execute(
                 "select fact_id, action from upsert_fact(%s::jsonb)", [json.dumps(payload)]
             )
@@ -457,26 +486,57 @@ def allocate(fact_id) -> int | None:
         raise
 
 
-def spread_now(fact_id) -> tuple[str, int]:
+@dataclass(frozen=True)
+class Outcome:
+    """Что стало с расходом на всю сеть: разошёлся, ждёт (и почему) или не нам.
+
+    `reason` заполняется только у `waiting` и приходит из базы
+    (`allocation_reason`), а не выводится здесь из пустого плана. Пустой план
+    означает **три разных** положения дел — правила нет, правило требует
+    человека, правилу нечем считать, — и до T132 продукт называл все три
+    отсутствием правила, в том числе когда правило лежало рядом в
+    `allocation_rules`.
+    """
+
+    state: str    # split | waiting | refused
+    rows: int
+    reason: str = ""
+
+
+def waiting_reason(fact_id) -> str:
+    """Почему факт ждёт разнесения. Пусто — не ждёт.
+
+    Спрашивается у базы, потому что там же живёт поиск правила
+    (`allocation_rule_for`, миграция `0236`): вторая копия этого поиска в Python
+    осталась бы верной по отдельности и разошлась бы с планом молча.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute("select allocation_reason(%s)", [str(fact_id)])
+        return cursor.fetchone()[0] or ""
+
+
+def spread_now(fact_id) -> Outcome:
     """Разнести только что записанный расход и сказать, чем кончилось.
 
-    Три ответа: `split` — разошёлся (и на сколько строк), `waiting` — правила
-    нет и факт ждёт, `refused` — разносить его вправе не этот человек. Отдельный
-    ответ для «уже разнесён» не нужен: повторная отправка той же формы ничего не
-    меняет (`unchanged`), а разнесение у факта уже есть — и число строк
+    Три состояния: `split` — разошёлся (и на сколько строк), `waiting` — ждёт, и
+    рядом сказано почему, `refused` — разносить его вправе не этот человек.
+    Отдельный ответ для «уже разнесён» не нужен: повторная отправка той же формы
+    ничего не меняет (`unchanged`), а разнесение у факта уже есть — и число строк
     считается по детям, а не по нулю, который вернула бы функция базы.
     """
     from core.models import Fact
 
     written = allocate(fact_id)
     if written is None:
-        return ("refused", 0)
+        return Outcome("refused", 0)
     if written > 0:
-        return ("split", written)
+        return Outcome("split", written)
     children = Fact.objects.filter(
         parent_fact_id=fact_id, superseded_at__isnull=True
     ).count()
-    return ("split", children) if children else ("waiting", 0)
+    if children:
+        return Outcome("split", children)
+    return Outcome("waiting", 0, waiting_reason(fact_id))
 
 
 def periods_waiting(tenant_id) -> list[date]:

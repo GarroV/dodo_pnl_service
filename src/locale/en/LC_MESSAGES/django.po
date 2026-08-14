@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 07:14+0000\n"
+"POT-Creation-Date: 2026-08-14 10:30+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -174,6 +174,9 @@ msgstr "Amount"
 
 msgid "Начисление"
 msgstr "Accrual"
+
+msgid "Расход"
+msgstr "Expense"
 
 msgid "Налог"
 msgstr "Tax"
@@ -527,6 +530,30 @@ msgstr "To one unit"
 msgid "Спрашивать каждый раз"
 msgstr "Ask every time"
 
+msgid "«Пропорционально выручке» пока не разносит ничего: выручки в продукте нет — она появится с коннектором Dodo IS."
+msgstr "\"Proportionally to revenue\" does not allocate anything yet: there is no revenue in the product — it will appear with the Dodo IS connector."
+
+msgid "«Спрашивать каждый раз» означает, что точку у такого расхода выбирают руками, в самом расходе: отдельного экрана вопроса нет."
+msgstr "\"Ask every time\" means the unit for such an expense is chosen by hand, in the expense itself: there is no separate question screen."
+
+msgid "Правила разнесения у статьи нет: заведите его в карточке статьи или укажите точку в самом расходе."
+msgstr "The item has no allocation rule: set one up on the item's card, or specify the unit in the expense itself."
+
+msgid "Правило статьи — «Спрашивать каждый раз»: точку у такого расхода выбирают руками. Откройте расход и укажите её."
+msgstr "The item's rule is \"Ask every time\": the unit for such an expense is chosen by hand. Open the expense and specify it."
+
+msgid "Правило статьи — «Пропорционально выручке», но выручки в продукте пока нет: она появится с коннектором Dodo IS. Пока укажите точку руками или смените правило."
+msgstr "The item's rule is \"Proportionally to revenue\", but there is no revenue in the product yet: it will appear with the Dodo IS connector. For now, specify the unit by hand or change the rule."
+
+msgid "Правило у статьи есть, но разносить не на что: ни одна точка не подошла под него в этом месяце."
+msgstr "The item has a rule, but there is nothing to allocate to: no unit matched it this month."
+
+msgid "Разносит расходы по точкам тот, кто ведёт все точки партнёра."
+msgstr "Expenses are allocated across units by whoever manages all of the partner's units."
+
+msgid "Правило у статьи есть — нажмите «Разнести по правилам»."
+msgstr "The item has a rule — click \"Allocate by the rules\"."
+
 #, python-format
 msgid "«%(label)s»: такого варианта нет."
 msgstr "\"%(label)s\": there is no such option."
@@ -632,14 +659,18 @@ msgstr "Expense item \"%(title)s\" is not effective on %(date)s: choose another 
 msgid "Регистр учёта"
 msgstr "Ledger"
 
-msgid "Когда деньги вышли из кассы. Месяц уже закрыт — расход ляжет в текущий, а эта дата останется при нём."
-msgstr "When the money left the cash register. If the month is already closed, the expense lands in the current month, and this date stays with it."
+msgid "Когда деньги вышли из кассы."
+msgstr "When the money left the cash register."
 
 msgid "Статьи ведёт администратор сети. Нужной нет — попросите завести: выдумывать название на месте нельзя, иначе одна трата назовётся по-разному."
 msgstr "Expense items are maintained by the network administrator. If the one you need is missing, ask them to add it — making up a name on the spot is not allowed, or the same expense would end up called differently each time."
 
 msgid "Зачем потратили. Через месяц это единственное, по чему строку узнают."
 msgstr "What the money was spent on. A month from now, this is the only thing the line will be recognized by."
+
+#, python-format
+msgid "Месяц %(closed)s закрыт: расход ляжет в %(month)s, а эта дата останется при нём."
+msgstr "Month %(closed)s is closed: the expense lands in %(month)s, and this date stays with it."
 
 msgid "Вся сеть"
 msgstr "Entire network"
@@ -665,9 +696,6 @@ msgstr " The expense was allocated across units by the item's rule: rows — %(c
 
 msgid " Разнести его по точкам может тот, кто ведёт все точки: строки разнесения ложатся и на чужие точки."
 msgstr " Only someone who manages every unit can allocate it across units: allocation rows land on other people's units too."
-
-msgid " Правила разнесения у статьи нет."
-msgstr " The item has no allocation rule."
 
 #, python-format
 msgid "%(what)s нельзя изменить: зарплата за %(month)s уже утверждена, а версий по датам у этой настройки нет — правка переписала бы закрытый месяц задним числом. Переопределите нужное человеку в условиях найма: там правка идёт с даты. Либо откройте месяц заново с причиной."
@@ -1059,6 +1087,10 @@ msgstr "From date"
 msgid "По дату"
 msgstr "To date"
 
+#, python-format
+msgid "«%(label)s»: это номер из списка, а не «%(value)s»."
+msgstr "\"%(label)s\" must be an ID from the list, not \"%(value)s\"."
+
 msgid "удалён"
 msgstr "Removed"
 
@@ -1076,6 +1108,13 @@ msgstr "All units"
 
 msgid "Все статьи"
 msgstr "All items"
+
+msgid "Все регистры"
+msgstr "All ledgers"
+
+#, python-format
+msgid "Пересчёт прошёл: ни одна строка не изменилась, а ждут разнесения %(count)s. Что мешает каждой — в колонке «Почему ждёт»."
+msgstr "Recalculation completed: not a single row changed, and %(count)s are waiting for allocation. What's blocking each one is in the \"Why it is waiting\" column."
 
 msgid "Пересчёт прошёл: менять было нечего, ни одна строка не тронута."
 msgstr "Recalculation completed: there was nothing to change, not a single row was touched."
@@ -1104,9 +1143,6 @@ msgstr "Supplementary"
 
 msgid "Внутренний"
 msgstr "Internal"
-
-msgid "Все регистры"
-msgstr "All ledgers"
 
 #, python-format
 msgid "%(percent)s и %(amount)s"
@@ -1281,9 +1317,6 @@ msgstr "Not recorded."
 msgid "Записать расход"
 msgstr "Save expense"
 
-msgid "Расход"
-msgstr "Expense"
-
 msgid "← К расходам"
 msgstr "← To the expenses"
 
@@ -1342,8 +1375,8 @@ msgstr "No expenses found for the selected period and filters."
 msgid "Нераспределённое"
 msgstr "Unallocated"
 
-msgid "Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по сети, но её нет ни на одной точке."
-msgstr "Expenses without a unit: they are waiting for an allocation rule. While they wait, the amount exists for the network but is on none of the units."
+msgid "Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по сети, но её нет ни на одной точке. У каждой строки написано, что именно мешает её разнести."
+msgstr "Expenses without a unit: they are waiting for an allocation rule. While they wait, the amount exists for the network but is on none of the units. Each row states exactly what is blocking it from being allocated."
 
 msgid "Пересчёт разнесения."
 msgstr "Recalculation of the allocation."
@@ -1356,6 +1389,9 @@ msgstr "What this is"
 
 msgid "Откуда"
 msgstr "Source"
+
+msgid "Почему ждёт"
+msgstr "Why it is waiting"
 
 msgid "Итого ждёт разнесения"
 msgstr "Total waiting for allocation"

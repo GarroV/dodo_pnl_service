@@ -14,7 +14,7 @@ P&L по сети, но её нет ни на одной точке.
 {% block content %}
 <p class="note"><a href="{{ back_url }}">{% translate "← К расходам" %}</a></p>
 <h1>{% translate "Нераспределённое" %}</h1>
-<p class="sub">{% translate "Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по сети, но её нет ни на одной точке." %}</p>
+<p class="sub">{% translate "Расходы без точки: они ждут правила разнесения. Пока ждут — сумма есть по сети, но её нет ни на одной точке. У каждой строки написано, что именно мешает её разнести." %}</p>
 
 {% if notice %}
 {% translate "Пересчёт разнесения." as done %}
@@ -33,6 +33,7 @@ P&L по сети, но её нет ни на одной точке.
       <th>{% translate "Что это" %}</th>
       <th class="num">{% translate "Сумма" %}</th>
       <th>{% translate "Откуда" %}</th>
+      <th>{% translate "Почему ждёт" %}</th>
     </tr>
   </thead>
   <tbody>
@@ -42,6 +43,7 @@ P&L по сети, но её нет ни на одной точке.
       <td>{{ row.title }}</td>
       <td class="num">{{ row.amount_text }}</td>
       <td>{{ row.source }}</td>
+      <td>{{ row.why }}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -49,7 +51,7 @@ P&L по сети, но её нет ни на одной точке.
     <tr data-total="{{ total_raw }}">
       <th colspan="2">{% translate "Итого ждёт разнесения" %}</th>
       <th class="num">{{ total_text }}</th>
-      <th></th>
+      <th colspan="2"></th>
     </tr>
   </tfoot>
 </table>{% endscroll %}

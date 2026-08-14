@@ -85,9 +85,33 @@ def facts_removed(sql, tenant):  # noqa: F811
     Просить эту фикстуру нужно **раньше** `payruns_restored`: разбираются они в
     обратном порядке, а факт закрытого месяца база удалить не даст
     (`facts_guard`), пока месяц не открыт заново.
+
+    Вместе с расходами убираются и месяцы, которые они за собой завели (T135):
+    запись факта заводит недостающий период сама, и оставленный им месяц ехал бы
+    дальше по прогону. Соседние тесты берут период «первой ссылкой со списка», а
+    список отсортирован по убыванию месяца — то есть оставленный август молча
+    подменял бы им июнь. Убираются только месяцы, появившиеся за время теста, и
+    только пустые: строку с расчётом или фактом трогать нельзя.
     """
+    before = [
+        row[0] for row in sql.execute(
+            "select period from periods where tenant_id = %s", (tenant,)
+        ).fetchall()
+    ]
     yield
     sql.execute("delete from facts where dedup_key like 'manual:cash:%%'")
+    sql.execute(
+        """delete from periods p
+            where p.tenant_id = %s
+              and p.period <> all(%s::date[])
+              and not exists (
+                  select 1 from facts f
+                   where f.tenant_id = p.tenant_id and f.period = p.period)
+              and not exists (
+                  select 1 from payruns r
+                   where r.tenant_id = p.tenant_id and r.period = p.period)""",
+        (tenant, before),
+    )
 
 
 def entry_key() -> str:

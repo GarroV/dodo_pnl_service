@@ -39,7 +39,7 @@ from django.utils.translation import gettext_lazy
 
 from core.models import ExpenseItem, Fact, Unit
 
-from . import cash
+from . import allocation, cash
 from .cash_views import expense_fields, parse_expense
 from .directory_views import LEDGER_CODES, BadInput, _select
 from .format import EMPTY, ledger_title, money
@@ -95,10 +95,7 @@ def _no_membership(request):
 def filters_default() -> dict:
     """Умолчание — текущий месяц: с ним человек и сверяет кассу.
 
-    `ledger` здесь пуст всегда: срез по регистру — параметр вызова по HTTP
-    (T112), у экрана его нет. Ключ тем не менее живёт в общем наборе отбора, а
-    не приезжает вторым способом: два набора отбора рядом расходятся молча, и
-    тогда экран и вызов начинают показывать разное, называя это одним списком.
+    `ledger` пуст — это «все видимые роли регистры», а не четвёртый безымянный.
     """
     first = date.today().replace(day=1)
     return {"from": first, "to": _last_day(first), "unit": "", "item": "", "ledger": ""}
@@ -109,10 +106,17 @@ def _last_day(first: date) -> date:
 
 
 def filters_from(request) -> dict:
-    """Что человек выбрал в адресе. Неразобранная дата — отказ, а не тихое умолчание.
+    """Что человек выбрал в адресе — одинаково для экрана и для вызова по HTTP.
 
-    Тихое умолчание означало бы, что человек смотрит не тот период, чем думает,
-    и сверяет кассу с чужим числом.
+    Разбор здесь **один** на обе поверхности (T133). Пока `ledger` читал только
+    вызов, один и тот же адрес отвечал по-разному: `/expenses/?ledger=official`
+    показывал две строки, а `/api/expenses/?ledger=official` — одну. Спека
+    (`spec.md`, условие 2) требует обратного: срез — параметр запроса, и ответ у
+    двух ручек одной двери обязан совпадать.
+
+    **Неразобранное значение — отказ, а не тихое умолчание.** Тихое умолчание
+    означало бы, что человек смотрит не тот период (или не ту точку), чем
+    думает, и сверяет кассу с чужим числом.
     """
     chosen = filters_default()
     for name in ("from", "to"):
@@ -122,10 +126,16 @@ def filters_from(request) -> dict:
     if chosen["to"] < chosen["from"]:
         raise BadInput(_("Конец периода раньше начала: поправьте даты."))
     # Точка и статья уходят в выборку как есть: чужую отсекут политики базы, а
-    # не проверка здесь (D014). Проверяется только то, что это вообще uuid.
+    # не проверка здесь (D014). Проверяется только то, что это вообще номер, —
+    # и негодное значение отвергается, а не подменяется полным списком (T134).
     for name in ("unit", "item"):
         raw = (request.GET.get(name) or "").strip()
-        chosen[name] = raw if _looks_like_id(raw) else ""
+        chosen[name] = _id_or_refuse(raw, name) if raw else ""
+    # Регистр разбору не подлежит: неизвестное слово отвечает тем же, чем
+    # невидимый регистр, — пустотой (D023, разбор в `rows_for`). Отказ здесь
+    # сделал бы выдуманное слово отличимым от скрытого, то есть превратил бы
+    # перебор в способ узнать состав регистров партнёра.
+    chosen["ledger"] = (request.GET.get("ledger") or "").strip()
     return chosen
 
 
@@ -134,7 +144,11 @@ def filters_from(request) -> dict:
 # подписи фильтров навсегда застывали русскими — на англоязычном демо было видно
 # «С даты» и «По дату» рядом с полностью английской страницей. Ленивый перевод
 # откладывает выбор языка до показа, то есть до запроса конкретного человека.
-LABELS = {"from": gettext_lazy("С даты"), "to": gettext_lazy("По дату")}
+LABELS = {
+    "from": gettext_lazy("С даты"), "to": gettext_lazy("По дату"),
+    "unit": gettext_lazy("Точка"), "item": gettext_lazy("Статья расхода"),
+    "ledger": gettext_lazy("Регистр учёта"),
+}
 
 
 def _day(raw: str, name: str) -> date:
@@ -147,14 +161,29 @@ def _day(raw: str, name: str) -> date:
         ) from None
 
 
-def _looks_like_id(raw: str) -> bool:
+def _id_or_refuse(raw: str, name: str) -> str:
+    """Номер точки или статьи из адреса. Не номер — отказ, а не полный список.
+
+    Раньше негодное значение молча обнулялось: `?item=zzz` отдавал **все**
+    статьи с итогом по всем (T134). На экране это ещё видно глазами, а вызов по
+    HTTP заведён ради бота — и бот, спросивший «расходы по статье X», получал
+    расходы по всем и докладывал это как ответ на свой вопрос. Ровно от этого
+    предостерегает комментарий у разбора дат двумя функциями выше; для точки и
+    статьи было сделано наоборот.
+
+    Отказ ничего не рассказывает о существовании строки: номер, которого нет, и
+    номер чужой точки по-прежнему дают пустой список (D023). Отвергается только
+    то, что номером не является вовсе, — а значит существовать не может.
+    """
     from uuid import UUID
 
     try:
-        UUID(raw)
+        return str(UUID(raw))
     except ValueError:
-        return False
-    return True
+        raise BadInput(
+            _("«%(label)s»: это номер из списка, а не «%(value)s».")
+            % {"label": LABELS[name], "value": raw}
+        ) from None
 
 
 def rows_for(who, chosen: dict, *, window: tuple[int, int] | None = None) -> list[dict]:
@@ -276,6 +305,15 @@ def _filter_fields(who, chosen: dict) -> list[dict]:
             ],
             chosen["item"], required=False, empty_label=_("Все статьи"),
         ),
+        # Срез по регистру — тот же параметр, что у вызова по HTTP (T133).
+        # Список только из видимых роли: предложить регистр, которого человек не
+        # видит, значило бы обещать пустой ответ и назвать его срезом.
+        _select(
+            "ledger", LABELS["ledger"],
+            [(code, ledger_title(code)) for code in LEDGER_CODES
+             if code in who.visible_ledgers],
+            chosen["ledger"], required=False, empty_label=_("Все регистры"),
+        ),
     ]
 
 
@@ -308,35 +346,61 @@ def unallocated(request):
         "total": total,
         "total_raw": f"{total}",
         "total_text": money(total),
-        "notice": _spread_notice(request),
+        "notice": _spread_notice(request, waiting=len(rows)),
         "back_url": reverse("expenses"),
     })
 
 
 def waiting_rows(who) -> list[dict]:
+    """Строки, ждущие разнесения, — и почему каждая ждёт (T132).
+
+    Причину считает база (`allocation_reason`), потому что там же живёт поиск
+    правила: вторая копия этого поиска здесь осталась бы верной по отдельности и
+    разошлась бы с планом молча.
+
+    Название статьи спрашивается у самой статьи, а не берётся из `title` факта
+    (T134). `title` — снимок названия на языке того, кто вносил расход; он обязан
+    остаться в данных (закрытый отчёт должен выглядеть как в день закрытия), но
+    показывать читателю нужно название на **его** языке. Оттого на английской
+    странице здесь стояла «Аренда», пока соседний экран и выгрузка звали ту же
+    статью `Rent`.
+    """
     from django.db import connection
+
+    from core.models import ExpenseItem
 
     with connection.cursor() as cursor:
         cursor.execute(
-            """select fact_id, period, title, amount, source::text
+            """select fact_id, period, title, amount, source::text,
+                      expense_item_id, allocation_reason(fact_id)
                  from facts_unallocated
                 where tenant_id = %s
                 order by period desc, title""",
             [str(who.tenant_id)],
         )
         found = cursor.fetchall()
+
+    titles = {
+        item.id: item.titles
+        for item in ExpenseItem.objects.filter(
+            pk__in=[row[5] for row in found if row[5] is not None]
+        )
+    }
     return [
         {
             "id": str(fact_id),
             "url": reverse("expense", args=[fact_id]),
             "period": month_title(period),
-            "title": title,
+            # Статьи у факта может не быть вовсе (фактура поставщика придёт со
+            # своим контрагентом) — тогда остаётся снимок названия.
+            "title": cash.item_title(titles[item_id]) if item_id in titles else title,
             "amount": amount,
             "amount_raw": f"{amount}",
             "amount_text": money(amount),
             "source": source,
+            "why": allocation.waiting_title(reason) if reason else "",
         }
-        for fact_id, period, title, amount, source in found
+        for fact_id, period, title, amount, source, item_id, reason in found
     ]
 
 
@@ -349,16 +413,27 @@ def spread_query(spread) -> str:
     return query
 
 
-def _spread_notice(request) -> str:
+def _spread_notice(request, *, waiting: int = 0) -> str:
     """Итог пересчёта словами. Молчать о пропущенных месяцах нельзя.
 
     Пропущенный молча месяц читается как «пересчитано» — и человек уходит,
     считая, что правило применилось везде.
+
+    **«Менять было нечего» говорится только тогда, когда и правда нечего
+    (T132).** Раньше эта фраза приходила и при висящих суммах — при 1 490,00
+    нераспределённого продукт отвечал, что менять нечего, и человек уходил
+    уверенный, что всё разнесено. Теперь ноль изменений при ждущих строках
+    отсылает к причине, написанной у каждой строки.
     """
     changed = request.GET.get("changed")
     if changed is None:
         return ""
-    if changed == "0":
+    if changed == "0" and waiting:
+        said = _(
+            "Пересчёт прошёл: ни одна строка не изменилась, а ждут разнесения "
+            "%(count)s. Что мешает каждой — в колонке «Почему ждёт»."
+        ) % {"count": waiting}
+    elif changed == "0":
         said = _("Пересчёт прошёл: менять было нечего, ни одна строка не тронута.")
     else:
         said = _("Пересчёт прошёл: строк изменено — %(count)s.") % {"count": changed}

@@ -332,9 +332,12 @@ def _rule_notice(request, who) -> str:
     кнопки, и человек должен прочитать оба, а не то из них, которое случилось
     последним.
     """
-    from .expenses_views import _spread_notice
+    from .expenses_views import _spread_notice, waiting_rows
 
-    parts = [_spread_notice(request)]
+    # Число ждущих строк спрашивается и здесь: без него «менять было нечего»
+    # приходит и тогда, когда ждать есть чему (T132). Один и тот же пересчёт не
+    # должен объясняться на двух экранах по-разному.
+    parts = [_spread_notice(request, waiting=len(waiting_rows(who)))]
     if request.GET.get("retro") == "1":
         parts.append(directory.closed_month_notice(who.tenant_id))
     return " ".join(filter(None, parts))
@@ -354,9 +357,13 @@ def _rule_fields(request, who, item) -> list[dict]:
              else (current.method if current else "")),
             required=False,
             empty_label=_("Правила нет — расход будет ждать"),
+            # Оговорка про два способа, которые выбрать можно, а исполнить пока
+            # нечем, стоит здесь же (T132): узнать об этом по висящей через
+            # месяц сумме — худший из способов.
             help=_("Как разложить по точкам расход, внесённый на всю сеть "
                    "(аренда офиса, реклама). Без правила он остаётся в списке "
-                   "нераспределённых и в разрез по точкам не попадает."),
+                   "нераспределённых и в разрез по точкам не попадает.")
+                 + " " + allocation.methods_warning(),
         ),
         _select(
             "alloc_unit", _("Точка разнесения"),
