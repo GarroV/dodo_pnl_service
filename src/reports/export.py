@@ -197,7 +197,7 @@ def _titled(title: str, view: SheetSlice, ledger_title) -> str:
 
 def payout(view: SheetSlice, *, tenant_id=None, period=None, title="",
            ledger_title=str, component_title=None, item_title=None,
-           whole_run=True) -> tuple[bytes, str]:
+           whole_run=True, vat=None) -> tuple[bytes, str]:
     """Ведомость к выплате: ровно то, что человек видит на экране, файлом.
 
     `item_title` и `whole_run` здесь не нужны и не используются: ведомость — про
@@ -403,8 +403,15 @@ def taxes_exist(tenant_id: UUID, period: date) -> bool:
     return bool(collect_taxes(tenant_id, period, {}))
 
 
+# Какие суммы едут в файл. «Без НДС» — умолчание продукта (D042): «в итоговом
+# ПНЛ мы обычно не показываем НДС». «С НДС» — не другой отчёт, а тот же файл для
+# партнёра, который налог не зачитывает и считает P&L по полной сумме документа.
+NET, GROSS = "net", "gross"
+VAT_VIEWS = {NET: "l.amount_net", GROSS: "l.amount"}
+
+
 def collect_expenses(tenant_id: UUID, period: date, cut: str,
-                     item_title=None) -> list[ExpenseLine]:
+                     item_title=None, vat: str = NET) -> list[ExpenseLine]:
     """Расходы периода строками для P&L — из представления `pnl_lines` (T113).
 
     **Читается представление, а не таблица.** В нём уже записано, что такое
@@ -443,7 +450,7 @@ def collect_expenses(tenant_id: UUID, period: date, cut: str,
                       -- от того, кто настроил соединение; явное приведение
                       -- делает ответ одним всегда.
                       e.titles::text,
-                      sum(l.amount)
+                      sum({VAT_VIEWS[vat]})
                  from pnl_lines l
                  left join expense_items e on e.id = l.expense_item_id
                 where l.tenant_id = %s
@@ -468,9 +475,44 @@ def collect_expenses(tenant_id: UUID, period: date, cut: str,
     ]
 
 
+def vat_exists(tenant_id: UUID, period: date) -> bool:
+    """Встречается ли в периоде НДС вообще (T146).
+
+    Спрашивается ради кнопки «с НДС»: ряд выгрузок не место для кнопки, которая
+    отдаёт ровно тот же файл. Тот же довод, что у налоговой части (T141), и тот
+    же приём — вопрос задаётся тем же представлением, из которого файл и
+    собирается, а не отдельной выборкой рядом.
+    """
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""select exists (
+                    select 1 from pnl_lines l
+                     where l.tenant_id = %s and l.period = %s
+                       and {EXPENSE_LINES}
+                       and l.vat_amount is not null)""",
+            [str(tenant_id), period],
+        )
+        return bool(cursor.fetchone()[0])
+
+
+def vat_note(vat: str) -> str:
+    """Чем суммы файла являются — словами, в шапке.
+
+    Два файла с одинаковыми колонками и разными числами — самый дешёвый способ
+    получить P&L, который не сходится, и не понять почему. Поэтому разрез
+    назван внутри самого файла, а не только в имени кнопки, по которой его
+    скачали: имя кнопки останется в браузере, файл уедет дальше один.
+    """
+    return (_("Суммы расходов — с НДС, как в документе.") if vat == GROSS
+            else _("Суммы расходов — без НДС."))
+
+
 def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
         ledger_title=str, articles=None, taxes=None, expenses=None,
-        component_title=None, item_title=None, whole_run=True) -> tuple[bytes, str]:
+        component_title=None, item_title=None, whole_run=True,
+        vat: str = NET) -> tuple[bytes, str]:
     """Строки для P&L: начисления и налоги раздельно, по статье и точке.
 
     Итоговой строки в файле нет намеренно: это заготовка строк для сборки P&L,
@@ -487,7 +529,7 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
     if expenses is None:
         # Разрез сужает и расходы тоже: файл одного регистра, где зарплата
         # своего регистра, а траты всех, не сходится ни с чем.
-        expenses = collect_expenses(tenant_id, period, view.cut, item_title)
+        expenses = collect_expenses(tenant_id, period, view.cut, item_title, vat=vat)
     # Разрез — это один регистр, а налог посчитан по строке ведомости целиком.
     # Приписать его регистру нельзя, поэтому в разрезе налогов нет вовсе — и это
     # решается здесь, а не тем, что вызывающий их не передал.
@@ -508,7 +550,7 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
     )
     _head(
         ws, _("Строки для P&L · %(sub)s") % {"sub": _titled(title, view, ledger_title)},
-        4, taxes_note(missing),
+        4, " ".join(filter(None, [vat_note(vat), taxes_note(missing)])),
     )
     _headers(ws, [
         _("Статья P&L"), _("Точка"), _("Регистр"), _("Тип строки"), _("Компонент"), _("Сумма"),
@@ -559,7 +601,7 @@ def pnl(view: SheetSlice, *, tenant_id=None, period=None, title="",
 
 def partner(view: SheetSlice, *, tenant_id=None, period=None, title="",
             ledger_title=str, component_title=None,
-            item_title=None, whole_run=True) -> tuple[bytes, str]:
+            item_title=None, whole_run=True, vat=None) -> tuple[bytes, str]:
     """Тот же расчёт, разложенный так, как привык читать бухгалтер партнёра.
 
     Привычное здесь — две вещи: **лист на точку** (в его таблице лист на точку

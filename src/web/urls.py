@@ -120,6 +120,14 @@ urlpatterns = [
         expense_items_views.expense_item,
         name="directory-expense-item-new",
     ),
+    # Наполнение справочника файлом бухгалтера (T147, D041). Отдельный адрес, а
+    # не POST на список: список — чтение, и его повторная отправка не должна
+    # загружать файл второй раз.
+    path(
+        "directory/expense-items/upload/",
+        expense_items_views.expense_items_upload,
+        name="directory-expense-items-upload",
+    ),
     path(
         "directory/expense-items/<uuid:item_id>/",
         expense_items_views.expense_item,

@@ -36,11 +36,13 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 
 from core.models import ExpenseItem, PnlItem, Unit
 
 from . import allocation, cash, directory
+from . import expense_items_upload as uploads
 from .cash import item_title
 from .dbrefusal import saving
 from .directory_views import (
@@ -70,6 +72,12 @@ from .format import ledger_title
 # предлагать их в форме означало бы обещать выбор, который отвергнет база при
 # первом же расходе.
 PNL_KINDS = ("expense", "transfer")
+
+# С какой даты действуют статьи, загруженные файлом, если своей даты в файле нет.
+# Намеренно раньше любого месяца, который может быть в продукте: справочник
+# наполняется первично, а статья, начавшая действовать сегодня, не подошла бы ни
+# одному уже внесённому расходу — их даты в прошлом.
+UPLOAD_FROM = date(2020, 1, 1)
 
 
 def _pnl_items():
@@ -136,7 +144,17 @@ def expense_items(request):
     who, denied = _guard(request)
     if denied is not None:
         return denied
+    return _list_page(request, who)
 
+
+def _list_page(request, who, *, error: str = "", status: int = 200):
+    """Страница справочника — одна на показ и на отказ по файлу (T147).
+
+    Отказ рисуется тем же списком с той же формой загрузки: человек только что
+    выбрал файл и должен выбрать другой, не возвращаясь назад руками. Второй
+    способ собрать этот список означал бы два списка, которые однажды покажут
+    разное.
+    """
     rows = [
         {
             "url": reverse("directory-expense-item", args=[item.id]),
@@ -158,7 +176,34 @@ def expense_items(request):
         if request.GET.get("retro") == "1" else ""
     )
     return render(request, "web/directory/list.html", {
-        "notice": notice,
+        # Сообщение об отказе по файлу и рассказ об успешной загрузке — одно
+        # место: два сообщения наверху одной страницы человек читает как одно.
+        "error": error,
+        "notice": notice or request.session.pop("expense_items_upload", ""),
+        # Загрузка живёт на самом справочнике (T147, D041): она и есть его
+        # первичное наполнение, а не отдельный раздел, в который надо знать
+        # дорогу.
+        "upload_url": reverse("directory-expense-items-upload"),
+        "upload_label": _("Загрузить из файла"),
+        "upload_about": _(
+            "Список статей бухгалтера книгой Excel. Колонки продукт ищет по "
+            "названию — «Название», «Код», «Строка P&L», — порядок и лишние "
+            "колонки значения не имеют. Повторная загрузка того же файла ничего "
+            "не удвоит: статьи сходятся по коду. Строки справочника, которых в "
+            "файле нет, останутся — их судьбу решаете вы."
+        ),
+        "upload_lines": [
+            {"id": line.id, "title": line.title} for line in _pnl_items()
+        ],
+        "upload_languages": [
+            {"code": code, "title": title,
+             "selected": code == get_language()}
+            for code, title in settings.LANGUAGES
+        ],
+        # Умолчание намеренно раннее: справочник наполняется первично, и статья,
+        # начавшая действовать сегодня, не подойдёт ни одному уже внесённому
+        # расходу — их даты в прошлом (`cash.items_on` отбирает статьи по дате).
+        "upload_from": UPLOAD_FROM.isoformat(),
         "heading": _("Статьи расходов"),
         "about": _("Чем называют траты и в какую строку P&L они попадают."),
         "add_url": reverse("directory-expense-item-new"),
@@ -177,7 +222,7 @@ def expense_items(request):
             "файла бухгалтера, а не выдумывается здесь — иначе одна и та же "
             "трата называлась бы по-разному у нас и у неё."
         ),
-    })
+    }, status=status)
 
 
 @login_required
@@ -420,3 +465,96 @@ def _rule_history(item) -> list[dict]:
         ),
         "help": _("По ним видно, каким правилом посчитан закрытый месяц."),
     }]
+
+
+# --- наполнение справочника файлом (T147, D041) -----------------------------------
+
+
+@login_required
+def expense_items_upload(request):
+    """Загрузить список статей книгой Excel.
+
+    Разбор и запись живут в `expense_items_upload.py`, здесь только приём файла и
+    слова человеку. Такое разделение не ради красоты: разбор чужого формата
+    проверяется без базы, а «не плодить дублей» — без файла.
+
+    **Отказ отвечает 400 и остаётся на справочнике**, а не уводит на отдельную
+    страницу ошибки: человек только что выбрал файл и должен выбрать другой, не
+    возвращаясь назад руками.
+
+    **Итог загрузки уезжает через сессию**, а не параметром адреса: он длинный,
+    в нём перечислены коды статей, и собран он уже переведённым. Готовую фразу в
+    адрес не положить — её не перевести и подставить в неё можно что угодно.
+    """
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+    if request.method != "POST":
+        return redirect(reverse("directory-expense-items"))
+
+    upload = request.FILES.get("file")
+    if upload is None:
+        return _upload_refused(request, who, _("Файл не выбран."))
+    if upload.size > uploads.MAX_UPLOAD:
+        return _upload_refused(request, who, _(
+            "Файл больше %(limit)s МБ — это не список статей."
+        ) % {"limit": uploads.MAX_UPLOAD // 1024 // 1024})
+
+    try:
+        rows = uploads.read_rows(upload)
+    except uploads.FileRefused as refused:
+        return _upload_refused(request, who, refused.message)
+
+    if not rows:
+        return _upload_refused(request, who, _(
+            "В файле не нашлось ни одной статьи: под строкой заголовков пусто."
+        ))
+
+    default_pnl = (request.POST.get("pnl_item") or "").strip() or None
+    if default_pnl is not None:
+        # Чужой номер строки P&L отвергается тем же способом, что и в форме:
+        # молча подставить свой означало бы разложить чужой справочник по
+        # статьям, которых человек не выбирал.
+        default_pnl = _choice(request, "pnl_item", _("Строка P&L"),
+                              list(_pnl_items().values_list("id", flat=True)),
+                              required=False)
+
+    language = _choice(request, "language", _("Язык названий в файле"),
+                       [code for code, _title in settings.LANGUAGES], required=False)
+    starts = _date(request, "valid_from", _("Статьи действуют с"), required=False)
+
+    with saving():
+        outcome = uploads.apply_rows(
+            who, rows, language=language or get_language(),
+            default_pnl_id=default_pnl, default_from=starts or UPLOAD_FROM,
+        )
+    request.session["expense_items_upload"] = _outcome_words(outcome)
+    return redirect(reverse("directory-expense-items"))
+
+
+def _upload_refused(request, who, message: str):
+    """Отказ по файлу: тот же справочник, те же кнопки, 400 и слова наверху."""
+    return _list_page(request, who, error=message, status=400)
+
+
+def _outcome_words(outcome) -> str:
+    """Итог загрузки словами: что завелось, что обновилось, что осталось.
+
+    Числа и коды, а не «готово»: человек грузит чужой список и обязан увидеть,
+    сошёлся ли он с тем, что уже есть. Пропущенные строки называются поимённо —
+    молча потерянная статья всплывёт только при сборке P&L.
+    """
+    parts = [_("Загружено: %(new)s новых, %(same)s без изменений, %(fixed)s обновлено.") % {
+        "new": len(outcome.created), "same": len(outcome.unchanged),
+        "fixed": len(outcome.updated),
+    }]
+    if outcome.skipped:
+        parts.append(_("Пропущены: %(rows)s.") % {
+            "rows": "; ".join(f"{code} — {reason}" for code, reason in outcome.skipped)
+        })
+    if outcome.kept:
+        parts.append(_(
+            "В справочнике остались статьи, которых в файле нет: %(codes)s. "
+            "Продукт их не трогает — закройте датой те, что больше не нужны."
+        ) % {"codes": ", ".join(outcome.kept)})
+    return " ".join(parts)

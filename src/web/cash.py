@@ -199,6 +199,7 @@ def record_expense(
     unit_id,
     till_id,
     ledger: str,
+    vat_rate,
     note: str,
     entry_key: str,
 ) -> Recorded:
@@ -228,6 +229,11 @@ def record_expense(
         "till_id": str(till_id) if till_id else None,
         "ledger": ledger,
         "amount": str(amount),
+        # Ставка НДС (T146, D042). Сумму налога здесь никто не считает: её
+        # считает база в `upsert_fact`, и это единственное место на продукт.
+        # Посчитай её ещё и Python — правило округления жило бы в двух местах и
+        # разъехалось бы на первой же правке, молча и в деньгах.
+        "vat_rate": str(vat_rate) if vat_rate is not None else None,
         # Название позиции — снимок названия статьи на момент записи. Читать его
         # обратно можно и из статьи (`expense_item_id` при факте есть), но снимок
         # обязан остаться: статью могут переименовать, а закрытый отчёт должен
@@ -393,6 +399,7 @@ def revise_expense(
     unit_id,
     till_id,
     ledger: str,
+    vat_rate,
     note: str,
 ) -> Recorded:
     """Правка расхода.
@@ -420,13 +427,14 @@ def revise_expense(
     if not month_is_closed(who.tenant_id, fact.period):
         return record_expense(
             who, on=on, amount=amount, item=item, unit_id=unit_id,
-            till_id=till_id, ledger=ledger, note=note, entry_key=key,
+            till_id=till_id, ledger=ledger, vat_rate=vat_rate, note=note, entry_key=key,
         )
 
     storno_expense(who, fact)
     return record_expense(
         who, on=on, amount=amount, item=item, unit_id=unit_id,
-        till_id=till_id, ledger=ledger, note=note, entry_key=key + FIX_SUFFIX,
+        till_id=till_id, ledger=ledger, vat_rate=vat_rate, note=note,
+        entry_key=key + FIX_SUFFIX,
     )
 
 
@@ -480,6 +488,11 @@ def storno_expense(who, fact) -> Recorded:
         "till_id": str(fact.till_id) if fact.till_id else None,
         "ledger": fact.ledger,
         "amount": str(-fact.amount),
+        # Ставка копируется, а сумма налога — НЕТ (T146). База посчитает её от
+        # отрицательной суммы и получит отрицательный налог; копия
+        # положительного отменяла бы сумму документа и **добавляла** налог, то
+        # есть уводила бы сумму без НДС на два налога вместо нуля.
+        "vat_rate": str(fact.vat_rate) if fact.vat_rate is not None else None,
         "title": fact.title,
         "note": fact.note or None,
         "channel": CASH_CHANNEL,

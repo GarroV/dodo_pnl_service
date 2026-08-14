@@ -1471,6 +1471,21 @@ class Fact(models.Model):
     fx_rate = models.DecimalField(max_digits=18, decimal_places=8, null=True, blank=True)
     fx_rate_date = models.DateField(null=True, blank=True)
 
+    # НДС (T146, D042). Ставка в процентах, включённая в `amount`, и сумма
+    # налога ВНУТРИ него. `amount` при этом остаётся суммой документа — тем
+    # числом, которое человек видел в чеке.
+    #
+    # Сумма налога хранится, а не считается на лету, по тому же доводу, что и
+    # курс валюты: правило округления однажды поменяется, а закрытый месяц
+    # обязан остаться прежним. Считает её база (`upsert_fact` через `vat_of`) —
+    # одно место на продукт; пришедшая явно сумма уважается как есть, так
+    # однажды придёт фактура с налогом отдельной строкой.
+    #
+    # Пусто у ставки — не ноль, а «налога нет вовсе»: так внесены все расходы до
+    # этой задачи, и сумма без НДС у них равна сумме документа.
+    vat_rate = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
+    vat_amount = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+
     # --- натуральные показатели: сырьё, списания, упаковка
     quantity = models.DecimalField(max_digits=18, decimal_places=4, null=True, blank=True)
     uom = models.TextField(null=True, blank=True)
@@ -1557,5 +1572,13 @@ class Fact(models.Model):
                 fields=["tenant", "dedup_key"],
                 condition=models.Q(superseded_at__isnull=True),
                 name="facts_dedup_active",
+            ),
+            # Ставка налога живёт в базе, а не только в форме (T146): 150% не
+            # бывает нигде, и такая запись по HTTP — дефект, а не ввод, который
+            # надо вежливо поправить.
+            models.CheckConstraint(
+                condition=models.Q(vat_rate__isnull=True)
+                | models.Q(vat_rate__gte=0, vat_rate__lte=100),
+                name="facts_vat_rate_range",
             ),
         ]

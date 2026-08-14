@@ -33,6 +33,12 @@
 {% endcomment %}<nav class="exports" aria-label="{% translate "Выгрузки и сверка" %}">
   <a class="cut file" download href="{{ payout_url }}{{ ledger_query }}">{% translate "Ведомость к выплате" %}</a>
   <a class="cut file" download href="{{ pnl_url }}{{ ledger_query }}">{% translate "Строки для P&L" %}</a>
+  {% comment %}
+  Вторая кнопка — тот же файл полными суммами документов (T146, D042). Она
+  появляется, только когда НДС в периоде вообще встречается: иначе два
+  одинаковых файла под разными названиями — это обещание разницы, которой нет.
+  {% endcomment %}
+  {% if has_vat %}<a class="cut file" download href="{{ pnl_url }}{% if ledger_query %}{{ ledger_query }}&amp;{% else %}?{% endif %}vat=gross">{% translate "Строки для P&L с НДС" %}</a>{% endif %}
   <a class="cut file" download href="{{ partner_url }}{{ ledger_query }}">{% translate "Вид бухгалтера" %}</a>
   <a class="cut page" href="{{ reconcile_url }}">{% translate "Сверка с таблицей" %}</a>
 </nav>

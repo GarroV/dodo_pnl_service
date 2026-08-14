@@ -22,6 +22,10 @@
 <h1>{{ heading }}</h1>
 <p class="sub">{{ about }}</p>
 
+{% if error %}
+{% translate "Не загружено." as not_loaded %}
+{% notice "alert" title=not_loaded %}{{ error }}{% endnotice %}
+{% endif %}
 {% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
 
 {% if search_label %}
@@ -33,6 +37,35 @@
 
 {% if add_url %}
 <p><a class="btn" href="{{ add_url }}">{{ add_label }}</a></p>
+{% endif %}
+
+{% comment %}
+Загрузка справочника файлом (T147, D041). Рисуется только там, где представление
+дало `upload_url`: это первичное наполнение статей расходов списком бухгалтера, а
+не общая возможность всех пяти справочников. Поля разреза (строка P&L, язык
+названий, дата начала) стоят рядом с кнопкой, а не прячутся в умолчаниях: они
+применяются ко всем строкам файла, где своих значений нет, и человек обязан их
+видеть до загрузки, а не узнавать по результату.
+{% endcomment %}
+{% if upload_url %}
+<form class="upload" method="post" action="{{ upload_url }}" enctype="multipart/form-data">
+  {% csrf_token %}
+  <p class="sub">{{ upload_about }}</p>
+  <label for="upload-file">{% translate "Файл бухгалтера (.xlsx)" %}</label>
+  <input type="file" id="upload-file" name="file" accept=".xlsx" required>
+  <label for="upload-pnl">{% translate "Строка P&L для статей, где её нет в файле" %}</label>
+  <select id="upload-pnl" name="pnl_item">
+    <option value="">{% translate "Не задана — такие строки будут пропущены" %}</option>
+    {% for line in upload_lines %}<option value="{{ line.id }}">{{ line.title }}</option>{% endfor %}
+  </select>
+  <label for="upload-language">{% translate "Язык названий в файле" %}</label>
+  <select id="upload-language" name="language">
+    {% for language in upload_languages %}<option value="{{ language.code }}"{% if language.selected %} selected{% endif %}>{{ language.title }}</option>{% endfor %}
+  </select>
+  <label for="upload-from">{% translate "Статьи действуют с" %}</label>
+  <input type="date" id="upload-from" name="valid_from" value="{{ upload_from }}">
+  <button type="submit">{{ upload_label }}</button>
+</form>
 {% endif %}
 
 {% if rows %}

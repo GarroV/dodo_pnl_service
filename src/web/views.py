@@ -365,6 +365,11 @@ def period_page(
             # собрав P&L, — поздно. Причина и слова к ней живут в `reports`
             # вместе с самим файлом: две формулировки одного и того же —
             # экранная и файловая — разъехались бы молча.
+            # Есть ли в периоде НДС (T146). От этого зависит вторая кнопка
+            # «Строки для P&L с НДС»: пока налога нет ни у одной строки, она
+            # отдавала бы ровно тот же файл — то есть обещала бы разницу,
+            # которой нет.
+            "has_vat": exports.vat_exists(period.tenant_id, period.period),
             "exports_note": exports.taxes_note(exports.taxes_missing(
                 has_taxes=exports.taxes_exist(period.tenant_id, period.period),
                 has_rows=bool(sheet.rows),
