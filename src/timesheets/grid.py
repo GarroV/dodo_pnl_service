@@ -73,10 +73,15 @@ class Row:
     # про строку. Типа нет в словаре — автора не записано, и разметка говорит об
     # этом словами.
     authors: dict[str, Author] = field(default_factory=dict)
-    # Кто последним правил величины самой строки: сдельную величину и базу для
-    # взносов. У них дня нет, поэтому и след свой.
+    # Кто последним правил величины самой строки — сдельную величину. У неё дня
+    # нет, поэтому и след свой.
     edited_by_name: str = ""
     edited_at: datetime | None = None
+    # Кто задал базу для взносов **руками** (T156). Отдельно от следа строки: до
+    # этой задачи колонка базы показывала именно его, и правка соседних часов
+    # приписывала базу тому, кто её не трогал. Пусто — её никто не задавал.
+    insured_by_name: str = ""
+    insured_at: datetime | None = None
 
     @property
     def suspicious(self) -> bool:
@@ -211,7 +216,11 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
     # ячейку: ячеек 210, а разных ответов среди них два-три (T143).
     authors = cell_authors(tenant_id, period)
     sheets = list(visible_rows(tenant_id, period, unit_ids))
-    row_editors = display_names(sheet.edited_by for sheet in sheets)
+    # Имена спрашиваются одним запросом на обе колонки сразу: у следа строки и у
+    # автора базы это чаще всего одни и те же несколько человек.
+    row_editors = display_names(
+        [sheet.edited_by for sheet in sheets] + [sheet.insured_by for sheet in sheets]
+    )
 
     rows = []
     for sheet in sheets:
@@ -256,6 +265,8 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                 },
                 edited_by_name=row_editors.get(sheet.edited_by, ""),
                 edited_at=sheet.edited_at,
+                insured_by_name=row_editors.get(sheet.insured_by, ""),
+                insured_at=sheet.insured_at,
             )
         )
     return Grid(columns=columns, rows=rows)

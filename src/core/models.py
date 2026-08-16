@@ -753,6 +753,16 @@ class Timesheet(models.Model):
     # перепроверяют.
     edited_by = models.UUIDField(null=True, blank=True)
     edited_at = models.DateTimeField(null=True, blank=True)
+    # Кто задал базу для взносов **руками** (T156). Отдельно от следа строки, а
+    # не вместо него: строку правит и тот, кто менял часы, — и тогда база
+    # пересчитывается сама. Приписать ей этого человека значило бы назвать его
+    # автором числа взносов, которого он не выбирал; база законно отличается от
+    # отработанного (issue #54), и спор о взносах решается именно этим вопросом.
+    #
+    # Пусто — ответ, а не пробел, и ответов два: сошлась с часами — «посчитано
+    # по часам», разошлась — «кто поставил, не записано». Различает их сетка.
+    insured_by = models.UUIDField(null=True, blank=True)
+    insured_at = models.DateTimeField(null=True, blank=True)
     source = models.TextField(db_default="manual")  # manual | dodo_is | import
     created_at = models.DateTimeField(db_default=now_default())
 

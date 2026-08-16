@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-16 15:17+0000\n"
+"POT-Creation-Date: 2026-08-16 15:24+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -542,21 +542,21 @@ msgstr ""
 msgid "отрицательной базы для взносов не бывает"
 msgstr "the contribution base cannot be negative"
 
-#: src/timesheets/store.py:174 src/timesheets/store.py:219
+#: src/timesheets/store.py:174 src/timesheets/store.py:224
 #, python-format
 msgid "больше %(limit)s часов в месяце не бывает"
 msgstr "there cannot be more than %(limit)s hours in a month"
 
-#: src/timesheets/store.py:214
+#: src/timesheets/store.py:219
 #, python-format
 msgid "типа часов «%(kind)s» нет в правилах страны"
 msgstr "hour type \"%(kind)s\" is not in the country rules"
 
-#: src/timesheets/store.py:216
+#: src/timesheets/store.py:221
 msgid "отрицательных часов не бывает"
 msgstr "hours cannot be negative"
 
-#: src/timesheets/store.py:475
+#: src/timesheets/store.py:487
 msgid "ручную правку нельзя записать без следа: нужен автор и причина"
 msgstr ""
 "a manual edit cannot be saved without a trace: an author and a reason are "
@@ -784,11 +784,12 @@ msgstr ""
 #: src/timesheets/templates/timesheets/grid.html:341
 msgid ""
 "Наведите на ячейку — увидите, кто поставил это число и когда. «Не записано»\n"
-"  значит, что часы попали в табель не с этого экрана и не загрузкой файла."
-msgstr ""
-"Hover over a cell to see who entered the number and when. “Not recorded”\n"
-"  means these hours came into the timesheet from somewhere other than this "
-"screen or a file upload."
+"  значит, что часы попали в табель не с этого экрана и не загрузкой файла. "
+"База для\n"
+"  взносов, которую никто не задавал руками, так и говорит — «посчитано по "
+"часам\n"
+"  табеля»: её никто не ставил, её посчитали."
+msgstr "Hover over a cell to see who entered the number and when. “Not recorded”\n  means these hours came into the timesheet from somewhere other than this screen or a file upload. A contribution base\n  that nobody set by hand says so — “counted from the timesheet hours”: nobody entered it, it was counted."
 
 #: src/timesheets/templates/timesheets/import_report.html:10
 #: src/timesheets/templates/timesheets/import_report.html:30
@@ -936,6 +937,10 @@ msgstr "who entered this is not recorded"
 #, python-format
 msgid "поставил %(who)s, %(when)s"
 msgstr "entered by %(who)s, %(when)s"
+
+#: src/timesheets/templatetags/timesheet_extras.py:100
+msgid "посчитано по часам табеля"
+msgstr "counted from the timesheet hours"
 
 #: src/timesheets/views.py:394
 msgid "точка не найдена"
@@ -1977,7 +1982,9 @@ msgstr "← To the calendar"
 #, python-format
 msgid ""
 "«%(label)s»: в месяце %(month)s столько дней не бывает — их всего %(limit)s."
-msgstr "\"%(label)s\": month %(month)s does not have that many days — it has %(limit)s."
+msgstr ""
+"\"%(label)s\": month %(month)s does not have that many days — it has "
+"%(limit)s."
 
 #: src/web/directory_views.py:1183
 #, python-format
@@ -2014,7 +2021,9 @@ msgstr "P&L line not recognized: \"%(value)s\""
 msgid ""
 "дата «Действует с» не разобрана: «%(value)s». Пишите её как 01.06.2026 или "
 "2026-06-01"
-msgstr "the \"Valid from\" date could not be read: \"%(value)s\". Write it as 01.06.2026 or 2026-06-01"
+msgstr ""
+"the \"Valid from\" date could not be read: \"%(value)s\". Write it as "
+"01.06.2026 or 2026-06-01"
 
 #: src/web/expense_items_upload.py:268
 msgid "строка P&L у статьи уже другая — поменяйте её на карточке статьи"

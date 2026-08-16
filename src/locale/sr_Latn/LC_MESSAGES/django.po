@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-16 15:17+0000\n"
+"POT-Creation-Date: 2026-08-16 15:24+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -531,21 +531,21 @@ msgstr ""
 msgid "отрицательной базы для взносов не бывает"
 msgstr "osnovica doprinosa ne može biti negativna"
 
-#: src/timesheets/store.py:174 src/timesheets/store.py:219
+#: src/timesheets/store.py:174 src/timesheets/store.py:224
 #, python-format
 msgid "больше %(limit)s часов в месяце не бывает"
 msgstr "ne može biti više od %(limit)s sati u mesecu"
 
-#: src/timesheets/store.py:214
+#: src/timesheets/store.py:219
 #, python-format
 msgid "типа часов «%(kind)s» нет в правилах страны"
 msgstr "vrsta sati „%(kind)s“ ne postoji u pravilima zemlje"
 
-#: src/timesheets/store.py:216
+#: src/timesheets/store.py:221
 msgid "отрицательных часов не бывает"
 msgstr "sati ne mogu biti negativni"
 
-#: src/timesheets/store.py:475
+#: src/timesheets/store.py:487
 msgid "ручную правку нельзя записать без следа: нужен автор и причина"
 msgstr "ručna izmena se ne može sačuvati bez traga: potreban je autor i razlog"
 
@@ -769,12 +769,12 @@ msgstr ""
 #: src/timesheets/templates/timesheets/grid.html:341
 msgid ""
 "Наведите на ячейку — увидите, кто поставил это число и когда. «Не записано»\n"
-"  значит, что часы попали в табель не с этого экрана и не загрузкой файла."
-msgstr ""
-"Pređite mišem preko ćelije da vidite ko je uneo broj i kada. „Nije "
-"zabeleženo“\n"
-"  znači da su sati u tabel stigli nekim putem osim ovog ekrana ili "
-"učitavanja fajla."
+"  значит, что часы попали в табель не с этого экрана и не загрузкой файла. "
+"База для\n"
+"  взносов, которую никто не задавал руками, так и говорит — «посчитано по "
+"часам\n"
+"  табеля»: её никто не ставил, её посчитали."
+msgstr "Pređite mišem preko ćelije — videćete ko je uneo broj i kada. „Nije zabeleženo“\n  znači da su sati stigli u evidenciju mimo ovog ekrana i mimo učitavanja fajla. Osnovica za\n  doprinose koju niko nije uneo ručno tako i kaže — „izračunato po satima iz evidencije“: nju niko nije uneo, ona je izračunata."
 
 #: src/timesheets/templates/timesheets/import_report.html:10
 #: src/timesheets/templates/timesheets/import_report.html:30
@@ -920,6 +920,10 @@ msgstr "ko je ovo uneo nije zabeleženo"
 #, python-format
 msgid "поставил %(who)s, %(when)s"
 msgstr "uneo %(who)s, %(when)s"
+
+#: src/timesheets/templatetags/timesheet_extras.py:100
+msgid "посчитано по часам табеля"
+msgstr "izračunato po satima iz evidencije"
 
 #: src/timesheets/views.py:394
 msgid "точка не найдена"
@@ -1988,7 +1992,9 @@ msgstr "P&L red nije prepoznat: „%(value)s“"
 msgid ""
 "дата «Действует с» не разобрана: «%(value)s». Пишите её как 01.06.2026 или "
 "2026-06-01"
-msgstr "datum „Važi od“ nije pročitan: „%(value)s“. Pišite ga kao 01.06.2026. ili 2026-06-01"
+msgstr ""
+"datum „Važi od“ nije pročitan: „%(value)s“. Pišite ga kao 01.06.2026. ili "
+"2026-06-01"
 
 #: src/web/expense_items_upload.py:268
 msgid "строка P&L у статьи уже другая — поменяйте её на карточке статьи"

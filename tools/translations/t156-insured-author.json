@@ -1,0 +1,10 @@
+{
+  "посчитано по часам табеля": {
+    "en": "counted from the timesheet hours",
+    "sr": "izračunato po satima iz evidencije"
+  },
+  "Наведите на ячейку — увидите, кто поставил это число и когда. «Не записано»\n  значит, что часы попали в табель не с этого экрана и не загрузкой файла. База для\n  взносов, которую никто не задавал руками, так и говорит — «посчитано по часам\n  табеля»: её никто не ставил, её посчитали.": {
+    "en": "Hover over a cell to see who entered the number and when. “Not recorded”\n  means these hours came into the timesheet from somewhere other than this screen or a file upload. A contribution base\n  that nobody set by hand says so — “counted from the timesheet hours”: nobody entered it, it was counted.",
+    "sr": "Pređite mišem preko ćelije — videćete ko je uneo broj i kada. „Nije zabeleženo“\n  znači da su sati stigli u evidenciju mimo ovog ekrana i mimo učitavanja fajla. Osnovica za\n  doprinose koju niko nije uneo ručno tako i kaže — „izračunato po satima iz evidencije“: nju niko nije uneo, ona je izračunata."
+  }
+}

@@ -266,3 +266,218 @@ def test_the_grid_offers_the_field_only_to_the_one_who_may_edit(client):
     html = body(client.get(grid_url(client)))
     assert 'data-field="insured"' in html, "директору поля базы для взносов не дали"
     client.post("/logout/")
+
+
+# =============================================================================
+# Автор базы взносов — тот, кто её поставил (T156, находка Н6 сверки 8)
+# =============================================================================
+#
+# Правишь соседнюю ячейку часов — подсказка у базы взносов говорит «поставил
+# Бухгалтер», хотя базу он не трогал: она пересчиталась сама (`set_cell` бережёт
+# связь «база идёт за часами»), а автором записался тот, кто правил строку.
+#
+# Это тот же класс, что закрывала первая половина T143: вопрос «кто поставил это
+# число» задают ровно тогда, когда числа разошлись, и неверное имя хуже
+# отсутствующего — его не перепроверяют. База взносов при этом не производная
+# величина, а самостоятельный вход расчёта (issue #54): она законно отличается
+# от часов, и спор о взносах решается именно вопросом «кто её такой поставил».
+
+
+def insured_title(html: str, row_id: str) -> str:
+    """Подсказка ячейки «База взносов» — так, как её видит мышь."""
+    import re
+
+    found = re.search(
+        rf'<td id="insured-{row_id}"[^>]*title="([^"]*)"', html
+    )
+    assert found, f"на сетке нет ячейки базы взносов строки {row_id}"
+    return found.group(1)
+
+
+def test_an_hours_edit_does_not_make_the_editor_the_author_of_the_insured_base(
+    client, period_restored,
+):
+    """ГЛАВНАЯ ПРОВЕРКА: правка часов не приписывает человеку базу взносов.
+
+    База пересчитывается — и это верно, — но поставил её не человек, а пересчёт.
+    Продукт обязан так и сказать.
+    """
+    from core.models import Timesheet
+
+    login_as(client, "director")
+    url = grid_url(client)
+    row_id, kind = _first_cell(body(client.get(url)))
+    client.post("/logout/")
+
+    login_as(client, "accountant")
+    try:
+        assert client.post(
+            f"{url}cell/", {"row": row_id, "kind": kind, "hours": "8"}
+        ).status_code == 200
+        title = insured_title(body(client.get(url)), row_id)
+    finally:
+        client.post("/logout/")
+
+    assert "Бухгалтер" not in title, (
+        f"база взносов приписана тому, кто правил часы: «{title}»"
+    )
+    row = Timesheet.objects.get(pk=row_id)
+    assert row.insured_by is None, "у пересчитанной базы появился автор"
+    # След строки при этом остаётся: строку правил именно он.
+    assert row.edited_by is not None
+
+
+def test_the_recalculated_insured_base_says_it_was_counted_from_the_hours(
+    client, period_restored,
+):
+    """Пусто — это ответ, и ответ здесь известен: «посчитано по часам табеля».
+
+    «Кто поставил, не записано» тут было бы правдой наполовину: продукт знает,
+    откуда взялось число, и молчать об этом незачем.
+    """
+    login_as(client, "director")
+    url = grid_url(client)
+    row_id, kind = _first_cell(body(client.get(url)))
+    try:
+        assert client.post(
+            f"{url}cell/", {"row": row_id, "kind": kind, "hours": "8"}
+        ).status_code == 200
+        title = insured_title(body(client.get(url)), row_id)
+    finally:
+        client.post("/logout/")
+
+    assert "по часам" in title, f"подсказка не говорит, откуда число: «{title}»"
+
+
+def test_the_author_appears_only_after_the_base_itself_is_edited(client, period_restored):
+    """Имя появляется от правки самой ячейки — и переживает правку часов рядом.
+
+    Вторая половина важнее первой: база, заданная руками, автоподстановке больше
+    не подчиняется (это уже работало), и её автор обязан остаться тем же, кто её
+    задал, даже когда соседнюю ячейку правит другой человек.
+    """
+    from core.models import Timesheet
+
+    login_as(client, "director")
+    url = grid_url(client)
+    row_id, kind = _first_cell(body(client.get(url)))
+
+    assert client.post(f"{url}insured/", {"row": row_id, "insured": "80"}).status_code == 200
+    title = insured_title(body(client.get(url)), row_id)
+    assert "Оперативный директор" in title, (
+        f"автор правки самой базы не назван: «{title}»"
+    )
+    client.post("/logout/")
+
+    login_as(client, "accountant")
+    try:
+        assert client.post(
+            f"{url}cell/", {"row": row_id, "kind": kind, "hours": "4"}
+        ).status_code == 200
+        after = insured_title(body(client.get(url)), row_id)
+    finally:
+        client.post("/logout/")
+
+    assert "Оперативный директор" in after and "Бухгалтер" not in after, (
+        f"автор базы перешёл к тому, кто правил часы: «{after}»"
+    )
+    assert Timesheet.objects.get(pk=row_id).insured_hours == Decimal("80.00"), (
+        "заданная руками база поехала за часами"
+    )
+
+
+def test_a_base_nobody_set_and_nobody_counted_says_it_is_not_recorded(
+    client, period_restored,
+):
+    """База, разошедшаяся с часами и без автора, честно говорит «не записано».
+
+    Так выглядит число, пришедшее мимо продукта: сидом, обслуживанием, правкой в
+    самой базе. Сказать про него «посчитано по часам» значило бы соврать — по
+    часам выходит другое.
+    """
+    from core.models import Timesheet
+
+    login_as(client, "director")
+    url = grid_url(client)
+    row_id, _kind = _first_cell(body(client.get(url)))
+    try:
+        Timesheet.objects.filter(pk=row_id).update(
+            insured_hours=Decimal("13.00"), insured_by=None, insured_at=None,
+        )
+        title = insured_title(body(client.get(url)), row_id)
+    finally:
+        client.post("/logout/")
+
+    assert "не записано" in title, f"подсказка выдумала происхождение числа: «{title}»"
+
+
+def test_an_uploaded_insured_base_carries_the_one_who_brought_the_file(one_row):  # noqa: F811
+    """У базы из загруженной таблицы автор есть: её принёс человек, а не пересчёт.
+
+    В таблице партнёра база для взносов — **своя** колонка, а не производная от
+    часов (Q005), и загрузка равноправна вводу с экрана. Подпись под сеткой
+    обещает имя и за загрузку тоже, поэтому «не записано» здесь было бы неправдой.
+    """
+    from timesheets import store
+
+    store.store_row(
+        timesheet=one_row,
+        want=store.RowInput(
+            hours={kind: Decimal(str(value)) for kind, value in (one_row.hours or {}).items()},
+            insured_hours=Decimal("123.00"),
+            norm_hours=one_row.norm_hours,
+        ),
+        actor_id=USER_DIRECTOR,
+    )
+
+    one_row.refresh_from_db()
+    assert one_row.insured_hours == Decimal("123.00")
+    assert str(one_row.insured_by) == str(USER_DIRECTOR), "у базы из файла нет автора"
+    assert one_row.insured_at is not None
+
+
+def test_a_hand_set_base_that_matched_the_hours_loses_its_author_on_recount(
+    client, period_restored,
+):
+    """Самый тонкий случай: база совпала с часами, потом часы поправили.
+
+    Пока база сходится с часами, `set_cell` бережёт связь и **пересчитывает**
+    её. Новое число посчитала машина, а имя у ячейки осталось бы от того, кто
+    когда-то задал прежнее, — и продукт снова отвечал бы на «кто поставил это
+    число» именем человека, который этого числа не выбирал.
+
+    Проверка заведена после порчи: без неё снятие автора при пересчёте можно
+    было убрать, и все остальные проверки оставались зелёными.
+    """
+    from core.models import Timesheet
+    from timesheets.store import country_of, hour_types, insured_base
+
+    login_as(client, "director")
+    url = grid_url(client)
+    row_id, kind = _first_cell(body(client.get(url)))
+    row = Timesheet.objects.get(pk=row_id)
+    known = hour_types(row.tenant_id, row.period, country_of(row.tenant_id))
+    tracked = insured_base(row.hours or {}, known)
+
+    # Директор задаёт руками ровно то, что и так выходит по часам: связь «база
+    # идёт за часами» при этом сохраняется, а автор появляется.
+    assert client.post(
+        f"{url}insured/", {"row": row_id, "insured": f"{tracked}"}
+    ).status_code == 200
+    assert "Оперативный директор" in insured_title(body(client.get(url)), row_id)
+    client.post("/logout/")
+
+    login_as(client, "accountant")
+    try:
+        assert client.post(
+            f"{url}cell/", {"row": row_id, "kind": kind, "hours": "7"}
+        ).status_code == 200
+        title = insured_title(body(client.get(url)), row_id)
+    finally:
+        client.post("/logout/")
+
+    assert Timesheet.objects.get(pk=row_id).insured_by is None, (
+        "у пересчитанной базы остался прежний автор"
+    )
+    assert "поставил" not in title, f"пересчитанное число приписано человеку: «{title}»"
+    assert "по часам" in title, title

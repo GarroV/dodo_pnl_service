@@ -200,7 +200,12 @@ def set_insured(*, timesheet: Timesheet, value: Decimal,
     # Та же блокировка и по той же причине, что в `set_cell`: в строку пишут
     # два пути сразу, и правка базы не должна ложиться поверх чужой записи.
     lock_row(timesheet)
+    # Своя пара «кто и когда» у самой базы (T156). Ставится **только здесь** —
+    # то есть ровно тогда, когда человек задал число сам. Пересчёт базы в
+    # `set_cell` её снимает: посчитанное автора не имеет.
     changes = _stamp({"insured_hours": value}, actor_id)
+    if actor_id is not None:
+        changes = {**changes, "insured_by": actor_id, "insured_at": changes["edited_at"]}
     Timesheet.objects.filter(pk=timesheet.pk).update(**changes)
     for name, stored in changes.items():
         setattr(timesheet, name, stored)
@@ -374,6 +379,13 @@ def set_cell(*, timesheet: Timesheet, hour_type: str, hours: Decimal,
     if base_tracked_hours:
         changes["insured_hours"] = insured_base(kept, known)
         timesheet.insured_hours = changes["insured_hours"]
+        # Автора у пересчитанной базы нет: её никто не вводил (T156). Прежний
+        # снимается вместе с прежним числом — иначе имя того, кто когда-то задал
+        # базу руками, осталось бы стоять у числа, которое посчитала машина.
+        # Тот же довод, что у раскладки прежнего итога: выдуманный автор хуже
+        # отсутствующего, потому что его не перепроверяют.
+        changes["insured_by"] = None
+        changes["insured_at"] = None
 
     timesheet.hours = kept
     changes = _stamp(changes, actor_id)
@@ -505,6 +517,14 @@ def store_row(*, timesheet: Timesheet, want: RowInput,
         changes["corrected_at"] = now()
 
     changes = _stamp(changes, actor_id)
+    # База для взносов у загрузки **своя** — отдельная колонка таблицы партнёра,
+    # а не пересчёт по часам, — поэтому автор у неё есть, и это тот, кто принёс
+    # файл (T156). Загрузка здесь равноправный путь ввода: подпись под сеткой
+    # обещает имя и за неё, а «не записано» приберегает для чисел, попавших в
+    # табель мимо продукта.
+    if actor_id is not None and not _same(timesheet.insured_hours, want.insured_hours):
+        changes["insured_by"] = actor_id
+        changes["insured_at"] = changes["edited_at"]
     Timesheet.objects.filter(pk=timesheet.pk).update(**changes)
     for name, value in changes.items():
         setattr(timesheet, name, value)
