@@ -170,3 +170,40 @@ def test_manual_correction_carries_a_reason():
     assert corrections, "в демо нет ни одной правки руками"
     for event in corrections:
         assert event.correction_reason.strip()
+
+
+def test_the_open_month_has_a_till_and_a_vat_expense():
+    """Экран, куда демо приводит посетителя (Н7, сверка 8), не должен быть пустым.
+
+    Посетитель попадает на **открытый** месяц — последний в `MONTHS` — и это
+    единственный месяц, чьи данные он видит без смены фильтра. Касса и НДС
+    проставлены только у закрытых месяцев (июнь, июль) — обе фичи (T145, T146)
+    посетителю не видны вовсе, хотя обе уже приняты. Красный этот тест значит:
+    открытый месяц опять показывает «—» в обеих колонках.
+    """
+    open_month = MONTHS[-1]
+    assert not open_month.approved, "последний месяц набора должен быть открытым"
+    open_key = f"{open_month.period:%Y-%m}"
+    of_the_month = [e for e in dataset.EXPENSES if e.on.strftime("%Y-%m") == open_key]
+    assert any(e.till for e in of_the_month), (
+        f"в {open_key} ни одного расхода из кассы — колонка Till пуста на экране входа"
+    )
+    assert any(e.vat for e in of_the_month), (
+        f"в {open_key} ни одного расхода с НДС — колонка VAT пуста на экране входа"
+    )
+
+
+def test_no_expense_mentions_a_till_it_does_not_have():
+    """Комментарий про кассу без самой кассы — витрина, которая противоречит себе.
+
+    Найдено сверкой ровно в этом виде: строка «Fuel paid from the till» при
+    пустой колонке Till читается посетителем как поломка продукта, а не как
+    незаполненный сид. Проверка — по признаку «в комментарии упомянута касса»
+    (`"till" in note.lower()`), а не по конкретной фразе: иначе она зазеленеет
+    на любой перефразировке того же противоречия.
+    """
+    liars = [
+        e for e in dataset.EXPENSES
+        if "till" in e.note.lower() and not e.till
+    ]
+    assert not liars, [f"{e.on} {e.unit} {e.item}: {e.note!r}" for e in liars]

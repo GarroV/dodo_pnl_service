@@ -74,6 +74,10 @@ def test_an_occupied_month_is_refused_in_words_not_overwritten(
         html = body(answer)
         assert "уже есть" in html, f"отказ не сказал, что случилось:\n{html[:800]}"
         assert "Месяц" in html, "отказ не назвал поле"
+        # Страны в отказе нет: поля «Страна» на форме не существует — она
+        # приезжает от партнёра, — и предлагать «задать другое значение» тому,
+        # чего человек не видит, значит отправлять его искать несуществующее.
+        assert "Страна" not in html, f"отказ назвал поле, которого нет в форме:\n{html[:800]}"
         for leak in ("Traceback", "IntegrityError", "duplicate key", "_uniq"):
             assert leak not in html, f"наружу вылезло «{leak}»"
 

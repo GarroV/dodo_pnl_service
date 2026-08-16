@@ -21,6 +21,7 @@ import sys
 import pytest
 
 from conftest import MANAGE_PY, temp_database
+from demo.dataset import MONTHS
 
 CYRILLIC = re.compile(r"[а-яА-ЯёЁ]")
 
@@ -449,3 +450,25 @@ def test_the_net_amount_is_smaller_exactly_by_the_vat(conn):
             where amount_net <> amount - coalesce(vat_amount, 0)"""
     ).fetchone()[0]
     assert off == 0, f"{off} строк, где сумма без НДС не сходится с суммой документа"
+
+
+def test_the_month_a_visitor_lands_on_has_till_and_vat_facts(conn):
+    """Экран, открывающийся посетителю сразу, показывает кассу и НДС (Н7, сверка 8).
+
+    Демо приводит посетителя на **открытый** месяц — последний в
+    `demo.dataset.MONTHS`, а не на приколоченную строку даты: сид пересобирается,
+    и открытый месяц у него всегда последний. Если в этом месяце ни у одного
+    факта нет `till_id` или `vat_rate`, посетитель, ничего не меняя в фильтре
+    дат, видит две пустые колонки — то самое, что нашла сверка.
+    """
+    open_period = MONTHS[-1].period
+    row = conn.execute(
+        """select count(*) filter (where till_id is not null),
+                  count(*) filter (where vat_rate is not null)
+             from facts
+            where period = %s and superseded_at is null""",
+        [open_period],
+    ).fetchone()
+    with_till, with_vat = row
+    assert with_till > 0, f"в {open_period:%Y-%m} нет ни одного расхода из кассы"
+    assert with_vat > 0, f"в {open_period:%Y-%m} нет ни одного расхода с НДС"

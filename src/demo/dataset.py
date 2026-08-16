@@ -445,8 +445,12 @@ EXPENSES = [
     Expense(date(2026, 6, 9), "NS1", "electricity", D("22750.00"), note="June power bill"),
     Expense(date(2026, 6, 9), "NS2", "electricity", D("19900.00"), note="June power bill"),
     Expense(date(2026, 6, 12), None, "office_rent", D("90000.00"), note="Head office, June"),
+    # Регистр supplementary без своей кассы: у NS1 есть внутренняя касса
+    # (NS1-side), у BG1 — нет. Дать этой строке till означало бы дать ей
+    # официальный регистр (D039), а не тот, что показывает эта строка, поэтому
+    # правильный ход здесь — комментарий, который не обещает кассу, а не касса.
     Expense(date(2026, 6, 18), "BG1", "courier_fuel", D("12400.00"),
-            ledger="supplementary", note="Fuel paid from the till"),
+            ledger="supplementary", note="Courier fuel, paid in cash"),
     # Регистр, которого управляющему не видно: демо показывает не рассказ про
     # разграничение доступа, а само разграничение.
     Expense(date(2026, 6, 22), "NS1", "repairs", D("25400.00"),
@@ -463,13 +467,19 @@ EXPENSES = [
     Expense(date(2026, 7, 12), None, "office_rent", D("90000.00"), note="Head office, July"),
     Expense(date(2026, 7, 20), "NS2", "waste", D("6000.00"), note="Waste removal, July"),
 
-    # Август — открытый месяц: его посетитель может править и дополнять сам.
-    Expense(date(2026, 8, 4), "NS1", "water", D("5050.00"), note="August water bill"),
+    # Август — открытый месяц: его посетитель видит первым делом, ничего не
+    # переключая. Касса и НДС здесь обязаны быть видны сразу — до Н7 обе
+    # колонки на этом месяце были пустыми (сверка 8).
+    Expense(date(2026, 8, 4), "NS1", "water", D("5050.00"), note="August water bill",
+            # Льготная ставка на воду, как у July — но без кассы: НДС и оплата
+            # из кассы независимы друг от друга, и обе строки показывают это.
+            vat="10"),
     Expense(date(2026, 8, 4), "NS2", "water", D("5300.00"), note="August water bill"),
-    Expense(date(2026, 8, 7), "BG1", "electricity", D("29900.00"), note="August power bill"),
+    Expense(date(2026, 8, 7), "BG1", "electricity", D("29900.00"), note="August power bill",
+            till="BG1-main", vat="20"),
     Expense(date(2026, 8, 11), None, "office_rent", D("90000.00"), note="Head office, August"),
     Expense(date(2026, 8, 14), "NS1", "courier_fuel", D("9800.00"),
-            note="Fuel paid from the till"),
+            till="NS1-main", note="Fuel paid from the till"),
     # Нераспределённое: правила у статьи нет, точки у расхода нет. Сумма висит и
     # **видна** — за этим и заведена. Молча пропавшая сумма это дыра в P&L,
     # которая не кричит.

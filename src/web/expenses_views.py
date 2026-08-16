@@ -539,6 +539,7 @@ def _card(request, who, fact, *, entered=None, error: str = "", status: int = 20
         "fact": fact,
         "editable": editable(fact),
         "closed_notice": closed_notice(who, fact),
+        "delete_notice": delete_notice(who, fact),
         "state": row_of(fact)["state"],
         "delete_url": reverse("expense-delete", args=[fact.id]),
         "back_url": reverse("expenses"),
@@ -593,6 +594,46 @@ def closed_notice(who, fact) -> str:
         "%(month)s двумя строками — сторно этой записи и новая, — а закрытый "
         "месяц не сдвинется ни на копейку."
     ) % {"closed": month_title(fact.period), "month": month_title(landing.period)}
+
+
+def delete_notice(who, fact) -> str:
+    """Что сделает кнопка «Удалить расход» с ЭТОЙ строкой (T157, находка Н4).
+
+    Раньше рядом с кнопкой стояла одна фраза на оба случая — «строка останется в
+    списке помеченной, а из итога выйдет», — верная только для открытого месяца.
+    В закрытом не происходит ни того, ни другого: исходную строку не тронуть
+    вовсе, а в текущий месяц ложится сторно. Человек, прочитавший это перед
+    нажатием, искал помеченную строку в июне и не находил, а изменение в августе
+    со своим действием не связывал.
+    """
+    if not cash.month_is_closed(who.tenant_id, fact.period):
+        return _(
+            "Удалённый расход не стирается: строка останется в списке "
+            "помеченной, а из итога выйдет."
+        )
+    try:
+        landing = cash.landing_for(who.tenant_id, fact.doc_date or fact.period)
+    except cash.CashRefused as refusal:
+        return refusal.message
+    said = _(
+        "Строку закрытого месяца не тронуть и здесь: удаление положит в "
+        "%(month)s сторно на её сумму, а %(closed)s не сдвинется. Помеченной в "
+        "списке она не станет — из итога её выводит сторно."
+    ) % {"closed": month_title(fact.period), "month": month_title(landing.period)}
+    if _has_correction(fact):
+        said += " " + _(
+            "Исправленная строка прежней правки при этом снимется — денег этого "
+            "расхода в P&L не останется."
+        )
+    return said
+
+
+def _has_correction(fact) -> bool:
+    """Лежит ли в текущем месяце исправленная строка от прежней правки."""
+    return Fact.objects.filter(
+        dedup_key=cash.DEDUP_PREFIX + cash.entry_key_of(fact) + cash.FIX_SUFFIX,
+        superseded_at__isnull=True,
+    ).exists()
 
 
 def _save(request, who, fact) -> str:

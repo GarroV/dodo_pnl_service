@@ -1,0 +1,14 @@
+{
+  "Строку закрытого месяца не тронуть и здесь: удаление положит в %(month)s сторно на её сумму, а %(closed)s не сдвинется. Помеченной в списке она не станет — из итога её выводит сторно.": {
+    "en": "A row of a closed month cannot be touched here either: deleting it puts a storno for its amount into %(month)s, and %(closed)s does not move. The row will not be marked in the list — it is the storno that takes it out of the total.",
+    "sr": "Red zatvorenog meseca ni ovde se ne može dirati: brisanje upisuje storno na njegov iznos u %(month)s, a %(closed)s se ne pomera. Red neće biti označen u listi — iz zbira ga izvodi storno."
+  },
+  "Исправленная строка прежней правки при этом снимется — денег этого расхода в P&L не останется.": {
+    "en": "The corrected row from the earlier edit will be withdrawn as well — none of this expense's money will be left in the P&L.",
+    "sr": "Ispravljeni red od ranije izmene će pritom biti povučen — novca ovog troška u P&L-u neće ostati."
+  },
+  "Список статей бухгалтера книгой Excel. Колонки продукт ищет по названию, на любом из трёх языков: «Название», «Naziv» или «Name»; «Код», «Šifra» или «Code»; «Строка P&L», «Kategorija» или «P&L»; «Действует с», «Važi od» или «Valid from». Порядок и лишние колонки значения не имеют. Дата из файла главнее поля ниже: оно применяется только к строкам, где даты нет, а непонятную дату продукт назовёт и строку пропустит. Повторная загрузка того же файла ничего не удвоит: статьи сходятся по коду. Строки справочника, которых в файле нет, останутся — их судьбу решаете вы.": {
+    "en": "The accountant's list of items as an Excel workbook. The product looks for columns by name, in any of the three languages: \"Name\", \"Naziv\" or \"Название\"; \"Code\", \"Šifra\" or \"Код\"; \"P&L\", \"Kategorija\" or \"Строка P&L\"; \"Valid from\", \"Važi od\" or \"Действует с\". Column order and extra columns do not matter. A date in the file wins over the field below: that field applies only to rows without a date, and if the product cannot read a date, it names that row and skips it. Uploading the same file again doubles nothing: items are matched by code. Directory rows that are not in the file stay — you decide what happens to them.",
+    "sr": "Spisak stavki knjigovođe kao Excel radna sveska. Proizvod traži kolone po nazivu, na bilo kom od tri jezika: „Naziv“, „Name“ ili „Название“; „Šifra“, „Code“ ili „Код“; „Kategorija“, „P&L“ ili „Строка P&L“; „Važi od“, „Valid from“ ili „Действует с“. Redosled i suvišne kolone nisu bitni. Datum iz fajla je jači od polja ispod: ono se primenjuje samo na redove bez datuma, a ako datum ne može da pročita, proizvod će taj red imenovati i preskočiti ga. Ponovno učitavanje istog fajla ništa neće udvostručiti: stavke se poklapaju po šifri. Redovi šifarnika kojih nema u fajlu ostaju — njihovu sudbinu odlučujete vi."
+  }
+}

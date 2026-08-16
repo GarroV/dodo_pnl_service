@@ -242,3 +242,46 @@ def test_the_api_deletion_takes_the_same_money_out(client, sql, tenant, revised)
         client.post("/logout/")
 
     assert live_total(sql, tenant) == before - Decimal("700.00")
+
+
+# =============================================================================
+# 4. Слова на карточке описывают то, что произойдёт (T157, находка Н4)
+# =============================================================================
+
+
+def test_the_card_of_a_closed_month_explains_deletion_by_storno(client, sql, revised):  # noqa: F811
+    """Пояснение к удалению на карточке закрытого месяца — про закрытый месяц.
+
+    Рядом с кнопкой «Удалить расход» стояло «строка останется в списке
+    помеченной, а из итога выйдет» — верное для **открытого** месяца. В закрытом
+    не происходит ни того, ни другого: исходная строка не помечается и из итога
+    не выходит, а в текущий месяц ложится сторно. Человек, прочитавший это перед
+    нажатием, ищет помеченную строку в июне и не находит, а изменение в августе
+    со своим действием не связывает.
+    """
+    login_as(client, "director")
+    try:
+        page = body(client.get(f"/expenses/{revised['fact']}/"))
+    finally:
+        client.post("/logout/")
+
+    assert "останется в списке помеченной" not in page, (
+        "карточка закрытого месяца объясняет удаление поведением открытого"
+    )
+    assert "сторно" in page.lower(), "не сказано, что удаление ляжет сторно"
+
+
+def test_the_card_of_an_open_month_keeps_its_own_explanation(
+    client, sql, item, units, facts_removed,  # noqa: F811
+):
+    """У открытого месяца пояснение прежнее: там удаление и правда пометка."""
+    from test_expenses_list import record
+
+    login_as(client, "director")
+    try:
+        key = record(client, item, units, unit=units["NS1"], amount="100.00")
+        page = body(client.get(f"/expenses/{fact_id_of(sql, key)}/"))
+    finally:
+        client.post("/logout/")
+
+    assert "останется в списке помеченной" in page, page[:1500]
