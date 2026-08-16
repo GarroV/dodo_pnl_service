@@ -103,9 +103,17 @@
      то есть комментарий уезжает к человеку и попадает в её текст. Проверка,
      которая ищет подпись и берёт следующее значение, нашла её в комментарии и
      вернула чужое число — поймано сразу, но починка была бы неочевидной. */
-  dl.facts { display: grid; grid-template-columns: max-content max-content; gap: 6px 24px; margin: 0 0 24px; }
+  /* Факты месяца — одной строкой, а не столбцом из пяти. Столбец занимал 130
+     пикселей над кнопками и таблицей, хотя это короткие пары «подпись —
+     значение», которые читаются подряд. На узком экране строка переносится
+     сама, и вид возвращается к прежнему. */
+  dl.facts {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px;
+    margin: 0 0 18px; font-size: 14px;
+  }
   dl.facts dt { color: var(--muted); }
-  dl.facts dd { margin: 0; }
+  dl.facts dt:not(:first-of-type)::before { content: "·"; margin-right: 8px; color: var(--line); }
+  dl.facts dd { margin: 0 8px 0 0; }
   /* Откуда взялось число: подпись мельче самой строки — она поясняет, а не спорит. */
   dl.facts .hint { font-size: 12px; opacity: .75; }
   h2 { font-size: 17px; margin: 32px 0 12px; }
@@ -171,15 +179,34 @@
      тому, кто пишет, а не всем шестидесяти строкам сразу. */
   table.sheet td.freeze input {
     font: inherit; width: 92px; padding: 3px 6px;
-    border: 1px solid var(--line); border-radius: 4px; background: var(--bg);
-    transition: width .15s ease;
+    border: 1px solid transparent; border-radius: 4px; background: transparent;
+    color: var(--muted); transition: width .15s ease;
+  }
+  /* Рамка появляется, когда поле нужно, — на наведении и в фокусе. Тридцать
+     пять рамок с обрезанным текстом внутри читались как поломка таблицы, а не
+     как поле ввода: причину спора набирают в одной строке из тридцати пяти. */
+  table.sheet tr:hover td.freeze input,
+  table.sheet td.freeze input:focus {
+    border-color: var(--line); background: var(--bg); color: var(--ink);
   }
   table.sheet td.freeze input:focus { width: 220px; }
+  /* Подсказка внутри поля тоже молчит, пока к строке не подошли: обрезанная
+     фраза, повторённая шестьдесят раз, читается как сломанный текст, а не как
+     приглашение к вводу. Полностью она всё равно не помещается — место под неё
+     появляется только в фокусе, когда поле раскрывается. */
+  table.sheet td.freeze input::placeholder { color: transparent; }
+  table.sheet tr:hover td.freeze input::placeholder,
+  table.sheet td.freeze input:focus::placeholder { color: var(--muted); }
   /* Кнопка внутри ведомости набрана мельче самих чисел: действие на строке
      помогает, но спорить с суммами за внимание не должно. Заодно это те
      последние два десятка пикселей, без которых таблица директора не влезала
      в 1440. */
-  table.sheet td.freeze button { font-size: 13px; padding: 3px 8px; }
+  table.sheet td.freeze button {
+    font-size: 12px; padding: 3px 8px; color: var(--muted);
+    border-color: transparent; background: transparent;
+  }
+  table.sheet tr:hover td.freeze button,
+  table.sheet td.freeze button:focus-visible { color: var(--accent); border-color: var(--line); background: #fff; }
   button.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
   button.primary:hover { background: #1740b4; }
   /* Формы входа и смены пароля: одна колонка, поле шире подписи — читается
@@ -217,7 +244,18 @@
   form.search.row .field > label { font-size: 12px; color: var(--muted); }
   form.search.row .field > .note { display: none; }
   form.search.row input, form.search.row select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
-  p.note.under { margin: -14px 0 22px; font-size: 12px; }
+  /* Пояснение под кнопками. Отрицательного отступа здесь быть не должно: ряд
+     кнопок — flex-блок со своим нижним полем, и подтягивание «поближе» наложило
+     текст прямо на кнопки. Поймано на снимке экрана — в разметке этого не
+     видно вовсе. */
+  p.note.under { margin: 8px 0 20px; font-size: 12px; }
+  /* Свёрнутая история периода: строка-заголовок вместо таблицы на треть экрана. */
+  details.history-box { margin: 0 0 24px; }
+  details.history-box > summary {
+    cursor: pointer; color: var(--muted); font-size: 13px; width: max-content;
+  }
+  details.history-box > summary:hover { color: var(--accent); }
+  details.history-box table { margin-top: 10px; }
   .alert, .ok { padding: 12px 16px; border-radius: 4px; margin: 0 0 20px; }
   .alert { color: var(--warn); background: var(--warn-bg); border: 1px solid #f3d3bf; }
   .alert .details { color: var(--ink); font-size: 13px; margin-top: 6px; }
