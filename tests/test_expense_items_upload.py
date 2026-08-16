@@ -277,3 +277,119 @@ def test_the_screen_offers_the_upload(client, items_removed):  # noqa: F811
         assert UPLOAD_URL in body(client.get(LIST_URL))
     finally:
         client.post("/logout/")
+
+
+# --- 3. дата «Действует с» из файла: разобрана или названа --------------------
+#
+# Находка Н5/Н1 восьмой сверки (T155). Дата в файле бухгалтера написана как
+# `01.06.2026`, `date.fromisoformat` её не принимает — и продукт молча подставлял
+# умолчание формы (`2020-01-01`), не сказав об этом ни слова: ни в сообщении, ни
+# в списке пропущенных. Соседняя негодная ячейка того же файла (строка P&L)
+# называется поимённо, то есть две ошибки одного класса обрабатывались
+# противоположно.
+#
+# Цена молчания не косметическая: `cash.items_on` отбирает статьи по дате, и
+# статья, заведённая бухгалтером с июня, после загрузки предлагалась и
+# принималась для трат за любой прошлый месяц, включая закрытые. Отличить
+# «дату взяли из файла» от «дату подставили за меня» человек не мог никак.
+
+
+def dates(sql) -> dict:  # noqa: F811
+    return {
+        code: valid_from
+        for code, valid_from in sql.execute(
+            "select code, valid_from from expense_items order by code"
+        ).fetchall()
+    }
+
+
+@pytest.mark.parametrize("written", ["01.06.2026", "2026-06-01", "1.6.2026."])
+def test_the_date_from_the_file_is_read_not_replaced(
+    client, sql, items_removed, written,  # noqa: F811
+):
+    """ГЛАВНАЯ ПРОВЕРКА: дата из файла доезжает до статьи, какой бы записью её ни вели.
+
+    `дд.мм.гггг` — обычная запись даты и в Сербии, и в России, а не экзотика;
+    сербский Excel пишет её ещё и с точкой на конце («01.06.2026.»).
+    """
+    from datetime import date
+
+    login_as(client, "admin")
+    try:
+        upload(client, book([
+            ["Šifra", "Naziv", "P&L", "Važi od"],
+            ["voda", "Voda", "food_cost", written],
+        ]), valid_from="2020-01-01")
+        assert dates(sql).get("voda") == date(2026, 6, 1), (
+            f"«{written}»: дата подменена умолчанием формы, а не прочитана из файла"
+        )
+    finally:
+        client.post("/logout/")
+
+
+def test_an_unreadable_date_is_named_and_the_row_is_skipped(
+    client, sql, items_removed,  # noqa: F811
+):
+    """Нечитаемая дата называется человеку так же, как непонятая строка P&L.
+
+    И статья с ней не заводится: тихо подставленное умолчание — это ошибка,
+    которую нельзя увидеть никогда.
+    """
+    login_as(client, "admin")
+    try:
+        page = body(upload(client, book([
+            ["Šifra", "Naziv", "P&L", "Važi od"],
+            ["voda", "Voda", "food_cost", "когда-нибудь"],
+            ["struja", "Struja", "food_cost", "01.07.2026"],
+        ]), valid_from="2020-01-01"))
+
+        assert "voda" in page, f"негодная дата не названа человеку:\n{page[:1500]}"
+        assert "когда-нибудь" in page, "не сказано, что именно не разобрано"
+        assert "voda" not in dates(sql), "статья с негодной датой всё-таки завелась"
+        # Соседняя годная строка при этом загружена: одна негодная ячейка не
+        # повод отвергнуть чужой справочник целиком.
+        assert "struja" in dates(sql), "годная строка не загрузилась"
+    finally:
+        client.post("/logout/")
+
+
+def test_an_empty_date_still_takes_the_default_from_the_form(
+    client, sql, items_removed,  # noqa: F811
+):
+    """Пустая ячейка — не ошибка: человек ничего не написал, и умолчание законно.
+
+    Разница между «не написал» и «написал, а его не поняли» и есть вся суть
+    находки: раньше эти два случая обрабатывались одинаково.
+    """
+    from datetime import date
+
+    login_as(client, "admin")
+    try:
+        upload(client, book([
+            ["Šifra", "Naziv", "P&L", "Važi od"],
+            ["voda", "Voda", "food_cost", ""],
+        ]), valid_from="2021-03-01")
+        assert dates(sql).get("voda") == date(2021, 3, 1), dates(sql)
+    finally:
+        client.post("/logout/")
+
+
+def test_an_ambiguous_slash_date_is_named_rather_than_guessed(
+    client, sql, items_removed,  # noqa: F811
+):
+    """`01/06/2026` — это 1 июня или 6 января: продукт не гадает, а спрашивает.
+
+    Угадать здесь нельзя ничем, кроме предположения о стране автора файла, и
+    угаданная не туда дата — та же молчаливая ошибка, ради которой задача и
+    заведена, только на шаг хитрее: она выглядит как прочитанная из файла.
+    """
+    login_as(client, "admin")
+    try:
+        page = body(upload(client, book([
+            ["Šifra", "Naziv", "P&L", "Važi od"],
+            ["voda", "Voda", "food_cost", "01/06/2026"],
+        ]), valid_from="2020-01-01"))
+        assert "voda" in page and "01/06/2026" in page, page[:1500]
+        assert "voda" not in dates(sql), "дата со слэшами всё-таки угадана"
+    finally:
+        client.post("/logout/")

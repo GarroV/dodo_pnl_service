@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-16 15:12+0000\n"
+"POT-Creation-Date: 2026-08-16 15:17+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1194,7 +1194,7 @@ msgstr "\"%(label)s\": a rate over 100%% is not possible."
 #: src/web/cash_views.py:185 src/web/cash_views.py:244
 #: src/web/directory_views.py:222 src/web/directory_views.py:230
 #: src/web/directory_views.py:245 src/web/directory_views.py:273
-#: src/web/directory_views.py:1141
+#: src/web/directory_views.py:1178
 #, python-format
 msgid "Поле «%(label)s» обязательно."
 msgstr "The \"%(label)s\" field is required."
@@ -1391,8 +1391,8 @@ msgid "Сквозной ключ"
 msgstr "External ID"
 
 #: src/web/dbrefusal.py:104 src/web/directory_views.py:1046
-#: src/web/directory_views.py:1127 src/web/directory_views.py:1141
-#: src/web/directory_views.py:1147
+#: src/web/directory_views.py:1142 src/web/directory_views.py:1178
+#: src/web/directory_views.py:1184
 #: src/web/templates/web/cash/unallocated.html:32
 #: src/web/templates/web/periods.html:18
 msgid "Месяц"
@@ -1786,7 +1786,7 @@ msgid "← К группам"
 msgstr "← To the groups"
 
 #: src/web/directory_views.py:736 src/web/directory_views.py:919
-#: src/web/directory_views.py:998 src/web/directory_views.py:1125
+#: src/web/directory_views.py:998 src/web/directory_views.py:1140
 #: src/web/expense_items_views.py:297
 #: src/web/templates/web/cash/expense_edit.html:38 src/web/tills_views.py:141
 msgid "Сохранить"
@@ -1940,12 +1940,12 @@ msgid "Завести месяц"
 msgstr "Add month"
 
 #: src/web/directory_views.py:1046 src/web/directory_views.py:1087
-#: src/web/directory_views.py:1130 src/web/templates/web/period.html:133
+#: src/web/directory_views.py:1145 src/web/templates/web/period.html:133
 msgid "Норма часов"
 msgstr "Standard hours"
 
 #: src/web/directory_views.py:1047 src/web/directory_views.py:1088
-#: src/web/directory_views.py:1132
+#: src/web/directory_views.py:1147 src/web/directory_views.py:1171
 msgid "Рабочих дней"
 msgstr "Working days"
 
@@ -1965,15 +1965,21 @@ msgstr ""
 "Until the month is in the calendar, the standard hours on its page are a "
 "dash, and there is nothing to calculate the shortfall from."
 
-#: src/web/directory_views.py:1115
+#: src/web/directory_views.py:1130
 msgid "Новый месяц календаря"
 msgstr "New calendar month"
 
-#: src/web/directory_views.py:1117
+#: src/web/directory_views.py:1132
 msgid "← К календарю"
 msgstr "← To the calendar"
 
-#: src/web/directory_views.py:1146
+#: src/web/directory_views.py:1169
+#, python-format
+msgid ""
+"«%(label)s»: в месяце %(month)s столько дней не бывает — их всего %(limit)s."
+msgstr "\"%(label)s\": month %(month)s does not have that many days — it has %(limit)s."
+
+#: src/web/directory_views.py:1183
 #, python-format
 msgid "«%(label)s»: месяц пишется как 2026-06, а не «%(value)s»."
 msgstr "\"%(label)s\": a month is written as 2026-06, not \"%(value)s\"."
@@ -2003,7 +2009,14 @@ msgstr ""
 msgid "строка P&L не опознана: «%(value)s»"
 msgstr "P&L line not recognized: \"%(value)s\""
 
-#: src/web/expense_items_upload.py:255
+#: src/web/expense_items_upload.py:234
+#, python-format
+msgid ""
+"дата «Действует с» не разобрана: «%(value)s». Пишите её как 01.06.2026 или "
+"2026-06-01"
+msgstr "the \"Valid from\" date could not be read: \"%(value)s\". Write it as 01.06.2026 or 2026-06-01"
+
+#: src/web/expense_items_upload.py:268
 msgid "строка P&L у статьи уже другая — поменяйте её на карточке статьи"
 msgstr ""
 "the item already has a different P&L line — change it on the item's card"
@@ -2304,7 +2317,9 @@ msgstr ""
 msgid ""
 "Этот расход уже удалён: отменяющая строка за него записана раньше. Ничего не "
 "изменилось."
-msgstr "This expense has already been deleted: the storno for it was recorded earlier. Nothing changed."
+msgstr ""
+"This expense has already been deleted: the storno for it was recorded "
+"earlier. Nothing changed."
 
 #: src/web/expenses_views.py:678
 #, python-format
@@ -2312,21 +2327,29 @@ msgid ""
 "Расход удалён. Месяц %(closed)s закрыт, строку в нём не тронуть, поэтому в "
 "%(month)s легло сторно на её сумму — закрытый месяц не сдвинулся ни на "
 "копейку."
-msgstr "The expense was deleted. Month %(closed)s is closed and its row cannot be touched there, so a storno for its amount landed in %(month)s — the closed month has not moved by a cent."
+msgstr ""
+"The expense was deleted. Month %(closed)s is closed and its row cannot be "
+"touched there, so a storno for its amount landed in %(month)s — the closed "
+"month has not moved by a cent."
 
 #: src/web/expenses_views.py:684
 msgid ""
 "Исправленная строка прежней правки снята — денег этого расхода в P&L больше "
 "нет."
-msgstr "The corrected row from the earlier edit was withdrawn — this expense's money is no longer in the P&L."
+msgstr ""
+"The corrected row from the earlier edit was withdrawn — this expense's money "
+"is no longer in the P&L."
 
 #: src/web/expenses_views.py:689
 msgid "Расход удалён: в текущий месяц легло сторно на его сумму."
-msgstr "The expense was deleted: a storno for its amount landed in the current month."
+msgstr ""
+"The expense was deleted: a storno for its amount landed in the current month."
 
 #: src/web/expenses_views.py:691
 msgid "Расход удалён: строка осталась в списке помеченной, а из итога вышла."
-msgstr "The expense was deleted: the row stays in the list, marked, and drops out of the total."
+msgstr ""
+"The expense was deleted: the row stays in the list, marked, and drops out of "
+"the total."
 
 #: src/web/expenses_views.py:707
 #, python-format
@@ -2338,7 +2361,10 @@ msgstr "The edit was recorded for month %(month)s."
 msgid ""
 "Месяц %(closed)s закрыт, поэтому правка записана в %(month)s двумя строками "
 "— сторно прежней записи и новой. Закрытый месяц не сдвинулся."
-msgstr "Month %(closed)s is closed, so the edit was recorded in %(month)s as two rows — a storno of the previous record and a new one. The closed month has not moved."
+msgstr ""
+"Month %(closed)s is closed, so the edit was recorded in %(month)s as two "
+"rows — a storno of the previous record and a new one. The closed month has "
+"not moved."
 
 #: src/web/format.py:45
 msgid "Официальный"

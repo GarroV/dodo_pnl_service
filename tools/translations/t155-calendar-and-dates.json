@@ -1,0 +1,10 @@
+{
+  "«%(label)s»: в месяце %(month)s столько дней не бывает — их всего %(limit)s.": {
+    "en": "\"%(label)s\": month %(month)s does not have that many days — it has %(limit)s.",
+    "sr": "„%(label)s“: mesec %(month)s nema toliko dana — ima ih %(limit)s."
+  },
+  "дата «Действует с» не разобрана: «%(value)s». Пишите её как 01.06.2026 или 2026-06-01": {
+    "en": "the \"Valid from\" date could not be read: \"%(value)s\". Write it as 01.06.2026 or 2026-06-01",
+    "sr": "datum „Važi od“ nije pročitan: „%(value)s“. Pišite ga kao 01.06.2026. ili 2026-06-01"
+  }
+}

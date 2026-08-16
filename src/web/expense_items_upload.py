@@ -222,7 +222,20 @@ def apply_rows(who, rows: list[Row], *, language: str,
                                     % {"value": row.pnl or "—"}))
             continue
 
-        starts = _date_or(row.valid_from, default_from)
+        starts = default_from
+        if row.valid_from:
+            # Дата в файле есть — значит она и решает, а не умолчание формы.
+            # Не разобрали — строка пропускается и называется, ровно как строка
+            # с неопознанной строкой P&L выше: две ошибки одного класса в одном
+            # файле обязаны вести себя одинаково (T155, находка Н1).
+            starts = read_date(row.valid_from)
+            if starts is None:
+                outcome.skipped.append((row.code, _(
+                    "дата «Действует с» не разобрана: «%(value)s». Пишите её как "
+                    "01.06.2026 или 2026-06-01"
+                ) % {"value": row.valid_from}))
+                continue
+
         item = existing.get(row.code)
         if item is None:
             item = ExpenseItem(
@@ -275,10 +288,38 @@ def _pnl_lines() -> dict:
     return found
 
 
-def _date_or(raw: str, fallback: date) -> date:
-    if not raw:
-        return fallback
+# Запись даты, которую человек ведёт руками. ISO разбирается отдельно
+# (`date.fromisoformat`), здесь — привычная запись Сербии и России: «01.06.2026»,
+# «1.6.2026» и она же с точкой на конце, как её печатает сербский Excel.
+#
+# Слэшей в списке нет намеренно: «01/06/2026» — это и 1 июня, и 6 января, и
+# выбрать между ними можно только предположением о стране автора файла.
+# Угаданная не туда дата выглядит как прочитанная из файла, то есть это та же
+# молчаливая подмена, ради которой задача заведена, — поэтому такая ячейка
+# называется человеку, а не разбирается.
+DOTTED = re.compile(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?$")
+
+
+def read_date(raw: str) -> date | None:
+    """Дата из ячейки файла. `None` — «написано, но разобрать нечем».
+
+    Пустую ячейку сюда не приносят: пусто и нечитаемо — **разные** события, и
+    именно их одинаковая обработка была находкой Н1 восьмой сверки. В первом
+    случае человек ничего не написал, и умолчание формы законно; во втором он
+    написал, его не поняли — и промолчать об этом нельзя.
+    """
+    text = (raw or "").strip()
+    if not text:
+        return None
     try:
-        return date.fromisoformat(raw[:10])
+        return date.fromisoformat(text[:10])
     except ValueError:
-        return fallback
+        pass
+    dotted = DOTTED.match(text)
+    if dotted is None:
+        return None
+    day, month, year = (int(part) for part in dotted.groups())
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None

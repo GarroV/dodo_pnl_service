@@ -1086,16 +1086,31 @@ def calendar_month(request, month=None):
             wanted = period or _month_or_new(request)
             norm = _number(request, "norm_hours", _("Норма часов"))
             days = _number(request, "working_days", _("Рабочих дней"))
+            _working_days_fit(wanted, days)
             # Норма часов закрытого месяца правится (T121, D020): закрытый
             # расчёт от этого не двигается, а разница едет вперёд помеченной
             # строкой. Человеку об этом говорится словами — до правки на самой
             # форме и после неё на странице календаря.
             carried = directory.touches_closed_month(who.tenant_id, wanted)
             with saving():
-                Calendar.objects.update_or_create(
-                    country_code=country, period=wanted,
-                    defaults={"norm_hours": norm, "working_days": int(days)},
-                )
+                if period is None:
+                    # «Завести месяц» именно заводит: занятый ключ отвергает
+                    # база, и человек читает то же самое, что на любом другом
+                    # справочнике (T136). Раньше здесь стоял `update_or_create`
+                    # на обе формы сразу — и кнопка «Завести месяц» молча
+                    # переписывала уже заведённый месяц: 302, ни слова, прежние
+                    # числа не показаны. Календарь при этом общий на страну, то
+                    # есть промахнувшийся месяцем администратор одного партнёра
+                    # переписывал норму часов всем (T155, находка Н5).
+                    Calendar.objects.create(
+                        country_code=country, period=wanted,
+                        norm_hours=norm, working_days=int(days),
+                    )
+                else:
+                    Calendar.objects.update_or_create(
+                        country_code=country, period=wanted,
+                        defaults={"norm_hours": norm, "working_days": int(days)},
+                    )
             # `shared=1` — всегда: календарь общий для страны при любой дате, и
             # человек обязан прочитать, что задел не только своего партнёра
             # (T139, issue #100). Признаки едут адресом, а не готовой фразой:
@@ -1133,6 +1148,28 @@ def calendar_month(request, month=None):
              "required": True, "value": item.working_days if item else ""},
         ],
     }, status=status)
+
+
+def _working_days_fit(period: date, days) -> None:
+    """Рабочих дней не бывает больше, чем дней в месяце.
+
+    Форма принимала 40 рабочих дней в июне с 302 и без вопросов (найдено той же
+    сверкой рядом с Н5). Это не спорное правило и не вкус: столько дней в месяце
+    физически нет, а рабочие дни — вход расчёта недоработки. Верхняя граница
+    считается по самому месяцу, а не константой 31: тогда февраль отличается от
+    января, и проверка остаётся утверждением о данных.
+    """
+    from calendar import monthrange
+
+    if days is None:
+        return
+    limit = monthrange(period.year, period.month)[1]
+    if days > limit:
+        raise BadInput(
+            _("«%(label)s»: в месяце %(month)s столько дней не бывает — "
+              "их всего %(limit)s.")
+            % {"label": _("Рабочих дней"), "month": f"{period:%Y-%m}", "limit": limit}
+        )
 
 
 def _month_or_new(request) -> date:
