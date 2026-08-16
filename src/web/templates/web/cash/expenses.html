@@ -35,6 +35,13 @@
 {% notice "alert" title=failed %}{{ error }}{% endnotice %}
 {% endif %}
 
+{% comment %}
+Что случилось с расходом до перехода сюда: удаление или правка (T154). Без этой
+строки кнопка «Удалить расход» отвечала возвратом в список и ни словом больше —
+а «302 и тишина» человек читает как успех, даже когда не удалилось ничего.
+{% endcomment %}
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+
 <form class="search row" method="get">
   {% include "web/directory/fields.html" with fields=filters %}
   <button type="submit">{% translate "Показать" %}</button>

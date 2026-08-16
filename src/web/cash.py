@@ -438,7 +438,25 @@ def revise_expense(
     )
 
 
-def remove_expense(who, fact) -> Recorded | None:
+@dataclass(frozen=True)
+class Removal:
+    """Что случилось при удалении расхода. Ответа «ничего» здесь быть не может.
+
+    Три состояния, и они разные для человека: строка помечена удалённой
+    (`marked`), закрытый месяц отменён сторно в текущем (`stornoed`), удалять
+    уже нечего (`already`). Раньше все три уводили в список одинаково и молча —
+    и `already` при этом означало, что деньги остались в P&L (T154).
+    """
+
+    state: str                      # marked | stornoed | already
+    landing: Landing | None = None
+    # Снята ли исправленная строка, оставшаяся от прежней правки. Отдельным
+    # признаком, а не выводом из состояния: человеку про неё говорится словами,
+    # потому что лежит она в другом месяце, чем сам расход.
+    withdrew_correction: bool = False
+
+
+def remove_expense(who, fact) -> Removal:
     """Удаление расхода.
 
     **Открытый месяц — пометкой, а не `delete`.** Строка остаётся в истории и
@@ -449,14 +467,65 @@ def remove_expense(who, fact) -> Recorded | None:
     тронуть строку закрытого месяца нельзя, а оставить расход, которого не было,
     тоже нельзя.
 
-    Возвращает записанное сторно или `None`, если строка просто помечена.
+    **Удаление ПОСЛЕ правки снимает и её исправленную строку (T154).** Это тот
+    случай, ради которого функция переписана. Правка закрытого месяца оставляет
+    в текущем две строки — сторно и `#fix` на новую сумму, — а удаление звало
+    только `storno_expense`. Сторно с этим ключом правка уже создала, `upsert_fact`
+    видел ту же строку и не делал ничего (идемпотентность, задуманная против
+    двойного нажатия), `#fix` оставался жить, и **деньги оставались в P&L после
+    того, как человек их удалил**. Теперь сторно остаётся (только оно и отменяет
+    нетронутую строку закрытого месяца), а исправленная снимается.
+
+    Снять `#fix` может быть нечем — если и его месяц уже закрыт, а текущий тоже.
+    Тогда приходит отказ словами (`CashRefused` из `landing_for`), а не тихий
+    возврат в список.
     """
     if month_is_closed(who.tenant_id, fact.period):
-        return storno_expense(who, fact)
+        recorded = storno_expense(who, fact)
+        withdrawn = _withdraw_correction(who, fact)
+        if recorded.action == "unchanged" and not withdrawn:
+            # Сторно уже лежало, снимать больше нечего: расход удалён раньше.
+            return Removal("already", landing=recorded.landing)
+        return Removal(
+            "stornoed", landing=recorded.landing, withdrew_correction=withdrawn,
+        )
 
+    _supersede(fact.id)
+    return Removal("marked")
+
+
+def _withdraw_correction(who, fact) -> bool:
+    """Снять исправленную строку прежней правки. Возвращает «было что снимать».
+
+    Ищется по ключу, а не по ссылке: `#fix` выводится из ключа исходной записи
+    (см. `revise_expense`), поэтому связь между строками держится тем же, чем
+    держится идемпотентность, — и не зависит от того, сохранил ли кто-то ссылку.
+
+    Снимается пометкой, если её месяц открыт, и сторнируется, если успел
+    закрыться: тронуть строку закрытого месяца нельзя никому, включая нас.
+    """
+    from core.models import Fact
+
+    key = DEDUP_PREFIX + entry_key_of(fact) + FIX_SUFFIX
+    correction = Fact.objects.filter(
+        dedup_key=key, superseded_at__isnull=True
+    ).first()
+    if correction is None:
+        return False
+
+    if month_is_closed(who.tenant_id, correction.period):
+        storno_expense(who, correction)
+        return True
+
+    _supersede(correction.id)
+    return True
+
+
+def _supersede(fact_id) -> None:
+    """Пометить факт удалённым. Закрывшийся месяц — отказ словами, а не 500."""
     try:
         with transaction.atomic(), connection.cursor() as cursor:
-            cursor.execute("select supersede_fact(%s)", [str(fact.id)])
+            cursor.execute("select supersede_fact(%s)", [str(fact_id)])
     except DatabaseError as refusal:
         state = getattr(getattr(refusal, "__cause__", None), "sqlstate", "") or ""
         if state == "P0001":
@@ -464,7 +533,6 @@ def remove_expense(who, fact) -> Recorded | None:
                 _("Месяц закрылся, пока расход удаляли. Откройте список заново.")
             ) from refusal
         raise
-    return None
 
 
 def storno_expense(who, fact) -> Recorded:

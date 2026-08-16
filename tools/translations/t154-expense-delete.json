@@ -1,0 +1,30 @@
+{
+  "Расход удалён: строка осталась в списке помеченной, а из итога вышла.": {
+    "en": "The expense was deleted: the row stays in the list, marked, and drops out of the total.",
+    "sr": "Trošak je obrisan: red ostaje u listi, označen, a iz zbira izlazi."
+  },
+  "Расход удалён: в текущий месяц легло сторно на его сумму.": {
+    "en": "The expense was deleted: a storno for its amount landed in the current month.",
+    "sr": "Trošak je obrisan: u tekući mesec je upisan storno na njegov iznos."
+  },
+  "Расход удалён. Месяц %(closed)s закрыт, строку в нём не тронуть, поэтому в %(month)s легло сторно на её сумму — закрытый месяц не сдвинулся ни на копейку.": {
+    "en": "The expense was deleted. Month %(closed)s is closed and its row cannot be touched there, so a storno for its amount landed in %(month)s — the closed month has not moved by a cent.",
+    "sr": "Trošak je obrisan. Mesec %(closed)s je zatvoren i red u njemu se ne može dirati, pa je u %(month)s upisan storno na njegov iznos — zatvoreni mesec se nije pomerio ni za dinar."
+  },
+  "Исправленная строка прежней правки снята — денег этого расхода в P&L больше нет.": {
+    "en": "The corrected row from the earlier edit was withdrawn — this expense's money is no longer in the P&L.",
+    "sr": "Ispravljeni red od ranije izmene je povučen — novca ovog troška više nema u P&L-u."
+  },
+  "Этот расход уже удалён: отменяющая строка за него записана раньше. Ничего не изменилось.": {
+    "en": "This expense has already been deleted: the storno for it was recorded earlier. Nothing changed.",
+    "sr": "Ovaj trošak je već obrisan: storno za njega je upisan ranije. Ništa se nije promenilo."
+  },
+  "Правка записана в месяц %(month)s.": {
+    "en": "The edit was recorded for month %(month)s.",
+    "sr": "Izmena je upisana u mesec %(month)s."
+  },
+  "Месяц %(closed)s закрыт, поэтому правка записана в %(month)s двумя строками — сторно прежней записи и новой. Закрытый месяц не сдвинулся.": {
+    "en": "Month %(closed)s is closed, so the edit was recorded in %(month)s as two rows — a storno of the previous record and a new one. The closed month has not moved.",
+    "sr": "Mesec %(closed)s je zatvoren, pa je izmena upisana u %(month)s kroz dva reda — storno prethodnog zapisa i novi. Zatvoreni mesec se nije pomerio."
+  }
+}

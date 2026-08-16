@@ -69,6 +69,12 @@ def expenses(request):
     total = sum((row["amount"] for row in rows if row["state"] == ACTIVE), Decimal("0"))
     return render(request, "web/cash/expenses.html", {
         "error": error,
+        # Что случилось с расходом до того, как человека увели сюда: удаление
+        # (T154) и правка. Оба ответа приезжают признаками в адресе и
+        # превращаются в слова здесь — готовую фразу в адрес не положить.
+        "notice": " ".join(filter(None, [
+            _removed_notice(request), _saved_notice(request),
+        ])),
         "rows": rows,
         "total": total,
         "total_raw": f"{total}",
@@ -517,9 +523,19 @@ def expense(request, fact_id):
         except cash.CashRefused as refusal:
             error, status = refusal.message, refusal.http_status
 
+    return _card(request, who, fact, entered=entered, error=error, status=status)
+
+
+def _card(request, who, fact, *, entered=None, error: str = "", status: int = 200):
+    """Карточка расхода. Одна на показ, на отказ формы и на отказ удаления.
+
+    Собиралась она в одном месте и раньше; отдельной функцией — потому что
+    удаление теперь тоже может отказать словами (T154), а собранная во второй раз
+    карточка разъехалась бы с первой молча.
+    """
     return render(request, "web/cash/expense_edit.html", {
         "error": error,
-        "fields": expense_fields(who, entered),
+        "fields": expense_fields(who, entered if entered is not None else _entered(fact)),
         "fact": fact,
         "editable": editable(fact),
         "closed_notice": closed_notice(who, fact),
@@ -587,12 +603,23 @@ def _save(request, who, fact) -> str:
     entered = parse_expense(request, who)
     recorded = cash.revise_expense(who, fact, **entered)
     landed = reverse("expenses") + f"?saved={recorded.landing.period:%Y-%m}"
+    if recorded.landing.moved_from is not None:
+        # Из какого месяца правку пришлось перенести: без этого признака список
+        # сказал бы «правка записана в август» и умолчал бы о том, что июнь
+        # закрыт и не сдвинулся, — а спрашивают ровно об этом.
+        landed += f"&from={recorded.landing.moved_from:%Y-%m}"
     return landed
 
 
 @login_required
 def expense_delete(request, fact_id):
-    """Удаление расхода. Только POST: это запись, а не просмотр."""
+    """Удаление расхода. Только POST: это запись, а не просмотр.
+
+    **Молчаливого возврата в список отсюда нет ни в одном случае (T154).** Кнопка
+    удаления — то место, где «302 и ни слова» читается как успех: человек уходит
+    уверенный, что расхода в учёте больше нет. Поэтому каждый исход называется
+    словами на том экране, куда человека увели.
+    """
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
 
@@ -602,8 +629,83 @@ def expense_delete(request, fact_id):
 
     fact = expense_or_404(fact_id)
     if not editable(fact):
-        # Заменённую строку удалять нечего: она уже вышла из счёта.
-        return redirect(reverse("expenses"))
+        # Заменённую строку удалять нечего: она уже вышла из счёта. Но сказать
+        # об этом надо — иначе второе нажатие выглядит как второе удаление.
+        return redirect(reverse("expenses") + "?removed=already")
 
-    cash.remove_expense(who, fact)
-    return redirect(reverse("expenses"))
+    try:
+        removal = cash.remove_expense(who, fact)
+    except cash.CashRefused as refusal:
+        # Снять расход некуда: и его месяц, и текущий закрыты. Отказ читается на
+        # той же карточке, с которой нажимали, — возвращать в список с ошибкой
+        # значило бы уводить от кнопки, которую человек только что нажал.
+        return _card(request, who, fact, error=refusal.message,
+                     status=refusal.http_status)
+    return redirect(reverse("expenses") + _removal_query(removal))
+
+
+def _removal_query(removal) -> str:
+    """Итог удаления числами и месяцами в адресе: готовую фразу туда не положить.
+
+    Тот же приём, что у пересчёта разнесения и у внесения расхода: фраза в адресе
+    не переводится, а подставить в неё можно что угодно.
+    """
+    query = f"?removed={removal.state}"
+    if removal.landing is not None:
+        query += f"&month={removal.landing.period:%Y-%m}"
+        if removal.landing.moved_from is not None:
+            query += f"&closed={removal.landing.moved_from:%Y-%m}"
+    if removal.withdrew_correction:
+        query += "&fix=1"
+    return query
+
+
+def _removed_notice(request) -> str:
+    """Что случилось с удалением — словами. Пусто только тогда, когда не удаляли."""
+    state = request.GET.get("removed") or ""
+    if not state:
+        return ""
+    month = _month_or_none(request.GET.get("month") or "")
+    closed = _month_or_none(request.GET.get("closed") or "")
+
+    if state == "already":
+        return _(
+            "Этот расход уже удалён: отменяющая строка за него записана раньше. "
+            "Ничего не изменилось."
+        )
+    if state == "stornoed" and month is not None and closed is not None:
+        said = _(
+            "Расход удалён. Месяц %(closed)s закрыт, строку в нём не тронуть, "
+            "поэтому в %(month)s легло сторно на её сумму — закрытый месяц не "
+            "сдвинулся ни на копейку."
+        ) % {"closed": month_title(closed), "month": month_title(month)}
+        if request.GET.get("fix") == "1":
+            said += " " + _(
+                "Исправленная строка прежней правки снята — денег этого расхода "
+                "в P&L больше нет."
+            )
+        return said
+    if state == "stornoed":
+        return _("Расход удалён: в текущий месяц легло сторно на его сумму.")
+    return _(
+        "Расход удалён: строка осталась в списке помеченной, а из итога вышла."
+    )
+
+
+def _saved_notice(request) -> str:
+    """Что случилось с правкой расхода. Список этот ответ раньше не читал.
+
+    Карточка уводила сюда с `?saved=2026-08`, а список параметр не разбирал — то
+    есть подтверждения «легло в август» человек не получал вовсе, хотя форма
+    внесения свой `?saved=` читает и говорит.
+    """
+    saved = _month_or_none(request.GET.get("saved") or "")
+    if saved is None:
+        return ""
+    closed = _month_or_none(request.GET.get("from") or "")
+    if closed is None:
+        return _("Правка записана в месяц %(month)s.") % {"month": month_title(saved)}
+    return _(
+        "Месяц %(closed)s закрыт, поэтому правка записана в %(month)s двумя "
+        "строками — сторно прежней записи и новой. Закрытый месяц не сдвинулся."
+    ) % {"closed": month_title(closed), "month": month_title(saved)}

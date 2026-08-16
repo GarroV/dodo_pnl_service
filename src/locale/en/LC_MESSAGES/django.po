@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 16:36+0000\n"
+"POT-Creation-Date: 2026-08-16 15:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -296,7 +296,7 @@ msgstr "No."
 #: src/reports/export.py:217 src/timesheets/templates/timesheets/grid.html:184
 #: src/web/dbrefusal.py:110 src/web/directory_views.py:322
 #: src/web/templates/web/components/diff_table.html:21
-#: src/web/templates/web/period.html:234 src/web/templates/web/period.html:344
+#: src/web/templates/web/period.html:240 src/web/templates/web/period.html:357
 #: src/web/templates/web/variance.html:39
 msgid "Сотрудник"
 msgstr "Employee"
@@ -305,19 +305,19 @@ msgstr "Employee"
 #: src/timesheets/templates/timesheets/grid.html:185 src/web/cash_views.py:244
 #: src/web/cash_views.py:431 src/web/dbrefusal.py:109
 #: src/web/directory_views.py:325 src/web/directory_views.py:493
-#: src/web/directory_views.py:561 src/web/expenses_views.py:149
-#: src/web/expenses_views.py:303 src/web/templates/web/cash/expenses.html:41
+#: src/web/directory_views.py:561 src/web/expenses_views.py:155
+#: src/web/expenses_views.py:309 src/web/templates/web/cash/expenses.html:55
 #: src/web/templates/web/directory/employee.html:45
-#: src/web/templates/web/period.html:344 src/web/templates/web/variance.html:39
+#: src/web/templates/web/period.html:357 src/web/templates/web/variance.html:39
 #: src/web/tills_views.py:67 src/web/tills_views.py:113
 #: src/web/tills_views.py:149
 msgid "Точка"
 msgstr "Unit"
 
 #: src/reports/export.py:217 src/reports/export.py:556
-#: src/reports/export.py:627 src/web/templates/web/cash/expenses.html:46
-#: src/web/templates/web/period.html:234 src/web/templates/web/period.html:344
-#: src/web/templates/web/period.html:417 src/web/templates/web/trace.html:146
+#: src/reports/export.py:627 src/web/templates/web/cash/expenses.html:60
+#: src/web/templates/web/period.html:240 src/web/templates/web/period.html:357
+#: src/web/templates/web/period.html:430 src/web/templates/web/trace.html:146
 #: src/web/templates/web/variance.html:39
 msgid "Регистр"
 msgstr "Ledger"
@@ -325,7 +325,7 @@ msgstr "Ledger"
 #: src/reports/export.py:219 src/reports/export.py:242
 #: src/timesheets/templates/timesheets/grid.html:205
 #: src/timesheets/templates/timesheets/grid.html:317
-#: src/web/templates/web/period.html:346 src/web/templates/web/period.html:424
+#: src/web/templates/web/period.html:359 src/web/templates/web/period.html:437
 msgid "Итого"
 msgstr "Total"
 
@@ -408,16 +408,16 @@ msgstr "P&L line item"
 msgid "Тип строки"
 msgstr "Row type"
 
-#: src/reports/export.py:556 src/web/templates/web/period.html:234
+#: src/reports/export.py:556 src/web/templates/web/period.html:240
 #: src/web/templates/web/trace.html:146 src/web/templates/web/variance.html:39
 msgid "Компонент"
 msgstr "Component"
 
 #: src/reports/export.py:556 src/web/cash_views.py:112
 #: src/web/cash_views.py:114 src/web/cash_views.py:301
-#: src/web/templates/web/cash/expenses.html:43
+#: src/web/templates/web/cash/expenses.html:57
 #: src/web/templates/web/cash/unallocated.html:34
-#: src/web/templates/web/period.html:417 src/web/templates/web/trace.html:92
+#: src/web/templates/web/period.html:430 src/web/templates/web/trace.html:92
 #: src/web/templates/web/trace.html:146 src/web/templates/web/trace.html:178
 msgid "Сумма"
 msgstr "Amount"
@@ -667,7 +667,7 @@ msgid "часы закрыты %(closed_at)s"
 msgstr "hours closed on %(closed_at)s"
 
 #: src/timesheets/templates/timesheets/grid.html:93
-#: src/web/templates/web/period.html:271
+#: src/web/templates/web/period.html:277
 msgid "Открыть заново"
 msgstr "Reopen"
 
@@ -858,7 +858,7 @@ msgstr "Sheet"
 
 #: src/timesheets/templates/timesheets/import_report.html:73
 #: src/timesheets/templates/timesheets/import_report.html:86
-#: src/web/templates/web/period.html:296
+#: src/web/templates/web/period.html:308
 #: src/web/templates/web/reconcile.html:185
 #: src/web/templates/web/reconcile.html:222
 #: src/web/templates/web/reconcile.html:239
@@ -1104,15 +1104,15 @@ msgstr "\"limit\" must be greater than zero."
 msgid "«%(name)s»: это целое число, а не «%(value)s»."
 msgstr "\"%(name)s\" must be a whole number, not \"%(value)s\"."
 
-#: src/web/api.py:287 src/web/expenses_views.py:585
+#: src/web/api.py:287 src/web/expenses_views.py:601
 msgid "Эта строка уже заменена: правьте ту, что действует."
 msgstr "This row has already been replaced: edit the one in effect."
 
-#: src/web/api.py:355
+#: src/web/api.py:374
 msgid "Укажите месяц пересчёта: «period» в виде 2026-08, по одному за вызов."
 msgstr "Specify the month to recalculate: \"period\" as 2026-08, one per call."
 
-#: src/web/api.py:361
+#: src/web/api.py:380
 #, python-format
 msgid "«period»: месяц пишется как 2026-08, а не «%(value)s»."
 msgstr "\"period\": the month is written as 2026-08, not \"%(value)s\"."
@@ -1148,13 +1148,13 @@ msgstr ""
 "A network-wide expense is entered by whoever runs all the partner's units. "
 "Choose your own unit."
 
-#: src/web/cash.py:464
+#: src/web/cash.py:533
 msgid "Месяц закрылся, пока расход удаляли. Откройте список заново."
 msgstr ""
 "The month was closed while the expense was being deleted. Reopen the list "
 "and try again."
 
-#: src/web/cash.py:692
+#: src/web/cash.py:760
 msgid ""
 "Форма устарела или испорчена. Откройте её заново и внесите расход ещё раз."
 msgstr ""
@@ -1178,7 +1178,7 @@ msgid "«%(label)s»: расход на ноль не вносится."
 msgstr "\"%(label)s\": a zero-amount expense is not recorded."
 
 #: src/web/cash_views.py:125 src/web/cash_views.py:335
-#: src/web/templates/web/cash/expenses.html:47
+#: src/web/templates/web/cash/expenses.html:61
 msgid "Комментарий"
 msgstr "Comment"
 
@@ -1201,7 +1201,7 @@ msgstr "The \"%(label)s\" field is required."
 
 #: src/web/cash_views.py:185 src/web/cash_views.py:189
 #: src/web/cash_views.py:314 src/web/dbrefusal.py:113
-#: src/web/expenses_views.py:149 src/web/expenses_views.py:307
+#: src/web/expenses_views.py:155 src/web/expenses_views.py:313
 msgid "Статья расхода"
 msgstr "Expense item"
 
@@ -1238,7 +1238,7 @@ msgstr ""
 #: src/web/directory_views.py:497 src/web/directory_views.py:574
 #: src/web/directory_views.py:660 src/web/directory_views.py:689
 #: src/web/directory_views.py:748 src/web/expense_items_views.py:344
-#: src/web/expenses_views.py:150
+#: src/web/expenses_views.py:156
 #: src/web/templates/web/directory/employee.html:49 src/web/tills_views.py:68
 #: src/web/tills_views.py:119 src/web/tills_views.py:155
 msgid "Регистр учёта"
@@ -1260,7 +1260,10 @@ msgstr "VAT rate, %"
 msgid ""
 "В Сербии 20 или 10. Пусто — налог не выделяем: в P&L такая трата пойдёт "
 "полной суммой. С заполненной ставкой в P&L по умолчанию поедет сумма без НДС."
-msgstr "In Serbia it is 20 or 10. Empty — no tax is split out: the expense goes into the P&L at its full amount. With a rate set, the P&L defaults to the amount excluding VAT."
+msgstr ""
+"In Serbia it is 20 or 10. Empty — no tax is split out: the expense goes into "
+"the P&L at its full amount. With a rate set, the P&L defaults to the amount "
+"excluding VAT."
 
 #: src/web/cash_views.py:320
 msgid ""
@@ -1289,7 +1292,7 @@ msgstr ""
 "What the money was spent on. A month from now, this is the only thing the "
 "line will be recognized by."
 
-#: src/web/cash_views.py:365 src/web/templates/web/cash/expenses.html:44
+#: src/web/cash_views.py:365 src/web/templates/web/cash/expenses.html:58
 msgid "Касса"
 msgstr "Till"
 
@@ -1314,7 +1317,7 @@ msgstr ""
 "Month %(closed)s is closed: the expense lands in %(month)s, and this date "
 "stays with it."
 
-#: src/web/cash_views.py:425 src/web/expenses_views.py:246
+#: src/web/cash_views.py:425 src/web/expenses_views.py:252
 msgid "Вся сеть"
 msgstr "Entire network"
 
@@ -1391,7 +1394,7 @@ msgstr "External ID"
 #: src/web/directory_views.py:1127 src/web/directory_views.py:1141
 #: src/web/directory_views.py:1147
 #: src/web/templates/web/cash/unallocated.html:32
-#: src/web/templates/web/periods.html:19
+#: src/web/templates/web/periods.html:18
 msgid "Месяц"
 msgstr "Month"
 
@@ -1629,7 +1632,7 @@ msgstr ""
 "Standard hours and working days of the month — the month page takes them "
 "from here"
 
-#: src/web/directory_views.py:236 src/web/expenses_views.py:159
+#: src/web/directory_views.py:236 src/web/expenses_views.py:165
 #, python-format
 msgid "«%(label)s»: дата пишется как 2026-06-01, а не «%(value)s»."
 msgstr "\"%(label)s\": a date is written as 2026-06-01, not \"%(value)s\"."
@@ -1991,7 +1994,9 @@ msgstr ""
 msgid ""
 "В файле не нашлась колонка с названием статьи. Назовите её «Название», "
 "«Naziv» или «Name» — по остальным колонкам продукт разберётся сам."
-msgstr "The file has no column with the item's name. Name it \"Название\", \"Naziv\" or \"Name\" — the product will work out the rest of the columns itself."
+msgstr ""
+"The file has no column with the item's name. Name it \"Название\", \"Naziv\" "
+"or \"Name\" — the product will work out the rest of the columns itself."
 
 #: src/web/expense_items_upload.py:221
 #, python-format
@@ -2000,7 +2005,8 @@ msgstr "P&L line not recognized: \"%(value)s\""
 
 #: src/web/expense_items_upload.py:255
 msgid "строка P&L у статьи уже другая — поменяйте её на карточке статьи"
-msgstr "the item already has a different P&L line — change it on the item's card"
+msgstr ""
+"the item already has a different P&L line — change it on the item's card"
 
 #: src/web/expense_items_views.py:114
 msgid "Нужно хотя бы одно название статьи — без него её не выбрать глазами."
@@ -2019,7 +2025,12 @@ msgid ""
 "имеют. Повторная загрузка того же файла ничего не удвоит: статьи сходятся по "
 "коду. Строки справочника, которых в файле нет, останутся — их судьбу решаете "
 "вы."
-msgstr "The accountant's list of items as an Excel workbook. The product looks for columns by name — \"Название\", \"Код\", \"Строка P&L\" — column order and extra columns do not matter. Uploading the same file again will not duplicate anything: items are matched by code. Catalog rows missing from the file stay in place — their fate is up to you."
+msgstr ""
+"The accountant's list of items as an Excel workbook. The product looks for "
+"columns by name — \"Название\", \"Код\", \"Строка P&L\" — column order and "
+"extra columns do not matter. Uploading the same file again will not "
+"duplicate anything: items are matched by code. Catalog rows missing from the "
+"file stay in place — their fate is up to you."
 
 #: src/web/expense_items_views.py:208
 msgid "Чем называют траты и в какую строку P&L они попадают."
@@ -2182,9 +2193,11 @@ msgstr "Skipped: %(rows)s."
 msgid ""
 "В справочнике остались статьи, которых в файле нет: %(codes)s. Продукт их не "
 "трогает — закройте датой те, что больше не нужны."
-msgstr "The catalog still has items that are not in the file: %(codes)s. The product leaves them as is — close the ones you no longer need with a date."
+msgstr ""
+"The catalog still has items that are not in the file: %(codes)s. The product "
+"leaves them as is — close the ones you no longer need with a date."
 
-#: src/web/expenses_views.py:86
+#: src/web/expenses_views.py:92
 msgid ""
 "Вас ещё не завели ни к одному партнёру, поэтому расходов у вас нет. "
 "Попросите администратора сети добавить вас."
@@ -2192,52 +2205,52 @@ msgstr ""
 "You have not been added to any partner yet, so you have no expenses. Ask the "
 "network administrator to add you."
 
-#: src/web/expenses_views.py:127
+#: src/web/expenses_views.py:133
 msgid "Конец периода раньше начала: поправьте даты."
 msgstr "The end of the period is before its start: fix the dates."
 
-#: src/web/expenses_views.py:148
+#: src/web/expenses_views.py:154
 msgid "С даты"
 msgstr "From date"
 
-#: src/web/expenses_views.py:148
+#: src/web/expenses_views.py:154
 msgid "По дату"
 msgstr "To date"
 
-#: src/web/expenses_views.py:184
+#: src/web/expenses_views.py:190
 #, python-format
 msgid "«%(label)s»: это номер из списка, а не «%(value)s»."
 msgstr "\"%(label)s\" must be an ID from the list, not \"%(value)s\"."
 
-#: src/web/expenses_views.py:281
+#: src/web/expenses_views.py:287
 msgid "удалён"
 msgstr "Removed"
 
-#: src/web/expenses_views.py:283
+#: src/web/expenses_views.py:289
 msgid "заменён"
 msgstr "Replaced"
 
-#: src/web/expenses_views.py:286
+#: src/web/expenses_views.py:292
 msgid "сторно"
 msgstr "Storno"
 
-#: src/web/expenses_views.py:288
+#: src/web/expenses_views.py:294
 msgid "исправление"
 msgstr "Correction"
 
-#: src/web/expenses_views.py:304
+#: src/web/expenses_views.py:310
 msgid "Все точки"
 msgstr "All units"
 
-#: src/web/expenses_views.py:312
+#: src/web/expenses_views.py:318
 msgid "Все статьи"
 msgstr "All items"
 
-#: src/web/expenses_views.py:321 src/web/format.py:64
+#: src/web/expenses_views.py:327 src/web/format.py:64
 msgid "Все регистры"
 msgstr "All ledgers"
 
-#: src/web/expenses_views.py:439
+#: src/web/expenses_views.py:445
 #, python-format
 msgid ""
 "Пересчёт прошёл: ни одна строка не изменилась, а ждут разнесения %(count)s. "
@@ -2247,18 +2260,18 @@ msgstr ""
 "for allocation. What's blocking each one is in the \"Why it is waiting\" "
 "column."
 
-#: src/web/expenses_views.py:443
+#: src/web/expenses_views.py:449
 msgid "Пересчёт прошёл: менять было нечего, ни одна строка не тронута."
 msgstr ""
 "Recalculation completed: there was nothing to change, not a single row was "
 "touched."
 
-#: src/web/expenses_views.py:445
+#: src/web/expenses_views.py:451
 #, python-format
 msgid "Пересчёт прошёл: строк изменено — %(count)s."
 msgstr "Recalculation completed: rows changed — %(count)s."
 
-#: src/web/expenses_views.py:450
+#: src/web/expenses_views.py:456
 #, python-format
 msgid ""
 "Закрытые месяцы не пересчитывались: %(months)s. Чтобы пересчитать их, месяц "
@@ -2267,7 +2280,7 @@ msgstr ""
 "Closed months were not recalculated: %(months)s. To recalculate them, the "
 "month must be reopened with a reason."
 
-#: src/web/expenses_views.py:456
+#: src/web/expenses_views.py:462
 #, python-format
 msgid ""
 "Эти месяцы не пересчитаны: %(months)s — разносит расходы по точкам тот, кто "
@@ -2276,7 +2289,7 @@ msgstr ""
 "These months were not recalculated: %(months)s — expenses are allocated "
 "across units by whoever manages all of the partner's units."
 
-#: src/web/expenses_views.py:576
+#: src/web/expenses_views.py:592
 #, python-format
 msgid ""
 "Месяц %(closed)s закрыт: строку в нём не изменить. Правка ляжет в %(month)s "
@@ -2286,6 +2299,46 @@ msgstr ""
 "Month %(closed)s is closed: its row cannot be changed there. The edit will "
 "land in %(month)s as two rows — a storno of this record and a new one — and "
 "the closed month will not move by a cent."
+
+#: src/web/expenses_views.py:673
+msgid ""
+"Этот расход уже удалён: отменяющая строка за него записана раньше. Ничего не "
+"изменилось."
+msgstr "This expense has already been deleted: the storno for it was recorded earlier. Nothing changed."
+
+#: src/web/expenses_views.py:678
+#, python-format
+msgid ""
+"Расход удалён. Месяц %(closed)s закрыт, строку в нём не тронуть, поэтому в "
+"%(month)s легло сторно на её сумму — закрытый месяц не сдвинулся ни на "
+"копейку."
+msgstr "The expense was deleted. Month %(closed)s is closed and its row cannot be touched there, so a storno for its amount landed in %(month)s — the closed month has not moved by a cent."
+
+#: src/web/expenses_views.py:684
+msgid ""
+"Исправленная строка прежней правки снята — денег этого расхода в P&L больше "
+"нет."
+msgstr "The corrected row from the earlier edit was withdrawn — this expense's money is no longer in the P&L."
+
+#: src/web/expenses_views.py:689
+msgid "Расход удалён: в текущий месяц легло сторно на его сумму."
+msgstr "The expense was deleted: a storno for its amount landed in the current month."
+
+#: src/web/expenses_views.py:691
+msgid "Расход удалён: строка осталась в списке помеченной, а из итога вышла."
+msgstr "The expense was deleted: the row stays in the list, marked, and drops out of the total."
+
+#: src/web/expenses_views.py:707
+#, python-format
+msgid "Правка записана в месяц %(month)s."
+msgstr "The edit was recorded for month %(month)s."
+
+#: src/web/expenses_views.py:709
+#, python-format
+msgid ""
+"Месяц %(closed)s закрыт, поэтому правка записана в %(month)s двумя строками "
+"— сторно прежней записи и новой. Закрытый месяц не сдвинулся."
+msgstr "Month %(closed)s is closed, so the edit was recorded in %(month)s as two rows — a storno of the previous record and a new one. The closed month has not moved."
 
 #: src/web/format.py:45
 msgid "Официальный"
@@ -2556,6 +2609,10 @@ msgstr "Periods"
 msgid "Внести расход"
 msgstr "Record expense"
 
+#: src/web/templates/web/cash/expense.html:22
+msgid "Расход попадёт в P&L строкой своей статьи."
+msgstr "The expense goes into P&L as a line of its item."
+
 #: src/web/templates/web/cash/expense.html:25
 msgid "Записано."
 msgstr "Recorded."
@@ -2600,54 +2657,58 @@ msgstr ""
 "This version of the record has been replaced: edit the one in effect now."
 
 #: src/web/templates/web/cash/expenses.html:19
-#: src/web/templates/web/cash/expenses.html:21
+#: src/web/templates/web/cash/expenses.html:28
 #: src/web/templates/web/components/header.html:51
 msgid "Расходы"
 msgstr "Expenses"
 
-#: src/web/templates/web/cash/expenses.html:25
+#: src/web/templates/web/cash/expenses.html:31
+msgid "Наличные из кассы точек."
+msgstr "Cash from the units’ tills."
+
+#: src/web/templates/web/cash/expenses.html:34
 msgid "Не показано."
 msgstr "Not shown."
 
-#: src/web/templates/web/cash/expenses.html:33
+#: src/web/templates/web/cash/expenses.html:47
 #: src/web/templates/web/rules/index.html:26
 msgid "Показать"
 msgstr "Show"
 
-#: src/web/templates/web/cash/expenses.html:40
+#: src/web/templates/web/cash/expenses.html:54
 msgid "Дата"
 msgstr "Date"
 
-#: src/web/templates/web/cash/expenses.html:42
+#: src/web/templates/web/cash/expenses.html:56
 msgid "Статья"
 msgstr "Item"
 
-#: src/web/templates/web/cash/expenses.html:45
+#: src/web/templates/web/cash/expenses.html:59
 msgid "НДС"
 msgstr "VAT"
 
-#: src/web/templates/web/cash/expenses.html:48
-#: src/web/templates/web/period.html:118 src/web/templates/web/periods.html:19
+#: src/web/templates/web/cash/expenses.html:62
+#: src/web/templates/web/period.html:118 src/web/templates/web/periods.html:18
 msgid "Состояние"
 msgstr "Status"
 
-#: src/web/templates/web/cash/expenses.html:62
+#: src/web/templates/web/cash/expenses.html:76
 #, python-format
 msgid "учтён в %(month)s"
 msgstr "accounted for %(month)s"
 
-#: src/web/templates/web/cash/expenses.html:68
+#: src/web/templates/web/cash/expenses.html:82
 #, python-format
 msgid "Итого по %(counter)s строке"
 msgid_plural "Итого по %(counter)s строкам"
 msgstr[0] "Total for %(counter)s row"
 msgstr[1] "Total for %(counter)s rows"
 
-#: src/web/templates/web/cash/expenses.html:75
+#: src/web/templates/web/cash/expenses.html:89
 msgid "Расходов нет."
 msgstr "No expenses."
 
-#: src/web/templates/web/cash/expenses.html:76
+#: src/web/templates/web/cash/expenses.html:90
 msgid "За выбранный период и по выбранному отбору расходов не найдено."
 msgstr "No expenses found for the selected period and filters."
 
@@ -2655,6 +2716,12 @@ msgstr "No expenses found for the selected period and filters."
 #: src/web/templates/web/cash/unallocated.html:16
 msgid "Нераспределённое"
 msgstr "Unallocated"
+
+#: src/web/templates/web/cash/unallocated.html:17
+msgid "Расходы без точки: сумма есть по сети, но её нет ни на одной точке."
+msgstr ""
+"Expenses with no unit: the amount exists network-wide but not at any single "
+"unit."
 
 #: src/web/templates/web/cash/unallocated.html:20
 msgid "Пересчёт разнесения."
@@ -2699,7 +2766,7 @@ msgid "В расчёте"
 msgstr "In the calculation"
 
 #: src/web/templates/web/components/diff_table.html:22
-#: src/web/templates/web/period.html:234
+#: src/web/templates/web/period.html:240
 msgid "Разница"
 msgstr "Difference"
 
@@ -2998,7 +3065,7 @@ msgstr "Username"
 msgid "Пароль"
 msgstr "Password"
 
-#: src/web/templates/web/login.html:15 src/web/templates/web/periods.html:52
+#: src/web/templates/web/login.html:15 src/web/templates/web/periods.html:51
 msgid "Войти"
 msgstr "Log in"
 
@@ -3120,25 +3187,29 @@ msgstr "Timesheet"
 msgid "Расхождения"
 msgstr "Discrepancies"
 
-#: src/web/templates/web/period.html:167
+#: src/web/templates/web/period.html:172
+msgid "Расчёт уйдёт в очередь, страница обновится сама."
+msgstr "The calculation goes to the queue; the page refreshes itself."
+
+#: src/web/templates/web/period.html:174
 msgid "Считается сразу."
 msgstr "Calculated immediately."
 
-#: src/web/templates/web/period.html:169
+#: src/web/templates/web/period.html:176
 msgid "Повторный запуск пересобирает ведомость заново."
 msgstr "Running it again rebuilds the payroll sheet from scratch."
 
-#: src/web/templates/web/period.html:190
+#: src/web/templates/web/period.html:196
 msgid "Разница перенесена. Закрытый период при этом не изменился."
 msgstr ""
 "The difference has been carried over. The closed period itself did not "
 "change."
 
-#: src/web/templates/web/period.html:193
+#: src/web/templates/web/period.html:199
 msgid "Разница за закрытый месяц ещё не в ведомости."
 msgstr "The difference for the closed month is not yet in the payroll sheet."
 
-#: src/web/templates/web/period.html:199
+#: src/web/templates/web/period.html:205
 #, python-format
 msgid ""
 "Перенос за %(title)s отменён — этот месяц пересчитали, и разница\n"
@@ -3150,7 +3221,7 @@ msgstr ""
 "        is now included in it. It's still in the payroll sheet (%(shown)s):\n"
 "        recalculate the period."
 
-#: src/web/templates/web/period.html:203
+#: src/web/templates/web/period.html:209
 #, python-format
 msgid ""
 "Перенос за %(title)s на сумму %(live)s в ведомость ещё не\n"
@@ -3159,15 +3230,15 @@ msgstr ""
 "The carryover for %(title)s in the amount of %(live)s hasn't been\n"
 "        added to the payroll sheet yet: recalculate the period."
 
-#: src/web/templates/web/period.html:213
+#: src/web/templates/web/period.html:219
 msgid "Сверить закрытый месяц с сегодняшними данными не удалось."
 msgstr "Could not reconcile the closed month with today's data."
 
-#: src/web/templates/web/period.html:219
+#: src/web/templates/web/period.html:225
 msgid "Данные этого месяца изменились после утверждения"
 msgstr "This month's data changed after approval"
 
-#: src/web/templates/web/period.html:229
+#: src/web/templates/web/period.html:235
 #, python-format
 msgid ""
 "Расхождение с тем, что хранит закрытый месяц: <strong>%(total)s</strong> по "
@@ -3176,21 +3247,21 @@ msgstr ""
 "Discrepancy with what the closed month has on record: <strong>%(total)s</"
 "strong> for %(employees)s people."
 
-#: src/web/templates/web/period.html:230 tests/test_screen_numbers.py:96
+#: src/web/templates/web/period.html:236 tests/test_screen_numbers.py:96
 msgid "У этого партнёра разница переносится в текущий период."
 msgstr ""
 "For this partner, the difference is carried over to the current period."
 
-#: src/web/templates/web/period.html:230
+#: src/web/templates/web/period.html:236
 msgid "У этого партнёра период открывается заново и пересчитывается."
 msgstr "For this partner, the period is reopened and recalculated."
 
-#: src/web/templates/web/period.html:249
+#: src/web/templates/web/period.html:255
 #, python-format
 msgid "Перенести разницу в %(target)s"
 msgstr "Carry the difference into %(target)s"
 
-#: src/web/templates/web/period.html:253
+#: src/web/templates/web/period.html:259
 #, python-format
 msgid ""
 "Закрытый период не изменится: разница ляжет помеченной строкой в\n"
@@ -3200,7 +3271,7 @@ msgstr ""
 "row in\n"
 "    %(target)s, in the same ledger."
 
-#: src/web/templates/web/period.html:259
+#: src/web/templates/web/period.html:265
 msgid ""
 "У этого партнёра правки задним числом ведутся пересчётом: откройте период\n"
 "    заново с указанием причины и посчитайте его снова."
@@ -3209,93 +3280,93 @@ msgstr ""
 "the period\n"
 "    with a reason and calculate it again."
 
-#: src/web/templates/web/period.html:269
+#: src/web/templates/web/period.html:275
 msgid "Утвердить период"
 msgstr "Approve the period"
 
-#: src/web/templates/web/period.html:270
+#: src/web/templates/web/period.html:276
 msgid "После утверждения расчёт и его данные меняться не будут."
 msgstr "After approval, the calculation and its data will not change."
 
-#: src/web/templates/web/period.html:272
+#: src/web/templates/web/period.html:278
 msgid "Причина попадёт в историю рядом с вашим именем."
 msgstr "The reason will be recorded in the history next to your name."
 
-#: src/web/templates/web/period.html:273
+#: src/web/templates/web/period.html:279
 msgid "Зачем открываете период"
 msgstr "Why are you reopening the period"
 
-#: src/web/templates/web/period.html:274
+#: src/web/templates/web/period.html:280
 msgid "например: ошиблись в часах за третью неделю"
 msgstr "for example: hours were entered wrong for the third week"
 
-#: src/web/templates/web/period.html:289
+#: src/web/templates/web/period.html:305
 msgid "История периода"
 msgstr "Period history"
 
-#: src/web/templates/web/period.html:296
+#: src/web/templates/web/period.html:308
 msgid "Когда"
 msgstr "When"
 
-#: src/web/templates/web/period.html:296
+#: src/web/templates/web/period.html:308
 msgid "Что стало"
 msgstr "What changed"
 
-#: src/web/templates/web/period.html:296
+#: src/web/templates/web/period.html:308
 msgid "Причина"
 msgstr "Reason"
 
-#: src/web/templates/web/period.html:303
+#: src/web/templates/web/period.html:315
 msgid "мимо приложения"
 msgstr "outside the app"
 
-#: src/web/templates/web/period.html:311
+#: src/web/templates/web/period.html:324
 msgid "Ведомость"
 msgstr "Payroll sheet"
 
-#: src/web/templates/web/period.html:324
+#: src/web/templates/web/period.html:337
 msgid "Разрез ведомости по регистрам"
 msgstr "Payroll sheet view by ledger"
 
-#: src/web/templates/web/period.html:344
+#: src/web/templates/web/period.html:357
 msgid "Спор"
 msgstr "Dispute"
 
-#: src/web/templates/web/period.html:359
+#: src/web/templates/web/period.html:372
 #, python-format
 msgid "Перерасчёт за %(title)s"
 msgstr "Recalculation for %(title)s"
 
-#: src/web/templates/web/period.html:371
+#: src/web/templates/web/period.html:384
 msgid "Заморожена"
 msgstr "Frozen"
 
-#: src/web/templates/web/period.html:376
+#: src/web/templates/web/period.html:389
 msgid "Снять заморозку"
 msgstr "Unfreeze"
 
-#: src/web/templates/web/period.html:382
+#: src/web/templates/web/period.html:395
 msgid "Заморозить"
 msgstr "Freeze"
 
-#: src/web/templates/web/period.html:383
+#: src/web/templates/web/period.html:396
 msgid "из-за чего спор"
 msgstr "what the dispute is about"
 
-#: src/web/templates/web/period.html:396 src/web/templates/web/trace.html:13
+#: src/web/templates/web/period.html:409 src/web/templates/web/trace.html:13
 msgid "Как получилась эта сумма"
 msgstr "How this amount was calculated"
 
-#: src/web/templates/web/period.html:402
+#: src/web/templates/web/period.html:415
 #, python-format
 msgid "Итого · %(employees)s чел."
 msgstr "Total · %(employees)s employees"
 
-#: src/web/templates/web/period.html:415
+#: src/web/templates/web/period.html:428
 msgid "Итоги по регистрам"
 msgstr "Totals by ledger"
 
-#: src/web/templates/web/period.html:429
+#: src/web/templates/web/period.html:442
 msgid ""
 "Итог посчитан по тому, что видно вашей роли: строки чужих регистров не "
 "доезжают до страницы и не входят в сумму."
@@ -3303,7 +3374,7 @@ msgstr ""
 "The total is calculated based on what your role can see: rows from other "
 "ledgers never reach the page and are not included in the sum."
 
-#: src/web/templates/web/period.html:430
+#: src/web/templates/web/period.html:443
 #, python-format
 msgid ""
 "Сейчас показан один регистр — %(title)s;\n"
@@ -3312,11 +3383,11 @@ msgstr ""
 "Right now only one ledger is shown — %(title)s;\n"
 "  the total is calculated from it."
 
-#: src/web/templates/web/period.html:449
+#: src/web/templates/web/period.html:462
 msgid "Ведомости пока нет"
 msgstr "There is no payroll sheet yet"
 
-#: src/web/templates/web/period.html:452
+#: src/web/templates/web/period.html:465
 msgid ""
 "Месяц начинается с часов: без них считать нечего. Внесите их в табеле\n"
 "    руками или загрузите таблицей партнёра, а потом вернитесь сюда и "
@@ -3329,11 +3400,11 @@ msgstr ""
 "calculate the\n"
 "    period."
 
-#: src/web/templates/web/period.html:455
+#: src/web/templates/web/period.html:468
 msgid "Перейти к табелю"
 msgstr "Go to timesheet"
 
-#: src/web/templates/web/period.html:457
+#: src/web/templates/web/period.html:470
 msgid ""
 "Часы за месяц уже внесены — осталось посчитать период. Ведомость появится\n"
 "    здесь же: строка на каждого сотрудника в каждом регистре, который видно\n"
@@ -3344,19 +3415,19 @@ msgstr ""
 "    will appear right here: one row per employee in every ledger visible to\n"
 "    your role."
 
-#: src/web/templates/web/periods.html:16
+#: src/web/templates/web/periods.html:15
 msgid "Откройте месяц — работа идёт внутри него."
 msgstr "Open a month — the work happens inside it."
 
-#: src/web/templates/web/periods.html:19
+#: src/web/templates/web/periods.html:18
 msgid "Партнёр"
 msgstr "Partner"
 
-#: src/web/templates/web/periods.html:40
+#: src/web/templates/web/periods.html:39
 msgid "Учётных месяцев пока не видно"
 msgstr "No accounting months visible yet"
 
-#: src/web/templates/web/periods.html:42
+#: src/web/templates/web/periods.html:41
 msgid ""
 "Месяц заводится вместе с данными партнёра. Если продукт только что "
 "поставили,\n"
@@ -3374,11 +3445,11 @@ msgstr ""
 "from whoever\n"
 "  creates users."
 
-#: src/web/templates/web/periods.html:48
+#: src/web/templates/web/periods.html:47
 msgid "Сначала войдите"
 msgstr "Log in first"
 
-#: src/web/templates/web/periods.html:50
+#: src/web/templates/web/periods.html:49
 msgid ""
 "Пока вы не вошли, база не показывает ничего: без пользователя политики "
 "доступа\n"
@@ -4336,15 +4407,3 @@ msgstr "entered manually"
 #: src/web/views.py:1294
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
-
-msgid "Расход попадёт в P&L строкой своей статьи."
-msgstr "The expense goes into P&L as a line of its item."
-
-msgid "Наличные из кассы точек."
-msgstr "Cash from the units’ tills."
-
-msgid "Расходы без точки: сумма есть по сети, но её нет ни на одной точке."
-msgstr "Expenses with no unit: the amount exists network-wide but not at any single unit."
-
-msgid "Расчёт уйдёт в очередь, страница обновится сама."
-msgstr "The calculation goes to the queue; the page refreshes itself."

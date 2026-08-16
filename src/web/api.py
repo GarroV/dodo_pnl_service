@@ -295,18 +295,37 @@ def expense_delete(request, who, fact_id):
 
     Открытый месяц — пометка (строка остаётся видимой как удалённая), закрытый
     — сторно в текущем: тронуть строку закрытого месяца нельзя физически.
+
+    **Состояние называется своим словом, включая «удалять было нечего» (T154).**
+    Раньше повторное удаление расхода, который уже правили в закрытом месяце,
+    отвечало тем же `storno`, что и первое, — при том что не менялось ничего, а
+    исправленная строка оставалась в P&L. Бот по такому ответу не отличил бы
+    сделанное от несделанного.
     """
     fact = expenses_views.expense_or_404(fact_id)
     if not expenses_views.editable(fact):
         # Заменённую строку удалять нечего: она уже вышла из счёта.
         return _json({"fact_id": str(fact.id), "state": "replaced", "storno": None})
 
-    storno = cash.remove_expense(who, fact)
+    removal = cash.remove_expense(who, fact)
     return _json({
         "fact_id": str(fact.id),
-        "state": "storno" if storno else "removed",
-        "storno": _recorded(storno) if storno else None,
+        "state": {"marked": "removed", "stornoed": "storno", "already": "already"}[
+            removal.state
+        ],
+        "storno": _landed(removal.landing) if removal.landing is not None else None,
+        # Снята ли исправленная строка прежней правки: по ней и оставались деньги
+        # в P&L, поэтому ответ о ней разбираемый машиной, а не только словами.
+        "correction_withdrawn": removal.withdrew_correction,
     })
+
+
+def _landed(landing) -> dict:
+    """Куда легло сторно: месяц учёта и месяц, из которого его перенесли."""
+    return {
+        "period": f"{landing.period:%Y-%m}",
+        "moved_from": f"{landing.moved_from:%Y-%m}" if landing.moved_from else None,
+    }
 
 
 # --- нераспределённое и разнесение --------------------------------------------
