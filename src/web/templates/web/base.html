@@ -80,14 +80,24 @@
   tfoot td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; }
   .empty { color: var(--muted); background: #fff; border: 1px dashed var(--line); padding: 24px; }
   .note { color: var(--muted); font-size: 13px; margin-top: 24px; }
-  /* Подсказка поля живёт в разметке всегда, а показывается, когда человек в это
-     поле пришёл. Причина простая: у половины полей объяснение длиннее самого
-     поля, и форма из шести полей растягивалась на два экрана — читать её
-     целиком приходилось каждый раз, даже когда всё понятно. Скрыт только показ:
-     текст остаётся в DOM, поэтому его по-прежнему видят и экранный диктор по
-     `aria-describedby`, и проверки. */
-  form.card .field > .note { display: none; margin: 4px 0 0; font-size: 12px; }
-  form.card .field:focus-within > .note { display: block; }
+  /* Подсказка поля показывается, когда человек в это поле пришёл: у половины
+     полей объяснение длиннее самого поля, и форма из шести полей растягивалась
+     на два экрана.
+
+     Скрыто ГЛАЗАМИ, а не для всех. Первая редакция прятала подсказку через
+     `display: none` — и это была ошибка: `display: none` выкидывает узел из
+     дерева доступности целиком, то есть для незрячего подсказки не
+     существовало вовсе (нашла сверка). Теперь она всегда в дереве, связана с
+     полем через `aria-describedby`, а прячется прозрачностью.
+
+     Место под подсказку зарезервировано (`min-height`), потому что появление
+     по фокусу двигало форму на 22 пикселя: проходя её табом, человек видел,
+     как кнопка сохранения прыгает на каждом поле. */
+  form.card .field > .note {
+    display: block; margin: 4px 0 0; font-size: 12px; min-height: 1.2em;
+    opacity: 0; transition: opacity .12s ease;
+  }
+  form.card .field:focus-within > .note { opacity: 1; }
   button, .btn {
     font: inherit; color: var(--accent); background: none;
     border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer;

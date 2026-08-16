@@ -24,9 +24,9 @@
   empty_selected        выбран пустой вариант (ни один из списка не отмечен);
   help                  пояснение под полем.
 {% endcomment %}{% if label %}<label for="{{ id }}">{{ label }}</label>
-{% endif %}<select id="{{ id }}" name="{{ name }}"{% if required %} required{% endif %}>
+{% endif %}<select id="{{ id }}" name="{{ name }}"{% if help %} aria-describedby="{{ id }}_help"{% endif %}{% if required %} required{% endif %}>
   {% if empty_label %}<option value=""{% if empty_selected %} selected{% endif %}>{{ empty_label }}</option>{% endif %}
   {% for option in options %}<option value="{{ option.code }}"{% if option.selected %} selected{% endif %}>{{ option.title }}</option>
   {% endfor %}
 </select>
-{% if help %}<span class="note">{{ help }}</span>{% endif %}
+{% if help %}<span class="note" id="{{ id }}_help">{{ help }}</span>{% endif %}

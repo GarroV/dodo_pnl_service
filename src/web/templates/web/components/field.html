@@ -25,5 +25,6 @@
        {% if accept %}accept="{{ accept }}"{% endif %}
        {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
        {% if inputmode %}inputmode="{{ inputmode }}"{% endif %}
+       {% if help %}aria-describedby="{{ id }}_help" {% endif %}
        {% if autofocus %}autofocus{% endif %}{% if required %} required{% endif %}>
-{% if help %}<span class="note">{{ help }}</span>{% endif %}
+{% if help %}<span class="note" id="{{ id }}_help">{{ help }}</span>{% endif %}
