@@ -4393,3 +4393,98 @@ msgstr "ručno uneto"
 #: src/web/views.py:1294
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
+
+#: src/web/counterparties_views.py:48
+msgid "Вас ещё не завели ни к одному партнёру, поэтому контрагентов у вас нет. Попросите администратора сети добавить вас."
+msgstr "Još niste dodati nijednom partneru, pa nemate nijednog dobavljača. Zamolite administratora mreže da vas doda."
+
+#: src/web/counterparties_views.py:69 src/web/directory_views.py:187
+msgid "Контрагенты"
+msgstr "Partneri"
+
+#: src/web/counterparties_views.py:70
+msgid "Поставщики и получатели платежей. Один контрагент — одна карточка: иначе траты одного поставщика рассыпаются по написаниям названия."
+msgstr "Dobavljači i primaoci uplata. Jedan partner — jedna kartica: inače se troškovi istog dobavljača rasipaju po različitim ispisima naziva."
+
+#: src/web/counterparties_views.py:79
+msgid "Поиск по названию, написаниям и номеру"
+msgstr "Pretraga po nazivu, ispisu ili broju"
+
+#: src/web/counterparties_views.py:84
+msgid "Завести контрагента"
+msgstr "Dodaj partnera"
+
+#: src/web/counterparties_views.py:87 src/web/counterparties_views.py:166
+#: src/web/counterparties_views.py:221
+msgid "Ключ Dodo IS"
+msgstr "Dodo IS ključ"
+
+#: src/web/counterparties_views.py:88 src/web/counterparties_views.py:148
+#: src/web/counterparties_views.py:158 src/web/counterparties_views.py:228
+msgid "Закрыт с"
+msgstr "Zatvoren od"
+
+#: src/web/counterparties_views.py:91
+msgid "Контрагентов нет."
+msgstr "Nema partnera."
+
+#: src/web/counterparties_views.py:91
+msgid "Ничего не нашлось."
+msgstr "Ništa nije pronađeno."
+
+#: src/web/counterparties_views.py:93
+msgid "Пока справочник пуст, счёт выписать не на кого."
+msgstr "Dok je imenik prazan, račun nema na koga da se upiše."
+
+#: src/web/counterparties_views.py:94
+msgid "Попробуйте другое написание: поиск смотрит и на название, и на другие написания, и на номера."
+msgstr "Probajte drugi ispis: pretraga gleda i naziv, i druge ispise, i brojeve."
+
+#: src/web/counterparties_views.py:156
+#, python-format
+msgid "«%(label)s»: дата закрытия должна быть позже даты начала (%(from)s)."
+msgstr "\"%(label)s\": datum zatvaranja mora biti kasniji od datuma početka (%(from)s)."
+
+#: src/web/counterparties_views.py:180
+msgid "Новый контрагент"
+msgstr "Novi partner"
+
+#: src/web/counterparties_views.py:182
+msgid "← К контрагентам"
+msgstr "← Na partnere"
+
+#: src/web/counterparties_views.py:212
+msgid "Как этот поставщик называется у вас. Название у партнёра одно: две карточки означают, что траты одного поставщика не сложатся."
+msgstr "Kako se ovaj dobavljač zove kod vas. Naziv je jedan po partneru: dve kartice znače da se troškovi istog dobavljača neće sabrati."
+
+#: src/web/counterparties_views.py:216
+msgid "ПИБ или его аналог. По нему сходятся фактура и выписка."
+msgstr "PIB ili njegov ekvivalent. Po njemu se spajaju faktura i izvod."
+
+#: src/web/counterparties_views.py:217
+msgid "Другие написания"
+msgstr "Drugi ispisi"
+
+#: src/web/counterparties_views.py:219
+msgid "Через запятую: как этого поставщика пишут в выписке и в файлах. Поиск смотрит и сюда."
+msgstr "Odvojeno zarezom: kako se ovaj dobavljač piše u izvodu i u fajlovima. Pretraga gleda i ovde."
+
+#: src/web/counterparties_views.py:223
+msgid "Идентификатор поставщика в справочнике Dodo IS. Можно оставить пустым: он понадобится, когда появится коннектор."
+msgstr "Identifikator dobavljača u Dodo IS imeniku. Može ostati prazan: trebaće kada stigne konektor."
+
+#: src/web/counterparties_views.py:227
+msgid "С какой даты работаем с этим контрагентом."
+msgstr "Od kog datuma radimo sa ovim partnerom."
+
+#: src/web/counterparties_views.py:231
+msgid "Контрагент закрывается датой, а не удалением: закрытые месяцы на него ссылаются."
+msgstr "Partner se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na njega."
+
+#: src/web/counterparties_views.py:235
+msgid "Для человека: чем занимается, кто ведёт переписку."
+msgstr "Za čoveka: čime se bave, ko vodi prepisku."
+
+#: src/web/directory_views.py:188
+msgid "Поставщики и получатели платежей: название, номера, ключ Dodo IS"
+msgstr "Dobavljači i primaoci uplata: naziv, brojevi, Dodo IS ključ"

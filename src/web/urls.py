@@ -4,6 +4,7 @@ from django.urls import path
 from . import (
     api,
     cash_views,
+    counterparties_views,
     directory_views,
     expense_items_views,
     expenses_views,
@@ -132,6 +133,29 @@ urlpatterns = [
         "directory/expense-items/<uuid:item_id>/",
         expense_items_views.expense_item,
         name="directory-expense-item",
+    ),
+    # Контрагенты (T150). Восьмой справочник и единственный, чей СПИСОК открыт
+    # всем ролям: контрагента выбирает бухгалтер, внося счёт, и закрытый от него
+    # список означал бы форму с пустым обязательным полем. Заведение и правка
+    # закрыты тем же `directory.manage`, что и остальные семь, — и в базе
+    # (`0242`), и на экране.
+    #
+    # Адрес всё равно под префиксом справочников: это словарь, а не первичные
+    # данные, и лежать ему рядом с остальными.
+    path(
+        "directory/counterparties/",
+        counterparties_views.counterparties,
+        name="directory-counterparties",
+    ),
+    path(
+        "directory/counterparties/new/",
+        counterparties_views.counterparty,
+        name="directory-counterparty-new",
+    ),
+    path(
+        "directory/counterparties/<uuid:counterparty_id>/",
+        counterparties_views.counterparty,
+        name="directory-counterparty",
     ),
     # Кассы (T145). Седьмой справочник, тот же префикс и то же право
     # `directory.manage`: касса — словарь, а не первичные данные.

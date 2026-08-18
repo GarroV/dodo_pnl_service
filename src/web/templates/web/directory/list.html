@@ -18,7 +18,15 @@
 {% endcomment %}
 {% block title %}{{ heading }}{% endblock %}
 {% block content %}
-<p class="note"><a href="{% url 'directory' %}">{% translate "← К справочникам" %}</a></p>
+{% comment %}
+Ссылка возврата: по умолчанию — в справочники, но экран вправе назвать своё
+место. Понадобилось контрагентам (T150): их список открыт всем ролям, а раздел
+справочников — только тому, кто их ведёт, и общая ссылка увела бы половину
+читателей на отказ. Пустая строка означает «возвращаться некуда»: так экран
+попадает в навигацию сам, а не из раздела.
+{% endcomment %}
+{% if back_url %}<p class="note"><a href="{{ back_url }}">{{ back_label }}</a></p>
+{% elif not standalone %}<p class="note"><a href="{% url 'directory' %}">{% translate "← К справочникам" %}</a></p>{% endif %}
 <h1>{{ heading }}</h1>
 <p class="sub">{{ about }}</p>
 

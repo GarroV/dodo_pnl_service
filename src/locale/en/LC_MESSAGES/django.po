@@ -4459,3 +4459,98 @@ msgstr "entered manually"
 #: src/web/views.py:1294
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
+
+#: src/web/counterparties_views.py:48
+msgid "Вас ещё не завели ни к одному партнёру, поэтому контрагентов у вас нет. Попросите администратора сети добавить вас."
+msgstr "You have not been added to any partner yet, so you have no counterparties. Ask the network administrator to add you."
+
+#: src/web/counterparties_views.py:69 src/web/directory_views.py:187
+msgid "Контрагенты"
+msgstr "Counterparties"
+
+#: src/web/counterparties_views.py:70
+msgid "Поставщики и получатели платежей. Один контрагент — одна карточка: иначе траты одного поставщика рассыпаются по написаниям названия."
+msgstr "Suppliers and payees. One counterparty, one card: otherwise the spending of a single supplier scatters across spellings of its name."
+
+#: src/web/counterparties_views.py:79
+msgid "Поиск по названию, написаниям и номеру"
+msgstr "Search by name, spelling or number"
+
+#: src/web/counterparties_views.py:84
+msgid "Завести контрагента"
+msgstr "Add counterparty"
+
+#: src/web/counterparties_views.py:87 src/web/counterparties_views.py:166
+#: src/web/counterparties_views.py:221
+msgid "Ключ Dodo IS"
+msgstr "Dodo IS key"
+
+#: src/web/counterparties_views.py:88 src/web/counterparties_views.py:148
+#: src/web/counterparties_views.py:158 src/web/counterparties_views.py:228
+msgid "Закрыт с"
+msgstr "Closed from"
+
+#: src/web/counterparties_views.py:91
+msgid "Контрагентов нет."
+msgstr "No counterparties yet."
+
+#: src/web/counterparties_views.py:91
+msgid "Ничего не нашлось."
+msgstr "Nothing found."
+
+#: src/web/counterparties_views.py:93
+msgid "Пока справочник пуст, счёт выписать не на кого."
+msgstr "While the directory is empty there is nobody to put an invoice on."
+
+#: src/web/counterparties_views.py:94
+msgid "Попробуйте другое написание: поиск смотрит и на название, и на другие написания, и на номера."
+msgstr "Try another spelling: the search looks at the name, the other spellings and the numbers."
+
+#: src/web/counterparties_views.py:156
+#, python-format
+msgid "«%(label)s»: дата закрытия должна быть позже даты начала (%(from)s)."
+msgstr "\"%(label)s\": the closing date must be later than the starting date (%(from)s)."
+
+#: src/web/counterparties_views.py:180
+msgid "Новый контрагент"
+msgstr "New counterparty"
+
+#: src/web/counterparties_views.py:182
+msgid "← К контрагентам"
+msgstr "← To the counterparties"
+
+#: src/web/counterparties_views.py:212
+msgid "Как этот поставщик называется у вас. Название у партнёра одно: две карточки означают, что траты одного поставщика не сложатся."
+msgstr "What you call this supplier. A partner keeps one name per counterparty: two cards mean the spending of one supplier will not add up."
+
+#: src/web/counterparties_views.py:216
+msgid "ПИБ или его аналог. По нему сходятся фактура и выписка."
+msgstr "The tax number or its local equivalent. It is what makes an invoice and a bank line meet."
+
+#: src/web/counterparties_views.py:217
+msgid "Другие написания"
+msgstr "Other spellings"
+
+#: src/web/counterparties_views.py:219
+msgid "Через запятую: как этого поставщика пишут в выписке и в файлах. Поиск смотрит и сюда."
+msgstr "Comma separated: how this supplier is spelled in the bank statement and in files. The search looks here too."
+
+#: src/web/counterparties_views.py:223
+msgid "Идентификатор поставщика в справочнике Dodo IS. Можно оставить пустым: он понадобится, когда появится коннектор."
+msgstr "The supplier identifier in the Dodo IS directory. It may stay empty: it will be needed once the connector arrives."
+
+#: src/web/counterparties_views.py:227
+msgid "С какой даты работаем с этим контрагентом."
+msgstr "From which date we work with this counterparty."
+
+#: src/web/counterparties_views.py:231
+msgid "Контрагент закрывается датой, а не удалением: закрытые месяцы на него ссылаются."
+msgstr "A counterparty is closed by a date, not by deletion: closed months refer to it."
+
+#: src/web/counterparties_views.py:235
+msgid "Для человека: чем занимается, кто ведёт переписку."
+msgstr "For a human: what they do, who keeps the correspondence."
+
+#: src/web/directory_views.py:188
+msgid "Поставщики и получатели платежей: название, номера, ключ Dodo IS"
+msgstr "Suppliers and payees: name, numbers, Dodo IS key"

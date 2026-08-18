@@ -299,8 +299,12 @@ def _seed(conn) -> None:
         (I_REVENUE, I_FOOD, I_UTILITIES, I_LABOUR, I_TAXES, I_TOTAL, I_TRANSFER),
     )
     conn.execute(
-        """insert into counterparties (id, tenant_id, title)
-           values (%s, %s, 'EPS Elektro'), (%s, %s, 'Metro')""",
+        # Дата начала обязательна с `0242`: контрагент — справочник с версией,
+        # а не просто название. Значение раннее намеренно — фикстура должна
+        # годиться любому месяцу, который тест возьмёт.
+        """insert into counterparties (id, tenant_id, title, valid_from)
+           values (%s, %s, 'EPS Elektro', '2023-01-01'),
+                  (%s, %s, 'Metro', '2023-01-01')""",
         (CP_EPS, T1, CP_METRO, T1),
     )
     conn.execute(
