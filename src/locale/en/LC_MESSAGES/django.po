@@ -4554,3 +4554,335 @@ msgstr "For a human: what they do, who keeps the correspondence."
 #: src/web/directory_views.py:188
 msgid "Поставщики и получатели платежей: название, номера, ключ Dodo IS"
 msgstr "Suppliers and payees: name, numbers, Dodo IS key"
+
+#: src/web/suppliers.py:252 src/web/suppliers_views.py:459
+#: src/web/suppliers_views.py:463
+msgid "Контрагент не найден."
+msgstr ""
+
+#: src/web/suppliers.py:341
+msgid "У счёта нет ни одной строки: оплачивать нечего."
+msgstr ""
+
+#: src/web/suppliers.py:373
+#, python-format
+msgid "Оплата счёта %(number)s"
+msgstr ""
+
+#: src/web/suppliers.py:374
+msgid "Оплата поставщику"
+msgstr ""
+
+#: src/web/suppliers_views.py:62
+msgid "Оплата"
+msgstr ""
+
+#: src/web/suppliers_views.py:152
+msgid "Вас ещё не завели ни к одному партнёру, поэтому счетов у вас нет. Попросите администратора сети добавить вас."
+msgstr ""
+
+#: src/web/suppliers_views.py:253
+msgid "оплачен"
+msgstr ""
+
+#: src/web/suppliers_views.py:254
+msgid "оплачен частично"
+msgstr ""
+
+#: src/web/suppliers_views.py:255
+msgid "не оплачен"
+msgstr ""
+
+#: src/web/suppliers_views.py:269
+msgid "Все контрагенты"
+msgstr ""
+
+#: src/web/suppliers_views.py:279
+msgid "Только неоплаченные"
+msgstr ""
+
+#: src/web/suppliers_views.py:279
+msgid "Только оплаченные"
+msgstr ""
+
+#: src/web/suppliers_views.py:281
+msgid "Все счета"
+msgstr ""
+
+#: src/web/suppliers_views.py:291
+#, python-format
+msgid "Счёт записан в период %(month)s."
+msgstr ""
+
+#: src/web/suppliers_views.py:299
+#, python-format
+msgid "Месяц %(month)s закрыт, поэтому счёт учтён в открытом периоде — дата документа осталась прежней (правка задним числом идёт отдельной строкой)."
+msgstr ""
+
+#: src/web/suppliers_views.py:305
+#, python-format
+msgid "Оплата записана в период %(month)s."
+msgstr ""
+
+#: src/web/suppliers_views.py:325
+msgid "Вас ещё не завели ни к одному партнёру, поэтому вносить счёт некуда. Попросите администратора сети добавить вас."
+msgstr ""
+
+#: src/web/suppliers_views.py:352 src/web/suppliers_views.py:684
+#, python-format
+msgid "Счёт %(number)s"
+msgstr ""
+
+#: src/web/suppliers_views.py:354
+msgid "Счёт"
+msgstr ""
+
+#: src/web/suppliers_views.py:354
+msgid "Новый счёт"
+msgstr ""
+
+#: src/web/suppliers_views.py:398 src/web/suppliers_views.py:535
+#: src/web/templates/web/suppliers/invoices.html:42
+msgid "Дата документа"
+msgstr ""
+
+#: src/web/suppliers_views.py:401
+#, python-format
+msgid "«%(label)s»: счёт на ноль не вносится."
+msgstr ""
+
+#: src/web/suppliers_views.py:412 src/web/suppliers_views.py:548
+msgid "Номер счёта"
+msgstr ""
+
+#: src/web/suppliers_views.py:445 src/web/suppliers_views.py:538
+#: src/web/templates/web/suppliers/invoice.html:50
+#: src/web/templates/web/suppliers/invoices.html:47
+msgid "Период учёта"
+msgstr ""
+
+#: src/web/suppliers_views.py:466
+#, python-format
+msgid "Контрагент «%(title)s» на %(date)s не действует: выберите другого или поправьте даты в справочнике."
+msgstr ""
+
+#: src/web/suppliers_views.py:537
+msgid "Дата на самом счёте."
+msgstr ""
+
+#: src/web/suppliers_views.py:540
+msgid "Месяц, к которому счёт относится. Счёт за июнь приходит в июле — в P&L он должен попасть в июнь. Пусто — месяц документа."
+msgstr ""
+
+#: src/web/suppliers_views.py:546
+msgid "Кому платим. Нет в списке — заведите его в справочнике контрагентов."
+msgstr ""
+
+#: src/web/suppliers_views.py:550
+msgid "Как счёт назван у поставщика. По нему его найдут в переписке."
+msgstr ""
+
+#: src/web/suppliers_views.py:555 src/web/suppliers_views.py:828
+msgid "Пока не разобрано"
+msgstr ""
+
+#: src/web/suppliers_views.py:556
+msgid "Можно не выбирать: счёт встанет в инбокс, и статью назначат там. Сумма при этом видна в P&L, а не пропадает."
+msgstr ""
+
+#: src/web/suppliers_views.py:565
+msgid "Куда отнести расход. Регистр платежа приезжает из кассы отдельно."
+msgstr ""
+
+#: src/web/suppliers_views.py:569
+msgid "Сумма документа, как она в счёте — с налогом, если он в нём есть."
+msgstr ""
+
+#: src/web/suppliers_views.py:572
+msgid "В процентах. Пусто — налог не выделен. В P&L по умолчанию едет сумма без налога."
+msgstr ""
+
+#: src/web/suppliers_views.py:593
+msgid "Чей это расход. «Вся сеть» — счёт на юрлицо целиком: его разнесёт правило контрагента."
+msgstr ""
+
+#: src/web/suppliers_views.py:611
+#, python-format
+msgid "Месяц %(month)s закрыт. Правка не тронет его: в открытом периоде появятся две строки — сторно прежней суммы и исправленная запись."
+msgstr ""
+
+#: src/web/suppliers_views.py:644
+msgid "наличными"
+msgstr ""
+
+#: src/web/suppliers_views.py:644
+msgid "банком"
+msgstr ""
+
+#: src/web/suppliers_views.py:660
+msgid "Вас ещё не завели ни к одному партнёру, поэтому отмечать оплату нечему."
+msgstr ""
+
+#: src/web/suppliers_views.py:683
+#: src/web/templates/web/suppliers/invoice.html:35
+msgid "Отметить оплату"
+msgstr ""
+
+#: src/web/suppliers_views.py:705 src/web/suppliers_views.py:708
+#: src/web/suppliers_views.py:727
+msgid "Сумма оплаты"
+msgstr ""
+
+#: src/web/suppliers_views.py:708 src/web/suppliers_views.py:798
+#, python-format
+msgid "«%(label)s»: оплата на ноль не вносится."
+msgstr ""
+
+#: src/web/suppliers_views.py:712 src/web/suppliers_views.py:723
+#: src/web/suppliers_views.py:795 src/web/suppliers_views.py:815
+#: src/web/templates/web/suppliers/invoice.html:49
+msgid "Дата оплаты"
+msgstr ""
+
+#: src/web/suppliers_views.py:725
+msgid "Когда деньги ушли. Это своя дата: она не обязана совпадать ни с датой счёта, ни с периодом учёта."
+msgstr ""
+
+#: src/web/suppliers_views.py:729
+msgid "Меньше остатка — частичная оплата: остаток по счёту уменьшится на неё, а не закроется."
+msgstr ""
+
+#: src/web/suppliers_views.py:734
+msgid "Оплачено банком"
+msgstr ""
+
+#: src/web/suppliers_views.py:735
+msgid "Если платили наличными. Регистр учёта тогда приезжает из кассы."
+msgstr ""
+
+#: src/web/suppliers_views.py:742
+msgid "Как у кассы"
+msgstr ""
+
+#: src/web/suppliers_views.py:743
+msgid "Пусто — регистр берётся из кассы, а без кассы остаётся официальным."
+msgstr ""
+
+#: src/web/suppliers_views.py:759
+msgid "Вас ещё не завели ни к одному партнёру, поэтому вносить оплату некуда."
+msgstr ""
+
+#: src/web/suppliers_views.py:817
+msgid "Когда деньги ушли. Счёта нет, поэтому расход признаётся этой датой."
+msgstr ""
+
+#: src/web/suppliers_views.py:822
+msgid "Кому заплатили. Нет в списке — заведите его в справочнике."
+msgstr ""
+
+#: src/web/suppliers_views.py:829
+msgid "Можно не выбирать: строка встанет в инбокс и будет видна числом."
+msgstr ""
+
+#: src/web/templates/web/components/header.html:56
+#: src/web/templates/web/suppliers/invoices.html:17
+#: src/web/templates/web/suppliers/invoices.html:20
+msgid "Счета"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoice.html:19
+#: src/web/templates/web/suppliers/payment.html:15
+msgid "← К счетам"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoice.html:32
+#, python-format
+msgid "Сумма %(amount)s · оплачено %(paid)s · остаток %(left)s"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoice.html:41
+msgid "Сохранить счёт"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoice.html:45
+msgid "Платежи по счёту"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoice.html:52
+msgid "Чем"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoice.html:73
+msgid "Оплат ещё не было."
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoice.html:74
+msgid "Счёт выставлен и висит в обязательствах: расход в P&L уже есть, деньги ещё не ушли."
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:21
+msgid "Внести счёт"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:23
+msgid "Что нам выставили поставщики и что из этого оплачено."
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:24
+#: src/web/templates/web/suppliers/payment.html:13
+#: src/web/templates/web/suppliers/payment.html:16
+msgid "Оплата без счёта"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:43
+msgid "Номер"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:49
+msgid "Оплачено"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:50
+msgid "Остаток"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:67
+msgid "исправлен"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:73
+#, python-format
+msgid "Итого по %(counter)s счёту"
+msgid_plural "Итого по %(counter)s счетам"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/web/templates/web/suppliers/invoices.html:77
+msgid "не оплачено"
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:82
+msgid "Счетов нет."
+msgstr ""
+
+#: src/web/templates/web/suppliers/invoices.html:83
+msgid "За выбранный период и по выбранному отбору счетов не найдено."
+msgstr ""
+
+#: src/web/templates/web/suppliers/pay.html:14
+msgid "← К счёту"
+msgstr ""
+
+#: src/web/templates/web/suppliers/pay.html:17
+#, python-format
+msgid "сумма %(amount)s, остаток %(left)s"
+msgstr ""
+
+#: src/web/templates/web/suppliers/pay.html:27
+#: src/web/templates/web/suppliers/payment.html:27
+msgid "Записать оплату"
+msgstr ""
+
+#: src/web/templates/web/suppliers/payment.html:17
+msgid "Мелкая покупка, за которую бумаги не будет: расход попадёт в P&L датой оплаты."
+msgstr ""

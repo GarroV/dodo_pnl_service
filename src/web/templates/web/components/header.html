@@ -45,8 +45,13 @@
   данных в продукте нет — расход отвергают точка и регистр, а не отдельное
   право. Показывать пункт только части ролей значило бы завести разграничение
   в разметке, где его никто не проверит.
+
+  «Счета» (T151) — по тому же правилу и той же причине. Управляющий точки видит
+  там счета своей точки: срез делают политики `facts`, а не наличие пункта в
+  шапке. Отсюда же ссылка на контрагентов внутри самого раздела, а не здесь:
+  справочник читают все, но приходят в него, внося счёт.
   {% endcomment %}
-  <nav aria-label="{% translate "Основная навигация" %}"><a href="{% url 'periods' %}">{% translate "Периоды" %}</a>{% if principal %} <a href="{% url 'expenses' %}">{% translate "Расходы" %}</a>{% endif %}{% if principal|may:"directory.manage" %} <a href="{% url 'directory' %}">{% translate "Справочники" %}</a>{% endif %}{% if principal|may:"rules.manage" %} <a href="{% url 'rules' %}">{% translate "Правила" %}</a>{% endif %}</nav>
+  <nav aria-label="{% translate "Основная навигация" %}"><a href="{% url 'periods' %}">{% translate "Периоды" %}</a>{% if principal %} <a href="{% url 'expenses' %}">{% translate "Расходы" %}</a> <a href="{% url 'invoices' %}">{% translate "Счета" %}</a>{% endif %}{% if principal|may:"directory.manage" %} <a href="{% url 'directory' %}">{% translate "Справочники" %}</a>{% endif %}{% if principal|may:"rules.manage" %} <a href="{% url 'rules' %}">{% translate "Правила" %}</a>{% endif %}</nav>
   <div class="who">
     {% if languages %}
     <form class="lang" method="post" action="{% url 'set_language' %}">{% csrf_token %}

@@ -252,7 +252,7 @@ def record_expense(
     }
     payload = {name: value for name, value in payload.items() if value is not None}
 
-    fact_id, action = _upsert(payload)
+    fact_id, action = write_fact(payload)
     return Recorded(fact_id=str(fact_id), action=action, landing=landing)
 
 
@@ -279,8 +279,15 @@ def ensure_period(tenant_id, period: date) -> bool:
     return created
 
 
-def _upsert(payload: dict) -> tuple[str, str]:
+def write_fact(payload: dict) -> tuple[str, str]:
     """Вызов `upsert_fact` с отказом базы, переведённым в отказ продукта.
+
+    Имя публичное намеренно: это **единственный** путь записи факта из
+    продукта, и четвёртая очередь (счета и платежи, `web/suppliers.py`) ходит
+    сюда же. Своя копия этой обёртки там означала бы второе место, где живут
+    точка сохранения, перевод отказа политики в слова и заведение месяца учёта, —
+    и разъехались бы они молча, потому что каждая по отдельности осталась бы
+    верной.
 
     Точка сохранения (`transaction.atomic`) обязательна: весь запрос идёт одной
     транзакцией (`DbContextMiddleware`), и отказ политики без точки сохранения
@@ -307,6 +314,19 @@ def _upsert(payload: dict) -> tuple[str, str]:
             # бы 500. Проверяем здесь и сейчас — тогда отказ приходит на месте и
             # теми же словами, что у чужой точки (D023).
             cursor.execute("set constraints all immediate")
+            # И сразу обратно. `set constraints` действует до конца ТРАНЗАКЦИИ,
+            # а транзакция здесь одна на весь запрос (`ATOMIC_REQUESTS`), — то
+            # есть проверка, оставленная включённой, меняет поведение всего, что
+            # запишется после. Ловится это не сразу: `upsert_fact` ставит ссылку
+            # на заменившую строку ДО её вставки (иначе не обойти уникальность
+            # `dedup_key`), и при немедленной проверке вторая запись в одном
+            # запросе падает по внешнему ключу `facts_superseded_by_fkey`.
+            # Найдено четвёртой очередью: счёт пишет сначала документ, потом
+            # строку, и правка счёта отвечала «Точка не найдена» — отказ базы по
+            # ключу неотличим от отказа политики (23503 и 42501 переводятся в
+            # один текст, D023). У расходов это не проявлялось: они пишут одну
+            # строку за запрос.
+            cursor.execute("set constraints all deferred")
             return written
     except DatabaseError as refusal:
         state = getattr(getattr(refusal, "__cause__", None), "sqlstate", "") or ""
@@ -572,7 +592,7 @@ def storno_expense(who, fact) -> Recorded:
         "allocation": "direct" if fact.unit_id else "pending",
     }
     payload = {name: value for name, value in payload.items() if value is not None}
-    fact_id, action = _upsert(payload)
+    fact_id, action = write_fact(payload)
     return Recorded(fact_id=str(fact_id), action=action, landing=landing)
 
 
@@ -602,8 +622,21 @@ def allocate(fact_id) -> int | None:
             cursor.execute("select allocate_fact(%s)", [str(fact_id)])
             written = cursor.fetchone()[0]
             # Ключи Django отложенные, то есть проверяются на коммите — за
-            # пределами этой точки сохранения. Тот же довод, что в `_upsert`.
+            # пределами этой точки сохранения. Тот же довод, что в `write_fact`.
             cursor.execute("set constraints all immediate")
+            # И сразу обратно. `set constraints` действует до конца ТРАНЗАКЦИИ,
+            # а транзакция здесь одна на весь запрос (`ATOMIC_REQUESTS`), — то
+            # есть проверка, оставленная включённой, меняет поведение всего, что
+            # запишется после. Ловится это не сразу: `upsert_fact` ставит ссылку
+            # на заменившую строку ДО её вставки (иначе не обойти уникальность
+            # `dedup_key`), и при немедленной проверке вторая запись в одном
+            # запросе падает по внешнему ключу `facts_superseded_by_fkey`.
+            # Найдено четвёртой очередью: счёт пишет сначала документ, потом
+            # строку, и правка счёта отвечала «Точка не найдена» — отказ базы по
+            # ключу неотличим от отказа политики (23503 и 42501 переводятся в
+            # один текст, D023). У расходов это не проявлялось: они пишут одну
+            # строку за запрос.
+            cursor.execute("set constraints all deferred")
             return written
     except DatabaseError as refusal:
         state = getattr(getattr(refusal, "__cause__", None), "sqlstate", "") or ""

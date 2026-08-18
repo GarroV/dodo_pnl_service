@@ -10,6 +10,8 @@ from . import (
     expenses_views,
     reports_views,
     rules_views,
+    suppliers_api,
+    suppliers_views,
     tills_views,
     views,
 )
@@ -186,6 +188,32 @@ urlpatterns = [
         expenses_views.expense_delete,
         name="expense-delete",
     ),
+    # Счета поставщиков (T151). Не под префиксом справочников: это первичные
+    # данные, а не словарь. Список стоит первым — с него начинается работа со
+    # счетами, а внесение это действие на нём. Постоянные адреса (`new/`) идут
+    # раньше адреса по номеру записи, иначе `new` разбирался бы как номер.
+    path("invoices/", suppliers_views.invoices, name="invoices"),
+    path("invoices/new/", suppliers_views.invoice, name="invoice-new"),
+    path("invoices/<uuid:document_id>/", suppliers_views.invoice, name="invoice"),
+    # Оплата — свой адрес, а не поле в форме счёта: платёж это отдельное
+    # событие со своей датой, и привязать его дату к правке счёта значило бы
+    # стереть разницу, ради которой события разведены.
+    path(
+        "invoices/<uuid:document_id>/pay/",
+        suppliers_views.invoice_pay,
+        name="invoice-pay",
+    ),
+    # Оплата без счёта: расход признаётся датой денег, потому что бумаги нет.
+    path("payments/new/", suppliers_views.payment_new, name="payment-new"),
+    # Инбокс классификации (T152): строки без статьи одним списком. Разбор —
+    # своим адресом и только POST: это запись денег, и по ссылке из истории
+    # браузера случиться не должна.
+    path("inbox/", suppliers_views.inbox, name="inbox"),
+    path(
+        "inbox/<uuid:fact_id>/classify/",
+        suppliers_views.inbox_classify,
+        name="inbox-classify",
+    ),
     # Расходы по HTTP (T112). Отдельный префикс `api/`, а не те же адреса с
     # другим заголовком: два разных ответа на один адрес разъезжаются молча — и
     # разъезжаться будут именно там, где их никто не смотрит глазами. Роль и
@@ -204,6 +232,31 @@ urlpatterns = [
         "api/expenses/<uuid:fact_id>/delete/",
         api.expense_delete,
         name="api-expense-delete",
+    ),
+    # Счета, платежи и инбокс по HTTP (T153). Тот же префикс `api/` и та же
+    # обвязка, что у расходов (`web/api.py`): два набора правил о том, как
+    # выглядит отказ и что такое ответ, разъехались бы молча — экран
+    # проверяется смоуком, а вызов нет.
+    #
+    # Постоянные адреса идут раньше адреса по номеру записи, иначе `pay`
+    # разбирался бы как номер.
+    path("api/invoices/", suppliers_api.invoices, name="api-invoices"),
+    path(
+        "api/invoices/<uuid:document_id>/",
+        suppliers_api.invoice,
+        name="api-invoice",
+    ),
+    path(
+        "api/invoices/<uuid:document_id>/pay/",
+        suppliers_api.invoice_pay,
+        name="api-invoice-pay",
+    ),
+    path("api/payments/", suppliers_api.payments, name="api-payments"),
+    path("api/inbox/", suppliers_api.inbox, name="api-inbox"),
+    path(
+        "api/inbox/<uuid:fact_id>/classify/",
+        suppliers_api.inbox_classify,
+        name="api-inbox-classify",
     ),
     # Правила расчёта (T090). Отдельный префикс, а не раздел справочников:
     # право другое (`rules.manage`), и партнёр вправе развести ведение

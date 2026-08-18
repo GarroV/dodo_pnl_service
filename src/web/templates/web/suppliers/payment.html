@@ -1,0 +1,29 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Оплата без счёта (T151).
+
+Бумаги не будет, поэтому расход признаётся датой денег: событие здесь одно, а не
+два. Форма поэтому короче формы счёта ровно на период учёта — выбирать его не из
+чего, месяц денег и есть месяц расхода.
+
+Наличной такой оплаты не бывает: мелкая покупка за наличные вносится расходом из
+кассы, где регистр приезжает из самой кассы (D039). Два способа завести одну и
+ту же трату разошлись бы в регистре молча.
+{% endcomment %}
+{% block title %}{% translate "Оплата без счёта" %}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К счетам" %}</a></p>
+<h1>{% translate "Оплата без счёта" %}</h1>
+<p class="sub">{% translate "Мелкая покупка, за которую бумаги не будет: расход попадёт в P&L датой оплаты." %}</p>
+
+{% if error %}
+{% translate "Не записано." as not_saved %}
+{% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
+{% endif %}
+
+<form class="card wide" method="post">{% csrf_token %}
+  <input type="hidden" name="entry_key" value="{{ entry_key }}">
+  {% include "web/directory/fields.html" with fields=fields %}
+  <p class="actions"><button type="submit" class="primary">{% translate "Записать оплату" %}</button></p>
+</form>
+{% endblock %}
