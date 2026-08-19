@@ -50,6 +50,11 @@ DIRECTORY_MANAGE = "directory.manage"
 # потребителем право обзавелось только с экраном правил: до него оно полгода
 # лежало в ролях и в миграциях, ни разу никем не спрошенное.
 RULES_MANAGE = "rules.manage"
+# Ведение ролей: какие права у роли и у кого какая роль (T171, issue #77). До
+# экрана ролей право полгода лежало без потребителя — и это было не косметикой:
+# на нём держался довод разграничения «администратор в любой момент вправе
+# выписать себе недостающее». Выписать было нечем.
+ROLES_MANAGE = "roles.manage"
 
 # Что показать человеку. Отказ называет само действие, а не код права: «нет
 # payrun.calculate» — сообщение для разработчика, а не для бухгалтера.
@@ -79,6 +84,7 @@ TITLES = {
     RETRO_POST: gettext_noop("Перенос разницы за закрытый месяц"),
     DIRECTORY_MANAGE: gettext_noop("Ведение справочников"),
     RULES_MANAGE: gettext_noop("Ведение правил расчёта"),
+    ROLES_MANAGE: gettext_noop("Ведение ролей"),
 }
 
 
@@ -88,7 +94,7 @@ def title(code: str) -> str:
     return _(known) if known is not None else code
 
 
-def message(code: str, role_title: str = "") -> str:
+def message(code: str, role_title: str = "", may_grant: bool = False) -> str:
     """Почему нельзя — одними и теми же словами до действия и после.
 
     Страница спрашивает это, чтобы объяснить, почему кнопки нет; отказ на само
@@ -100,6 +106,20 @@ def message(code: str, role_title: str = "") -> str:
     приставить. Пустая роль — не редкость: до входа роли нет вовсе.
     """
     action = title(code)
+    # Тому, кто ведёт роли, «попросите того, у кого это право есть» — тупик:
+    # просить некого, он и есть тот самый человек. Владелец уткнулся в это
+    # первым же входом администратором (D047), и до экрана ролей выхода из
+    # тупика не существовало вовсе.
+    if may_grant:
+        if role_title:
+            return _(
+                "%(action)s не входит в права вашей роли «%(role)s». "
+                "Вы ведёте роли — откройте «Роли и права» и выдайте его."
+            ) % {"action": action, "role": role_title}
+        return _(
+            "%(action)s не входит в права вашей роли. "
+            "Вы ведёте роли — откройте «Роли и права» и выдайте его."
+        ) % {"action": action}
     if role_title:
         return _(
             "%(action)s не входит в права вашей роли «%(role)s». "
@@ -116,10 +136,11 @@ class PermissionRefused(Exception):
 
     http_status = 403
 
-    def __init__(self, code: str, role_title: str = ""):
+    def __init__(self, code: str, role_title: str = "", may_grant: bool = False):
         self.code = code
         self.role_title = role_title
-        self.message = message(code, role_title)
+        self.may_grant = may_grant
+        self.message = message(code, role_title, may_grant)
         super().__init__(self.message)
 
 
@@ -131,7 +152,11 @@ def check(who, code: str) -> None:
     ошибается ровно в ту сторону, в которую ошибаться нельзя.
     """
     if who is None or code not in (who.permissions or []):
-        raise PermissionRefused(code, getattr(who, "role_title", ""))
+        # Может ли этот человек выдать право сам — решается здесь, а не на
+        # каждой странице: иначе один и тот же запрет объяснялся бы по-разному
+        # в зависимости от того, какой экран его встретил.
+        may_grant = who is not None and ROLES_MANAGE in (who.permissions or [])
+        raise PermissionRefused(code, getattr(who, "role_title", ""), may_grant)
 
 
 def has(who, code: str) -> bool:
@@ -149,4 +174,7 @@ def explain(who, code: str) -> str:
     """
     if has(who, code):
         return ""
-    return message(code, getattr(who, "role_title", ""))
+    # Тот же выход из тупика, что и у отказа на само действие: страница и отказ
+    # обязаны говорить одно и то же, иначе человек прочитает про один запрет
+    # два разных совета (T172).
+    return message(code, getattr(who, "role_title", ""), has(who, ROLES_MANAGE))

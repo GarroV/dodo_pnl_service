@@ -9,6 +9,7 @@ from . import (
     expense_items_views,
     expenses_views,
     reports_views,
+    roles_views,
     rules_views,
     suppliers_api,
     suppliers_views,
@@ -82,6 +83,12 @@ urlpatterns = [
     # Список и правка — разные адреса, а не одна страница с формой на каждой
     # строке: правка справочника меняет расчёт, и человек должен видеть, что
     # именно он открыл, до того как наберёт новую ставку.
+    # Роли и права (T171, issue #77). Адрес есть у всех, отвечает отказом
+    # словами тому, кому не положено, — как справочники и правила: сокрытие
+    # адреса не защита, а проверка стоит в представлении и в политиках базы.
+    path("roles/", roles_views.index, name="roles"),
+    path("roles/<uuid:role_id>/rights/", roles_views.role_rights, name="role-rights"),
+    path("roles/people/<uuid:user_id>/", roles_views.person_roles, name="person-roles"),
     path("directory/", directory_views.index, name="directory"),
     path("directory/employees/", directory_views.employees, name="directory-employees"),
     path(

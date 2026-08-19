@@ -1,0 +1,16 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Отказ в доступе к ролям — страницей, теми же словами и тем же видом, что отказы
+в справочниках и правилах: три запрета одного веса, объяснённые по-разному,
+читаются как три разных продукта.
+
+Свой файл нужен ровно из-за заголовка: человек должен прочитать, какой раздел
+ему не открыт, а не гадать.
+{% endcomment %}
+{% block title %}{% translate "Роли и права" %}{% endblock %}
+{% block content %}
+<h1>{% translate "Роли и права" %}</h1>
+{% translate "Этот экран вам не открыт." as denied_title %}
+{% notice "alert" title=denied_title %}{{ message }}{% endnotice %}
+<p class="note"><a href="{% url 'periods' %}">{% translate "← К периодам" %}</a></p>
+{% endblock %}

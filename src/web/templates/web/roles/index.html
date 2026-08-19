@@ -1,0 +1,93 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Роли и права: что роль позволяет и у кого какая роль.
+
+Две таблицы, а не одна, потому что это два разных вопроса. «Что позволяет
+роль» меняют редко и всем сразу; «кто ею наделён» — по человеку. Смешанные в
+одну сетку, они дали бы экран, где галочка напротив имени означает то же, что
+галочка напротив роли, — а это разные вещи.
+
+Права показываются названиями действий, а не кодами: `payrun.calculate` —
+слова для разработчика. Названия берутся оттуда же, откуда их берёт отказ
+(`web/permissions.py`), чтобы человек прочитал на экране ролей ровно то, что
+прочитает в отказе, если права не окажется.
+
+Форма на роль своя — сохранение построчное. Одна форма на всю таблицу означала
+бы, что правка одной роли переписывает заодно и остальные: незаметно и молча.
+{% endcomment %}
+{% block title %}{% translate "Роли и права" %}{% endblock %}
+{% block content %}
+<h1>{% translate "Роли и права" %}</h1>
+<p class="sub">{% blocktranslate %}Роль — это набор прав, а человеку можно дать несколько ролей сразу. Так бухгалтер, который ведёт весь проект, становится ещё и администратором, а там, где это разные люди, разделение обязанностей остаётся.{% endblocktranslate %}</p>
+
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+{% if error %}{% notice "alert" %}{{ error }}{% endnotice %}{% endif %}
+
+<h2>{% translate "Что позволяет роль" %}</h2>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Роль" %}</th>
+      <th>{% translate "Права" %}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.role.title }}<br><span class="note">{{ row.role.code }}</span></td>
+      <td>
+        <form method="post" action="{% url 'role-rights' row.role.id %}" id="rights-{{ row.role.id }}">{% csrf_token %}
+          <div class="rights">
+            {% for right in row.rights %}
+            <label class="right">
+              <input type="checkbox" name="right:{{ right.code }}"{% if right.granted %} checked{% endif %}>
+              {{ right.title }}
+            </label>
+            {% endfor %}
+          </div>
+        </form>
+      </td>
+      <td><button type="submit" form="rights-{{ row.role.id }}">{% translate "Сохранить" %}</button></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+
+<h2>{% translate "У кого какая роль" %}</h2>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Человек" %}</th>
+      <th>{% translate "Роли" %}</th>
+      <th>{% translate "Выдать роль" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for person in people %}
+    <tr>
+      <td>{{ person.who }}</td>
+      <td>
+        {% for held in person.roles %}
+        <form method="post" action="{% url 'person-roles' person.user_id %}" class="inline">{% csrf_token %}
+          <input type="hidden" name="role" value="{{ held.id }}">
+          <input type="hidden" name="action" value="remove">
+          <span class="chip">{{ held.title }}
+            <button type="submit" class="link" title="{% translate "Снять роль" %}">×</button>
+          </span>
+        </form>
+        {% endfor %}
+      </td>
+      <td>
+        <form method="post" action="{% url 'person-roles' person.user_id %}" class="inline">{% csrf_token %}
+          <select name="role" aria-label="{% translate "Роль" %}">
+            {% for role in roles %}<option value="{{ role.id }}">{{ role.title }}</option>{% endfor %}
+          </select>
+          <button type="submit">{% translate "Выдать" %}</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% endblock %}
