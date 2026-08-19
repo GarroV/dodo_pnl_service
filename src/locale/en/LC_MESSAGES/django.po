@@ -4459,3 +4459,84 @@ msgstr "entered manually"
 #: src/web/views.py:1294
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
+
+#: src/web/roles_views.py
+msgid "Ведение ролей"
+msgstr "Roles management"
+
+#: src/web/roles_views.py
+msgid "Роли"
+msgstr "Roles"
+
+#: src/web/roles_views.py
+msgid "Роли и права"
+msgstr "Roles and rights"
+
+#: src/web/roles_views.py
+msgid "Что позволяет роль"
+msgstr "What a role allows"
+
+#: src/web/roles_views.py
+msgid "У кого какая роль"
+msgstr "Who holds which role"
+
+#: src/web/roles_views.py
+msgid "Права"
+msgstr "Rights"
+
+#: src/web/roles_views.py
+msgid "Человек"
+msgstr "Person"
+
+#: src/web/roles_views.py
+msgid "Выдать"
+msgstr "Grant"
+
+#: src/web/roles_views.py
+msgid "Выдать роль"
+msgstr "Grant a role"
+
+#: src/web/roles_views.py
+msgid "Снять роль"
+msgstr "Remove the role"
+
+#: src/web/roles_views.py
+msgid "Роль «%(role)s» выдана."
+msgstr "The role “%(role)s” has been granted."
+
+#: src/web/roles_views.py
+msgid "Роль «%(role)s» снята."
+msgstr "The role “%(role)s” has been removed."
+
+#: src/web/roles_views.py
+msgid "Права роли «%(role)s» сохранены."
+msgstr "The rights of “%(role)s” have been saved."
+
+#: src/web/roles_views.py
+msgid "Права роли не изменены: база не приняла запись."
+msgstr "The rights were not changed: the database refused the write."
+
+#: src/web/roles_views.py
+msgid "Такой роли у этого партнёра нет."
+msgstr "This partner has no such role."
+
+#: src/web/roles_views.py
+msgid "Эта роль у человека уже есть."
+msgstr "The person already holds this role."
+
+#: src/web/roles_views.py
+msgid "Это единственная роль человека — снимать её некуда."
+msgstr "This is the person’s only role — there is nothing to fall back to."
+
+#: src/web/roles_views.py
+msgid "Роль — это набор прав, а человеку можно дать несколько ролей сразу. Так бухгалтер, который ведёт весь проект, становится ещё и администратором, а там, где это разные люди, разделение обязанностей остаётся."
+msgstr "A role is a set of rights, and one person can hold several roles at once. That is how an accountant who runs the whole project also becomes an administrator, while separation of duties stays intact wherever those are different people."
+
+#: src/web/roles_views.py
+msgid "%(action)s не входит в права вашей роли «%(role)s». Вы ведёте роли — откройте «Роли и права» и выдайте его."
+msgstr "%(action)s is outside the permissions of your role “%(role)s”. You manage roles — open “Roles and rights” and grant it."
+
+#: src/web/roles_views.py
+msgid "%(action)s не входит в права вашей роли. Вы ведёте роли — откройте «Роли и права» и выдайте его."
+msgstr "%(action)s is outside the permissions of your role. You manage roles — open “Roles and rights” and grant it."
+

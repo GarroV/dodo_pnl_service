@@ -4393,3 +4393,84 @@ msgstr "ručno uneto"
 #: src/web/views.py:1294
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
+
+#: src/web/roles_views.py
+msgid "Ведение ролей"
+msgstr "Upravljanje ulogama"
+
+#: src/web/roles_views.py
+msgid "Роли"
+msgstr "Uloge"
+
+#: src/web/roles_views.py
+msgid "Роли и права"
+msgstr "Uloge i prava"
+
+#: src/web/roles_views.py
+msgid "Что позволяет роль"
+msgstr "Šta uloga dozvoljava"
+
+#: src/web/roles_views.py
+msgid "У кого какая роль"
+msgstr "Ko ima koju ulogu"
+
+#: src/web/roles_views.py
+msgid "Права"
+msgstr "Prava"
+
+#: src/web/roles_views.py
+msgid "Человек"
+msgstr "Osoba"
+
+#: src/web/roles_views.py
+msgid "Выдать"
+msgstr "Dodeli"
+
+#: src/web/roles_views.py
+msgid "Выдать роль"
+msgstr "Dodeli ulogu"
+
+#: src/web/roles_views.py
+msgid "Снять роль"
+msgstr "Ukloni ulogu"
+
+#: src/web/roles_views.py
+msgid "Роль «%(role)s» выдана."
+msgstr "Uloga „%(role)s“ je dodeljena."
+
+#: src/web/roles_views.py
+msgid "Роль «%(role)s» снята."
+msgstr "Uloga „%(role)s“ je uklonjena."
+
+#: src/web/roles_views.py
+msgid "Права роли «%(role)s» сохранены."
+msgstr "Prava uloge „%(role)s“ su sačuvana."
+
+#: src/web/roles_views.py
+msgid "Права роли не изменены: база не приняла запись."
+msgstr "Prava nisu izmenjena: baza nije prihvatila upis."
+
+#: src/web/roles_views.py
+msgid "Такой роли у этого партнёра нет."
+msgstr "Ovaj partner nema takvu ulogu."
+
+#: src/web/roles_views.py
+msgid "Эта роль у человека уже есть."
+msgstr "Osoba već ima ovu ulogu."
+
+#: src/web/roles_views.py
+msgid "Это единственная роль человека — снимать её некуда."
+msgstr "Ovo je jedina uloga osobe — nema šta da ostane posle uklanjanja."
+
+#: src/web/roles_views.py
+msgid "Роль — это набор прав, а человеку можно дать несколько ролей сразу. Так бухгалтер, который ведёт весь проект, становится ещё и администратором, а там, где это разные люди, разделение обязанностей остаётся."
+msgstr "Uloga je skup prava, a jedna osoba može imati više uloga odjednom. Tako računovođa koji vodi ceo projekat postaje i administrator, a tamo gde su to različiti ljudi podela odgovornosti ostaje."
+
+#: src/web/roles_views.py
+msgid "%(action)s не входит в права вашей роли «%(role)s». Вы ведёте роли — откройте «Роли и права» и выдайте его."
+msgstr "%(action)s nije u pravima vaše uloge „%(role)s“. Vi vodite uloge — otvorite „Uloge i prava“ i dodelite ga."
+
+#: src/web/roles_views.py
+msgid "%(action)s не входит в права вашей роли. Вы ведёте роли — откройте «Роли и права» и выдайте его."
+msgstr "%(action)s nije u pravima vaše uloge. Vi vodite uloge — otvorite „Uloge i prava“ i dodelite ga."
+

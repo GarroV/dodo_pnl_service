@@ -383,8 +383,12 @@ def test_the_recursion_would_come_back_with_the_old_policy(plain_owner, app_conn
     from psycopg.conninfo import make_conninfo
 
     admin_dsn = make_conninfo(ADMIN_DSN, dbname=plain_owner["dbname"])
+    # Политик на memberships с `0242` три: чтение своего, чтение чужого тем, кто
+    # ведёт роли, и запись под тем же правом. Прежний вид — одна политика через
+    # `app_tenant_ids()`, поэтому на время снимаются все три.
     with psycopg.connect(admin_dsn, autocommit=True) as admin:
-        admin.execute("drop policy tenant_isolation on memberships")
+        for name in ("own_membership_read", "memberships_manage_read", "memberships_manage_write"):
+            admin.execute(f"drop policy {name} on memberships")
         admin.execute("""
             create policy tenant_isolation on memberships
                 for all
@@ -399,10 +403,20 @@ def test_the_recursion_would_come_back_with_the_old_policy(plain_owner, app_conn
             app_conn.rollback()
             admin.execute("drop policy tenant_isolation on memberships")
             admin.execute("""
-                create policy tenant_isolation on memberships
-                    for all
+                create policy own_membership_read on memberships
+                    for select
                     using (user_id = app_user_id())
-                    with check (user_id = app_user_id())
+            """)
+            admin.execute("""
+                create policy memberships_manage_read on memberships
+                    for select
+                    using (app_has_permission(tenant_id, 'roles.manage'))
+            """)
+            admin.execute("""
+                create policy memberships_manage_write on memberships
+                    for all
+                    using (app_has_permission(tenant_id, 'roles.manage'))
+                    with check (app_has_permission(tenant_id, 'roles.manage'))
             """)
 
 
