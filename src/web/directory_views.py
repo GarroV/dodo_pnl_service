@@ -38,6 +38,7 @@ from django.utils.translation import gettext as _
 
 from core.models import (
     Calendar,
+    Counterparty,
     Employee,
     EmployeeGroup,
     EmploymentTerm,
@@ -180,6 +181,15 @@ def _sections(who) -> list[dict]:
             # `tills` уже сузили выборку по точке и регистру. Иначе цифра сама
             # становится утечкой (D023).
             "count": Till.objects.count(),
+        },
+        {
+            "url": reverse("directory-counterparties"),
+            "title": _("Контрагенты"),
+            "about": _("Поставщики и получатели платежей: название, номера, ключ Dodo IS"),
+            # Считается то же, что покажет раздел: контрагенты партнёра целиком.
+            # Регистра у контрагента нет — он словарь названий, а не данные о
+            # деньгах, и политика на нём одна, по партнёру.
+            "count": Counterparty.objects.count(),
         },
         {
             "url": reverse("directory-calendar"),

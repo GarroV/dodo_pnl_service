@@ -1,0 +1,29 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Отметка оплаты счёта (T151).
+
+Событие своё, и дата у него своя: деньги ушли тогда, когда ушли, а не тогда,
+когда выписан счёт и не тогда, к какому месяцу счёт относится. Ради этой
+разницы экран и отделён от карточки счёта.
+
+Сумма подставляется остатком, но остаётся полем: частичная оплата — обычное
+дело, и подставленное значение обязано быть исправимым, а не приколоченным.
+{% endcomment %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К счёту" %}</a></p>
+<h1>{{ heading }}</h1>
+<p class="sub" data-left="{{ summary.left_raw }}">{{ about }} ·
+  {% blocktranslate with amount=summary.amount_text left=summary.left_text %}сумма {{ amount }}, остаток {{ left }}{% endblocktranslate %}</p>
+
+{% if error %}
+{% translate "Не записано." as not_saved %}
+{% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
+{% endif %}
+
+<form class="card wide" method="post">{% csrf_token %}
+  <input type="hidden" name="entry_key" value="{{ entry_key }}">
+  {% include "web/directory/fields.html" with fields=fields %}
+  <p class="actions"><button type="submit" class="primary">{% translate "Записать оплату" %}</button></p>
+</form>
+{% endblock %}

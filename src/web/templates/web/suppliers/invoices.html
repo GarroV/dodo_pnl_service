@@ -1,0 +1,86 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Счета поставщиков с двумя итогами (T151).
+
+**Итогов два, и это главное отличие от списка расходов.** У расхода вопрос один
+— сколько потрачено; у счетов их два: сколько выставлено и сколько ещё не
+заплачено. Второе число и есть обязательства партнёра, и прятать его за
+отбором «только неоплаченные» значило бы прятать половину смысла экрана.
+
+**Оба итога считаются по показанным строкам** и приезжают готовыми из
+представления. Складывать суммы в шаблоне нельзя: шаблон не знает, какие строки
+заменены, а вторая выборка в представлении разошлась бы с таблицей молча.
+
+**У строки есть машиночитаемые суммы и состояние.** Не украшение: по ним приёмка
+сверяет, что итог — сумма именно показанных строк, а не соседней выборки.
+{% endcomment %}
+{% block title %}{% translate "Счета" %}{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>{% translate "Счета" %}</h1>
+  <a class="btn primary" href="{{ add_url }}">{% translate "Внести счёт" %}</a>
+</div>
+<p class="sub">{% translate "Что нам выставили поставщики и что из этого оплачено." %}
+  <a href="{{ payment_url }}">{% translate "Оплата без счёта" %}</a> ·
+  <a href="{{ inbox_url }}">{% translate "Инбокс" %}</a></p>
+
+{% if error %}
+{% translate "Не показано." as failed %}
+{% notice "alert" title=failed %}{{ error }}{% endnotice %}
+{% endif %}
+
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+
+<form class="search row" method="get">
+  {% include "web/directory/fields.html" with fields=filters %}
+  <button type="submit">{% translate "Показать" %}</button>
+</form>
+
+{% if rows %}
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Дата документа" %}</th>
+      <th>{% translate "Номер" %}</th>
+      <th>{% translate "Контрагент" %}</th>
+      <th>{% translate "Точка" %}</th>
+      <th>{% translate "Статья" %}</th>
+      <th>{% translate "Период учёта" %}</th>
+      <th class="num">{% translate "Сумма" %}</th>
+      <th class="num">{% translate "Оплачено" %}</th>
+      <th class="num">{% translate "Остаток" %}</th>
+      <th>{% translate "Состояние" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr data-amount="{{ row.amount_raw }}" data-paid="{{ row.paid_raw }}"
+        data-left="{{ row.left_raw }}" data-state="{{ row.state }}" data-invoice="{{ row.id }}">
+      <td><a href="{{ row.url }}">{{ row.date }}</a></td>
+      <td>{{ row.number }}</td>
+      <td>{{ row.counterparty }}</td>
+      <td>{{ row.unit }}</td>
+      <td>{{ row.item }}</td>
+      <td>{{ row.period }}</td>
+      <td class="num">{{ row.amount_text }}</td>
+      <td class="num">{{ row.paid_text }}</td>
+      <td class="num">{{ row.left_text }}</td>
+      <td>{{ row.state_title }}{% if row.corrections %} <span class="note">{% translate "исправлен" %}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr data-total="{{ total_raw }}" data-total-left="{{ left_raw }}">
+      <th colspan="6">{% blocktranslate count counter=counted %}Итого по {{ counter }} счёту{% plural %}Итого по {{ counter }} счетам{% endblocktranslate %}</th>
+      <th class="num">{{ total_text }}</th>
+      <th class="num"></th>
+      <th class="num">{{ left_text }}</th>
+      <th>{% translate "не оплачено" %}</th>
+    </tr>
+  </tfoot>
+</table>{% endscroll %}
+{% else %}
+{% translate "Счетов нет." as empty %}
+{% notice "empty" title=empty %}<span data-total="{{ total_raw }}">{% translate "За выбранный период и по выбранному отбору счетов не найдено." %}</span>{% endnotice %}
+{% endif %}
+{% endblock %}

@@ -390,7 +390,27 @@ class Till(models.Model):
 
 
 class Counterparty(models.Model):
-    """Контрагент. Знание «как его пишут в разных системах» — это данные, не память."""
+    """Контрагент. Знание «как его пишут в разных системах» — это данные, не память.
+
+    **Название одно на партнёра** (`counterparties_tenant_title_uniq`, миграция
+    `0242`). Ради этого справочник и заведён: пока «EPS» и «EPS Elektro» — две
+    строки, траты одного поставщика не складываются, а рассыпаются по
+    написаниям, и сверить его акт не с чем. Другие написания живут в `aliases`,
+    то есть данными, а не второй карточкой.
+
+    **Ключ Dodo IS (`external_id`) заведён пустым и заранее** (T150,
+    `docs/dodo-is-api.md`). У Dodo IS свой справочник поставщиков
+    (`Accounting → Vendor List`), и в шестой очереди строки придётся сводить.
+    Сводить их по названию — гарантированная ручная работа на каждый импорт,
+    поэтому поле стоит здесь с самого начала; уникальность у него частичная —
+    пустой ключ означает «ещё не сопоставлен», и таких строк сколько угодно.
+
+    **Закрывается датой, а не удалением.** На контрагента ссылаются факты
+    закрытых месяцев, и `PROTECT` у них не спасёт от главного: удалённый
+    поставщик унёс бы с собой смысл строк, которые на него ссылались. Поэтому
+    `valid_to` — «с этой даты больше не работаем», и такой контрагент уходит из
+    списков выбора, оставаясь в истории.
+    """
 
     id = uuid_pk()
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
@@ -398,10 +418,34 @@ class Counterparty(models.Model):
     tax_number = models.TextField(null=True, blank=True)
     aliases = ArrayField(models.TextField(), db_default=[])
     note = models.TextField(null=True, blank=True)
+    # Идентификатор поставщика в Dodo IS. Пусто до шестой очереди.
+    external_id = models.TextField(null=True, blank=True)
+    valid_from = models.DateField()
+    valid_to = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
 
     class Meta:
         db_table = "counterparties"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant", "title"], name="counterparties_tenant_title_uniq"
+            ),
+            # Частичная: пустой ключ — это «ещё не сопоставлен с Dodo IS», а не
+            # значение. Обычный уникальный ключ разрешил бы ровно одного
+            # несопоставленного контрагента на партнёра, то есть сегодня —
+            # одного вообще.
+            models.UniqueConstraint(
+                fields=["tenant", "external_id"],
+                condition=models.Q(external_id__isnull=False),
+                name="counterparties_tenant_external_uniq",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(valid_to__isnull=True)
+                | models.Q(valid_to__gt=models.F("valid_from")),
+                name="counterparties_validity",
+            ),
+        ]
 
 
 class AllocationRule(models.Model):

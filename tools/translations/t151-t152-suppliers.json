@@ -1,0 +1,362 @@
+{
+  "Счета": {
+    "en": "Invoices",
+    "sr": "Fakture"
+  },
+  "Счёт": {
+    "en": "Invoice",
+    "sr": "Faktura"
+  },
+  "Новый счёт": {
+    "en": "New invoice",
+    "sr": "Nova faktura"
+  },
+  "Внести счёт": {
+    "en": "Add an invoice",
+    "sr": "Unesi fakturu"
+  },
+  "Сохранить счёт": {
+    "en": "Save the invoice",
+    "sr": "Sačuvaj fakturu"
+  },
+  "Счёт %(number)s": {
+    "en": "Invoice %(number)s",
+    "sr": "Faktura %(number)s"
+  },
+  "Номер счёта": {
+    "en": "Invoice number",
+    "sr": "Broj fakture"
+  },
+  "Номер": {
+    "en": "Number",
+    "sr": "Broj"
+  },
+  "Что нам выставили поставщики и что из этого оплачено.": {
+    "en": "What suppliers have billed us and how much of it is paid.",
+    "sr": "Šta su nam dobavljači fakturisali i koliko je od toga plaćeno."
+  },
+  "Как счёт назван у поставщика. По нему его найдут в переписке.": {
+    "en": "The number the supplier gave it. That is how it will be found in correspondence.",
+    "sr": "Broj koji je dao dobavljač. Po njemu se faktura pronalazi u prepisci."
+  },
+  "Дата документа": {
+    "en": "Document date",
+    "sr": "Datum dokumenta"
+  },
+  "Дата на самом счёте.": {
+    "en": "The date printed on the invoice itself.",
+    "sr": "Datum koji stoji na samoj fakturi."
+  },
+  "Период учёта": {
+    "en": "Accounting period",
+    "sr": "Obračunski period"
+  },
+  "Месяц, к которому счёт относится. Счёт за июнь приходит в июле — в P&L он должен попасть в июнь. Пусто — месяц берётся из даты документа.": {
+    "en": "The month the invoice belongs to. A June invoice arrives in July — in the P&L it has to land in June. Empty means the month is taken from the document date.",
+    "sr": "Mesec na koji se faktura odnosi. Faktura za jun stiže u julu — u P&L mora da uđe u jun. Prazno znači da se mesec uzima iz datuma dokumenta."
+  },
+  "Кому платим. Нет в списке — заведите его в справочнике контрагентов.": {
+    "en": "Who we are paying. Not on the list — add them to the counterparties directory.",
+    "sr": "Kome plaćamo. Nema ga na spisku — dodajte ga u šifarnik partnera."
+  },
+  "Кому заплатили. Нет в списке — заведите его в справочнике.": {
+    "en": "Who was paid. Not on the list — add them to the directory.",
+    "sr": "Kome je plaćeno. Nema ga na spisku — dodajte ga u šifarnik."
+  },
+  "Контрагент не найден.": {
+    "en": "Counterparty not found.",
+    "sr": "Partner nije pronađen."
+  },
+  "Контрагент «%(title)s» на %(date)s не действует: выберите другого или поправьте даты в справочнике.": {
+    "en": "The counterparty “%(title)s” is not in effect on %(date)s: pick another one or fix the dates in the directory.",
+    "sr": "Partner „%(title)s“ ne važi na dan %(date)s: izaberite drugog ili ispravite datume u šifarniku."
+  },
+  "Сумма документа, как она в счёте — с налогом, если он в нём есть.": {
+    "en": "The amount as printed on the invoice — including tax if the invoice has it.",
+    "sr": "Iznos kako stoji na fakturi — sa porezom ako ga faktura sadrži."
+  },
+  "В процентах. Пусто — налог не выделен. В P&L по умолчанию едет сумма без налога.": {
+    "en": "As a percentage. Empty means no tax is broken out. By default the P&L takes the amount without tax.",
+    "sr": "U procentima. Prazno znači da porez nije izdvojen. U P&L podrazumevano ide iznos bez poreza."
+  },
+  "Чей это расход. «Вся сеть» — счёт на юрлицо целиком: его разнесёт правило контрагента.": {
+    "en": "Whose expense it is. “Whole network” means the invoice is on the legal entity as a whole: the counterparty rule will spread it.",
+    "sr": "Čiji je to trošak. „Cela mreža“ znači da je faktura na pravno lice u celini: raspodeliće je pravilo partnera."
+  },
+  "Куда отнести расход. Регистр платежа приезжает из кассы отдельно.": {
+    "en": "Where the expense belongs. The ledger of the payment comes from the till separately.",
+    "sr": "Gde trošak pripada. Registar plaćanja dolazi iz kase posebno."
+  },
+  "Можно не выбирать: счёт встанет в инбокс, и статью назначат там. Сумма при этом видна в P&L, а не пропадает.": {
+    "en": "You may leave it empty: the invoice goes to the inbox and the item is assigned there. The amount is still visible in the P&L, it does not disappear.",
+    "sr": "Ne morate birati: faktura ide u prijemno sanduče i stavka se dodeljuje tamo. Iznos je i dalje vidljiv u P&L, ne nestaje."
+  },
+  "Пока не разобрано": {
+    "en": "Not sorted out yet",
+    "sr": "Još nije razvrstano"
+  },
+  "«%(label)s»: счёт на ноль не вносится.": {
+    "en": "“%(label)s”: an invoice for zero is not accepted.",
+    "sr": "„%(label)s“: faktura na nulu se ne unosi."
+  },
+  "Счёт записан в период %(month)s.": {
+    "en": "The invoice has been recorded in period %(month)s.",
+    "sr": "Faktura je zavedena u period %(month)s."
+  },
+  "Месяц %(month)s закрыт, поэтому счёт учтён в открытом периоде — дата документа осталась прежней (правка задним числом).": {
+    "en": "Month %(month)s is closed, so the invoice went into the open period — the document date stayed as it was (a backdated entry).",
+    "sr": "Mesec %(month)s je zatvoren, pa je faktura ušla u otvoreni period — datum dokumenta je ostao isti (unos unazad)."
+  },
+  "Месяц %(month)s закрыт. Правка не тронет его: в открытом периоде появятся две строки — сторно прежней суммы и исправленная.": {
+    "en": "Month %(month)s is closed. The edit will not touch it: two rows appear in the open period — a reversal of the old amount and the corrected one.",
+    "sr": "Mesec %(month)s je zatvoren. Izmena ga ne dira: u otvorenom periodu pojaviće se dva reda — storno starog iznosa i ispravljeni."
+  },
+  "Вас ещё не завели ни к одному партнёру, поэтому счетов у вас нет. Попросите администратора сети добавить вас.": {
+    "en": "You have not been added to any partner yet, so you have no invoices. Ask the network administrator to add you.",
+    "sr": "Još niste dodati nijednom partneru, pa nemate fakture. Zamolite administratora mreže da vas doda."
+  },
+  "Вас ещё не завели ни к одному партнёру, поэтому вносить счёт некуда. Попросите администратора сети добавить вас.": {
+    "en": "You have not been added to any partner yet, so there is nowhere to put an invoice. Ask the network administrator to add you.",
+    "sr": "Još niste dodati nijednom partneru, pa nema gde da se unese faktura. Zamolite administratora mreže da vas doda."
+  },
+  "Вас ещё не завели ни к одному партнёру, поэтому отмечать оплату нечему.": {
+    "en": "You have not been added to any partner yet, so there is nothing to mark as paid.",
+    "sr": "Još niste dodati nijednom partneru, pa nema šta da se označi kao plaćeno."
+  },
+  "Вас ещё не завели ни к одному партнёру, поэтому вносить оплату некуда.": {
+    "en": "You have not been added to any partner yet, so there is nowhere to record a payment.",
+    "sr": "Još niste dodati nijednom partneru, pa nema gde da se unese plaćanje."
+  },
+  "Вас ещё не завели ни к одному партнёру, поэтому разбирать нечего.": {
+    "en": "You have not been added to any partner yet, so there is nothing to sort out.",
+    "sr": "Još niste dodati nijednom partneru, pa nema šta da se razvrstava."
+  },
+  "Оплата": {
+    "en": "Payment",
+    "sr": "Plaćanje"
+  },
+  "Оплата поставщику": {
+    "en": "Payment to a supplier",
+    "sr": "Plaćanje dobavljaču"
+  },
+  "Оплата без счёта": {
+    "en": "Payment without an invoice",
+    "sr": "Plaćanje bez fakture"
+  },
+  "Оплата счёта %(number)s": {
+    "en": "Payment of invoice %(number)s",
+    "sr": "Plaćanje fakture %(number)s"
+  },
+  "Отметить оплату": {
+    "en": "Mark as paid",
+    "sr": "Označi plaćanje"
+  },
+  "Записать оплату": {
+    "en": "Record the payment",
+    "sr": "Zabeleži plaćanje"
+  },
+  "Платежи по счёту": {
+    "en": "Payments against the invoice",
+    "sr": "Plaćanja po fakturi"
+  },
+  "Оплат ещё не было.": {
+    "en": "No payments yet.",
+    "sr": "Još nema plaćanja."
+  },
+  "Сумма оплаты": {
+    "en": "Payment amount",
+    "sr": "Iznos plaćanja"
+  },
+  "Дата оплаты": {
+    "en": "Payment date",
+    "sr": "Datum plaćanja"
+  },
+  "«%(label)s»: оплата на ноль не вносится.": {
+    "en": "“%(label)s”: a payment of zero is not accepted.",
+    "sr": "„%(label)s“: plaćanje na nulu se ne unosi."
+  },
+  "Когда деньги ушли. Это своя дата: она не обязана совпадать ни с датой счёта, ни с периодом учёта.": {
+    "en": "When the money left. This is its own date: it does not have to match the invoice date or the accounting period.",
+    "sr": "Kada je novac otišao. To je zaseban datum: ne mora da se poklapa ni sa datumom fakture ni sa obračunskim periodom."
+  },
+  "Когда деньги ушли. Счёта нет, поэтому расход признаётся этой датой.": {
+    "en": "When the money left. There is no invoice, so the expense is recognised on this date.",
+    "sr": "Kada je novac otišao. Fakture nema, pa se trošak priznaje tim datumom."
+  },
+  "Меньше остатка — частичная оплата: остаток по счёту уменьшится на неё, а не закроется.": {
+    "en": "Less than the outstanding amount means a partial payment: the balance goes down by it instead of closing.",
+    "sr": "Manje od preostalog iznosa znači delimično plaćanje: saldo se umanjuje, a ne zatvara."
+  },
+  "Оплачено банком": {
+    "en": "Paid by bank",
+    "sr": "Plaćeno preko banke"
+  },
+  "Если платили наличными. Регистр учёта тогда приезжает из кассы.": {
+    "en": "If it was paid in cash. The ledger then comes from the till.",
+    "sr": "Ako je plaćeno gotovinom. Registar tada dolazi iz kase."
+  },
+  "Как у кассы": {
+    "en": "Same as the till",
+    "sr": "Kao kod kase"
+  },
+  "Пусто — регистр берётся из кассы, а без кассы остаётся официальным.": {
+    "en": "Empty means the ledger comes from the till, and without a till it stays official.",
+    "sr": "Prazno znači da se registar uzima iz kase, a bez kase ostaje zvanični."
+  },
+  "У счёта нет ни одной строки: оплачивать нечего.": {
+    "en": "The invoice has no rows: there is nothing to pay.",
+    "sr": "Faktura nema nijednu stavku: nema šta da se plati."
+  },
+  "Счёт не найден.": {
+    "en": "Invoice not found.",
+    "sr": "Faktura nije pronađena."
+  },
+  "Счетов нет.": {
+    "en": "No invoices.",
+    "sr": "Nema faktura."
+  },
+  "За выбранный период и по выбранному отбору счетов не найдено.": {
+    "en": "No invoices found for the selected period and filter.",
+    "sr": "Za izabrani period i izabrani filter nema faktura."
+  },
+  "Все контрагенты": {
+    "en": "All counterparties",
+    "sr": "Svi partneri"
+  },
+  "Все счета": {
+    "en": "All invoices",
+    "sr": "Sve fakture"
+  },
+  "Только неоплаченные": {
+    "en": "Unpaid only",
+    "sr": "Samo neplaćene"
+  },
+  "Только оплаченные": {
+    "en": "Paid only",
+    "sr": "Samo plaćene"
+  },
+  "оплачен": {
+    "en": "paid",
+    "sr": "plaćena"
+  },
+  "оплачен частично": {
+    "en": "partly paid",
+    "sr": "delimično plaćena"
+  },
+  "не оплачен": {
+    "en": "unpaid",
+    "sr": "neplaćena"
+  },
+  "не оплачено": {
+    "en": "still outstanding",
+    "sr": "još nije plaćeno"
+  },
+  "Оплачено": {
+    "en": "Amount paid",
+    "sr": "Plaćeni iznos"
+  },
+  "Остаток": {
+    "en": "Outstanding",
+    "sr": "Preostalo"
+  },
+  "исправлен": {
+    "en": "corrected",
+    "sr": "ispravljena"
+  },
+  "наличными": {
+    "en": "in cash",
+    "sr": "gotovinom"
+  },
+  "банком": {
+    "en": "by bank",
+    "sr": "preko banke"
+  },
+  "Чем": {
+    "en": "How",
+    "sr": "Čime"
+  },
+  "Сумма %(amount)s · оплачено %(paid)s · остаток %(left)s": {
+    "en": "Amount %(amount)s · paid %(paid)s · outstanding %(left)s",
+    "sr": "Iznos %(amount)s · plaćeno %(paid)s · preostalo %(left)s"
+  },
+  "сумма %(amount)s, остаток %(left)s": {
+    "en": "amount %(amount)s, outstanding %(left)s",
+    "sr": "iznos %(amount)s, preostalo %(left)s"
+  },
+  "Счёт выставлен и висит в обязательствах: расход в P&L уже есть, деньги ещё не ушли.": {
+    "en": "The invoice is issued and sits in liabilities: the expense is already in the P&L, the money has not left yet.",
+    "sr": "Faktura je izdata i stoji u obavezama: trošak je već u P&L, novac još nije otišao."
+  },
+  "Мелкая покупка, за которую бумаги не будет: расход попадёт в P&L датой оплаты.": {
+    "en": "A small purchase with no paperwork to come: the expense lands in the P&L on the payment date.",
+    "sr": "Sitna kupovina za koju neće biti papira: trošak ulazi u P&L na datum plaćanja."
+  },
+  "← К счетам": {
+    "en": "← Back to invoices",
+    "sr": "← Nazad na fakture"
+  },
+  "← К счёту": {
+    "en": "← Back to the invoice",
+    "sr": "← Nazad na fakturu"
+  },
+  "Инбокс": {
+    "en": "Inbox",
+    "sr": "Prijemno sanduče"
+  },
+  "Инбокс пуст.": {
+    "en": "The inbox is empty.",
+    "sr": "Prijemno sanduče je prazno."
+  },
+  "У всех строк есть статья: разбирать нечего.": {
+    "en": "Every row has an item: there is nothing to sort out.",
+    "sr": "Svi redovi imaju stavku: nema šta da se razvrstava."
+  },
+  "Строки без статьи. Деньги уже в P&L, но не там, где их будут искать.": {
+    "en": "Rows with no item. The money is already in the P&L, but not where people will look for it.",
+    "sr": "Redovi bez stavke. Novac je već u P&L, ali ne tamo gde će ga tražiti."
+  },
+  "Итого без статьи": {
+    "en": "Total with no item",
+    "sr": "Ukupno bez stavke"
+  },
+  "Разобрать": {
+    "en": "Sort out",
+    "sr": "Razvrstaj"
+  },
+  "Строка не найдена.": {
+    "en": "Row not found.",
+    "sr": "Red nije pronađen."
+  },
+  "Строка не разобрана: выберите статью и точку и попробуйте ещё раз. Строка осталась в списке.": {
+    "en": "The row was not sorted out: pick an item and a unit and try again. The row is still on the list.",
+    "sr": "Red nije razvrstan: izaberite stavku i objekat pa pokušajte ponovo. Red je ostao na spisku."
+  },
+  "Строка разобрана и учтена в периоде %(month)s.": {
+    "en": "The row is sorted out and recorded in period %(month)s.",
+    "sr": "Red je razvrstan i zaveden u period %(month)s."
+  },
+  "Месяц %(month)s закрыт, поэтому разбор лёг в открытый период двумя строками: сторно прежней и разобранная запись.": {
+    "en": "Month %(month)s is closed, so sorting it out went into the open period as two rows: a reversal of the old one and the sorted entry.",
+    "sr": "Mesec %(month)s je zatvoren, pa je razvrstavanje ušlo u otvoreni period kao dva reda: storno prethodnog i razvrstani unos."
+  },
+  "Месяц %(month)s закрыт, поэтому счёт учтён в открытом периоде — дата документа осталась прежней (правка задним числом идёт отдельной строкой).": {
+    "en": "Month %(month)s is closed, so the invoice went into the open period — the document date stayed as it was (a backdated entry goes as its own row).",
+    "sr": "Mesec %(month)s je zatvoren, pa je faktura ušla u otvoreni period — datum dokumenta je ostao isti (unos unazad ide kao poseban red)."
+  },
+  "Оплата записана в период %(month)s.": {
+    "en": "The payment has been recorded in period %(month)s.",
+    "sr": "Plaćanje je zavedeno u period %(month)s."
+  },
+  "Месяц, к которому счёт относится. Счёт за июнь приходит в июле — в P&L он должен попасть в июнь. Пусто — месяц документа.": {
+    "en": "The month the invoice belongs to. A June invoice arrives in July — in the P&L it has to land in June. Empty means the month of the document.",
+    "sr": "Mesec na koji se faktura odnosi. Faktura za jun stiže u julu — u P&L mora da uđe u jun. Prazno znači mesec dokumenta."
+  },
+  "Месяц %(month)s закрыт. Правка не тронет его: в открытом периоде появятся две строки — сторно прежней суммы и исправленная запись.": {
+    "en": "Month %(month)s is closed. The edit will not touch it: two rows appear in the open period — a reversal of the old amount and the corrected entry.",
+    "sr": "Mesec %(month)s je zatvoren. Izmena ga ne dira: u otvorenom periodu pojaviće se dva reda — storno starog iznosa i ispravljeni unos."
+  },
+  "Можно не выбирать: строка встанет в инбокс и будет видна числом.": {
+    "en": "You may leave it empty: the row goes to the inbox and stays visible as a number.",
+    "sr": "Ne morate birati: red ide u prijemno sanduče i ostaje vidljiv kao broj."
+  }
+}
