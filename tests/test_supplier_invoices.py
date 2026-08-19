@@ -164,7 +164,8 @@ def test_the_accounting_period_is_not_the_document_date(
     assert answer.status_code == 302, body(answer)
 
     (row,) = lines(sql)
-    _key, amount, period, doc_date, unit_id, allocation, gone, document, expense, channel, _code = row
+    (_key, amount, period, doc_date, unit_id, allocation, gone,
+     document, expense, channel, _code) = row
     assert period.isoformat() == "2026-06-01"      # период учёта
     assert doc_date.isoformat() == JULY_DAY        # дата документа
     assert amount == Decimal("24000.00")

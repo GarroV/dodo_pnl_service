@@ -487,8 +487,12 @@ def _item_or_none(request, on: date):
     from core.models import ExpenseItem
     try:
         wanted = UUID(raw)
-    except ValueError:
-        raise BadInput(_("«%(label)s»: такого варианта нет.") % {"label": _("Статья расхода")})
+    except ValueError as bad_uuid:
+        # `from` обязателен: без него в трассировке остаётся только наша фраза, и
+        # непонятно, что исходной причиной был неразобранный идентификатор.
+        raise BadInput(
+            _("«%(label)s»: такого варианта нет.") % {"label": _("Статья расхода")}
+        ) from bad_uuid
 
     item = ExpenseItem.objects.select_related("pnl_item").filter(pk=wanted).first()
     if item is None:
@@ -960,7 +964,7 @@ def inbox_classify(request, fact_id):
         recorded = suppliers.classify(
             who, fact, item=item, unit_id=_unit(request, who),
         )
-    except (BadInput, cash.UnitRefused, cash.CashRefused) as refusal:
+    except (BadInput, cash.UnitRefused, cash.CashRefused):
         # Отказ уезжает в адрес признаком, а не готовой фразой: фразу в адресе не
         # перевести и подставить в неё можно что угодно. Строка при этом остаётся
         # в инбоксе — молча уйти она не может.

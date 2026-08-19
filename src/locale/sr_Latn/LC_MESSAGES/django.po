@@ -4572,331 +4572,386 @@ msgstr "Dobavljači i primaoci uplata: naziv, brojevi, Dodo IS ključ"
 #: src/web/suppliers.py:252 src/web/suppliers_views.py:459
 #: src/web/suppliers_views.py:463
 msgid "Контрагент не найден."
-msgstr ""
+msgstr "Partner nije pronađen."
 
 #: src/web/suppliers.py:341
 msgid "У счёта нет ни одной строки: оплачивать нечего."
-msgstr ""
+msgstr "Faktura nema nijednu stavku: nema šta da se plati."
 
 #: src/web/suppliers.py:373
 #, python-format
 msgid "Оплата счёта %(number)s"
-msgstr ""
+msgstr "Plaćanje fakture %(number)s"
 
 #: src/web/suppliers.py:374
 msgid "Оплата поставщику"
-msgstr ""
+msgstr "Plaćanje dobavljaču"
 
 #: src/web/suppliers_views.py:62
 msgid "Оплата"
-msgstr ""
+msgstr "Plaćanje"
 
 #: src/web/suppliers_views.py:152
 msgid "Вас ещё не завели ни к одному партнёру, поэтому счетов у вас нет. Попросите администратора сети добавить вас."
-msgstr ""
+msgstr "Još niste dodati nijednom partneru, pa nemate fakture. Zamolite administratora mreže da vas doda."
 
 #: src/web/suppliers_views.py:253
 msgid "оплачен"
-msgstr ""
+msgstr "plaćena"
 
 #: src/web/suppliers_views.py:254
 msgid "оплачен частично"
-msgstr ""
+msgstr "delimično plaćena"
 
 #: src/web/suppliers_views.py:255
 msgid "не оплачен"
-msgstr ""
+msgstr "neplaćena"
 
 #: src/web/suppliers_views.py:269
 msgid "Все контрагенты"
-msgstr ""
+msgstr "Svi partneri"
 
 #: src/web/suppliers_views.py:279
 msgid "Только неоплаченные"
-msgstr ""
+msgstr "Samo neplaćene"
 
 #: src/web/suppliers_views.py:279
 msgid "Только оплаченные"
-msgstr ""
+msgstr "Samo plaćene"
 
 #: src/web/suppliers_views.py:281
 msgid "Все счета"
-msgstr ""
+msgstr "Sve fakture"
 
 #: src/web/suppliers_views.py:291
 #, python-format
 msgid "Счёт записан в период %(month)s."
-msgstr ""
+msgstr "Faktura je zavedena u period %(month)s."
 
 #: src/web/suppliers_views.py:299
 #, python-format
 msgid "Месяц %(month)s закрыт, поэтому счёт учтён в открытом периоде — дата документа осталась прежней (правка задним числом идёт отдельной строкой)."
-msgstr ""
+msgstr "Mesec %(month)s je zatvoren, pa je faktura ušla u otvoreni period — datum dokumenta je ostao isti (unos unazad ide kao poseban red)."
 
 #: src/web/suppliers_views.py:305
 #, python-format
 msgid "Оплата записана в период %(month)s."
-msgstr ""
+msgstr "Plaćanje je zavedeno u period %(month)s."
 
 #: src/web/suppliers_views.py:325
 msgid "Вас ещё не завели ни к одному партнёру, поэтому вносить счёт некуда. Попросите администратора сети добавить вас."
-msgstr ""
+msgstr "Još niste dodati nijednom partneru, pa nema gde da se unese faktura. Zamolite administratora mreže da vas doda."
 
 #: src/web/suppliers_views.py:352 src/web/suppliers_views.py:684
 #, python-format
 msgid "Счёт %(number)s"
-msgstr ""
+msgstr "Faktura %(number)s"
 
 #: src/web/suppliers_views.py:354
 msgid "Счёт"
-msgstr ""
+msgstr "Faktura"
 
 #: src/web/suppliers_views.py:354
 msgid "Новый счёт"
-msgstr ""
+msgstr "Nova faktura"
 
 #: src/web/suppliers_views.py:398 src/web/suppliers_views.py:535
 #: src/web/templates/web/suppliers/invoices.html:42
 msgid "Дата документа"
-msgstr ""
+msgstr "Datum dokumenta"
 
 #: src/web/suppliers_views.py:401
 #, python-format
 msgid "«%(label)s»: счёт на ноль не вносится."
-msgstr ""
+msgstr "„%(label)s“: faktura na nulu se ne unosi."
 
 #: src/web/suppliers_views.py:412 src/web/suppliers_views.py:548
 msgid "Номер счёта"
-msgstr ""
+msgstr "Broj fakture"
 
 #: src/web/suppliers_views.py:445 src/web/suppliers_views.py:538
 #: src/web/templates/web/suppliers/invoice.html:50
 #: src/web/templates/web/suppliers/invoices.html:47
 msgid "Период учёта"
-msgstr ""
+msgstr "Obračunski period"
 
 #: src/web/suppliers_views.py:466
 #, python-format
 msgid "Контрагент «%(title)s» на %(date)s не действует: выберите другого или поправьте даты в справочнике."
-msgstr ""
+msgstr "Partner „%(title)s“ ne važi na dan %(date)s: izaberite drugog ili ispravite datume u šifarniku."
 
 #: src/web/suppliers_views.py:537
 msgid "Дата на самом счёте."
-msgstr ""
+msgstr "Datum koji stoji na samoj fakturi."
 
 #: src/web/suppliers_views.py:540
 msgid "Месяц, к которому счёт относится. Счёт за июнь приходит в июле — в P&L он должен попасть в июнь. Пусто — месяц документа."
-msgstr ""
+msgstr "Mesec na koji se faktura odnosi. Faktura za jun stiže u julu — u P&L mora da uđe u jun. Prazno znači mesec dokumenta."
 
 #: src/web/suppliers_views.py:546
 msgid "Кому платим. Нет в списке — заведите его в справочнике контрагентов."
-msgstr ""
+msgstr "Kome plaćamo. Nema ga na spisku — dodajte ga u šifarnik partnera."
 
 #: src/web/suppliers_views.py:550
 msgid "Как счёт назван у поставщика. По нему его найдут в переписке."
-msgstr ""
+msgstr "Broj koji je dao dobavljač. Po njemu se faktura pronalazi u prepisci."
 
 #: src/web/suppliers_views.py:555 src/web/suppliers_views.py:828
 msgid "Пока не разобрано"
-msgstr ""
+msgstr "Još nije razvrstano"
 
 #: src/web/suppliers_views.py:556
 msgid "Можно не выбирать: счёт встанет в инбокс, и статью назначат там. Сумма при этом видна в P&L, а не пропадает."
-msgstr ""
+msgstr "Ne morate birati: faktura ide u prijemno sanduče i stavka se dodeljuje tamo. Iznos je i dalje vidljiv u P&L, ne nestaje."
 
 #: src/web/suppliers_views.py:565
 msgid "Куда отнести расход. Регистр платежа приезжает из кассы отдельно."
-msgstr ""
+msgstr "Gde trošak pripada. Registar plaćanja dolazi iz kase posebno."
 
 #: src/web/suppliers_views.py:569
 msgid "Сумма документа, как она в счёте — с налогом, если он в нём есть."
-msgstr ""
+msgstr "Iznos kako stoji na fakturi — sa porezom ako ga faktura sadrži."
 
 #: src/web/suppliers_views.py:572
 msgid "В процентах. Пусто — налог не выделен. В P&L по умолчанию едет сумма без налога."
-msgstr ""
+msgstr "U procentima. Prazno znači da porez nije izdvojen. U P&L podrazumevano ide iznos bez poreza."
 
 #: src/web/suppliers_views.py:593
 msgid "Чей это расход. «Вся сеть» — счёт на юрлицо целиком: его разнесёт правило контрагента."
-msgstr ""
+msgstr "Čiji je to trošak. „Cela mreža“ znači da je faktura na pravno lice u celini: raspodeliće je pravilo partnera."
 
 #: src/web/suppliers_views.py:611
 #, python-format
 msgid "Месяц %(month)s закрыт. Правка не тронет его: в открытом периоде появятся две строки — сторно прежней суммы и исправленная запись."
-msgstr ""
+msgstr "Mesec %(month)s je zatvoren. Izmena ga ne dira: u otvorenom periodu pojaviće se dva reda — storno starog iznosa i ispravljeni unos."
 
 #: src/web/suppliers_views.py:644
 msgid "наличными"
-msgstr ""
+msgstr "gotovinom"
 
 #: src/web/suppliers_views.py:644
 msgid "банком"
-msgstr ""
+msgstr "preko banke"
 
 #: src/web/suppliers_views.py:660
 msgid "Вас ещё не завели ни к одному партнёру, поэтому отмечать оплату нечему."
-msgstr ""
+msgstr "Još niste dodati nijednom partneru, pa nema šta da se označi kao plaćeno."
 
 #: src/web/suppliers_views.py:683
 #: src/web/templates/web/suppliers/invoice.html:35
 msgid "Отметить оплату"
-msgstr ""
+msgstr "Označi plaćanje"
 
 #: src/web/suppliers_views.py:705 src/web/suppliers_views.py:708
 #: src/web/suppliers_views.py:727
 msgid "Сумма оплаты"
-msgstr ""
+msgstr "Iznos plaćanja"
 
 #: src/web/suppliers_views.py:708 src/web/suppliers_views.py:798
 #, python-format
 msgid "«%(label)s»: оплата на ноль не вносится."
-msgstr ""
+msgstr "„%(label)s“: plaćanje na nulu se ne unosi."
 
 #: src/web/suppliers_views.py:712 src/web/suppliers_views.py:723
 #: src/web/suppliers_views.py:795 src/web/suppliers_views.py:815
 #: src/web/templates/web/suppliers/invoice.html:49
 msgid "Дата оплаты"
-msgstr ""
+msgstr "Datum plaćanja"
 
 #: src/web/suppliers_views.py:725
 msgid "Когда деньги ушли. Это своя дата: она не обязана совпадать ни с датой счёта, ни с периодом учёта."
-msgstr ""
+msgstr "Kada je novac otišao. To je zaseban datum: ne mora da se poklapa ni sa datumom fakture ni sa obračunskim periodom."
 
 #: src/web/suppliers_views.py:729
 msgid "Меньше остатка — частичная оплата: остаток по счёту уменьшится на неё, а не закроется."
-msgstr ""
+msgstr "Manje od preostalog iznosa znači delimično plaćanje: saldo se umanjuje, a ne zatvara."
 
 #: src/web/suppliers_views.py:734
 msgid "Оплачено банком"
-msgstr ""
+msgstr "Plaćeno preko banke"
 
 #: src/web/suppliers_views.py:735
 msgid "Если платили наличными. Регистр учёта тогда приезжает из кассы."
-msgstr ""
+msgstr "Ako je plaćeno gotovinom. Registar tada dolazi iz kase."
 
 #: src/web/suppliers_views.py:742
 msgid "Как у кассы"
-msgstr ""
+msgstr "Kao kod kase"
 
 #: src/web/suppliers_views.py:743
 msgid "Пусто — регистр берётся из кассы, а без кассы остаётся официальным."
-msgstr ""
+msgstr "Prazno znači da se registar uzima iz kase, a bez kase ostaje zvanični."
 
 #: src/web/suppliers_views.py:759
 msgid "Вас ещё не завели ни к одному партнёру, поэтому вносить оплату некуда."
-msgstr ""
+msgstr "Još niste dodati nijednom partneru, pa nema gde da se unese plaćanje."
 
 #: src/web/suppliers_views.py:817
 msgid "Когда деньги ушли. Счёта нет, поэтому расход признаётся этой датой."
-msgstr ""
+msgstr "Kada je novac otišao. Fakture nema, pa se trošak priznaje tim datumom."
 
 #: src/web/suppliers_views.py:822
 msgid "Кому заплатили. Нет в списке — заведите его в справочнике."
-msgstr ""
+msgstr "Kome je plaćeno. Nema ga na spisku — dodajte ga u šifarnik."
 
 #: src/web/suppliers_views.py:829
 msgid "Можно не выбирать: строка встанет в инбокс и будет видна числом."
-msgstr ""
+msgstr "Ne morate birati: red ide u prijemno sanduče i ostaje vidljiv kao broj."
 
 #: src/web/templates/web/components/header.html:56
 #: src/web/templates/web/suppliers/invoices.html:17
 #: src/web/templates/web/suppliers/invoices.html:20
 msgid "Счета"
-msgstr ""
+msgstr "Fakture"
 
 #: src/web/templates/web/suppliers/invoice.html:19
 #: src/web/templates/web/suppliers/payment.html:15
 msgid "← К счетам"
-msgstr ""
+msgstr "← Nazad na fakture"
 
 #: src/web/templates/web/suppliers/invoice.html:32
 #, python-format
 msgid "Сумма %(amount)s · оплачено %(paid)s · остаток %(left)s"
-msgstr ""
+msgstr "Iznos %(amount)s · plaćeno %(paid)s · preostalo %(left)s"
 
 #: src/web/templates/web/suppliers/invoice.html:41
 msgid "Сохранить счёт"
-msgstr ""
+msgstr "Sačuvaj fakturu"
 
 #: src/web/templates/web/suppliers/invoice.html:45
 msgid "Платежи по счёту"
-msgstr ""
+msgstr "Plaćanja po fakturi"
 
 #: src/web/templates/web/suppliers/invoice.html:52
 msgid "Чем"
-msgstr ""
+msgstr "Čime"
 
 #: src/web/templates/web/suppliers/invoice.html:73
 msgid "Оплат ещё не было."
-msgstr ""
+msgstr "Još nema plaćanja."
 
 #: src/web/templates/web/suppliers/invoice.html:74
 msgid "Счёт выставлен и висит в обязательствах: расход в P&L уже есть, деньги ещё не ушли."
-msgstr ""
+msgstr "Faktura je izdata i stoji u obavezama: trošak je već u P&L, novac još nije otišao."
 
 #: src/web/templates/web/suppliers/invoices.html:21
 msgid "Внести счёт"
-msgstr ""
+msgstr "Unesi fakturu"
 
 #: src/web/templates/web/suppliers/invoices.html:23
 msgid "Что нам выставили поставщики и что из этого оплачено."
-msgstr ""
+msgstr "Šta su nam dobavljači fakturisali i koliko je od toga plaćeno."
 
 #: src/web/templates/web/suppliers/invoices.html:24
 #: src/web/templates/web/suppliers/payment.html:13
 #: src/web/templates/web/suppliers/payment.html:16
 msgid "Оплата без счёта"
-msgstr ""
+msgstr "Plaćanje bez fakture"
 
 #: src/web/templates/web/suppliers/invoices.html:43
 msgid "Номер"
-msgstr ""
+msgstr "Broj"
 
 #: src/web/templates/web/suppliers/invoices.html:49
 msgid "Оплачено"
-msgstr ""
+msgstr "Plaćeni iznos"
 
 #: src/web/templates/web/suppliers/invoices.html:50
 msgid "Остаток"
-msgstr ""
+msgstr "Preostalo"
 
 #: src/web/templates/web/suppliers/invoices.html:67
 msgid "исправлен"
-msgstr ""
+msgstr "ispravljena"
 
 #: src/web/templates/web/suppliers/invoices.html:73
 #, python-format
 msgid "Итого по %(counter)s счёту"
 msgid_plural "Итого по %(counter)s счетам"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Ukupno za %(counter)s fakturu"
+msgstr[1] "Ukupno za %(counter)s fakture"
 
 #: src/web/templates/web/suppliers/invoices.html:77
 msgid "не оплачено"
-msgstr ""
+msgstr "još nije plaćeno"
 
 #: src/web/templates/web/suppliers/invoices.html:82
 msgid "Счетов нет."
-msgstr ""
+msgstr "Nema faktura."
 
 #: src/web/templates/web/suppliers/invoices.html:83
 msgid "За выбранный период и по выбранному отбору счетов не найдено."
-msgstr ""
+msgstr "Za izabrani period i izabrani filter nema faktura."
 
 #: src/web/templates/web/suppliers/pay.html:14
 msgid "← К счёту"
-msgstr ""
+msgstr "← Nazad na fakturu"
 
 #: src/web/templates/web/suppliers/pay.html:17
 #, python-format
 msgid "сумма %(amount)s, остаток %(left)s"
-msgstr ""
+msgstr "iznos %(amount)s, preostalo %(left)s"
 
 #: src/web/templates/web/suppliers/pay.html:27
 #: src/web/templates/web/suppliers/payment.html:27
 msgid "Записать оплату"
-msgstr ""
+msgstr "Zabeleži plaćanje"
 
 #: src/web/templates/web/suppliers/payment.html:17
 msgid "Мелкая покупка, за которую бумаги не будет: расход попадёт в P&L датой оплаты."
-msgstr ""
+msgstr "Sitna kupovina za koju neće biti papira: trošak ulazi u P&L na datum plaćanja."
+
+#: src/web/suppliers_views.py
+msgid "Вас ещё не завели ни к одному партнёру, поэтому разбирать нечего."
+msgstr "Još niste dodati nijednom partneru, pa nema šta da se razvrstava."
+
+#: src/web/suppliers_views.py
+msgid "Инбокс"
+msgstr "Prijemno sanduče"
+
+#: src/web/suppliers_views.py
+msgid "Инбокс пуст."
+msgstr "Prijemno sanduče je prazno."
+
+#: src/web/suppliers_views.py
+msgid "Итого без статьи"
+msgstr "Ukupno bez stavke"
+
+#: src/web/suppliers_views.py
+msgid "Месяц %(month)s закрыт, поэтому разбор лёг в открытый период двумя строками: сторно прежней и разобранная запись."
+msgstr "Mesec %(month)s je zatvoren, pa je razvrstavanje ušlo u otvoreni period kao dva reda: storno prethodnog i razvrstani unos."
+
+#: src/web/suppliers_views.py
+msgid "Разобрать"
+msgstr "Razvrstaj"
+
+#: src/web/suppliers_views.py
+msgid "Строка не найдена."
+msgstr "Red nije pronađen."
+
+#: src/web/suppliers_views.py
+msgid "Строка не разобрана: выберите статью и точку и попробуйте ещё раз. Строка осталась в списке."
+msgstr "Red nije razvrstan: izaberite stavku i objekat pa pokušajte ponovo. Red je ostao na spisku."
+
+#: src/web/suppliers_views.py
+msgid "Строка разобрана и учтена в периоде %(month)s."
+msgstr "Red je razvrstan i zaveden u period %(month)s."
+
+#: src/web/suppliers_views.py
+msgid "Строки без статьи. Деньги уже в P&L, но не там, где их будут искать."
+msgstr "Redovi bez stavke. Novac je već u P&L, ali ne tamo gde će ga tražiti."
+
+#: src/web/suppliers_views.py
+msgid "Счёт не найден."
+msgstr "Faktura nije pronađena."
+
+#: src/web/suppliers_views.py
+msgid "У всех строк есть статья: разбирать нечего."
+msgstr "Svi redovi imaju stavku: nema šta da se razvrstava."
+
+#: src/web/templates/web/suppliers/inbox.html
+#, python-format
+msgid "ждёт разбора %(counter)s строка"
+msgid_plural "ждут разбора %(counter)s строки"
+msgstr[0] "%(counter)s red čeka razvrstavanje"
+msgstr[1] "%(counter)s reda čeka razvrstavanje"
