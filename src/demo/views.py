@@ -25,12 +25,12 @@ from __future__ import annotations
 
 from datetime import date
 
-from django.conf import settings
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 
 from web.auth import login_with_password
 
+from . import access
 from .accountant_table import build_accountant_table
 from .seed import ROLES, demo_password
 from .table import accountant_rows, full_slice
@@ -51,28 +51,20 @@ DEFAULT_ROLE = "director"
 RECONCILE_PERIOD = date(2026, 6, 1)
 
 
-def enabled() -> bool:
-    return bool(getattr(settings, "DEMO_MODE", False))
-
-
-def _key_ok(request) -> bool:
-    """Спидбамп. Ключа не задано — открыто всем, и это осознанный режим."""
-    key = (getattr(settings, "DEMO_KEY", "") or "").strip()
-    if not key:
-        return True
-    return request.GET.get("key", "") == key or request.session.get("demo_key") == key
-
-
 def _guard(request) -> None:
-    if not enabled():
+    """Пустить или отказать. Правило — общее с остальными дверями в демо.
+
+    Само правило живёт в `demo.access`: его спрашивают ещё корень стенда и
+    форма входа продукта (issue #116), и разъехавшиеся ответы означали бы, что
+    одна дверь пустила, а вторая показала `404`.
+    """
+    if not access.enabled():
         raise Http404("demo is off")
-    if not _key_ok(request):
+    if not access.key_ok(request):
         raise Http404("demo key required")
-    key = (getattr(settings, "DEMO_KEY", "") or "").strip()
-    if key:
-        # Ключ запоминается в сессии, чтобы посетителю не пришлось таскать его
-        # в каждой ссылке внутри демо.
-        request.session["demo_key"] = key
+    # Ключ запоминается в сессии, чтобы посетителю не пришлось таскать его
+    # в каждой ссылке внутри демо.
+    access.remember_key(request)
 
 
 def landing(request):

@@ -4540,3 +4540,18 @@ msgstr "%(action)s is outside the permissions of your role “%(role)s”. You m
 msgid "%(action)s не входит в права вашей роли. Вы ведёте роли — откройте «Роли и права» и выдайте его."
 msgstr "%(action)s is outside the permissions of your role. You manage roles — open “Roles and rights” and grant it."
 
+#: src/web/templates/web/login.html:19
+msgid "Это демо-стенд"
+msgstr "This is a demo stand"
+
+#: src/web/templates/web/login.html:21
+msgid ""
+"Учётка здесь не нужна: демо открывается одним кликом и наполнено выдуманной\n"
+"  сетью — два юрлица, три точки, тридцать человек и три месяца расчёта."
+msgstr ""
+"You need no account here: the demo opens in one click and is filled with an\n"
+"  invented network — two legal entities, three units, thirty people and three months of payroll."
+
+#: src/web/templates/web/login.html:24
+msgid "Открыть демо"
+msgstr "Open the demo"

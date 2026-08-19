@@ -4474,3 +4474,18 @@ msgstr "%(action)s nije u pravima vaše uloge „%(role)s“. Vi vodite uloge �
 msgid "%(action)s не входит в права вашей роли. Вы ведёте роли — откройте «Роли и права» и выдайте его."
 msgstr "%(action)s nije u pravima vaše uloge. Vi vodite uloge — otvorite „Uloge i prava“ i dodelite ga."
 
+#: src/web/templates/web/login.html:19
+msgid "Это демо-стенд"
+msgstr "Ovo je demo stend"
+
+#: src/web/templates/web/login.html:21
+msgid ""
+"Учётка здесь не нужна: демо открывается одним кликом и наполнено выдуманной\n"
+"  сетью — два юрлица, три точки, тридцать человек и три месяца расчёта."
+msgstr ""
+"Nalog ovde nije potreban: demo se otvara jednim klikom i popunjen je izmišljenom\n"
+"  mrežom — dva pravna lica, tri lokala, trideset ljudi i tri meseca obračuna."
+
+#: src/web/templates/web/login.html:24
+msgid "Открыть демо"
+msgstr "Otvori demo"
