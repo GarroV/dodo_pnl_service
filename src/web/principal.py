@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from uuid import UUID
 
 from core.models import Membership, Unit
+
 # Канонический порядок регистров берётся из формы ролей, а не пишется здесь
 # вторым списком: два списка одного и того же расходятся молча — ровно тем
 # способом, из-за которого `core/roles.py` и появился.

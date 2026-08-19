@@ -73,7 +73,9 @@ def test_the_administrator_edits_the_rights_of_a_role(db):
                 where id = %s""",
             (R_MANAGER,),
         )
-        got = conn.execute("select permissions from roles where id = %s", (R_MANAGER,)).fetchone()[0]
+        got = conn.execute(
+            "select permissions from roles where id = %s", (R_MANAGER,)
+        ).fetchone()[0]
         assert "payrun.calculate" in got
 
 
@@ -144,3 +146,30 @@ def test_without_context_nothing_is_visible_and_nothing_is_writable(db):
                 "insert into memberships (tenant_id, user_id, role_id) values (%s, %s, %s)",
                 (T1, USER_ADMIN, R_ADMIN),
             )
+
+
+def test_the_role_manager_sees_people_by_name(db):
+    """Экрану ролей нужны имена: столбик UUID не говорит, кому даёшь право.
+
+    Учётки заводятся здесь же владельцем таблиц: схемная фикстура их не
+    содержит — до экрана ролей ни один тест доступа людьми по именам не
+    интересовался.
+    """
+    db.execute(
+        """insert into users (id, username, password, full_name) values
+               (%s, 'admin', 'x', 'Админ Сети'),
+               (%s, 'accountant', 'x', 'Бухгалтер Партнёра'),
+               (%s, 'manager', 'x', 'Управляющий NS1'),
+               (%s, 'stranger', 'x', 'Чужой Партнёр')""",
+        (USER_ADMIN, USER_ACCOUNTANT, USER_MANAGER, USER_OTHER),
+    )
+
+    with as_app_user(db, USER_ADMIN) as conn:
+        names = {row[0] for row in conn.execute("select username from users").fetchall()}
+    assert names == {"admin", "accountant", "manager"}, (
+        f"администратор видит не своих или не всех: {names}"
+    )
+
+    with as_app_user(db, USER_ACCOUNTANT) as conn:
+        seen = {row[0] for row in conn.execute("select username from users").fetchall()}
+    assert seen == {"accountant"}, "бухгалтеру по-прежнему видна только своя учётка"
