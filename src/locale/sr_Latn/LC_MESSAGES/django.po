@@ -2382,20 +2382,20 @@ msgstr "Interna"
 msgid "%(percent)s и %(amount)s"
 msgstr "%(percent)s i %(amount)s"
 
-#: src/web/i18n.py:34
-msgid "Оперативный директор"
+#: src/web/i18n.py
+msgid "role.director"
 msgstr "Operativni direktor"
 
-#: src/web/i18n.py:35
-msgid "Бухгалтер"
+#: src/web/i18n.py
+msgid "role.accountant"
 msgstr "Knjigovođa"
 
-#: src/web/i18n.py:36
-msgid "Управляющий точки"
+#: src/web/i18n.py
+msgid "role.manager"
 msgstr "Menadžer objekta"
 
-#: src/web/i18n.py:37
-msgid "Администратор сети"
+#: src/web/i18n.py
+msgid "role.admin"
 msgstr "Administrator mreže"
 
 #: src/web/onboarding.py:28
@@ -4955,3 +4955,11 @@ msgid "ждёт разбора %(counter)s строка"
 msgid_plural "ждут разбора %(counter)s строки"
 msgstr[0] "%(counter)s red čeka razvrstavanje"
 msgstr[1] "%(counter)s reda čeka razvrstavanje"
+
+#: src/web/i18n.py
+msgid "role.regional_manager"
+msgstr "Regionalni menadžer"
+
+#: src/web/i18n.py
+msgid "role.shift_manager"
+msgstr "Menadžer smene"
