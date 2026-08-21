@@ -39,6 +39,7 @@ from core.role_delivery import (
     EDITED,
     MATCH,
     UNKNOWN,
+    describe,
     diff_lines,
     from_jsonb,
     normalize,
@@ -299,6 +300,14 @@ def test_a_role_without_a_snapshot_waits_for_a_human(stand):
     _role_id, ledgers, permissions, _shipped = _role(stand, "accountant")
     assert normalize(ledgers, permissions) == product_shape("accountant")
 
+    # Порядок строк отчёта — в порядке событий: сначала приняли, потом довезли.
+    # Обратный порядок стоял здесь до приёмки и читался как «довезли, а потом
+    # зачем-то приняли», то есть описывал механизм неверно.
+    said = describe(adopted)
+    assert said.index("принято как поставленное продуктом: rs-dev/accountant") < next(
+        i for i, line in enumerate(said) if line.startswith("довезено:")
+    ), f"отчёт рассказывает события в обратном порядке: {said}"
+
 
 def test_check_writes_nothing(stand):
     """`--check` отвечает списком и не притрагивается к базе."""
@@ -430,18 +439,22 @@ def test_a_connection_that_cannot_see_the_roles_says_so(stand):
     security`, поэтому роль, не обходящая политики, увидит ноль строк, обновит
     ноль и честно отчитается «расхождений нет». Зелено и неправда — тот же
     корень, что у issue #44 и у проверки в конце миграции `0110`.
+
+    Проверяется не только то, что оговорка сказана, но и то, что отчёт **не
+    утверждает согласия**. Так он и выглядел на приёмке: первой строкой «роли
+    совпадают с кодом (0 шт.)», оговорка — после. Первая строка и есть то, что
+    человек запоминает, поэтому «сказано где-то ниже» здесь не годится.
     """
     _set_role(
         stand, "accountant",
         ledgers=["official"], permissions=["timesheet.edit"],
         shipped={"visible_ledgers": ["official"], "permissions": ["timesheet.edit"]},
     )
-    said: list[str] = []
 
     with stand.cursor() as cur:
         cur.execute("set local role app_user")
     try:
-        report = sync(stand, apply=False, say=said.append)
+        report = sync(stand, apply=False)
     finally:
         with stand.cursor() as cur:
             cur.execute("reset role")
@@ -450,8 +463,13 @@ def test_a_connection_that_cannot_see_the_roles_says_so(stand):
         "доставка не заметила, что смотрит на таблицу через политики"
     )
     assert report.states == [], "без контекста пользователя ролей не видно — это и есть ловушка"
-    assert any("не обходит RLS" in line for line in said), (
-        f"про невидимые роли не сказано ни слова: {said}"
+
+    said = describe(report)
+    assert "не обходит RLS" in said[0], (
+        f"первой строкой отчёта сказано не про невидимые роли: {said}"
+    )
+    assert not any("совпадают с кодом" in line for line in said), (
+        f"отчёт утверждает согласие, которого не может знать: {said}"
     )
 
 
