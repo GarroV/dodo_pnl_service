@@ -41,7 +41,7 @@ P&L по сети, но её нет ни на одной точке.
     <tr data-amount="{{ row.amount_raw }}" data-fact="{{ row.id }}">
       <td><a href="{{ row.url }}">{{ row.period }}</a></td>
       <td>{{ row.title }}</td>
-      <td class="num">{{ row.amount_text }}</td>
+      <td class="{{ row.amount_text|numclass }}">{{ row.amount_text }}</td>
       <td>{{ row.source }}</td>
       <td>{{ row.why }}</td>
     </tr>
@@ -50,7 +50,7 @@ P&L по сети, но её нет ни на одной точке.
   <tfoot>
     <tr data-total="{{ total_raw }}">
       <th colspan="2">{% translate "Итого ждёт разнесения" %}</th>
-      <th class="num">{{ total_text }}</th>
+      <th class="{{ total_text|numclass }}">{{ total_text }}</th>
       <th colspan="2"></th>
     </tr>
   </tfoot>

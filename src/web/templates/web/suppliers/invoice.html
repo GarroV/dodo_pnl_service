@@ -60,7 +60,7 @@
     <tr data-amount="{{ row.amount_raw }}">
       <td>{{ row.date }}</td>
       <td>{{ row.period }}</td>
-      <td class="num">{{ row.amount_text }}</td>
+      <td class="{{ row.amount_text|numclass }}">{{ row.amount_text }}</td>
       <td>{{ row.channel }}</td>
       <td>{{ row.till }}</td>
       <td>{{ row.ledger }}</td>
