@@ -8,6 +8,7 @@ from . import (
     directory_views,
     expense_items_views,
     expenses_views,
+    papers_views,
     reports_views,
     roles_views,
     rules_views,
@@ -212,6 +213,21 @@ urlpatterns = [
     ),
     # Оплата без счёта: расход признаётся датой денег, потому что бумаги нет.
     path("payments/new/", suppliers_views.payment_new, name="payment-new"),
+    # Бумаги с точек (T174, D047): накладная и чек, принесённые управляющим.
+    # Свой корень адреса, а не под `invoices/`: бумага — это ещё не счёт, и
+    # адрес обязан говорить то же, что данные. К разделу «Счета» в шапке она при
+    # этом принадлежит (`NAV_BELONGS` в `templatetags/ui.py`) — работа со счетами
+    # начинается с неё.
+    path("papers/", papers_views.paper_list, name="papers"),
+    path("papers/new/", papers_views.paper_new, name="paper-new"),
+    path("papers/<uuid:document_id>/", papers_views.paper, name="paper"),
+    # Сам файл — своим адресом: карточка бумаги показывает его картинкой, а
+    # PDF отдаётся на сохранение. Кому файл виден, решают политики базы.
+    path(
+        "papers/<uuid:document_id>/file/",
+        papers_views.paper_file,
+        name="paper-file",
+    ),
     # Инбокс классификации (T152): строки без статьи одним списком. Разбор —
     # своим адресом и только POST: это запись денег, и по ссылке из истории
     # браузера случиться не должна.

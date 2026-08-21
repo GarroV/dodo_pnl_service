@@ -1426,6 +1426,13 @@ class SourceDocument(models.Model):
         Counterparty, on_delete=models.SET_NULL, null=True, blank=True,
         db_column="counterparty_id",
     )
+    # Чья это бумага: точка, с которой её принесли (T174). Не точка расхода —
+    # та живёт у факта и назначается при разборе: накладную приносят с NS1, а
+    # расход по ней может лечь на всю сеть. Пусто у всего, что бумагой с точки
+    # не является: у счетов, заведённых бухгалтером, и у банковской выписки.
+    unit = models.ForeignKey(
+        Unit, on_delete=models.SET_NULL, null=True, blank=True, db_column="unit_id",
+    )
     kind = EnumField(db_type_name=DOCUMENT_KIND)
     source = EnumField(db_type_name=FACT_SOURCE)
     external_id = models.TextField()  # id в системе-источнике
@@ -1443,6 +1450,12 @@ class SourceDocument(models.Model):
     batch = models.ForeignKey(
         FactBatch, on_delete=models.SET_NULL, null=True, blank=True, db_column="batch_id",
     )
+    # Когда бумагу принесли с точки (T174). Заполнено — документ ждёт разбора
+    # бухгалтером; пусто — обычный документ. Отметка нужна, чтобы бумага,
+    # принесённая и ещё не разобранная, отличалась от документа, у которого
+    # строки не записались из-за отказа: второе выглядело бы разобранным, и
+    # именно так деньги теряются молча.
+    handed_over_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(db_default=now_default())
     created_by = models.UUIDField(null=True, blank=True)
 
@@ -1451,10 +1464,68 @@ class SourceDocument(models.Model):
         indexes = [
             models.Index("tenant", models.F("doc_date").desc(), name="source_docs_date_idx"),
             models.Index("tenant", "counterparty", name="source_docs_counterparty_idx"),
+            # Инбокс спрашивает только принесённые бумаги, и их единицы на фоне
+            # всех документов партнёра: частичный индекс, а не полный.
+            models.Index(
+                models.F("tenant"), models.F("handed_over_at").desc(),
+                condition=models.Q(handed_over_at__isnull=False),
+                name="source_docs_handed_over_idx",
+            ),
         ]
         constraints = [
             models.UniqueConstraint(
                 fields=["tenant", "source", "external_id"], name="source_documents_external_uniq"
+            ),
+            # Бумага с точки обязана точку назвать. Правило стоит в базе, а не в
+            # форме: без него управляющий сдавал бы бумагу «на всю сеть», и она
+            # была бы видна всем — политика по точке пропускает пустую точку
+            # намеренно (там это означает «точка живёт у строки»).
+            models.CheckConstraint(
+                condition=models.Q(handed_over_at__isnull=True)
+                | models.Q(unit__isnull=False),
+                name="source_documents_paper_names_its_unit",
+            ),
+        ]
+
+
+class DocumentFile(models.Model):
+    """Файл принесённой бумаги: фотография накладной, скан чека (T174).
+
+    Отдельной таблицей, а не колонкой в документе: Django выбирает все колонки
+    модели, и фотография уезжала бы в каждый список счетов — десятки мегабайт на
+    экран. Заодно это отвечает на вопрос «кому виден файл» одним правилом: он
+    виден ровно тогда, когда виден его документ (политика зовёт документ, а не
+    повторяет его условия).
+
+    Один файл на бумагу — первичный ключ и есть документ. Накладная на трёх
+    листах приносится тремя бумагами; складывать страницы в одну запись пока
+    незачем, а вторая таблица под страницы стоила бы дороже, чем экономит.
+
+    Байты лежат в базе, а не на диске: бэкап у продукта один — дамп Postgres, и
+    файл на диске уехал бы из него молча.
+    """
+
+    document = models.OneToOneField(
+        SourceDocument, on_delete=models.CASCADE, primary_key=True,
+        db_column="document_id",
+    )
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    # Тип определяется по самим байтам, а не по слову из браузера: браузер
+    # присылает то, что ему сказала операционная система, и подменить это в
+    # запросе может кто угодно.
+    media_type = models.TextField()
+    byte_size = models.IntegerField()
+    content = models.BinaryField()
+    sha256 = models.TextField()
+    created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "document_files"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(byte_size__gt=0),
+                name="document_files_size_is_positive",
             ),
         ]
 

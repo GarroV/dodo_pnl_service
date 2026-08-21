@@ -12,9 +12,13 @@
 значением: два источника одного `id` — верный способ развязать подпись и ввод
 молча.
 
-Виды: text, number, date, month, select, note. Незнакомый вид рисуется обычным
-полем — это осознанно: молча пропущенное поле человек не заметит, а лишнее
-текстовое увидит сразу.
+Виды: text, number, date, month, select, file, note. Незнакомый вид рисуется
+обычным полем — это осознанно: молча пропущенное поле человек не заметит, а
+лишнее текстовое увидит сразу.
+
+`file` — выбор файла (фотография бумаги с точки, T174). Форма с таким полем
+обязана быть `enctype="multipart/form-data"`, иначе браузер пришлёт одно имя
+файла вместо его содержимого, и продукт честно откажет «файл не приложен».
 
 `note` — значение без ввода: так показывается то, что человек вправе видеть, но
 не вправе менять (способ работы группы без права `rules.manage`). Не
@@ -35,6 +39,8 @@
     {% include "web/components/field.html" with id=field.name name=field.name label=field.label value=field.value required=field.required help=field.help type="text" inputmode="decimal" %}
   {% elif field.kind == "date" %}
     {% include "web/components/field.html" with id=field.name name=field.name label=field.label value=field.value required=field.required help=field.help type="date" %}
+  {% elif field.kind == "file" %}
+    {% include "web/components/field.html" with id=field.name name=field.name label=field.label required=field.required help=field.help type="file" accept=field.accept %}
   {% elif field.kind == "month" %}
     {% include "web/components/field.html" with id=field.name name=field.name label=field.label value=field.value required=field.required help=field.help type="month" %}
   {% else %}

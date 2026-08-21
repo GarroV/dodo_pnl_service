@@ -12,12 +12,19 @@
 
 Каждая строка — своя форма, а не одна общая на таблицу. Общая отправляла бы все
 строки разом, и одна ошибка в одной строке роняла бы разбор всех.
+
+**Второй список — бумаги с точек** (T174), и он отделён от первого нарочно.
+Разница между ними не в оформлении, а в деньгах: строка без статьи **уже** в
+P&L, только не в той статье, а бумага в P&L не входит вовсе — у неё ещё нет ни
+одной строки учёта. Один список с общим итогом сложил бы эти два числа, и
+получилась бы сумма, которой нет ни в одном отчёте.
 {% endcomment %}
 {% block title %}{% translate "Инбокс" %}{% endblock %}
 {% block content %}
 <p class="note"><a href="{{ back_url }}">{% translate "← К счетам" %}</a></p>
 <h1>{% translate "Инбокс" %}</h1>
-<p class="sub">{% translate "Строки без статьи. Деньги уже в P&L, но не там, где их будут искать." %}</p>
+<p class="sub">{% translate "Строки без статьи. Деньги уже в P&L, но не там, где их будут искать." %}
+  <a href="{{ papers_url }}">{% translate "Бумаги с точек" %}</a></p>
 
 {% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
 
@@ -66,5 +73,40 @@
 {% else %}
 {% translate "Инбокс пуст." as empty %}
 {% notice "empty" title=empty %}<span data-total="{{ total_raw }}">{% translate "У всех строк есть статья: разбирать нечего." %}</span>{% endnotice %}
+{% endif %}
+
+<h2>{% translate "Бумаги с точек" %}</h2>
+{% if papers %}
+{% notice "alert" title=stated_text %}<span data-papers="{{ papers_counted }}" data-stated="{{ stated_raw }}">{% blocktranslate count counter=papers_counted %}ждёт разбора {{ counter }} бумага{% plural %}ждут разбора {{ counter }} бумаг{% endblocktranslate %} — {% translate "суммы со слов управляющих, в P&L их нет" %}</span>{% endnotice %}
+
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Дата на бумаге" %}</th>
+      <th>{% translate "Что за бумага" %}</th>
+      <th>{% translate "Точка" %}</th>
+      <th>{% translate "Поставщик" %}</th>
+      <th>{% translate "Что это" %}</th>
+      <th class="num">{% translate "Сумма со слов" %}</th>
+      <th>{% translate "Разобрать" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in papers %}
+    <tr data-paper="{{ row.id }}">
+      <td><a href="{{ row.url }}">{{ row.date }}</a></td>
+      <td>{{ row.kind }}</td>
+      <td>{{ row.unit }}</td>
+      <td>{{ row.counterparty }}</td>
+      <td>{{ row.note }}</td>
+      <td class="{{ row.amount_text|numclass }}">{{ row.amount_text }}</td>
+      <td><a class="btn" href="{{ row.url }}">{% translate "Открыть бумагу" %}</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% else %}
+{% translate "Бумаг на разбор нет." as no_papers %}
+{% notice "empty" title=no_papers %}<span data-papers="0">{% translate "Всё, что принесли с точек, разобрано." %}</span>{% endnotice %}
 {% endif %}
 {% endblock %}

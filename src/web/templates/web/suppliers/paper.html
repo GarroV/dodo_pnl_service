@@ -1,0 +1,87 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Карточка бумаги с точки: сама бумага и её разбор (T174).
+
+**Фотография стоит выше формы.** Разбирает бухгалтер, и он читает поставщика,
+дату и сумму с самой бумаги — форма под снимком повторяет порядок работы, а не
+порядок полей в базе.
+
+**Пока бумага не разобрана, об этом сказано прямо: в P&L её нет.** Это не
+предупреждение на всякий случай, а главное свойство состояния: суммы, названной
+управляющим, в отчёте не существует, потому что в отчёте живут факты, а факта
+ещё нет. Человек, который этого не знает, начнёт складывать её с суммами P&L.
+
+**Разобранная бумага показывает свои строки и ведёт на счёт.** Дальше правят
+счёт, а не бумагу: бумага — это то, что принесли, и переписывать её задним
+числом нечем.
+{% endcomment %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К бумагам" %}</a></p>
+<h1>{{ heading }}</h1>
+
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+
+{% if error %}
+{% translate "Не разобрано." as not_sorted %}
+{% notice "alert" title=not_sorted %}{{ error }}{% endnotice %}
+{% endif %}
+
+<p class="sub">
+  {% blocktranslate with kind=paper.kind date=paper.date unit=paper.unit %}{{ kind }} от {{ date }}, точка {{ unit }}{% endblocktranslate %}
+  · {% blocktranslate with party=paper.counterparty %}поставщик: {{ party }}{% endblocktranslate %}
+  · {% blocktranslate with amount=paper.stated_text %}сумма со слов: {{ amount }}{% endblocktranslate %}
+  {% if paper.note %}<br>{{ paper.note }}{% endif %}
+</p>
+
+{% if shown_inline %}
+<p><img class="paper-shot" src="{{ file_url }}" alt="{% translate "Снимок принесённой бумаги" %}"></p>
+{% else %}
+<p><a class="btn" href="{{ file_url }}">{% blocktranslate with size=file_size %}Скачать файл ({{ size }}){% endblocktranslate %}</a></p>
+{% endif %}
+
+{% if waiting %}
+{% translate "Бумага ещё не разобрана." as not_yet %}
+{% notice "alert" title=not_yet %}<span data-waiting="1">{% translate "В P&L её нет: там живут строки учёта, а у этой бумаги их пока ни одной. Назначьте поставщика, статью и период — и сумма встанет в отчёт." %}</span>{% endnotice %}
+
+{% if closed_note %}<p class="note">{{ closed_note }}</p>{% endif %}
+
+<h2>{% translate "Разобрать бумагу" %}</h2>
+<form class="card wide" method="post">{% csrf_token %}
+  {% comment %}
+  Скрытого ключа записи здесь нет намеренно, в отличие от формы счёта: ключ у
+  этой строки один возможный — внешний ключ самой бумаги. Взять его из формы
+  значило бы позволить браузеру назвать другой, то есть записать деньги в
+  документ-двойник.
+  {% endcomment %}
+  {% include "web/directory/fields.html" with fields=fields %}
+  <p class="actions"><button type="submit" class="primary">{% translate "Разобрать и учесть" %}</button></p>
+</form>
+{% else %}
+{% translate "Бумага разобрана." as sorted_out %}
+{% notice "ok" title=sorted_out %}<span data-waiting="0">{% translate "Строки учтены и видны в P&L. Дальше правят счёт, а не бумагу." %}</span>{% endnotice %}
+
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Что это" %}</th>
+      <th>{% translate "Точка" %}</th>
+      <th>{% translate "Период учёта" %}</th>
+      <th class="num">{% translate "Сумма" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in lines %}
+    <tr data-amount="{{ row.amount_raw }}">
+      <td>{{ row.title }}</td>
+      <td>{{ row.unit }}</td>
+      <td>{{ row.period }}</td>
+      <td class="{{ row.amount_text|numclass }}">{{ row.amount_text }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+
+<p class="actions"><a class="btn primary" href="{{ invoice_url }}">{% translate "Открыть счёт" %}</a></p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Скинуть бумагу с точки (T174, D047).
+
+Форма короткая нарочно: управляющий доносит бумагу, а не считает. Статьи расхода
+и периода учёта здесь нет вовсе — их назначает бухгалтер при разборе; поле,
+заполненное наугад, дороже пустого, потому что перепроверять придётся всё равно.
+
+`enctype` обязателен: без него браузер пришлёт одно имя файла вместо содержимого,
+и продукт откажет «файл не приложен» — честно, но человеку непонятно за что.
+
+Ключ записи — скрытым полем: по нему повторная отправка (второе нажатие на
+телефоне с плохой связью) узнаётся как та же бумага, а не как вторая.
+{% endcomment %}
+{% block title %}{% translate "Скинуть накладную или чек" %}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К бумагам" %}</a></p>
+<h1>{% translate "Скинуть накладную или чек" %}</h1>
+<p class="sub">{% translate "Сфотографируйте бумагу и приложите снимок. Поставщика, статью и период назначит бухгалтер." %}</p>
+
+{% if error %}
+{% translate "Не принято." as not_taken %}
+{% notice "alert" title=not_taken %}{{ error }}{% endnotice %}
+{% endif %}
+
+<form class="card wide" method="post" enctype="multipart/form-data">{% csrf_token %}
+  <input type="hidden" name="entry_key" value="{{ entry_key }}">
+  {% include "web/directory/fields.html" with fields=fields %}
+  <p class="actions"><button type="submit" class="primary">{% translate "Отправить бумагу" %}</button></p>
+</form>
+{% endblock %}
