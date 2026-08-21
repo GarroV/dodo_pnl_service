@@ -215,6 +215,7 @@ class Report:
     adopted: list[RoleState] = field(default_factory=list)
     recorded: list[RoleState] = field(default_factory=list)
     foreign: int = 0               # роли, которых в форме продукта нет вовсе
+    adopt_only: bool = False       # проход был `--adopt`: приняли и НЕ доставляли
 
     def by_state(self, state: str) -> list[RoleState]:
         return [item for item in self.states if item.state == state]
@@ -387,6 +388,30 @@ def sync(connection, *, apply: bool = True, adopt: bool = False, say=None) -> Re
                 for item in report.by_state(UNKNOWN):
                     cursor.execute(_RECORD_SQL, [_json(item.db), item.role_id])
                     report.adopted.append(item)
+                # И на этом проход заканчивается — доставки в нём НЕ будет.
+                #
+                # Почему так, хотя раньше принятие и доставка шли подряд.
+                # `unknown` — это роли, существовавшие до появления снимка, а
+                # экран `/roles/` к тому времени уже позволял партнёру править
+                # права. Значит роль без снимка — это с высокой вероятностью
+                # как раз **правка человека**, а не наше отставание: если бы
+                # база совпадала с кодом, роль была бы `match`, а не `unknown`.
+                #
+                # Принятие делает её `behind`, и прошлая версия тут же
+                # переписывала её значениями из кода — то есть единственный
+                # выход из `unknown` затирал правку партнёра в том же вызове, без
+                # предупреждения и без шанса передумать. Это ровно то молчание,
+                # против которого сделан весь механизм, только в другую сторону:
+                # его же докстринг говорит, что продукт не вправе решать за
+                # человека, его там правка или наше отставание.
+                #
+                # Теперь принятие только начинает отслеживать роль. Дальше
+                # человек смотрит разъезд (`--check` покажет его как отставание)
+                # и решает сам. Найдено разбором дифа свежим взглядом; прошлая
+                # версия была не опиской, а закреплённым в тесте поведением.
+                report.adopt_only = True
+                report.states = [_state_of(row) for row in _read(cursor)]
+                return report
 
             # Перечитываем: после принятия часть ролей стала `behind`.
             report.states = [_state_of(row) for row in _read(cursor)]
@@ -442,6 +467,13 @@ def describe(report: Report) -> list[str]:
     # приняли».
     for item in report.adopted:
         lines.append(f"принято как поставленное продуктом: {item.tenant}/{item.code}")
+    if report.adopt_only and report.adopted:
+        # Без этой строки человек уйдёт с мыслью, что `--adopt` всё уладил.
+        lines.append(
+            "доставки в этом проходе НЕ было: принятые роли теперь отслеживаются "
+            "и читаются как отставшие. Посмотрите разъезд (`roles_sync --check`) "
+            "прежде чем доставлять: если это правка партнёра, доставка её затрёт"
+        )
     for item in report.delivered:
         lines.append(f"довезено: {item.tenant}/{item.code} «{item.title}»")
         lines.extend(f"    {line}" for line in item.diff)

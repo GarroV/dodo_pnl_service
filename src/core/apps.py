@@ -63,8 +63,17 @@ def deliver_role_shapes(sender, **kwargs) -> None:
     report = sync(connections[using], apply=True, say=say)
     # Отчёт — только когда есть что сказать: «роли совпадают с кодом» в конце
     # каждого migrate превратилось бы в строку, которую перестают читать.
+    # `recorded` здесь обязателен: без него первый прогон на базе, где роли
+    # случайно совпали с кодом, ЗАПИСЫВАЛ снимки во все такие роли и не говорил
+    # об этом ни строки. Значения при этом верные, неправды нет — но «сделали и
+    # не сказали» противоречит контракту самого отчёта («что доставка увидела и
+    # что сделала»), а наблюдаемость первого боевого прогона тут и есть главное.
     if verbosity >= 1 and (
-        report.delivered or not report.in_sync or not report.bypasses_rls
+        report.delivered
+        or report.recorded
+        or report.adopted
+        or not report.in_sync
+        or not report.bypasses_rls
     ):
         for line in describe(report):
             stream.write(f"Роли: {line}\n")

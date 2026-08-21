@@ -294,19 +294,36 @@ def test_a_role_without_a_snapshot_waits_for_a_human(stand):
     _role_id, _ledgers, permissions, _shipped = _role(stand, "accountant")
     assert list(permissions) == ["timesheet.edit"], "роль без снимка тронули без спроса"
 
+    # `--adopt` НАЧИНАЕТ отслеживать роль и на этом останавливается. Раньше он
+    # принимал и тут же довозил её до кода — то есть единственный выход из
+    # ожидания затирал правку партнёра в том же вызове. А роль без снимка это с
+    # высокой вероятностью как раз правка: совпадай она с кодом, состояние было
+    # бы `match`, а не `unknown`. Найдено разбором дифа свежим взглядом, и
+    # прежняя редакция этого теста закрепляла именно дефект.
     adopted = sync(stand, apply=True, adopt=True)
     assert [item.code for item in adopted.adopted] == ["accountant"]
-    assert [item.code for item in adopted.delivered] == ["accountant"]
+    assert adopted.delivered == [], "принятие не должно доставлять в том же проходе"
+    assert adopted.adopt_only is True
+    _role_id, ledgers, permissions, _shipped = _role(stand, "accountant")
+    assert list(permissions) == ["timesheet.edit"], "принятие затёрло правку человека"
+
+    # И человек об этом узнаёт словами, а не по отсутствию строки.
+    said = " ".join(describe(adopted))
+    assert "доставки в этом проходе НЕ было" in said, said
+
+    # Роль теперь отслеживается: следующий проход видит её отставшей и довозит —
+    # но это уже осознанный второй шаг, а не побочный эффект принятия.
+    delivered = sync(stand, apply=True)
+    assert [item.code for item in delivered.delivered] == ["accountant"]
     _role_id, ledgers, permissions, _shipped = _role(stand, "accountant")
     assert normalize(ledgers, permissions) == product_shape("accountant")
 
-    # Порядок строк отчёта — в порядке событий: сначала приняли, потом довезли.
-    # Обратный порядок стоял здесь до приёмки и читался как «довезли, а потом
-    # зачем-то приняли», то есть описывал механизм неверно.
-    said = describe(adopted)
-    assert said.index("принято как поставленное продуктом: rs-dev/accountant") < next(
-        i for i, line in enumerate(said) if line.startswith("довезено:")
-    ), f"отчёт рассказывает события в обратном порядке: {said}"
+    # Проверка порядка «сначала приняли, потом довезли» отсюда убрана нарочно:
+    # эти два события больше не происходят в одном проходе, и проверять их
+    # взаимный порядок стало не на чем. Смысл, который она защищала — отчёт
+    # рассказывает события в порядке событий, — остаётся закреплён двумя
+    # проверками выше: в проходе принятия говорится «принято» и прямо
+    # сказано, что доставки не было, а «довезено» появляется только во втором.
 
 
 def test_check_writes_nothing(stand):
