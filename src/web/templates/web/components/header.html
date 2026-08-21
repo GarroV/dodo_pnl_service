@@ -135,9 +135,9 @@
     {% url 'guide' as guide_url %}
     {% translate "как это работает" as guide_label %}
     {% if request.path|in_section:guide_url %}
-      <span class="btn here" aria-current="page">{{ guide_label }}</span>
+      <span class="guide-link here" aria-current="page">{{ guide_label }}</span>
     {% else %}
-      <a class="btn" href="{{ guide_url }}">{{ guide_label }}</a>
+      <a class="guide-link" href="{{ guide_url }}">{{ guide_label }}</a>
     {% endif %}
     {% if languages %}
     <form class="lang seg" method="post" action="{% url 'set_language' %}">{% csrf_token %}
