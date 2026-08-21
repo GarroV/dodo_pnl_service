@@ -58,6 +58,7 @@
 | `/expenses/<uuid:fact_id>/delete/` | `expense-delete` | `web.expenses_views.expense_delete` |
 | `/expenses/new/` | `expense-new` | `web.cash_views.cash_expense` |
 | `/expenses/unallocated/` | `expenses-unallocated` | `web.expenses_views.unallocated` |
+| `/guide/` | `guide` | `web.guide.page` |
 | `/i18n/setlang/` | `set_language` | `django.views.i18n.set_language` |
 | `/inbox/` | `inbox` | `web.suppliers_views.inbox` |
 | `/inbox/<uuid:fact_id>/classify/` | `inbox-classify` | `web.suppliers_views.inbox_classify` |
