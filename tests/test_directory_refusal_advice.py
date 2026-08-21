@@ -42,6 +42,25 @@ def official_group(sql):  # noqa: F811  — имя фикстуры pytest, не
     ).fetchone()
 
 
+def another_scheme(sql, current: str) -> str:  # noqa: F811
+    """Другая схема — настоящая, из правил страны.
+
+    Прежде обе проверки ниже подставляли строку «совсем другая», и с T164 это
+    перестало доходить до проверяемого отказа: схема выбирается из списка правил
+    страны, и выдуманное значение отвергается раньше — как ввод (400), а не как
+    состояние данных (409). Первая проверка от этого покраснела, а вторая
+    осталась зелёной **по случайности**: она смотрит только на слова, а слова
+    «в условиях найма» есть и в подсказке под полем схемы. Зелёный не по своей
+    причине хуже красного — поэтому значение берётся из правил.
+    """
+    row = sql.execute(
+        "select key from rule_presets, jsonb_object_keys(body -> 'schemes') as key "
+        "where country_code = 'RS' and key <> %s limit 1", (current,),
+    ).fetchone()
+    assert row, "в правилах страны меньше двух схем — менять не на что"
+    return row[0]
+
+
 def test_the_group_refusal_names_no_date_the_person_never_typed(
     client, sql, web_env, payruns_restored,  # noqa: F811
 ):
@@ -58,7 +77,8 @@ def test_the_group_refusal_names_no_date_the_person_never_typed(
     login_as(client, "admin")
     try:
         refused = client.post(f"/directory/groups/{group_id}/", {
-            "code": code, "title": title, "scheme": "совсем другая", "ledger": ledger,
+            "code": code, "title": title,
+            "scheme": another_scheme(sql, scheme), "ledger": ledger,
         })
         assert refused.status_code == 409, refused.status_code
         html = body(refused)
@@ -93,7 +113,8 @@ def test_the_group_refusal_does_not_advise_picking_a_date(
     login_as(client, "admin")
     try:
         refused = client.post(f"/directory/groups/{group_id}/", {
-            "code": code, "title": title, "scheme": "совсем другая", "ledger": ledger,
+            "code": code, "title": title,
+            "scheme": another_scheme(sql, scheme), "ledger": ledger,
         })
         html = body(refused)
         assert "озьмите дату" not in html, (
