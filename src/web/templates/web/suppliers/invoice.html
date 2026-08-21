@@ -1,0 +1,76 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Карточка счёта: сам счёт, его платежи и остаток (T151).
+
+**Платежи стоят рядом со счётом, а не отдельным разделом.** Счёт и платёж —
+разные события с разными датами, и увидеть это можно только вместе: сверху сумма
+документа, снизу — когда и чем её гасили. Экран, где остаток приходится считать
+в уме, и есть причина, по которой у партнёра это живёт в Excel.
+
+**Кнопка оплаты — ссылка на свой адрес, а не поле в этой же форме.** Оплата
+пишет своё событие со своей датой; поле в форме счёта означало бы, что дата
+денег привязана к правке счёта, то есть ровно то, чего мы избегаем.
+
+Ключ записи — скрытым полем: по нему повторная отправка той же формы узнаётся
+как та же самая, а не как второй счёт теми же деньгами.
+{% endcomment %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К счетам" %}</a></p>
+<h1>{{ heading }}</h1>
+
+{% if error %}
+{% translate "Не сохранено." as not_saved %}
+{% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
+{% endif %}
+
+{% if closed_note %}<p class="note">{{ closed_note }}</p>{% endif %}
+
+{% if summary %}
+<p class="sub" data-amount="{{ summary.amount_raw }}" data-paid="{{ summary.paid_raw }}"
+   data-left="{{ summary.left_raw }}" data-state="{{ summary.state }}">
+  {% blocktranslate with amount=summary.amount_text paid=summary.paid_text left=summary.left_text %}Сумма {{ amount }} · оплачено {{ paid }} · остаток {{ left }}{% endblocktranslate %}
+  · {{ summary.state_title }}
+</p>
+<p><a class="btn primary" href="{{ pay_url }}">{% translate "Отметить оплату" %}</a></p>
+{% endif %}
+
+<form class="card wide" method="post">{% csrf_token %}
+  <input type="hidden" name="entry_key" value="{{ entry_key }}">
+  {% include "web/directory/fields.html" with fields=fields %}
+  <p class="actions"><button type="submit" class="primary">{% translate "Сохранить счёт" %}</button></p>
+</form>
+
+{% if payments %}
+<h2>{% translate "Платежи по счёту" %}</h2>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Дата оплаты" %}</th>
+      <th>{% translate "Период учёта" %}</th>
+      <th class="num">{% translate "Сумма" %}</th>
+      <th>{% translate "Чем" %}</th>
+      <th>{% translate "Касса" %}</th>
+      <th>{% translate "Регистр" %}</th>
+      <th>{% translate "Комментарий" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in payments %}
+    <tr data-amount="{{ row.amount_raw }}">
+      <td>{{ row.date }}</td>
+      <td>{{ row.period }}</td>
+      <td class="num">{{ row.amount_text }}</td>
+      <td>{{ row.channel }}</td>
+      <td>{{ row.till }}</td>
+      <td>{{ row.ledger }}</td>
+      <td>{{ row.note }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% elif summary %}
+{% translate "Оплат ещё не было." as no_payments %}
+{% notice "empty" title=no_payments %}{% translate "Счёт выставлен и висит в обязательствах: расход в P&L уже есть, деньги ещё не ушли." %}{% endnotice %}
+{% endif %}
+{% endblock %}

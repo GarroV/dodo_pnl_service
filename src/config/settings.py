@@ -21,6 +21,24 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "insecure-dev-key-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
+# Источники, которым Django верит при проверке CSRF на POST по HTTPS (T161).
+# Понадобилось, когда стенд начал открываться наружу постоянным адресом: за
+# обратным прокси Django сверяет заголовок Origin со списком, и без него вход
+# на публичном адресе отвечал бы 403 на верный пароль — то есть выглядел бы
+# как сломанный продукт, а не как настройка.
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+# Прокси стоит впереди и заканчивает TLS на себе. Без этой пары Django считает
+# запрос небезопасным (http), и штука, которая ломается первой, — это как раз
+# CSRF на входе.
+if os.environ.get("BEHIND_TLS_PROXY") == "1":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
@@ -45,6 +63,12 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Продукт партнёра не место для поисковика: индексировать его незачем ни в
+    # каком развёртывании, а публичный адрес стенда делает это не теорией
+    # (T161). Заголовком, а не файлом robots.txt: robots — просьба к обходчику
+    # не заходить, X-Robots-Tag — запрет показывать в выдаче то, что уже
+    # получили.
+    "web.middleware.NoIndex",
     # Статика отдаётся тут же, приложением, а не отдельным веб-сервером
     # (issue #68; почему именно так — у STATIC_ROOT ниже). Место в списке не
     # произвольное: сразу после SecurityMiddleware, как требует whitenoise, —

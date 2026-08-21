@@ -1,0 +1,44 @@
+# Каталог перевода интерфейса Dodo P&L — РУССКИЙ.
+#
+# Этот каталог намеренно НЕПОЛНЫЙ и таким и останется. Русский — язык
+# исходника: почти все строки продукта написаны по-русски прямо в коде и
+# шаблонах, перевода им не нужно. Здесь лежат только те строки, у которых
+# ключом стоит устойчивый идентификатор, а не русский текст, — сейчас это
+# названия ролей (см. `src/web/i18n.py`).
+#
+# ВНИМАНИЕ: не запускать для него `makemessages` — он затянет сюда все 900+
+# строк продукта и потребует переводить русский на русский.
+msgid ""
+msgstr ""
+"Project-Id-Version: dodo-pnl\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: 2026-08-21 00:00+0000\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+
+#: src/web/i18n.py
+msgid "role.director"
+msgstr "Оперативный директор"
+
+#: src/web/i18n.py
+msgid "role.accountant"
+msgstr "Бухгалтер"
+
+#: src/web/i18n.py
+msgid "role.manager"
+msgstr "Управляющий точки"
+
+#: src/web/i18n.py
+msgid "role.admin"
+msgstr "Администратор сети"
+
+#: src/web/i18n.py
+msgid "role.regional_manager"
+msgstr "Региональный управляющий"
+
+#: src/web/i18n.py
+msgid "role.shift_manager"
+msgstr "Менеджер смены"

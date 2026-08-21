@@ -1,0 +1,94 @@
+{
+  "Контрагенты": {
+    "en": "Counterparties",
+    "sr": "Partneri"
+  },
+  "Контрагентов нет.": {
+    "en": "No counterparties yet.",
+    "sr": "Nema partnera."
+  },
+  "Новый контрагент": {
+    "en": "New counterparty",
+    "sr": "Novi partner"
+  },
+  "Завести контрагента": {
+    "en": "Add counterparty",
+    "sr": "Dodaj partnera"
+  },
+  "← К контрагентам": {
+    "en": "← To the counterparties",
+    "sr": "← Na partnere"
+  },
+  "Ничего не нашлось.": {
+    "en": "Nothing found.",
+    "sr": "Ništa nije pronađeno."
+  },
+  "Поставщики и получатели платежей. Один контрагент — одна карточка: иначе траты одного поставщика рассыпаются по написаниям названия.": {
+    "en": "Suppliers and payees. One counterparty, one card: otherwise the spending of a single supplier scatters across spellings of its name.",
+    "sr": "Dobavljači i primaoci uplata. Jedan partner — jedna kartica: inače se troškovi istog dobavljača rasipaju po različitim ispisima naziva."
+  },
+  "Поставщики и получатели платежей: название, номера, ключ Dodo IS": {
+    "en": "Suppliers and payees: name, numbers, Dodo IS key",
+    "sr": "Dobavljači i primaoci uplata: naziv, brojevi, Dodo IS ključ"
+  },
+  "Поиск по названию, написаниям и номеру": {
+    "en": "Search by name, spelling or number",
+    "sr": "Pretraga po nazivu, ispisu ili broju"
+  },
+  "Пока справочник пуст, счёт выписать не на кого.": {
+    "en": "While the directory is empty there is nobody to put an invoice on.",
+    "sr": "Dok je imenik prazan, račun nema na koga da se upiše."
+  },
+  "Попробуйте другое написание: поиск смотрит и на название, и на другие написания, и на номера.": {
+    "en": "Try another spelling: the search looks at the name, the other spellings and the numbers.",
+    "sr": "Probajte drugi ispis: pretraga gleda i naziv, i druge ispise, i brojeve."
+  },
+  "Вас ещё не завели ни к одному партнёру, поэтому контрагентов у вас нет. Попросите администратора сети добавить вас.": {
+    "en": "You have not been added to any partner yet, so you have no counterparties. Ask the network administrator to add you.",
+    "sr": "Još niste dodati nijednom partneru, pa nemate nijednog dobavljača. Zamolite administratora mreže da vas doda."
+  },
+  "Ключ Dodo IS": {
+    "en": "Dodo IS key",
+    "sr": "Dodo IS ključ"
+  },
+  "Другие написания": {
+    "en": "Other spellings",
+    "sr": "Drugi ispisi"
+  },
+  "Закрыт с": {
+    "en": "Closed from",
+    "sr": "Zatvoren od"
+  },
+  "Как этот поставщик называется у вас. Название у партнёра одно: две карточки означают, что траты одного поставщика не сложатся.": {
+    "en": "What you call this supplier. A partner keeps one name per counterparty: two cards mean the spending of one supplier will not add up.",
+    "sr": "Kako se ovaj dobavljač zove kod vas. Naziv je jedan po partneru: dve kartice znače da se troškovi istog dobavljača neće sabrati."
+  },
+  "ПИБ или его аналог. По нему сходятся фактура и выписка.": {
+    "en": "The tax number or its local equivalent. It is what makes an invoice and a bank line meet.",
+    "sr": "PIB ili njegov ekvivalent. Po njemu se spajaju faktura i izvod."
+  },
+  "Через запятую: как этого поставщика пишут в выписке и в файлах. Поиск смотрит и сюда.": {
+    "en": "Comma separated: how this supplier is spelled in the bank statement and in files. The search looks here too.",
+    "sr": "Odvojeno zarezom: kako se ovaj dobavljač piše u izvodu i u fajlovima. Pretraga gleda i ovde."
+  },
+  "Идентификатор поставщика в справочнике Dodo IS. Можно оставить пустым: он понадобится, когда появится коннектор.": {
+    "en": "The supplier identifier in the Dodo IS directory. It may stay empty: it will be needed once the connector arrives.",
+    "sr": "Identifikator dobavljača u Dodo IS imeniku. Može ostati prazan: trebaće kada stigne konektor."
+  },
+  "С какой даты работаем с этим контрагентом.": {
+    "en": "From which date we work with this counterparty.",
+    "sr": "Od kog datuma radimo sa ovim partnerom."
+  },
+  "Контрагент закрывается датой, а не удалением: закрытые месяцы на него ссылаются.": {
+    "en": "A counterparty is closed by a date, not by deletion: closed months refer to it.",
+    "sr": "Partner se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na njega."
+  },
+  "Для человека: чем занимается, кто ведёт переписку.": {
+    "en": "For a human: what they do, who keeps the correspondence.",
+    "sr": "Za čoveka: čime se bave, ko vodi prepisku."
+  },
+  "«%(label)s»: дата закрытия должна быть позже даты начала (%(from)s).": {
+    "en": "\"%(label)s\": the closing date must be later than the starting date (%(from)s).",
+    "sr": "\"%(label)s\": datum zatvaranja mora biti kasniji od datuma početka (%(from)s)."
+  }
+}
