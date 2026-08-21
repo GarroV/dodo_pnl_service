@@ -38,9 +38,13 @@ from conftest import body, login_as, period_url, wipe_payruns
 # больше всех в расчёте — и справочники всё равно не его.
 ROLES_WITHOUT_RIGHT = ["director", "accountant", "manager"]
 
+# Справочники, закрытые правом целиком. Сотрудников здесь больше нет: с T173
+# (D047) их список и карточка открыты на чтение каждому, кто вошёл, а право
+# решает «правка или чтение». Проверки этого экрана — в
+# `test_manager_reads_employees.py`; здесь остались те, у которых читателя,
+# которому они нужны для работы, нет.
 DIRECTORY_URLS = [
     "/directory/",
-    "/directory/employees/",
     "/directory/groups/",
     "/directory/units/",
     "/directory/legal-entities/",

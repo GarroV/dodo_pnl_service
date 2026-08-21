@@ -81,6 +81,27 @@
       {% url 'expenses' as section_url %}{% translate "Расходы" as section_label %}{% include "web/components/appnav_item.html" %}
       {% url 'invoices' as section_url %}{% translate "Счета" as section_label %}{% include "web/components/appnav_item.html" %}
     {% endif %}
+    {% comment %}
+    «Сотрудники» (T173, D047) — единственный справочник, который читают все, а
+    ведёт один, поэтому он и стоит здесь пунктом, а не только внутри раздела
+    справочников. Управляющему точки нужны имена, должности и ставки своих
+    людей: ставок в Dodo IS нет вовсе — это условия найма, наши данные.
+
+    Пункт показан тому, у кого раздела справочников НЕТ: у администратора сети
+    он ведёт туда же, и два входа в один экран из одной шапки читались бы как
+    два разных места. Срез строк при этом делают политики `employees` (`0020`) и
+    `employment_terms` (`0011`), а не наличие пункта в шапке — управляющий видит
+    только своих людей, и это гарантия базы, а не свойство разметки.
+
+    Известная неточность выделения: корень адреса у сотрудников и у контрагентов
+    один (`/directory/…`), поэтому читатель, открывший список контрагентов из
+    счёта, увидит выделенным «Сотрудники». Лечится это в `in_section` (там
+    сравниваются корни, и намеренно — иначе выделение теряется на вложенных
+    экранах), а не здесь; заведено issue.
+    {% endcomment %}
+    {% if principal and not principal|may:"directory.manage" %}
+      {% url 'directory-employees' as section_url %}{% translate "Сотрудники" as section_label %}{% include "web/components/appnav_item.html" %}
+    {% endif %}
     {% translate "Справочники" as nav_directory %}{% translate "Правила" as nav_rules %}{% translate "Роли" as nav_roles %}
     {% if principal|may:"directory.manage" %}
       {% url 'directory' as section_url %}{% translate "Справочники" as section_label %}{% include "web/components/appnav_item.html" %}
