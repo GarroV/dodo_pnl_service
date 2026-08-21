@@ -208,6 +208,12 @@ class Role(models.Model):
     title = models.TextField()
     permissions = models.JSONField(db_default=[])
     visible_ledgers = ArrayField(ledger_field(), db_default=["official"])
+    # Снимок формы, которую последним ставил сам продукт — сид или доставка
+    # (`core.role_delivery`, T169). Пусто — продукт не знает, что здесь стоит:
+    # роль заведена до появления механизма. Нужен ровно для одного: отличить
+    # правку партнёра от того, что код ушёл вперёд. Без такой записи видно
+    # только «в базе одно, в коде другое», а кто из двоих прав — неизвестно.
+    shipped_shape = models.JSONField(null=True, blank=True)
 
     class Meta:
         db_table = "roles"
