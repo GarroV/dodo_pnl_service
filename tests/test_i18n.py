@@ -419,3 +419,40 @@ def test_catalog_holds_nothing_that_is_gone_from_the_sources(language):
         f"{language}: записи есть в каталоге, но не в коде ({len(dead)}) — "
         f"удалите их точечно, не запуская makemessages:\n" + "\n".join(sorted(dead))
     )
+
+
+# Языки продукта целиком, включая русский. Для остальных проверок русского в
+# списке нет — он исходник; но у названий ролей ключ не русский текст, а
+# `role.<код>`, поэтому русский здесь такой же перевод, как остальные два.
+ALL_LANGUAGES = ("ru", "en", "sr-latn")
+
+
+@pytest.mark.parametrize("language", ALL_LANGUAGES)
+def test_role_titles_are_translated_in_every_language(language):
+    """Название роли не должно остаться ключом — это и есть молчаливый откат.
+
+    Почему нужна отдельная проверка. Для всего остального продукта отсутствие
+    перевода видно глазами: строка остаётся русской на английской странице. У
+    ролей ключ — `role.<код>`, и непереведённая роль выглядит как
+    `role.manager` посреди интерфейса. Ошибки при этом нет: gettext честно
+    отдаёт ключ, страница рендерится, тесты каталога молчат — запись-то в нём
+    есть. Ловится только так.
+
+    Проверка живая, а не формальная: она падала на `ru` до того, как у русского
+    появился свой каталог, и на `sr-latn` до того, как в него внесли две новые
+    роли.
+    """
+    from django.utils import translation
+
+    from web.i18n import ROLE_TITLES, role_title
+
+    with translation.override(language):
+        broken = [
+            code
+            for code in ROLE_TITLES
+            if not role_title(code).strip() or role_title(code) == f"role.{code}"
+        ]
+    assert not broken, (
+        f"{language}: название роли осталось ключом, человек увидит "
+        f"«role.<код>» вместо слова: {broken}"
+    )

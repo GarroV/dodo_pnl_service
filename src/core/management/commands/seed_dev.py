@@ -25,6 +25,7 @@ from django.db import connection, transaction
 from django.utils.timezone import now
 
 from core import models
+from core.role_delivery import product_shape
 from core.roles import ROLE_ORDER, ROLE_SHAPES
 from core.rules import import_presets
 from payroll import load_preset
@@ -357,6 +358,11 @@ class Command(BaseCommand):
                 id=det_id("role", role_def.code), tenant=tenant, code=role_def.code,
                 title=role_def.title, visible_ledgers=role_def.ledgers,
                 permissions=role_def.permissions,
+                # Снимок формы пишется здесь же, потому что здесь она и
+                # ставится (T169). Сид — один из двух путей, которыми форма
+                # попадает в базу, и роль, заведённая без снимка, для доставки
+                # выглядела бы правленной человеком: код бы до неё не доехал.
+                shipped_shape=product_shape(role_def.code),
             )
             user = models.User.objects.create_user(
                 username=role_def.code,

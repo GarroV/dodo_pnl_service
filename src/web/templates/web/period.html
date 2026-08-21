@@ -240,7 +240,7 @@
         <td>{{ line.employee }}</td>
         <td>{{ line.title }}</td>
         <td>{% ledger line.ledger %}</td>
-        <td class="num">{{ line.amount }}</td>
+        <td class="{{ line.amount|numclass }}">{{ line.amount }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -389,14 +389,14 @@
           {% include "web/components/action.html" with allowed=True url=freeze_url label=freeze_label reason_name="reason" reason_id="" reason_label="" reason_placeholder=freeze_reason_placeholder primary=False note="" denied="" %}
         {% endif %}
       </td>
-      {% for cell in row.cells %}<td class="num">{{ cell }}</td>{% endfor %}
+      {% for cell in row.cells %}<td class="{{ cell|numclass }}">{{ cell }}</td>{% endfor %}
       {% comment %}
       Итог строки — ссылка на след расчёта (T029): «откуда это число» спрашивают
       именно про него. Отдельной колонкой ссылку не ставим — ведомость едва
       уместилась в 1440 (см. журнал блока), и ещё одна колонка вернула бы тот
       самый перелив, который там лечили.
       {% endcomment %}
-      <td class="num strong">{% if row.trace_url %}<a class="trace" href="{{ row.trace_url }}"
+      <td class="{{ row.total|numclass }} strong">{% if row.trace_url %}<a class="trace" href="{{ row.trace_url }}"
         title="{% translate "Как получилась эта сумма" %}">{{ row.total }}</a>{% else %}{{ row.total }}{% endif %}</td>
     </tr>
     {% endfor %}
@@ -404,8 +404,8 @@
   <tfoot>
     <tr class="grand">
       <td colspan="4">{% blocktranslate with employees=sheet.employees %}Итого · {{ employees }} чел.{% endblocktranslate %}</td>
-      {% for cell in sheet.column_totals %}<td class="num">{{ cell }}</td>{% endfor %}
-      <td class="num">{{ total }}</td>
+      {% for cell in sheet.column_totals %}<td class="{{ cell|numclass }}">{{ cell }}</td>{% endfor %}
+      <td class="{{ total|numclass }}">{{ total }}</td>
     </tr>
   </tfoot>
 </table>
@@ -421,11 +421,11 @@
   <thead><tr><th>{% translate "Регистр" %}</th><th class="num">{% translate "Сумма" %}</th></tr></thead>
   <tbody>
     {% for row in ledgers %}
-    <tr><td>{{ row.title }}</td><td class="num">{{ row.total }}</td></tr>
+    <tr><td>{{ row.title }}</td><td class="{{ row.total|numclass }}">{{ row.total }}</td></tr>
     {% endfor %}
   </tbody>
   <tfoot>
-    <tr><td>{% translate "Итого" %}</td><td class="num">{{ total }}</td></tr>
+    <tr><td>{% translate "Итого" %}</td><td class="{{ total|numclass }}">{{ total }}</td></tr>
   </tfoot>
 </table>
 {% endif %}

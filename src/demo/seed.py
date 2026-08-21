@@ -26,6 +26,7 @@ from django.db import connection, transaction
 from django.utils.timezone import now
 
 from core import models
+from core.role_delivery import product_shape
 from core.roles import ROLE_ORDER, ROLE_SHAPES
 from core.rules import import_presets
 from payrun.calc import calculate_period
@@ -329,6 +330,10 @@ def _roles_and_users(tenant) -> None:
         role = models.Role.objects.create(
             id=det_id("role", code), tenant=tenant, code=code, title=title,
             visible_ledgers=list(ledgers), permissions=list(permissions),
+            # Снимок формы — по тому же доводу, что в сиде разработки (T169):
+            # роль без снимка доставка приняла бы за правку человека и обошла
+            # стороной, то есть демо однажды осталось бы на старой форме.
+            shipped_shape=product_shape(code),
         )
         user = models.User.objects.create_user(
             username=code, password=password,

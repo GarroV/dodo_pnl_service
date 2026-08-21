@@ -1,6 +1,9 @@
 /*
- * Сетка табеля. Токены (--ink, --line, --accent) берутся из базового шаблона:
- * второй палитры на продукт быть не должно.
+ * Сетка табеля. Значения (--ink, --line, --accent, --warn-*) берутся из
+ * дизайн-системы — static/web/tokens.css: второй палитры на продукт быть не
+ * должно. Раньше они приезжали из <style> в базовом шаблоне; лист переехал в
+ * статику (T177), и имена части токенов при этом сменились на семантические
+ * (--muted → --ink-2, --warn-bg → --warn-soft, --bg → --canvas).
  *
  * Главное требование к оформлению здесь одно — читаемость столбика чисел на
  * 35 строк. Поэтому ячейка без рамки: 210 рамок превращают таблицу в решётку,
@@ -24,32 +27,32 @@ table.grid input.cell {
   color: var(--ink);
 }
 
-table.grid input.cell:hover { background: #f6f8ff; }
+table.grid input.cell:hover { background: var(--surface-2); }
 
 /* Фокус видно всегда и издалека: на экране в 35 строк потерять курсор — обычное
    дело, а вводить вслепую нельзя. */
 table.grid input.cell:focus {
   outline: none;
   border-color: var(--accent);
-  background: #fff;
-  box-shadow: 0 0 0 2px rgba(31, 79, 216, .16);
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--focus-soft);
 }
 
 /* Состояние записи. Полоска слева, а не заливка: заливка спорит с чтением
    чисел ровно так же, как на ведомости (D023). */
 table.grid input.cell.pending { box-shadow: inset 3px 0 0 var(--line); }
-table.grid input.cell.saved   { box-shadow: inset 3px 0 0 #16a34a; }
+table.grid input.cell.saved   { box-shadow: inset 3px 0 0 var(--ok); }
 
 /* Отказ — исключение из правила выше: бледная заливка на 210 ячеек не
    отличается от соседних (проверено сверкой), а не найденная глазом ячейка с
    отказом — это потерянные часы. Поэтому рамка целиком и жирное начертание:
    ячейка должна вычитываться из столбика, а не угадываться. */
 table.grid input.cell.failed {
-  border-color: var(--warn);
-  box-shadow: inset 3px 0 0 var(--warn), 0 0 0 2px rgba(197, 90, 17, .18);
-  background: var(--warn-bg);
-  color: var(--warn);
-  font-weight: 600;
+  border-color: var(--warn-ink);
+  box-shadow: inset 3px 0 0 var(--warn), 0 0 0 2px var(--warn-line);
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  font-weight: var(--w-semibold);
 }
 
 /* Объяснение отказа: у ячейки, а не внизу документа. Фиксированное — иначе на
@@ -59,42 +62,42 @@ table.grid input.cell.failed {
   z-index: 20;
   max-width: 340px;
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: var(--fs-dense);
   line-height: 1.4;
-  color: var(--warn);
-  background: var(--warn-bg);
+  color: var(--warn-ink);
+  background: var(--warn-soft);
   border: 1px solid var(--warn);
-  border-radius: 4px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, .16);
+  border-radius: var(--r-block);
+  box-shadow: var(--sh-pop);
 }
 .cell-error[hidden] { display: none; }
 
 /* База для взносов: вход расчёта наравне с часами. Пока она сходится — тихая
    служебная колонка; разошлась — её видно, потому что на ней остановится
    расчёт периода. */
-table.grid td.insured { color: var(--muted); }
+table.grid td.insured { color: var(--ink-2); }
 table.grid td.insured.insured-mismatch {
-  color: var(--warn);
-  font-weight: 600;
-  background: var(--warn-bg);
+  color: var(--warn-ink);
+  font-weight: var(--w-semibold);
+  background: var(--warn-soft);
 }
 table.grid td.insured .hint {
   display: block;
-  font-size: 10px;
-  font-weight: 400;
-  color: var(--warn);
+  font-size: var(--fs-micro);
+  font-weight: var(--w-regular);
+  color: var(--warn-ink);
 }
 
 /* Подозрительные числа строки (T118): часов больше нормы, строка без часов,
    отрицательные. Пометка заметная, но не запрещающая — числа сохраняются, и
    ни одно из них не ошибка само по себе. Полными фразами перечислено над
    таблицей: в узкой колонке итога предложение про норму не поместится. */
-table.grid td.suspect { color: var(--warn); background: var(--warn-bg); }
+table.grid td.suspect { color: var(--warn-ink); background: var(--warn-soft); }
 table.grid td.suspect .hint.warn {
   display: block;
-  font-size: 10px;
-  font-weight: 400;
-  color: var(--warn);
+  font-size: var(--fs-micro);
+  font-weight: var(--w-regular);
+  color: var(--warn-ink);
   text-transform: lowercase;
 }
 
@@ -105,37 +108,37 @@ table.grid td.piece { position: relative; }
 table.grid td.piece .hint,
 table.grid td.num .hint {
   display: block;
-  font-size: 10px;
-  color: var(--muted);
+  font-size: var(--fs-micro);
+  color: var(--ink-2);
 }
 /* Часы сдельной строки ведут для учёта времени, но денег они не дают. Пометка
    тихая: это не ошибка, а другой способ считать. */
-table.grid td.cellbox.unpaid input.cell { color: var(--muted); }
+table.grid td.cellbox.unpaid input.cell { color: var(--ink-2); }
 
 /* Незаполненная ячейка не должна выглядеть как ноль: она пустая. */
 table.grid input.cell::placeholder { color: var(--line); }
 
 table.grid td.who { white-space: nowrap; }
-table.grid .muted { color: var(--muted); }
-table.grid th.muted { color: var(--muted); }
+table.grid .muted { color: var(--ink-2); }
+table.grid th.muted { color: var(--ink-2); }
 
 /* Подпись к колонке: процент ставки и пометка неподтверждённого правила. */
 table.grid th .hint {
   display: block;
-  font-size: 10px;
-  font-weight: 400;
+  font-size: var(--fs-micro);
+  font-weight: var(--w-regular);
   letter-spacing: 0;
   text-transform: none;
-  color: var(--muted);
+  color: var(--ink-2);
 }
-table.grid th .hint.warn { color: var(--warn); }
+table.grid th .hint.warn { color: var(--warn-ink); }
 
 /* Имя и точка не уезжают при горизонтальной прокрутке: без них строка чисел
    ничья. Второй столбец сдвинут на ширину первого. */
 table.grid th:first-child, table.grid td:first-child {
-  position: sticky; left: 0; background: #fff; z-index: 1;
+  position: sticky; left: 0; background: var(--surface); z-index: 1;
 }
-table.grid tbody tr:hover td:first-child { background: #f6f8ff; }
+table.grid tbody tr:hover td:first-child { background: var(--surface-2); }
 
 #cell-error { margin-top: 16px; }
 
@@ -144,20 +147,20 @@ table.grid tbody tr:hover td:first-child { background: #f6f8ff; }
    вниз экрана — то есть спрятала бы главное ради вспомогательного. */
 form.import {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  background: #fff; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-block);
   padding: 12px 16px; margin: 0 0 20px;
 }
-form.import label { color: var(--muted); font-size: 13px; }
-form.import .hint { color: var(--muted); font-size: 12px; }
+form.import label { color: var(--ink-2); font-size: var(--fs-dense); }
+form.import .hint { color: var(--ink-2); font-size: var(--fs-meta); }
 
 /* База для взносов правится с экрана (T143), но остаётся служебной колонкой:
    поле тише соседних, пока число сходится с часами. Разошлось — цвет и
    начертание те же, что у остальных предупреждений сетки: колонка обязана
    вычитываться из ряда, потому что на ней остановится расчёт периода. */
-table.grid td.insured input.cell { color: var(--muted); }
+table.grid td.insured input.cell { color: var(--ink-2); }
 table.grid td.insured.insured-mismatch input.cell {
-  color: var(--warn);
-  font-weight: 600;
+  color: var(--warn-ink);
+  font-weight: var(--w-semibold);
 }
 /* У ячейки с полем отступов нет (`td.cellbox`), и подпись расхождения без этой
    строки прилипала бы к краю столбца. */
@@ -173,27 +176,27 @@ section.units {
 }
 section.units .unit {
   display: flex; align-items: baseline; gap: 10px;
-  background: #fff; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-block);
   padding: 10px 14px;
 }
 /* Код точки — главное в карточке: по нему её узнают в таблице и в отчёте. */
-section.units .unit-code { font-weight: 600; letter-spacing: .02em; }
-section.units .unit .hint { color: var(--muted); font-size: 12px; }
+section.units .unit-code { font-weight: var(--w-semibold); letter-spacing: .02em; }
+section.units .unit .hint { color: var(--ink-2); font-size: var(--fs-meta); }
 
 /* Состояние показано начертанием и рамкой, а не только словами: у остального
    продукта состояния читаются глазом (метка регистра, «Закрыт» у периода), и
    одна панель, где всё отличается только текстом, читается как незаконченная. */
 section.units .unit-state {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
-  border-radius: 3px; padding: 2px 7px;
-  color: var(--muted); background: var(--bg); border: 1px solid var(--line);
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tracking-micro);
+  border-radius: var(--r-control); padding: 2px 7px;
+  color: var(--ink-2); background: var(--canvas); border: 1px solid var(--line);
 }
 /* Закрытые часы — не ошибка и не тревога, а законченный шаг, поэтому зелёный
    той же семьи, что у плашки `.ok` в общем листе, а не оранжевый предупреждения. */
-section.units .unit.is-closed { border-color: #bbf7d0; background: #f7fefa; }
+section.units .unit.is-closed { border-color: var(--ok-line); background: var(--ok-soft); }
 section.units .unit-state.closed {
-  color: #14532d; background: #f0fdf4; border-color: #bbf7d0;
-  text-transform: none; letter-spacing: 0; font-size: 12px;
+  color: var(--ok); background: var(--ok-soft); border-color: var(--ok-line);
+  text-transform: none; letter-spacing: 0; font-size: var(--fs-meta);
 }
 /* Кнопка стоит в строке с подписью, а не под ней: действие относится к этой
    точке, и перенос вниз разрывал бы карточку пополам. */
@@ -203,5 +206,5 @@ section.units .note { margin: 0; flex-basis: 100%; }
    оно не должно: закрытие двигает месяц вперёд, открытие возвращает его назад.
    Класс `secondary` живёт ровно здесь (больше его не просит никто), поэтому и
    правило стоит в листе табеля, а не в общем. */
-section.units button.secondary { color: var(--muted); }
+section.units button.secondary { color: var(--ink-2); }
 section.units button.secondary:hover { color: var(--accent); border-color: var(--accent); }

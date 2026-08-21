@@ -1,0 +1,721 @@
+/* ─────────────────────────────────────────────────────────────
+   Оформление продукта. Правила; значения — в tokens.css, который
+   подключается раньше (T177).
+
+   До этой задачи лист лежал внутри <style> в base.html, 336 строк,
+   и каждая очередь дописывала туда свои цвета. Отсюда и жалоба
+   владельца «весь интерфейс вразнобой, нечитаемый»: одно и то же
+   серое в двух местах оказывалось разным.
+
+   Правила игры здесь три, и все три проверяются тестами:
+
+   1. Ни одного литерального цвета. Только var(--…) из tokens.css.
+      Литерал в этом файле — это вторая палитра, то есть возврат
+      к исходной беде (tests/test_visual_tokens.py).
+   2. Геометрия и типографика — из дизайн-системы: отбивки
+      --space-*, радиусы --r-*, кегли --fs-*, ряды --row*.
+      Своё число заводится только тогда, когда объяснено, почему
+      ни одно из готовых не подошло.
+   3. Классы остаются продуктовыми. Экраны переезжают на систему
+      по одному, по правилу владельца: «экран, которого касаемся
+      по любой задаче, переезжает тем же изменением». Массовое
+      переименование классов сломало бы разметку 49 шаблонов
+      разом и проверить его было бы нечем.
+
+   Файл читает любой, кто открыл страницу: он лежит в статике по
+   постоянному адресу и назван в разметке. Значит здесь нет и не
+   будет ничего, кроме объяснений оформления, — ни данных, ни
+   имён, ни дат.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Сброс и каркас страницы ─────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font: var(--w-regular) var(--fs-body) / var(--lh-body) var(--font-ui);
+}
+
+/* `min-width` у body из эталона здесь НЕ ставится. В эталоне страница держит
+   1280 и ниже этого едет вбок целиком; у продукта же есть свой инвариант,
+   купленный смоуком: прокручивается контейнер таблицы, а не страница
+   (`{% scroll %}`, см. components/README.md). Зафиксировать ширину body значило
+   бы отменить его — и заодно уронить требование «работоспособность на 768»:
+   мобильные правила эталона включаются только с 767, и планшет получил бы
+   страницу в 1280 с горизонтальной прокруткой всего, включая шапку. */
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-press); text-decoration: underline; }
+
+/* Фокус виден на всём, чем можно управлять с клавиатуры: бухгалтер вводит
+   числа с клавиатуры и мышь не любит. */
+:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
+
+/* Колонка содержимого. 1360, а не 1280 из эталона: ведомость обязана читаться
+   на 1440 — это измеренное требование, а не пожелание, и колонка в 1280
+   загнала бы её в горизонтальную прокрутку на том самом экране, под который
+   её выверяли. */
+main {
+  max-width: 1360px;
+  margin: var(--space-10) auto;
+  padding: 0 var(--space-10);
+}
+
+h1 { font-size: var(--fs-display); line-height: var(--lh-display); margin: 0 0 var(--space-2); }
+h2 { font-size: var(--fs-title); line-height: var(--lh-title); margin: var(--space-10) 0 var(--space-6); }
+.sub { color: var(--ink-2); margin: 0 0 var(--space-9); }
+
+/* Заголовок экрана и его главное действие — одной строкой: действие, ради
+   которого на экран пришли, не должно искаться глазами ниже фильтров. */
+.head { display: flex; align-items: center; gap: var(--space-7); margin: 0 0 var(--space-2); }
+.head h1 { margin: 0; }
+.head .btn { margin-left: auto; }
+
+/* Дорога назад со вложенного экрана. Отдельно от `.note`, потому что это не
+   примечание, а навигация: она стоит выше содержимого и читается раньше него. */
+p.back { margin: calc(-1 * var(--space-3)) 0 var(--space-8); font-size: var(--fs-meta); }
+p.back a { color: var(--ink-2); }
+p.back a:hover { color: var(--accent); }
+
+/* ── Шапка приложения ────────────────────────────────────────── */
+
+/* Раздел 08 эталона: имя продукта, разделы, тенант, роль. Высота 50 —
+   единственная «магическая» цифра шапки, и она из эталона: ряд в 50 пикселей
+   держит две строки служебного текста (кто и что видит) и при этом не съедает
+   первую строку данных. */
+.appbar {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-9);
+  padding: 0 var(--gutter);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-control);
+}
+
+/* Имя продукта: «Dodo» начертанием, «P&L» акцентом. Ссылка ведёт на первый
+   экран месяца — по имени продукта уходят «в начало», это привычка, а не
+   украшение. */
+.brand {
+  display: flex; align-items: baseline; gap: var(--space-3);
+  text-decoration: none; color: var(--ink); flex: 0 0 auto;
+}
+.brand:hover { text-decoration: none; }
+.brand__name { font-weight: var(--w-bold); font-size: var(--fs-lead); letter-spacing: -.01em; }
+.brand__mark { font-weight: var(--w-medium); font-size: var(--fs-lead); color: var(--accent); }
+
+.appnav { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; }
+/* Раздел, в котором человек сейчас, — не ссылка, а `span[aria-current]`:
+   ссылка на текущую страницу обманывает и мышь, и клавиатуру. Тот же
+   инвариант, что у переключателя разреза ведомости, и по той же причине. */
+.appnav__current {
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--r-control);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: var(--w-semibold);
+  white-space: nowrap;
+}
+.appnav__link {
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--r-control);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.appnav__link:hover { background: var(--surface-3); text-decoration: none; color: var(--ink); }
+
+.appbar__spacer { flex: 1 1 auto; }
+
+/* Правый край шапки. Шапка обязана держаться в ОДНУ строку: служебное (кем
+   вошли, что видно, чем переключить язык) стоит выше содержания страницы, и
+   когда его столько, что оно переносится на вторую строку, оно начинает
+   спорить с данными, ради которых человек пришёл. Отсюда мелкий кегль,
+   короткие подписи языков и метка dev-входа точкой, а не рамкой. */
+.who {
+  display: flex; align-items: center; gap: var(--space-5);
+  color: var(--ink-2); font-size: var(--fs-meta);
+  flex: 0 1 auto; min-width: 0;
+}
+.who .cut { white-space: nowrap; }
+
+/* Кто смотрит и на что. Сильная строка — имя человека, слабая — партнёр,
+   регистры и точка: сначала «кто я», потом «что мне видно».
+
+   В эталоне в сильной строке стоит название юрлица, а имени человека нет
+   вовсе — его заменяет кружок с инициалами. Здесь наоборот, и это не вкус:
+   один и тот же экран показывает разным людям разные числа, и человек должен
+   видеть, чьими глазами смотрит, не наводя мышь ни на что. Кружок при
+   показанном имени становится вторым способом сказать то же самое — то есть
+   шумом в строке, которой и без него тесно. */
+.viewer { text-align: right; line-height: 1.25; min-width: 0; }
+.viewer__name {
+  font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.viewer__meta { font-size: var(--fs-meta); color: var(--ink-3); }
+.viewer__meta span:not(:first-child)::before { content: " · "; color: var(--line-strong); }
+
+/* Роль — одна. В эталоне рядом стоят все выданные наборы прав, но владелец
+   решил иначе: у человека один уровень, а понадобилось больше — его поднимают
+   на ступень выше со сроком и причиной. Поэтому здесь одна плашка и нет
+   пунктирной «временной»: расхождение с эталоном разбирается отдельно и не
+   решается оформлением. */
+.role {
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--r-control);
+  font-size: var(--fs-meta);
+  font-weight: var(--w-semibold);
+  white-space: nowrap;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+}
+
+/* Переключатель языка — сегментированный переключатель дизайн-системы.
+   Кнопки, а не ссылки: смена языка меняет состояние (cookie), и делать это
+   переходом по ссылке нельзя — такую ссылку пройдёт любой предзагрузчик.
+   Выбранный язык — `span`, а не кнопка: см. `.appnav__current`. */
+.seg {
+  display: inline-flex; margin: 0;
+  background: var(--seg-track); border-radius: var(--r-control);
+  padding: var(--space-1); gap: var(--space-1);
+}
+.seg__item, .seg__current {
+  display: inline-flex; align-items: center;
+  height: 22px; padding: 0 var(--space-4);
+  border: 0; border-radius: var(--r-control);
+  font: var(--w-regular) var(--fs-micro) / 1 var(--font-ui);
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.seg__item { background: transparent; color: var(--ink-2); cursor: pointer; }
+.seg__item:hover { color: var(--ink); background: transparent; border-color: transparent; }
+.seg__current {
+  background: var(--surface); color: var(--ink);
+  font-weight: var(--w-semibold); box-shadow: var(--sh-xs);
+}
+
+/* Действия учётной записи набраны мельче разделов: уходят по ним редко. */
+.who .btn, .who button { height: var(--control-h-sm); font-size: var(--fs-meta); }
+
+/* ── Плашки состояния и метки ────────────────────────────────── */
+
+/* Метка dev-входа: маленькая и без рамки-кричалки. Она сообщает о настройке
+   стенда, а не о состоянии данных, — и не должна перетягивать взгляд с роли,
+   под которой человек смотрит. */
+.badge.dot { letter-spacing: .04em; padding: var(--space-1) var(--space-3); border: 0; background: var(--surface-3); }
+.badge {
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tracking-micro);
+  color: var(--warn-ink); background: var(--warn-soft);
+  border: 1px solid var(--warn-line); border-radius: var(--r-control);
+  padding: var(--space-1) var(--space-3);
+}
+
+.alert, .ok {
+  padding: var(--space-6) var(--space-7);
+  border-radius: var(--r-block);
+  margin: 0 0 var(--space-8);
+}
+.alert { color: var(--warn-ink); background: var(--warn-soft); border: 1px solid var(--warn-line); }
+.alert .details { color: var(--ink); font-size: var(--fs-meta); margin-top: var(--space-3); }
+.ok { color: var(--ok); background: var(--ok-soft); border: 1px solid var(--ok-line); }
+
+/* Пустое состояние объясняет следующий шаг, а не сообщает о пустоте.
+   Поэтому у него есть заголовок, абзац и действие — как у любого экрана. */
+.empty {
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px dashed var(--line-control);
+  border-radius: var(--r-block);
+  padding: var(--space-9);
+}
+.empty h3 { margin: 0 0 var(--space-3); font-size: var(--fs-lead); color: var(--ink); }
+.empty .next { display: block; margin-top: var(--space-6); }
+
+/* Примечание — абзац, а не блок: это текст рядом с данными. */
+.note { color: var(--ink-2); font-size: var(--fs-meta); margin-top: var(--space-9); }
+/* Пояснение под кнопками. Отрицательного отступа здесь быть не должно: ряд
+   кнопок — flex-блок со своим нижним полем, и подтягивание «поближе» наложило
+   текст прямо на кнопки. Поймано на снимке экрана — в разметке этого не
+   видно вовсе. */
+p.note.under { margin: var(--space-4) 0 var(--space-8); font-size: var(--fs-meta); }
+/* Откуда взялось число: подпись мельче самой строки — она поясняет, а не спорит. */
+.hint { font-size: var(--fs-meta); color: var(--ink-2); }
+
+/* Метка регистра, а не заливка строки: заливка мешает читать числа (D023).
+   Начертание обычное: «ДОПОЛНИТЕЛЬНЫЙ» вразрядку — самое широкое слово в
+   колонке, а метка обязана быть заметной, но не главной на строке. */
+.ledger {
+  font-size: var(--fs-micro); letter-spacing: 0;
+  color: var(--ink-2);
+  border: 1px solid var(--line-control); border-radius: var(--r-mark);
+  padding: var(--space-1) var(--space-3);
+}
+
+/* ── Числа ───────────────────────────────────────────────────── */
+
+/* Первый принцип дизайн-системы: деньги читаются столбиком — правый край,
+   моноширинное, табличные цифры. Ноль — цифра, отсутствие значения — прочерк,
+   и путать их нельзя.
+
+   `tabular-nums` здесь не украшение: в пропорциональном начертании единица
+   уже семёрки, и столбик из шестидесяти сумм перестаёт складываться глазом в
+   разряды — тысячи одной строки встают под сотнями соседней. */
+.num {
+  font: var(--num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.num.strong { font-weight: var(--w-bold); }
+/* Прочерк — это «значения нет», и он обязан отличаться от нуля не только
+   начертанием знака, но и весом на странице: ноль — такое же число, как
+   остальные в столбце, а прочерк сообщение о пустоте, и притягивать взгляд
+   ему незачем. Класс ставится там, где значение уже сложилось в текст
+   (фильтр `numclass`), а не по данным: прочерк рождается в одном месте —
+   web/format.py. */
+.num--empty { color: var(--ink-empty); }
+/* Ноль остаётся цифрой цвета остальных чисел. Отдельный класс существует для
+   тех редких столбцов, где ноль — законный, но незначащий итог (в эталоне это
+   .num--zero); заливкой или бледностью его отмечать нельзя, иначе он начнёт
+   читаться как отсутствие значения — то самое, что запрещено смешивать. */
+.num--zero { color: var(--ink-3); }
+.num.muted { color: var(--ink-2); }
+/* Расхождение, которое не сошлось: красное, но по-прежнему в общем столбце. */
+.num.off { color: var(--err); font-weight: var(--w-semibold); }
+
+/* ── Кнопки ──────────────────────────────────────────────────── */
+
+button, .btn {
+  font: var(--w-regular) var(--fs-body) / 1 var(--font-ui);
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--line-control);
+  border-radius: var(--r-control);
+  padding: var(--space-2) var(--space-5);
+  cursor: pointer;
+}
+button:hover, .btn:hover { border-color: var(--accent); }
+button.primary, a.btn.primary {
+  color: var(--ink-inverse); background: var(--accent); border-color: var(--accent);
+  font-weight: var(--w-semibold);
+  text-decoration: none;
+}
+button.primary:hover, a.btn.primary:hover { background: var(--accent-hover); }
+button.primary:active, a.btn.primary:active { background: var(--accent-press); }
+form.inline { display: inline; }
+
+/* ── Переключатель разреза и выгрузки ────────────────────────── */
+
+/* Переключатель разреза ведомости. Ссылки, а не кнопки: разрез живёт
+   в адресе, и его можно отправить коллеге. Выбранный — не ссылка вовсе:
+   ссылка на текущую страницу обманывает и мышь, и клавиатуру. */
+nav.cuts, nav.exports { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0 0 var(--space-6); }
+nav.cuts .cut, nav.exports .cut {
+  font-size: var(--fs-meta); text-decoration: none; color: var(--ink-2);
+  border: 1px solid var(--line-control); border-radius: var(--r-control);
+  padding: var(--space-2) var(--space-6);
+  background: var(--surface);
+}
+nav.cuts a.cut:hover, nav.exports a.cut:hover { color: var(--accent); border-color: var(--accent); }
+nav.cuts .cut.current {
+  color: var(--accent); background: var(--accent-soft);
+  border-color: var(--accent-line); font-weight: var(--w-semibold);
+}
+/* Скачивание обязано отличаться от переключения ВИДОМ, а не только разметкой.
+   Ряды стояли одинаковыми кнопками друг под другом: верхний менял то, что на
+   экране, нижний молча скачивал файл. Человек нажимает одинаковое и получает
+   разное — и узнаёт об этом по появившемуся файлу в загрузках.
+   Отсюда стрелка перед подписью и пунктирная рамка: и то и другое читается
+   как «отсюда что-то уедет», а не «здесь переключится». */
+nav.exports .file {
+  border-style: dashed; border-color: var(--line-control-2);
+  background: var(--surface-download);
+}
+nav.exports .file::before { content: "↓"; margin-right: var(--space-3); opacity: .7; }
+/* Сверка — не файл и не разрез: это отдельный экран. Стоит в том же ряду по
+   смыслу (всё про «что дальше с этой ведомостью»), но выглядит ссылкой на
+   страницу, а не кнопкой скачивания. */
+nav.exports .page::before { content: "→"; margin-right: var(--space-3); opacity: .7; }
+
+/* Переключатель языка. Кнопки, а не ссылки: смена языка меняет состояние,
+   и переходом по ссылке это делать нельзя. Выбранный язык не нажимается —
+   как и выбранный разрез ведомости, по той же причине. */
+form.lang { display: flex; gap: var(--space-2); margin: 0; }
+.lang-option {
+  font-size: var(--fs-micro); letter-spacing: .04em;
+  padding: var(--space-1) var(--space-3); color: var(--ink-2);
+  border: 1px solid var(--line-control); border-radius: var(--r-mark);
+  background: var(--surface);
+}
+.lang-option:hover { color: var(--accent); border-color: var(--accent); }
+.lang-option.current {
+  color: var(--accent); background: var(--accent-soft);
+  border-color: var(--accent-line); font-weight: var(--w-semibold); cursor: default;
+}
+
+/* ── Формы ───────────────────────────────────────────────────── */
+
+/* Формы входа и смены пароля: одна колонка, поле шире подписи — читается
+   сверху вниз без метаний глазом. */
+form.card {
+  background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: var(--r-block);
+  padding: var(--space-8) var(--space-9);
+  max-width: 420px;
+}
+/* Форма справочника — две колонки на широком экране: шесть полей в одну
+   колонку уводили кнопку сохранения за нижний край, а справа оставалось
+   полтора экрана пустоты. Вход и смена пароля остаются узкими (`max-width`
+   выше): там полей два, и колонка шириной в экран читалась бы хуже. */
+form.card.wide { max-width: 860px; display: grid; gap: 0 var(--space-9); grid-template-columns: 1fr 1fr; }
+form.card.wide > p, form.card.wide > .field { margin-bottom: var(--space-6); }
+form.card.wide > .full, form.card.wide > .actions { grid-column: 1 / -1; }
+form.card p { margin: 0 0 var(--space-7); }
+form.card p:last-child { margin-bottom: 0; }
+form.card label { color: var(--ink-2); font-size: var(--fs-meta); }
+form.card input, form.card select {
+  font: var(--w-regular) var(--fs-body) / 1 var(--font-ui);
+  width: 100%;
+  padding: var(--space-3) var(--space-5); margin-top: var(--space-2);
+  border: 1px solid var(--line-control); border-radius: var(--r-control);
+  background: var(--surface); color: var(--ink);
+}
+form.card input:hover, form.card select:hover { border-color: var(--line-control-2); }
+form.card input:focus-visible, form.card select:focus-visible {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-soft);
+}
+/* Поле — всегда «подпись сверху, ввод под ней». Половина полей раскладывалась
+   иначе (подпись слева, объяснение обтеканием справа) просто потому, что
+   `select` — строчный элемент: получалась не разница стилей, а сломанная
+   вёрстка. */
+form.card .field { display: block; margin: 0 0 var(--space-6); }
+form.card .field > label { display: block; }
+/* Подсказка поля показывается, когда человек в это поле пришёл: у половины
+   полей объяснение длиннее самого поля, и форма из шести полей растягивалась
+   на два экрана.
+
+   Скрыто ГЛАЗАМИ, а не для всех. Первая редакция прятала подсказку через
+   `display: none` — и это была ошибка: `display: none` выкидывает узел из
+   дерева доступности целиком, то есть для незрячего подсказки не
+   существовало вовсе (нашла сверка). Теперь она всегда в дереве, связана с
+   полем через `aria-describedby`, а прячется прозрачностью.
+
+   Место под подсказку зарезервировано (`min-height`), потому что появление
+   по фокусу двигало форму на 22 пикселя: проходя её табом, человек видел,
+   как кнопка сохранения прыгает на каждом поле. */
+form.card .field > .note {
+  display: block; margin: var(--space-2) 0 0;
+  font-size: var(--fs-meta); min-height: 1.2em;
+  opacity: 0; transition: opacity var(--t-pop) var(--ease);
+}
+form.card .field:focus-within > .note { opacity: 1; }
+
+/* Фильтры — одной строкой над таблицей. Столбиком они занимали четверть
+   экрана до первой строки данных, хотя пять коротких полей встают в ряд. */
+form.search.row {
+  display: flex; flex-wrap: wrap; align-items: end;
+  gap: var(--space-6) var(--space-7); margin: 0 0 var(--space-8);
+}
+form.search.row .field { display: flex; flex-direction: column; margin: 0; }
+form.search.row .field > label { font-size: var(--fs-meta); color: var(--ink-2); }
+form.search.row .field > .note { display: none; }
+form.search.row input, form.search.row select {
+  font: var(--w-regular) var(--fs-dense) / 1 var(--font-ui);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-control); border-radius: var(--r-control);
+  background: var(--surface); color: var(--ink);
+}
+
+/* ── Таблицы ─────────────────────────────────────────────────── */
+
+table { border-collapse: collapse; width: 100%; background: var(--surface); }
+th, td { text-align: left; padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--line); }
+th {
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tracking-micro);
+  color: var(--ink-2); font-weight: var(--w-semibold);
+}
+tbody tr:hover { background: var(--surface-2); }
+tfoot td { font-weight: var(--w-semibold); border-top: 2px solid var(--line-strong); border-bottom: none; }
+
+/* Ведомость шире экрана — прокручивается сама, страница по горизонтали не едет. */
+.scroll { overflow-x: auto; border: 1px solid var(--line-strong); border-radius: var(--r-block); }
+
+table.sheet { font-size: var(--fs-dense); }
+table.sheet th, table.sheet td { padding: var(--space-3) var(--space-4); white-space: nowrap; }
+/* Заголовки колонок переносятся: названия компонентов приходят из пресета,
+   они длинные, и без переноса колонка «Итого» уезжает за край экрана.
+
+   Прописные и разрядка здесь сняты намеренно, в отличие от остальных таблиц:
+   слово вразрядку и в капслоке занимает на треть больше места, чем обычное, и
+   на ведомости из двенадцати колонок эта треть — те самые двести пикселей,
+   из-за которых её приходилось прокручивать вбок. Читаемости это не стоит
+   ничего: длинное слово в обычном начертании читается легче. */
+table.sheet th {
+  white-space: normal; vertical-align: bottom;
+  text-transform: none; letter-spacing: 0; font-size: var(--fs-micro);
+  background: var(--surface-head);
+}
+table.sheet .strong { font-weight: var(--w-semibold); }
+/* Колонка «Итого» прилипает к правому краю: главное число строки должно быть
+   видно всегда, а компонентов у страны может стать сколько угодно. */
+table.sheet th:last-child, table.sheet td:last-child {
+  position: sticky; right: 0;
+  background: var(--surface); box-shadow: -1px 0 0 var(--line-strong);
+}
+/* Подпись «Итого» остаётся частью строки заголовков. Заливка выше нужна самим
+   ячейкам — прилипшая колонка обязана быть непрозрачной, иначе под ней видны
+   уезжающие числа, — но у заголовка она перекрывала `--surface-head` и
+   выбивала последнюю подпись белым прямоугольником посреди серой шапки
+   таблицы. Поймано на снимке экрана: в разметке этого не видно вовсе. */
+table.sheet th:last-child { background: var(--surface-head); }
+table.sheet tbody tr:hover td:last-child { background: var(--surface-2); }
+table.sheet tfoot .grand td { background: var(--surface-total); }
+
+/* Причина спора набирается редко, а место занимает в каждой строке. Поле
+   узкое по умолчанию и раскрывается, когда в него встали: подсказка нужна
+   тому, кто пишет, а не всем шестидесяти строкам сразу. */
+table.sheet td.freeze input {
+  font: var(--w-regular) var(--fs-dense) / 1 var(--font-ui);
+  width: 92px; padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent; border-radius: var(--r-control);
+  background: transparent; color: var(--ink-2);
+  transition: width var(--t-pop) var(--ease);
+}
+/* Рамка появляется, когда поле нужно, — на наведении и в фокусе. Тридцать
+   пять рамок с обрезанным текстом внутри читались как поломка таблицы, а не
+   как поле ввода: причину спора набирают в одной строке из тридцати пяти. */
+table.sheet tr:hover td.freeze input,
+table.sheet td.freeze input:focus {
+  border-color: var(--line-control); background: var(--canvas); color: var(--ink);
+}
+table.sheet td.freeze input:focus { width: 220px; }
+/* Подсказка внутри поля тоже молчит, пока к строке не подошли: обрезанная
+   фраза, повторённая шестьдесят раз, читается как сломанный текст, а не как
+   приглашение к вводу. Полностью она всё равно не помещается — место под неё
+   появляется только в фокусе, когда поле раскрывается. */
+table.sheet td.freeze input::placeholder { color: transparent; }
+table.sheet tr:hover td.freeze input::placeholder,
+table.sheet td.freeze input:focus::placeholder { color: var(--ink-3); }
+/* Кнопка внутри ведомости набрана мельче самих чисел: действие на строке
+   помогает, но спорить с суммами за внимание не должно. Заодно это те
+   последние два десятка пикселей, без которых таблица директора не влезала
+   в 1440. */
+table.sheet td.freeze button {
+  font-size: var(--fs-meta); padding: var(--space-2) var(--space-4);
+  color: var(--ink-2); border-color: transparent; background: transparent;
+}
+table.sheet tr:hover td.freeze button,
+table.sheet td.freeze button:focus-visible {
+  color: var(--accent); border-color: var(--line-control); background: var(--surface);
+}
+
+/* Экран следа расчёта. Сумма строки ведомости — ссылка, а не отдельная
+   колонка: колонка стоила бы ширины, которой у ведомости нет (её едва
+   хватило на 1440), а число и есть то, о чём спрашивают «откуда оно». */
+table.sheet a.trace { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--ink-3); }
+table.sheet a.trace:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Ключ и значение рядом, а не по краям экрана: при `auto` во второй колонке
+   значение уезжало к правому краю, и глаз проходил три сотни пустых пикселей
+   от подписи до числа.
+
+   Факты месяца — одной строкой, а не столбцом из пяти. Столбец занимал 130
+   пикселей над кнопками и таблицей, хотя это короткие пары «подпись —
+   значение», которые читаются подряд. На узком экране строка переносится
+   сама, и вид возвращается к прежнему. */
+dl.facts {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-8); font-size: var(--fs-lead);
+}
+dl.facts dt { color: var(--ink-2); }
+dl.facts dt:not(:first-of-type)::before { content: "·"; margin-right: var(--space-4); color: var(--line-strong); }
+dl.facts dd { margin: 0 var(--space-4) 0 0; }
+dl.facts .hint { font-size: var(--fs-meta); opacity: .75; }
+
+/* Входы шага набраны парами «подпись — число»: по ним сумма повторяется на
+   калькуляторе, поэтому число заметнее подписи. */
+table.steps td.inputs { color: var(--ink-2); font-size: var(--fs-meta); }
+table.steps td.inputs .pair { display: inline-block; margin-right: var(--space-7); white-space: nowrap; }
+table.steps td.inputs b {
+  color: var(--ink); font-family: var(--font-num); font-variant-numeric: tabular-nums;
+}
+table.steps .hint { display: block; color: var(--ink-2); font-size: var(--fs-micro); }
+/* Шаг, разошедшийся с сохранённым: следа продукт не хранит, и молчать о
+   расхождении нельзя — иначе экран выдаёт сегодняшний счёт за вчерашний. */
+table.steps tr.drifted { background: var(--warn-soft); }
+table.steps tr.drifted .badge { margin-left: var(--space-3); }
+
+/* Отчёт расхождений. Отклонение — главное число строки, поэтому оно набрано
+   жирнее прочих, а рост и падение различаются цветом: направление читается
+   быстрее знака. Порог набран мелко: он объясняет, почему строка здесь, но сам
+   по себе не новость. */
+table.variance td.delta { font-weight: var(--w-semibold); }
+table.variance tr.grew td.delta { color: var(--down); }
+table.variance tr.fell td.delta { color: var(--up); }
+table.variance .hint { color: var(--ink-2); font-size: var(--fs-micro); }
+table.variance td.threshold { white-space: nowrap; }
+table.variance td:nth-child(2) .hint { display: block; }
+
+/* Свёрнутая история периода: строка-заголовок вместо таблицы на треть экрана. */
+details.history-box { margin: 0 0 var(--space-9); }
+details.history-box > summary {
+  cursor: pointer; color: var(--ink-2); font-size: var(--fs-meta); width: max-content;
+}
+details.history-box > summary:hover { color: var(--accent); }
+details.history-box table { margin-top: var(--space-5); }
+
+/* ── Ход долгой операции ─────────────────────────────────────── */
+
+/* Полоса — не украшение: без неё страница на время расчёта выглядит замершей,
+   и человек жмёт кнопку второй раз. */
+section.progress {
+  background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: var(--r-block);
+  padding: var(--space-7) var(--space-8); margin: 0 0 var(--space-9);
+}
+section.progress h2 { font-size: var(--fs-lead); margin: 0 0 var(--space-4); }
+section.progress .stage { margin: 0 0 var(--space-5); color: var(--ink-2); font-size: var(--fs-meta); }
+section.progress .counter {
+  margin: var(--space-4) 0 0; color: var(--ink-2); font-size: var(--fs-meta);
+  font-variant-numeric: tabular-nums;
+}
+section.progress .bar {
+  height: 6px; border-radius: 999px; background: var(--surface-3); overflow: hidden;
+}
+/* Ширина — единственное, что меняется: число приходит с сервера, поэтому
+   переход мягкий, а не рывками между опросами. */
+section.progress .fill { height: 100%; background: var(--accent); transition: width var(--t-panel) var(--ease); }
+section.progress .alert { margin: var(--space-7) 0 0; }
+section.progress .alert form { margin-top: var(--space-5); }
+
+/* ── Правки задним числом ────────────────────────────────────── */
+
+/* Разница обязана читаться как разница, а не как обычная сумма месяца: у строки
+   своя подложка и своя пометка с месяцем-источником. Подкраска здесь допустима
+   — она отмечает не значение числа (это запрещено D023), а происхождение
+   строки: ровно то, для чего в дизайн-системе завели --origin-carried. */
+section.retro {
+  background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: var(--r-block);
+  padding: var(--space-7) var(--space-8); margin: 0 0 var(--space-9);
+}
+section.retro h2 { font-size: var(--fs-lead); margin: 0 0 var(--space-4); }
+section.retro table { margin: var(--space-6) 0; }
+section.retro form { margin-top: var(--space-6); }
+tr.retro { background: var(--origin-carried); }
+tr.retro:hover { background: var(--origin-carried-hover); }
+.badge-retro {
+  display: inline-block; margin-left: var(--space-4);
+  padding: var(--space-1) var(--space-4); border-radius: 999px;
+  font-size: var(--fs-micro);
+  color: var(--warn-ink); background: var(--warn-soft); border: 1px solid var(--warn-line);
+  white-space: nowrap;
+}
+
+/* ── Онбординг: три шага месяца ──────────────────────────────── */
+
+/* Полоса стоит над содержимым: человек, впервые открывший продукт, должен
+   увидеть порядок работы раньше, чем первую таблицу. Пройденный шаг гасится,
+   текущий выделен — полоса показывает, где человек сейчас, а не просто
+   перечисляет действия. */
+ol.steps {
+  display: flex; flex-wrap: wrap; gap: 0; list-style: none;
+  margin: 0 0 var(--space-9); padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-control); border-radius: var(--r-control);
+  overflow: hidden;
+}
+ol.steps li {
+  flex: 1 1 220px; padding: var(--space-4) var(--space-7);
+  border-right: 1px solid var(--line-2);
+  color: var(--ink-2); font-size: var(--fs-meta);
+}
+ol.steps li:last-child { border-right: none; }
+ol.steps .name {
+  display: block; color: var(--ink); font-weight: var(--w-semibold);
+  font-size: var(--fs-dense); margin-bottom: var(--space-1);
+}
+/* Объяснение шага нужно тому, кто на нём стоит. Пройденный шаг объяснять
+   поздно, будущий — рано: полоса из трёх абзацев занимала 90 пикселей и
+   повторялась на каждом экране месяца, хотя читают её один раз в жизни.
+   Текст остаётся в разметке — он нужен экранному диктору и проверкам. */
+ol.steps li:not(.now) .what { display: none; }
+ol.steps li:not(.now) .name { margin-bottom: 0; }
+ol.steps li.done { background: var(--ok-soft); }
+ol.steps li.done .name::after { content: " ✓"; color: var(--ok); }
+ol.steps li.now { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+ol.steps li.now .name { color: var(--accent); }
+
+/* ── Узкий экран ─────────────────────────────────────────────── */
+
+/* Продукт десктоп-первый: рабочие ширины бухгалтера 1280–1920. Ниже 1024
+   начинается планшет, и здесь нужна одна вещь — чтобы страница не поехала
+   вбок целиком. В эталоне за это отвечает `min-width` у body: страница держит
+   1280 и прокручивается вся. Здесь так нельзя: продукт обязан работать на 768,
+   а прокрутка всей страницы вместе с шапкой и есть «рассыпалось».
+
+   Поэтому шапка переносится на две строки: разделы сверху, «кто смотрит» под
+   ними. Разрыв делает распорка — на широком экране она растягивает пустоту
+   между навигацией и правым краем, на узком занимает всю строку и переносит
+   правый край вниз. Одно правило вместо перестановки элементов. */
+@media (max-width: 1023px) {
+  .appbar {
+    height: auto; flex-wrap: wrap;
+    padding: var(--space-4) var(--space-6);
+    gap: var(--space-4) var(--space-6);
+  }
+  .appbar__spacer { flex: 1 1 100%; }
+  .who { flex-wrap: wrap; row-gap: var(--space-3); }
+  .viewer { text-align: left; }
+
+  main { margin: var(--space-8) auto; padding: 0 var(--space-7); }
+  form.card.wide { grid-template-columns: 1fr; max-width: 560px; }
+}
+
+/* Сценарии управляющего точки: телефон, 375, заходит на две минуты — отметить
+   часы, внести расход, сфотографировать накладную. Всё, что он нажимает, — не
+   меньше 44 пикселей: это не пожелание доступности, а физика пальца.
+
+   Растягивать на всю ширину нужно кнопки форм, а не любые: кнопка в шапке или
+   в строке таблицы, растянутая на экран, ломает саму строку. */
+@media (max-width: 767px) {
+  main { margin: var(--space-6) auto; padding: 0 var(--space-6); }
+  h1 { font-size: var(--fs-title); line-height: var(--lh-title); }
+
+  form.card { max-width: none; padding: var(--space-6); }
+  form.card input, form.card select, form.card .btn, form.card button {
+    min-height: var(--tap-min); font-size: var(--fs-lead);
+  }
+  form.card .actions .btn, form.card .actions button { width: 100%; }
+  form.card .actions { display: flex; flex-direction: column; gap: var(--space-4); }
+
+  /* Фильтры столбиком: пять коротких полей в ряд на 375 превращаются в пять
+     обрезанных. */
+  form.search.row { flex-direction: column; align-items: stretch; }
+  form.search.row input, form.search.row select { min-height: var(--tap-min); }
+
+  /* Полоса шагов месяца — столбиком: три шага по 220 пикселей в ряд на 375 не
+     встают, а перенос по одному оставляет их читаемыми. */
+  ol.steps li { flex: 1 1 100%; border-right: 0; border-bottom: 1px solid var(--line-2); }
+  ol.steps li:last-child { border-bottom: 0; }
+}
+
+/* ── Печать ──────────────────────────────────────────────────── */
+
+/* Ведомость иногда уносят на бумаге. Служебное на бумаге не нужно: шапка,
+   кнопки, переключатели — это способы что-то сделать, а с листа ничего не
+   делают. Прокрутку контейнера тоже снимаем, иначе на печать уйдёт видимая
+   часть таблицы, а остальное молча пропадёт. */
+@media print {
+  .appbar, nav.cuts, nav.exports, .actions, button, .btn { display: none; }
+  .scroll { overflow: visible; border: 0; }
+  table.sheet th:last-child, table.sheet td:last-child { position: static; }
+  body { background: var(--surface); }
+}
