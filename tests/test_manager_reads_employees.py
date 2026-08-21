@@ -23,16 +23,18 @@ Django ходит через `DbContextMiddleware`, то есть под рол�
 форма читается как поломка продукта (T072). И сам `POST` отвечает 403, ничего не
 записав, — иначе отказ был бы косметикой.
 
-**Чтение не расширяет доступ мимоходом.** Остальные семь справочников
-управляющему по-прежнему отвечают отказом; сквозной ключ (в Сербии это JMBG,
-национальный идентификатор) читателю не показывается вовсе; на карточке нет ни
-одного числа, кроме ставки и коэффициента, — сумм расчёта там быть не должно.
+**Чтение не расширяет доступ мимоходом.** Остальные справочники, у которых
+такого читателя нет, управляющему по-прежнему отвечают отказом — все семь, а не
+выборка; сквозной ключ (в Сербии это JMBG, национальный идентификатор) читателю
+не показывается вовсе; на карточке и в списке нет ни одного числа, кроме ставки
+и коэффициента, и ни одной ссылки в расчёт — сумм месяца здесь быть не должно.
 
 Данные берутся из сида: точка `NS1` у управляющего, `BG1` и `NS2` — чужие.
 """
 from __future__ import annotations
 
 import re
+from decimal import Decimal
 
 import pytest
 
@@ -205,6 +207,34 @@ def test_the_cut_is_the_database_and_not_the_screen(rls, sql):
     assert found == 0
 
 
+def test_the_alien_card_is_refused_by_the_database_and_not_by_the_view(rls, sql):
+    """404 на чужой карточке приходит от базы, а не от нашего фильтра.
+
+    Экранная проверка выше (`test_a_person_of_another_unit_is_not_openable_by_address`)
+    зеленела бы и на фильтре по точке, случайно написанном в представлении. Такой
+    фильтр — вторая копия правила «свой человек», и разъезжаются такие копии
+    молча: политику потом правят, а забытый фильтр в коде продолжает показывать
+    старую картину (или наоборот — политику ослабляют, а экран прикрывает дырку).
+
+    Поэтому здесь берётся ровно тот запрос, которым продукт ищет карточку —
+    `_employee_or_404`: `Employee.objects.filter(pk=employee_id)`, ни одного
+    условия о точке, — и выполняется он под ролью `app_user` с контекстом
+    управляющего. Своего человека база отдаёт, чужого не отдаёт вовсе: значит
+    представлению просто нечего показать, и 404 стоит не на нашей вежливости.
+    """
+    who = manager_id(sql)
+    mine, alien = person_id(sql, MINE), person_id(sql, ANOTHER_UNIT)
+    with as_app_user(rls, who) as conn:
+        found = {
+            key: conn.execute(
+                "select count(*) from employees where id = %s", (key,)
+            ).fetchone()[0]
+            for key in (mine, alien)
+        }
+    assert found[mine] == 1, "политика не отдаёт управляющему его собственного человека"
+    assert found[alien] == 0, "политика отдала чужого человека по прямому ключу"
+
+
 # --- право решает правку, а не видимость --------------------------------------
 
 
@@ -246,6 +276,65 @@ def test_the_reader_sees_the_rate_and_nothing_else_numeric(client, web_env, sql)
         f"на карточке читателя лишние числа: {numbers}"
     )
     client.post("/logout/")
+
+
+def test_the_list_shows_rates_and_no_other_numbers(client, web_env, sql, rls):
+    """В списке одно число на человека — его ставка, и ничего кроме.
+
+    Карточку стережёт проверка выше, но столбец с суммой месяца дописывают как
+    раз в список: он один из всех экранов чтения похож на отчёт. Сверяется не
+    «столбцов пять», а сами значения: каждое число списка обязано быть ставкой,
+    которую этому управляющему показывает база. Столбец «за июнь начислено»
+    такую проверку не пройдёт, как бы он ни назывался.
+    """
+    from web.format import EMPTY
+
+    who = manager_id(sql)
+    with as_app_user(rls, who) as conn:
+        rates = {
+            Decimal(row[0]) for row in conn.execute(
+                "select base_rate from employment_terms"
+            ).fetchall()
+        }
+    assert rates, "управляющему не видно ни одной ставки — проверка проверяет пустоту"
+
+    login_as(client, "manager")
+    page = body(client.get(LIST))
+    client.post("/logout/")
+
+    cells = re.findall(r'<td class="num[^"]*"[^>]*>([^<]*)<', page)
+    assert cells, "в списке нет ни одной числовой ячейки"
+    shown = []
+    for text in cells:
+        value = text.strip().replace(" ", "").replace(" ", "").replace(",", ".")
+        if value in ("", EMPTY):
+            continue
+        shown.append(Decimal(value))
+    assert shown, "все числа списка — прочерки: сверять нечего"
+    extra = [str(value) for value in shown if value not in rates]
+    assert not extra, f"в списке числа, которые базе не ставки: {extra}"
+
+
+def test_neither_screen_offers_the_payroll_of_the_person(client, web_env, sql):
+    """Ставки — да, ведомость и суммы расчёта — нет.
+
+    Читателю открыли справочник, а не расчёт, и разница здесь не косметическая.
+    Ставка — условие найма, наши данные (в Dodo IS их нет вовсе), и управляющий
+    обязан их проверять. Итог месяца — другое: он режется регистром и правом, и
+    расширить доступ мимоходом на этом экране дешевле всего, достаточно дописать
+    на карточку строку «за июнь начислено» или ссылку «посмотреть ведомость».
+
+    Проверяются оба экрана и оба способа проговориться — словом и ссылкой.
+    Слова взяты настоящие, те, которыми расчёт назван в продукте (`period.html`,
+    `trace.html`): проверка на выдуманное слово зеленела бы всегда.
+    """
+    login_as(client, "manager")
+    pages = {LIST: body(client.get(LIST)), "карточка": body(client.get(card(sql, MINE)))}
+    client.post("/logout/")
+
+    for where, page in pages.items():
+        for leak in ("Ведомость", "Итого", "/payslips/", "/timesheets/", "/trace/"):
+            assert leak not in page, f"{where}: экран чтения отдаёт расчёт — {leak}"
 
 
 def test_the_national_id_is_not_shown_to_the_reader(client, web_env, sql):
@@ -318,10 +407,22 @@ def test_the_one_who_manages_the_directory_still_edits(client, web_env, sql):
 
 
 def test_reading_people_did_not_open_the_rest_of_the_admin(client, web_env):
-    """Открыли один экран, а не справочники целиком."""
+    """Открыли один экран, а не справочники целиком.
+
+    Здесь же живёт гарантия, которую раньше несла строка `/directory/employees/`
+    в `DIRECTORY_URLS` (`tests/test_directory.py`): право `directory.manage`
+    по-прежнему закрывает экран целиком там, где читателя, которому экран нужен
+    для работы, нет. Перечислены все такие адреса, а не половина, — иначе
+    «доступ расширился мимоходом» ловилось бы через один экран из трёх.
+
+    Контрагентов в списке нет намеренно: они открыты на чтение той же границей
+    (`/directory/counterparties/` отвечает управляющему 200) — с них эта форма
+    решения и взята. Экран не наш, и стережёт его блок поставщиков.
+    """
     login_as(client, "manager")
     for closed in ("/directory/", "/directory/groups/", "/directory/units/",
-                   "/directory/legal-entities/", "/directory/calendar/"):
+                   "/directory/legal-entities/", "/directory/calendar/",
+                   "/directory/expense-items/", "/directory/tills/"):
         answer = client.get(closed)
         assert answer.status_code == 403, f"{closed}: {answer.status_code}"
     client.post("/logout/")
