@@ -200,6 +200,101 @@ def test_trace_of_fixed_amount_does_not_pretend_there_is_a_rate(serbia_preset):
 
 
 # =============================================================================
+# 3a. Мера, заданная человеку в условиях найма (T164)
+# =============================================================================
+#
+# Раньше способ существовал единственным образом — правилом на всю группу. Это
+# и есть третья дыра T164: партнёру с одним курьером на фиксированной выплате
+# оставалось либо завести группу из одного человека, либо перевести на неё всех.
+#
+# Проверяется здесь ровно то, что делает эту меру безопасной: она сильнее
+# правила группы, её отсутствие ничего не меняет, а след честно называет того,
+# кто решил, — иначе экран объяснял бы сумму решением страны, которого страна не
+# принимала.
+
+
+def test_the_person_measure_works_without_any_group_rule(serbia_preset):
+    """Группа считается по часам, а этот человек — фиксированной суммой."""
+    engine = PayrollEngine(serbia_preset)
+    person = courier()
+    person.work_measure = "fixed_amount"
+
+    slip = engine.calculate(person, Timesheet(piece_value=D("45000.00")))
+
+    assert amounts(slip) == {"piecework.fixed_amount": D("45000.00")}
+    assert slip.net == D("45000.00")
+
+
+def test_the_person_measure_wins_over_the_group_rule(serbia_preset):
+    """У группы доставки, у человека фиксированная выплата — платим по человеку.
+
+    Порядок именно такой, а не наоборот: условия найма — договор с конкретным
+    человеком, а правило группы — умолчание для тех, у кого своего нет.
+    """
+    engine = piecework_engine(serbia_preset, "deliveries")
+    person = courier()
+    person.work_measure = "fixed_amount"
+
+    slip = engine.calculate(person, Timesheet(piece_value=D("45000.00")))
+
+    # По правилу группы вышло бы 420 × 45000 — правдоподобное число в сотни раз
+    # больше настоящего. Именно поэтому мера человека обязана перебивать группу.
+    assert amounts(slip) == {"piecework.fixed_amount": D("45000.00")}
+
+
+def test_an_empty_person_measure_changes_nothing(serbia_preset):
+    """Пусто у человека — считаем по группе, побайтово как раньше."""
+    engine = piecework_engine(serbia_preset, "deliveries")
+
+    by_group = engine.calculate(courier(), Timesheet(piece_value=D(120)))
+    person = courier()
+    person.work_measure = None
+    by_person = engine.calculate(person, Timesheet(piece_value=D(120)))
+
+    assert amounts(by_group) == amounts(by_person)
+    assert by_group.net == by_person.net == D("50400.00")
+
+
+def test_the_trace_names_the_person_and_not_the_country(serbia_preset):
+    """След говорит, кто выбрал способ: человек, а не правила страны.
+
+    Пресет о мере из условий найма не знает ничего, и спросить его значило бы
+    получить «правило страны» про решение, которого страна не принимала. Путь
+    правила при этом остаётся тем же — это ровно то правило, которое условия
+    найма перебивают.
+    """
+    engine = PayrollEngine(serbia_preset)
+    person = courier()
+    person.work_measure = "deliveries"
+
+    slip = engine.calculate(person, Timesheet(piece_value=D(120)))
+
+    step = next(s for s in slip.trace if s.rule_code == "piecework.deliveries")
+    assert step.rule_code_path == "groups.couriers.work_measure"
+    assert step.source_level == "employee", (
+        "след приписал стране то, что задано человеку в условиях найма"
+    )
+    assert step.input_values["measure"] == "deliveries"
+
+    # Обратная сторона: мера от группы по-прежнему называется правилом.
+    by_group = piecework_engine(serbia_preset, "deliveries").calculate(
+        courier(), Timesheet(piece_value=D(120)),
+    )
+    group_step = next(s for s in by_group.trace if s.rule_code == "piecework.deliveries")
+    assert group_step.source_level == "country"
+
+
+def test_an_unknown_person_measure_is_refused_loudly(serbia_preset):
+    """Опечатка в мере человека — отказ, а не тихий расчёт по часам."""
+    engine = PayrollEngine(serbia_preset)
+    person = courier()
+    person.work_measure = "per_delivery"
+
+    with pytest.raises(ValueError, match="per_delivery"):
+        engine.calculate(person, Timesheet(piece_value=D(120)))
+
+
+# =============================================================================
 # 4. Живая база: ввод величины, права и закрытый период
 # =============================================================================
 #

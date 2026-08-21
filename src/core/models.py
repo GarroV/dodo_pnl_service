@@ -722,6 +722,13 @@ class EmploymentTerm(models.Model):
     coefficient = models.DecimalField(max_digits=8, decimal_places=4, db_default=1)
     scheme = models.TextField(null=True, blank=True)  # переопределяет схему группы
     ledger = ledger_field(null=True, blank=True)  # переопределяет регистр группы
+    # Чем меряется работа именно этого человека (T164): ключ из `work_measures`
+    # правил страны. Пусто — как у группы, то есть по правилу
+    # `groups.<код>.work_measure`. Здесь, а не переопределением правила, потому
+    # что правило адресуется кодом группы: после перевода человека в другую
+    # группу такое переопределение молча перестало бы применяться (см. миграцию
+    # `0247`).
+    work_measure = models.TextField(null=True, blank=True)
     valid_from = models.DateField()
     valid_to = models.DateField(null=True, blank=True)
 

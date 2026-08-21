@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
 
-from .presets import FILE_ORIGIN
+from .presets import FILE_ORIGIN, Origin
 from .trace import TraceStep
 
 D = Decimal
@@ -39,6 +39,9 @@ class Employee:
     coefficient: Decimal = D("1.0")
     ledger: str | None = None        # переопределяет регистр группы
     unit: str | None = None
+    # Чем меряется работа этого человека: переопределяет меру группы (T164).
+    # Пусто — как у группы, и до T164 иначе и не бывало.
+    work_measure: str | None = None
 
 
 @dataclass
@@ -102,13 +105,32 @@ def insured_base(hours: dict, hour_types: dict) -> Decimal:
 # Разделение с «схемой расчёта» намеренное: схема отвечает на «как из нето
 # получить бруто и взносы», мера — на «из чего берётся само нето». Свести их в
 # одно значило бы заводить схему на каждое сочетание.
+#
+# С T164 у человека есть своя мера — в условиях найма, рядом со схемой и
+# регистром. Порядок «человек сильнее группы» записан **здесь и только здесь**:
+# спрашивают его трое — движок, расчёт периода (`payrun.calc.check_measures`) и
+# экран табеля (`timesheets.grid.measure_of`), — и три копии одного правила
+# разъехались бы молча. Разъезд выглядел бы так: экран предлагает вводить
+# доставки, а расчёт считает часы.
 
 HOURS = "hours"
 
+# Откуда взялась мера, заданная человеку: из его условий найма. Уровень тот же
+# `employee`, что у переопределения правила по человеку (`presets.LEVELS`), —
+# интерфейс уже называет его словами «переопределение по сотруднику»
+# (`web/views.LEVEL_TITLES`), и это ровно то, что здесь произошло. Версии у неё
+# нет: версионируется строка условий найма, а не правило.
+TERMS_ORIGIN = Origin(level="employee")
 
-def work_measure(group: dict | None) -> str:
-    """Мера работы группы. Пусто — часы: так работали до появления правила."""
-    return (group or {}).get("work_measure") or HOURS
+
+def work_measure(group: dict | None, *, employee: str | None = None) -> str:
+    """Мера работы: своя у человека сильнее правила группы. Обе пусты — часы.
+
+    Часы умолчанием, потому что так работали до появления правила вовсе: группа
+    без `work_measure` и человек без своей меры обязаны считаться ровно как
+    считались.
+    """
+    return employee or (group or {}).get("work_measure") or HOURS
 
 
 def uses_insured_hours(scheme: dict) -> bool:
@@ -185,15 +207,23 @@ class PayrollEngine:
     # -- вспомогательное --------------------------------------------------
 
     def step(self, code: str, title: str, value: Decimal, *, rule_path: str,
-             inputs: dict[str, Any], contributes_to: str = "net") -> TraceStep:
+             inputs: dict[str, Any], contributes_to: str = "net",
+             origin: Origin | None = None) -> TraceStep:
         """Шаг следа с версией правила, по которой посчитано.
 
         Откуда взялось значение, знает сам пресет: собранный из базы помнит, на
         каком уровне его переопределили и какой строкой. Пресет из файла версии
         не имеет — и шаг честно остаётся без неё.
+
+        `origin` передаётся тогда, когда значение пришло **не из правил**: мера
+        работы бывает задана человеку в условиях найма (T164), и пресет о ней не
+        знает ничего. Спросить его в таком случае значило бы получить ответ
+        «правило страны» про решение, которого страна не принимала, — то есть
+        соврать ровно там, где след и нужен.
         """
-        origin_of = getattr(self.p, "origin_of", None)
-        origin = origin_of(rule_path) if origin_of else FILE_ORIGIN
+        if origin is None:
+            origin_of = getattr(self.p, "origin_of", None)
+            origin = origin_of(rule_path) if origin_of else FILE_ORIGIN
         return TraceStep(
             rule_code=code, title=title, applied_value=value, rule_code_path=rule_path,
             input_values=inputs, rule_version_id=origin.version_id,
@@ -241,8 +271,8 @@ class PayrollEngine:
         return total
 
     def measure_of(self, e: Employee) -> str:
-        """Чем меряется работа этого человека — по правилу его группы."""
-        return work_measure(self.groups.get(e.group))
+        """Чем меряется работа этого человека: своя мера сильнее правила группы."""
+        return work_measure(self.groups.get(e.group), employee=e.work_measure)
 
     def accrue_piecework(self, slip: Payslip, ts: Timesheet, measure: str) -> Decimal:
         """Начисление сдельной работы: количество × ставка либо сама сумма.
@@ -278,6 +308,12 @@ class PayrollEngine:
                 # Само `pay_per_unit` при этом в входах, чтобы объяснение
                 # читалось целиком, а не по двум местам.
                 rule_path=f"groups.{e.group}.work_measure",
+                # Мера, заданная человеку в условиях найма (T164), — не правило
+                # страны и не переопределение партнёра: её версия живёт в
+                # `employment_terms`, а пресет о ней не знает. Путь при этом
+                # остаётся тем же: это ровно то правило, которое условия найма
+                # перебивают, — а уровень называет того, кто решил.
+                origin=TERMS_ORIGIN if e.work_measure else None,
                 inputs={
                     "measure": measure, "quantity": quantity,
                     "pay_per_unit": per_unit, "rate": rate,

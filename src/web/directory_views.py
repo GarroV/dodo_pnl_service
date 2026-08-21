@@ -2,10 +2,28 @@
 
 Что здесь есть и чего здесь нет.
 
-**Заведения сотрудников нет — это решение D029, а не пропуск.** Карточки
-появляются из данных партнёра, админка нужна для правки. Поэтому у сотрудников
-есть список и карточка, но нет кнопки «Добавить». У точек, юрлиц и групп
-заведение есть: их в таблице партнёра нет вовсе, взяться им больше неоткуда.
+**Сотрудник заводится экраном (T164). Прежнее «нет и не будет» (D029) больше не
+действует.** D029 говорил: карточки приезжают загрузкой таблицы партнёра, админка
+нужна только для правки. Для стройки на тестовых данных этого хватало, для
+передачи продукта партнёру — нет. Человек выходит на работу пятнадцатого числа, и
+до следующей загрузки таблицы его в системе **не существует**: ни в табеле, ни в
+ведомости, ни в справочнике. Обходной путь — просить бухгалтера перезалить
+таблицу ради одного человека, то есть ровно та ручная работа, ради избавления от
+которой продукт и пишется.
+
+Поэтому заведение есть, а загрузка таблицы никуда не делась: это два входа для
+двух разных случаев — месяц целиком и один человек. Оба пишут в те же
+`employees` и `employment_terms`, и второй не отменяет первого.
+
+**Заводится человек ВМЕСТЕ с первой версией условий найма, а не «карточкой, а
+условия потом».** Карточка без условий найма — это человек, которого расчёт не
+знает: ни группы, ни ставки, ни точки. Он не попадёт ни в табель, ни в
+ведомость, и узнается это на расчёте месяца, а не при заведении. Форма спрашивает
+и то и другое сразу, потому что «завести сотрудника» продуктово означает «с этого
+числа он работает и стоит столько».
+
+У точек, юрлиц и групп заведение было и раньше: их в таблице партнёра нет вовсе,
+взяться им больше неоткуда.
 
 **Удаления нет ни у одного справочника, и это тоже решение.** Точка закрывается
 датой (`closed_at`), человек увольняется датой (`dismissed_at`) — и то и другое
@@ -92,6 +110,23 @@ def _saved_notices() -> dict:
         "person": _("Карточка сохранена."),
         "terms": _("Заведена новая версия условий найма."),
         "same": _("Ничего не изменилось — новая версия не заведена."),
+        # Заведение (T164) — свой ответ, а не «карточка сохранена»: человек
+        # только что появился в продукте, и следующий его шаг другой — часы.
+        # Сказать об этом надо здесь, иначе он ждёт, что сотрудник сам окажется
+        # в ведомости.
+        #
+        # Сказано ровно то, что продукт умеет **сегодня**, и это не мелочь.
+        # Строка табеля появляется пока только загрузкой таблицы за месяц
+        # (`timesheets/importer.py` — единственное место, где она создаётся), а
+        # на экране табеля видны те, у кого строка уже есть. Обещать «внесите
+        # ему часы в табеле» значило бы отправить человека искать строку,
+        # которой там нет: обещание, которого продукт не держит, хуже
+        # отсутствующей возможности. Дыра записана в журнал блока и в беклог.
+        "hired": _(
+            "Сотрудник заведён вместе с первой версией условий найма. "
+            "В ведомость он попадёт, когда за этот месяц появятся его часы: "
+            "сегодня строку табеля создаёт только загрузка таблицы за месяц."
+        ),
     }
 
 
@@ -354,6 +389,141 @@ def _select(name: str, label: str, rows, selected, **extra) -> dict:
     }
 
 
+# --- правила страны на экранах справочников -----------------------------------
+#
+# Схема расчёта и мера работы перечислены в правилах страны, а не в коде: страна
+# заводит свою схему обычным пресетом, и экран обязан предложить её, не дожидаясь
+# правки интерфейса. Отсюда и общий раздел: спрашивают правила два экрана —
+# карточка человека и форма группы, — и второй источник списка означал бы, что на
+# соседних экранах предлагаются разные наборы схем.
+
+
+def _preset_now(who):
+    """Правила партнёра, действующие сегодня. Нет правил страны — None.
+
+    Сегодня, а не на дату периода: справочник ведут «сейчас», и способ работы
+    показывается тот, по которому считается ближайший месяц. Дата новой версии
+    при этом спрашивается отдельно — см. форму группы.
+    """
+    from core.rules import PresetNotFound, load_rules_at
+
+    try:
+        return load_rules_at(who.tenant_id, _country_of(who), date.today()).base
+    except PresetNotFound:
+        return None
+
+
+def _measure_of(preset, code: str) -> str:
+    """Чем меряется работа группы по действующим правилам.
+
+    Тем же способом, каким её берут табель и расчёт (`payroll.work_measure`):
+    пусто и отсутствие узла означают часы. Своя ветка здесь дала бы третье
+    прочтение одного правила.
+    """
+    from payroll import work_measure
+
+    if preset is None:
+        return "hours"
+    return work_measure(((preset.get("groups") or {}).get(code)) or {})
+
+
+def _measure_title(preset, measure: str) -> str:
+    if preset is None:
+        return measure
+    return ((preset.get("work_measures") or {}).get(measure) or {}).get("title") or measure
+
+
+def _scheme_title(preset, code: str) -> str:
+    """Схема расчёта словом, а не ключом из правил.
+
+    Пока в истории версий стоял сам ключ, карточка отвечала `direct` — то есть
+    человеку, который выбрал схему из списка, читать её обратно приходилось на
+    языке YAML. Незнакомая правилам схема показывается ключом: подменять её
+    выдуманной подписью значило бы скрыть, что расчёт по ней не пойдёт.
+    """
+    if not code:
+        return code
+    return ((preset or {}).get("schemes") or {}).get(code, {}).get("title") or code
+
+
+def _effective_measure(preset, term) -> str:
+    """Чем на самом деле меряется работа этого человека сейчас (T164).
+
+    Одним вызовом `payroll.work_measure`, а не своей веткой «есть своё — бери
+    своё»: порядок «человек сильнее группы» записан в движке, и вторая его копия
+    здесь означала бы экран, который показывает не то, что посчитает расчёт.
+    """
+    from payroll import work_measure
+
+    if term is None:
+        return "hours"
+    return work_measure(
+        ((preset or {}).get("groups") or {}).get(term.group.code),
+        employee=term.work_measure,
+    )
+
+
+def _with_current(rows: list, current: str | None) -> list:
+    """Список выбора плюс то значение, которое уже стоит, если его в списке нет.
+
+    Выбросить незнакомое значение из списка нельзя, и это не вежливость к
+    опечаткам. Схема, которой в правилах страны нет, уже лежит в базе, и человек
+    сегодня открывает карточку не ради неё — ради даты увольнения. Если такого
+    варианта в списке не будет, браузер отметит первый попавшийся, и «Сохранить»
+    молча переведёт человека на другую схему расчёта. Помечаем словами и
+    оставляем: показать проблему дороже, чем спрятать её подменой.
+    """
+    if not current or any(str(code) == current for code, _title in rows):
+        return rows
+    return [
+        *rows,
+        (current, _("%(code)s — в правилах страны такой нет") % {"code": current}),
+    ]
+
+
+def _choice_field(name: str, label: str, rows: list, current: str | None, *,
+                  required: bool, empty_label: str = "", prompt: str = "",
+                  help: str = "", no_rules_help: str = "") -> dict:
+    """Поле выбора из правил страны — или текстовое поле, если правил нет вовсе.
+
+    Пустого списка выбора здесь быть не должно: `<select>` без вариантов
+    означает «задать нельзя», а правил страны может не быть по причине, к
+    условиям найма отношения не имеющей (пресет не загружен). Тогда поле
+    остаётся текстовым и **говорит**, почему списка нет: молча подменённый вид
+    поля читается как поломка.
+
+    `prompt` — подпись пустого варианта у обязательного поля, пока ничего не
+    выбрано. Без него браузер отмечает первый вариант списка сам, и человек,
+    не тронувший поле, «выбирает» его не глядя: у новой группы это была бы
+    случайная схема расчёта. Найдено смоуком в браузере — в разметке такого не
+    видно, а тест на «поле есть» зеленел.
+    """
+    options = _with_current(rows, current)
+    if not options:
+        return {"kind": "text", "name": name, "label": label,
+                "value": current or "", "required": required, "help": no_rules_help}
+    if required and not current:
+        empty_label = prompt or empty_label
+    return _select(name, label, options, current, required=required,
+                   empty_label=empty_label, help=help)
+
+
+def _from_rules(request, name: str, label: str, rows: list, current: str | None, *,
+                required: bool):
+    """Прочитать значение, выбранное из правил страны. Чужое — отказ словами.
+
+    Разбор в паре с `_choice_field`: список допустимого один и тот же, иначе
+    экран предлагал бы вариант, который сам же отвергнет. Правил нет —
+    принимается текст, ровно как их и вводили до появления списка.
+    """
+    options = _with_current(rows, current)
+    if not options:
+        value = _text(request, name, label, required=required)
+        return value or None
+    allowed = [code for code, _title in options]
+    return _choice(request, name, label, allowed, required=required)
+
+
 # --- сотрудники ---------------------------------------------------------------
 
 
@@ -388,8 +558,9 @@ def employees(request):
     return render(request, "web/directory/list.html", {
         "heading": _("Сотрудники"),
         "about": _(
-            "Карточки заводятся вместе с данными партнёра, а не здесь: "
-            "имя, коэффициент и ставку приносит загрузка таблицы. Править — можно."
+            "Кто работает у партнёра и по каким условиям. Месяц целиком приносит "
+            "загрузка таблицы, одного человека — кнопка ниже: вышел на работу "
+            "пятнадцатого числа, завели пятнадцатым."
         ) if may_manage else _(
             "Люди вашей точки: в какой группе человек считается и по какой ставке. "
             "Только чтение — карточки ведёт администратор сети."
@@ -405,20 +576,26 @@ def employees(request):
         "back_url": reverse("directory") if may_manage else "",
         "back_label": _("← К справочникам"),
         "standalone": not may_manage,
+        # Кнопка есть у того, кто ведёт справочник (T164). Читателю её не
+        # рисуют вовсе: экран не предлагает того, что сам же отвергнет (T072).
+        "add_url": reverse("directory-employee-new") if may_manage else "",
+        "add_label": _("Завести сотрудника"),
         "columns": columns,
         "rows": rows,
         # Пустое состояние говорит, что делать дальше, а не что данных нет:
-        # заголовок — факт, тело — следующий шаг. Кнопки «Завести» у сотрудников
-        # нет (D029), поэтому шаг здесь — загрузка таблицы партнёра.
+        # заголовок — факт, тело — следующий шаг. Шагов теперь два, и назван
+        # каждый: месяц целиком приносит загрузка таблицы, одного человека —
+        # кнопка (её подставляет сам шаблон, когда есть `add_url`).
         #
-        # Читателю следующий шаг называется другой: загрузить табель он не
-        # может, и совет «загрузите таблицу» отправил бы его на экран, который
-        # ответит отказом.
+        # Читателю следующий шаг называется другой: ни загрузить табель, ни
+        # завести человека он не может, и совет сделать это отправил бы его на
+        # экран, который ответит отказом.
         "empty": _("Сотрудников нет.") if not query else _("Ничего не нашлось."),
         "empty_next": (
             _(
-                "Карточки заводит загрузка таблицы партнёра: откройте месяц и "
-                "загрузите табель — люди появятся вместе с часами."
+                "Месяц целиком приносит загрузка таблицы партнёра: откройте месяц "
+                "и загрузите табель — люди появятся вместе с часами. Одного "
+                "человека заведите здесь:"
             ) if may_manage else _(
                 "Здесь появятся люди вашей точки — вместе с их условиями найма. "
                 "Пока их нет, спросите администратора сети."
@@ -578,6 +755,117 @@ def employee(request, employee_id):
     ), status=status)
 
 
+@login_required
+def employee_new(request):
+    """Завести сотрудника (T164). Прежде такого адреса не было вовсе — D029.
+
+    Почему право спрашивается `_guard`, а не `_reader`, как у списка и карточки.
+    У списка право решает «правка или чтение» — читателю нужны ставки своих
+    людей. Здесь читать нечего: это форма записи целиком, и открывать её тому,
+    кто не вправе записать, значило бы предлагать работу, которая закончится
+    отказом. Отказ при этом словами и на весь экран, а не пропавшая ссылка:
+    адрес остаётся рабочим (T072).
+
+    База, как и раньше, не полагается на этот экран: `employees` и
+    `employment_terms` закрыты политиками `directory_manage_insert`
+    (`0130_directory_permissions`), то есть запись мимо интерфейса тоже не
+    пройдёт.
+    """
+    who, denied = _guard(request)
+    if denied is not None:
+        return denied
+
+    error, status = "", 200
+    if request.method == "POST":
+        try:
+            # Человек и его первая версия условий найма — одной точкой
+            # сохранения: отвергнутая форма не должна оставить за собой карточку
+            # без условий найма, то есть человека, которого расчёт не знает (T136).
+            with saving():
+                person, valid_from = _create_employee(request, who)
+            carried = "&retro=1" if directory.touches_closed_month(
+                who.tenant_id, valid_from,
+            ) else ""
+            return redirect(
+                reverse("directory-employee", args=[person.id]) + f"?saved=hired{carried}"
+            )
+        except ConstraintRefused as refused:
+            error, status = refused.message, refused.http_status
+        except BadInput as bad:
+            error, status = bad.message, bad.http_status
+        except directory.DirectoryRefused as refusal:
+            error, status = refusal.message, refusal.http_status
+
+    return render(request, "web/directory/form.html", {
+        "heading": _("Новый сотрудник"),
+        "back_url": reverse("directory-employees"),
+        "back_label": _("← К сотрудникам"),
+        "error": error,
+        # Дата приёма может лежать внутри утверждённого месяца — например,
+        # человека завели с опозданием. Правка проходит, закрытый месяц не
+        # двигается, и сказать об этом надо ДО кнопки (T121).
+        "closed_note": directory.closed_month_warning(who.tenant_id),
+        "submit_label": _("Завести сотрудника"),
+        "fields": [
+            *_person_fields(None),
+            # Дата одна на карточку и на условия найма, и это не экономия поля.
+            # «Принят» — это и есть дата, с которой человек работает и стоит
+            # столько: два разных числа здесь означали бы человека, принятого
+            # первого числа и посчитанного с пятнадцатого, — расхождение,
+            # которое никто не заметит до расчёта.
+            {"kind": "date", "name": "hired_at", "label": _("Принят"), "required": True,
+             "value": "",
+             "help": _("С этой даты человек работает — и с неё же действует первая "
+                       "версия условий найма. Середина месяца работает: расчёт "
+                       "берёт версию, действующую в месяце.")},
+            *_terms_fields(who, None),
+        ],
+    }, status=status)
+
+
+def _create_employee(request, who) -> tuple[Employee, date]:
+    """Карточка человека и первая версия его условий найма. Возвращает обе даты.
+
+    Условия найма заводятся здесь же, а не «потом на карточке»: человек без них
+    не попадёт ни в табель, ни в ведомость, и узнается это на расчёте месяца.
+    Заводить экраном заведомо неполную запись — это молчаливый сбой, отложенный
+    на две недели.
+    """
+    person = Employee(tenant_id=who.tenant_id)
+    hired_at = _date(request, "hired_at", _("Принят"), required=True)
+    person.last_name = _text(request, "last_name", _("Фамилия"))
+    person.first_name = _text(request, "first_name", _("Имя"))
+    person.external_id = _text(request, "external_id", _("Внешний ключ"))
+    person.hired_at = hired_at
+    # Разбор условий найма — ДО записи карточки: отказ по ним не должен оставить
+    # за собой человека без условий. Точка сохранения это тоже прикрывает, но
+    # порядок здесь дешевле, чем откат.
+    wanted = _wanted_terms(request, who, None)
+    person.save()
+    directory.save_terms(who.tenant_id, person.id, valid_from=hired_at, wanted=wanted)
+    return person, hired_at
+
+
+def _person_fields(person: Employee | None) -> list[dict]:
+    """Поля самой карточки: имя и сквозной ключ. Одни на заведение и на правку.
+
+    Даты приёма и увольнения здесь нет намеренно: при заведении дата приёма
+    обязательна и служит началом условий найма, а даты увольнения не бывает
+    вовсе — заводить уже уволенного незачем. На карточке обе есть и обе
+    необязательны.
+    """
+    return [
+        {"kind": "text", "name": "last_name", "label": _("Фамилия"),
+         "value": person.last_name if person else "", "required": True},
+        {"kind": "text", "name": "first_name", "label": _("Имя"),
+         "value": person.first_name if person else "", "required": True},
+        {"kind": "text", "name": "external_id", "label": _("Внешний ключ"),
+         "value": person.external_id if person else "", "required": True,
+         "help": _("Сквозной ключ между системами, например JMBG. "
+                   "По нему сходится загрузка табеля.")},
+    ]
+
+
 def _save_person(request, person: Employee) -> None:
     person.last_name = _text(request, "last_name", _("Фамилия"))
     person.first_name = _text(request, "first_name", _("Имя"))
@@ -601,26 +889,64 @@ def _save_terms(request, who, person: Employee) -> tuple[str, str]:
     Правило и его «почему» — в `web/directory.py`.
     """
     valid_from = _date(request, "valid_from", _("Действует с"), required=True)
-    # Разрешены только группы видимого регистра: иначе человека можно было бы
-    # перевести в группу, о существовании которой роли знать не положено, —
-    # подбором значения в форме (D023).
-    groups = list(_visible_groups(who).values_list("id", flat=True))
-    units = list(Unit.objects.values_list("id", flat=True))
-    wanted = {
-        "group_id": _choice(request, "group", _("Группа"), groups),
-        "unit_id": _choice(request, "unit", _("Точка"), units, required=False),
-        "base_rate": _number(request, "base_rate", _("Ставка")),
-        "coefficient": _number(request, "coefficient", _("Коэффициент")),
-        "scheme": _text(request, "scheme", _("Схема расчёта"), required=False) or None,
-        "ledger": _choice(request, "ledger", _("Регистр учёта"), LEDGER_CODES, required=False),
-    }
     change = directory.save_terms(
-        who.tenant_id, person.id, valid_from=valid_from, wanted=wanted,
+        who.tenant_id, person.id, valid_from=valid_from,
+        wanted=_wanted_terms(request, who, _last_term(person.id)),
     )
     if not change.changed:
         return "same", ""
     carried = directory.touches_closed_month(who.tenant_id, valid_from)
     return "terms", ("&retro=1" if carried else "")
+
+
+def _last_term(employee_id) -> EmploymentTerm | None:
+    """Последняя версия условий найма человека — та, которую показала форма.
+
+    Нужна разбору ввода, а не показу: список допустимых схем и мер включает то,
+    что уже стоит (см. `_with_current`), и составлять его при чтении формы надо
+    из того же источника, из которого он составлялся при её показе. Иначе
+    сохранение отвергало бы ровно то значение, которое экран сам и предложил.
+    """
+    return (
+        EmploymentTerm.objects.filter(employee_id=employee_id)
+        .order_by("valid_from")
+        .last()
+    )
+
+
+def _wanted_terms(request, who, current: EmploymentTerm | None) -> dict:
+    """Условия найма, заявленные формой. Одни на правку и на заведение (T164).
+
+    Одной функцией, а не двумя похожими: у формы заведения и формы новой версии
+    поля условий найма одни и те же, и разъехавшийся разбор означал бы, что
+    завести можно то, чего нельзя изменить (или наоборот).
+    """
+    preset = _preset_now(who)
+    # Разрешены только группы видимого регистра: иначе человека можно было бы
+    # перевести в группу, о существовании которой роли знать не положено, —
+    # подбором значения в форме (D023).
+    groups = list(_visible_groups(who).values_list("id", flat=True))
+    units = list(Unit.objects.values_list("id", flat=True))
+    return {
+        "group_id": _choice(request, "group", _("Группа"), groups),
+        "unit_id": _choice(request, "unit", _("Точка"), units, required=False),
+        "base_rate": _number(request, "base_rate", _("Ставка")),
+        "coefficient": _number(request, "coefficient", _("Коэффициент")),
+        # Схема расчёта — выбор из правил страны, а не набранный текст (T164).
+        # Опечатка в ключе означала молча несчитанного человека: расчёт узнаёт о
+        # ней на месяце, а не при наборе.
+        "scheme": _from_rules(
+            request, "scheme", _("Схема расчёта"), rules.scheme_choices(preset or {}),
+            current.scheme if current else None, required=False,
+        ),
+        # Чем меряется работа именно этого человека (T164). Пусто — как у группы.
+        "work_measure": _from_rules(
+            request, "work_measure", _("Чем меряется работа"),
+            rules.measure_choices(preset or {}),
+            current.work_measure if current else None, required=False,
+        ),
+        "ledger": _choice(request, "ledger", _("Регистр учёта"), LEDGER_CODES, required=False),
+    }
 
 
 def _employee_context(
@@ -633,6 +959,9 @@ def _employee_context(
     ))
     current = versions[-1] if versions else None
     edge = directory.closed_through(who.tenant_id)
+    # Правила нужны обоим режимам экрана: подписать меру работы словом («По
+    # часам»), а не ключом, — иначе на карточке стоял бы `fixed_amount`.
+    preset = _preset_now(who)
     shown = {
         "person": person,
         "back_url": reverse("directory-employees"),
@@ -649,7 +978,20 @@ def _employee_context(
                 # есть, без округления до копеек (`format.exact`, T116).
                 "rate": exact(term.base_rate),
                 "coefficient": exact(term.coefficient),
-                "scheme": term.scheme or term.group.scheme,
+                # Схема — словом из правил страны, а не ключом: `direct` в
+                # истории означал бы, что выбранное из списка читается обратно
+                # на языке YAML.
+                "scheme": _scheme_title(preset, term.scheme or term.group.scheme),
+                # Мера версии — только своя, а не унаследованная (T164).
+                # Подставить сюда меру группы значило бы показать в июньской
+                # строке сегодняшнее правило: мера группы версионируется
+                # отдельно, своими датами, и на дату версии условий найма она
+                # могла быть другой. «Как у группы» — честный ответ: в этой
+                # версии человеку меру не задавали.
+                "measure": (
+                    _measure_title(preset, term.work_measure) if term.work_measure
+                    else _("как у группы")
+                ),
                 "ledger": ledger_title(term.ledger or term.group.ledger),
             }
             for term in versions
@@ -681,6 +1023,19 @@ def _employee_context(
                     "value": exact(current.coefficient) if current else EMPTY,
                     "num": True,
                 },
+                # Чем меряется работа — управляющему это нужно так же, как
+                # ставка: по этому он понимает, что вводить в табель — часы или
+                # величину за месяц (T164, D047). Здесь показывается
+                # действующее значение целиком, включая унаследованное от
+                # группы: факты отвечают на «как считается сейчас», а не «что
+                # записано в версии».
+                {
+                    "label": _("Чем меряется работа"),
+                    "value": (
+                        _measure_title(preset, _effective_measure(preset, current))
+                        if current else EMPTY
+                    ),
+                },
                 {
                     "label": _("Принят"),
                     "value": person.hired_at.isoformat() if person.hired_at else EMPTY,
@@ -696,50 +1051,100 @@ def _employee_context(
         "closed_through": edge,
         "closed_note": directory.closed_month_warning(who.tenant_id),
         "person_fields": [
-            {"kind": "text", "name": "last_name", "label": _("Фамилия"),
-             "value": person.last_name, "required": True},
-            {"kind": "text", "name": "first_name", "label": _("Имя"),
-             "value": person.first_name, "required": True},
-            {"kind": "text", "name": "external_id", "label": _("Внешний ключ"),
-             "value": person.external_id, "required": True,
-             "help": _("Сквозной ключ между системами, например JMBG. "
-                       "По нему сходится загрузка табеля.")},
+            *_person_fields(person),
             {"kind": "date", "name": "hired_at", "label": _("Принят"),
              "value": person.hired_at.isoformat() if person.hired_at else ""},
+            # Увольнение — это дата, а не удаление, и сказать об этом надо здесь
+            # же. Пустое поле «Уволен» без слов читается как «уволить нечем»:
+            # человек ищет кнопку, которой нет и не будет. Строка не исчезает
+            # никуда — по ней считаются закрытые месяцы, в которых человек
+            # работал, и вернуть его можно, очистив дату.
             {"kind": "date", "name": "dismissed_at", "label": _("Уволен"),
-             "value": person.dismissed_at.isoformat() if person.dismissed_at else ""},
+             "value": person.dismissed_at.isoformat() if person.dismissed_at else "",
+             "help": _("Уволить — значит поставить дату. Карточка и история "
+                       "остаются: месяцы, в которые человек работал, считаются "
+                       "по ним. Очистить дату можно — увольнение обратимо.")},
         ],
         "terms_fields": [
             {"kind": "date", "name": "valid_from", "label": _("Действует с"),
              "value": "", "required": True,
              "help": _("С этой даты действует новая версия. Прошлая закрывается "
                        "этим же днём и остаётся в истории.")},
-            _select(
-                "group", _("Группа"),
-                _visible_groups(who).order_by("title").values_list("id", "title"),
-                current.group_id if current else None, required=True,
-            ),
-            _select(
-                "unit", _("Точка"),
-                Unit.objects.order_by("code").values_list("id", "code"),
-                current.unit_id if current else None, empty_label=_("не задана"),
-            ),
-            {"kind": "number", "name": "base_rate", "label": _("Ставка"), "required": True,
-             "value": current.base_rate if current else ""},
-            {"kind": "number", "name": "coefficient", "label": _("Коэффициент"), "required": True,
-             "value": current.coefficient if current else ""},
-            {"kind": "text", "name": "scheme", "label": _("Схема расчёта"),
-             "value": (current.scheme if current else "") or "",
-             "help": _("Пусто — как у группы. Заполняется только там, где человек "
-                       "считается иначе своей группы.")},
-            _select(
-                "ledger", _("Регистр учёта"),
-                [(code, ledger_title(code)) for code in LEDGER_CODES
-                 if code in who.visible_ledgers],
-                current.ledger if current else None, empty_label=_("как у группы"),
-            ),
+            *_terms_fields(who, current),
         ],
     }
+
+
+def _terms_fields(who, current: EmploymentTerm | None) -> list[dict]:
+    """Поля условий найма: группа, точка, ставка, коэффициент, схема, мера, регистр.
+
+    Одни и те же на карточке (новая версия) и на форме заведения (T164) — как и
+    их разбор в `_wanted_terms`. Даты здесь нет намеренно: на карточке она
+    называется «Действует с», при заведении это дата приёма, и спрашивать её
+    дважды значило бы разрешить завести человека, который принят одним числом, а
+    считается с другого.
+    """
+    preset = _preset_now(who)
+    return [
+        _select(
+            "group", _("Группа"),
+            _visible_groups(who).order_by("title").values_list("id", "title"),
+            current.group_id if current else None, required=True,
+            # Пустой вариант, пока группа не выбрана, — и это не украшение.
+            # Обязательный список без него браузер отмечает первым вариантом
+            # сам: человек, заполнивший имя и ставку, завёл бы сотрудника в
+            # первую по алфавиту группу, не выбрав её. У группы своя схема
+            # расчёта и свой регистр учёта, то есть это другие деньги и другая
+            # видимость строки. Найдено смоуком в браузере.
+            empty_label="" if current else _("выберите группу"),
+        ),
+        _select(
+            "unit", _("Точка"),
+            Unit.objects.order_by("code").values_list("id", "code"),
+            current.unit_id if current else None, empty_label=_("не задана"),
+        ),
+        {"kind": "number", "name": "base_rate", "label": _("Ставка"), "required": True,
+         "value": current.base_rate if current else ""},
+        {"kind": "number", "name": "coefficient", "label": _("Коэффициент"), "required": True,
+         # Единица подставлена заранее: коэффициент есть у каждого, и у
+         # большинства он ровно один. Пустое обязательное поле на форме
+         # заведения означало бы, что человека нельзя завести, не зная слова
+         # «коэффициент».
+         "value": current.coefficient if current else "1"},
+        # Схема расчёта — выбором из правил страны, а не набором ключа руками
+        # (T164). Прежде здесь стояло текстовое поле, и знать надо было ключ из
+        # YAML: `standard`, `half_time`, `half_time_min_base`. Опечатка в нём —
+        # это молча несчитанный человек: расчёт отказывает по имени, но узнаётся
+        # это на закрытии месяца, а не при наборе.
+        _choice_field(
+            "scheme", _("Схема расчёта"), rules.scheme_choices(preset or {}),
+            (current.scheme if current else None) or None,
+            required=False, empty_label=_("как у группы"),
+            help=_("Пусто — как у группы. Заполняется там, где человек считается "
+                   "иначе своей группы."),
+            no_rules_help=_("Правил страны в базе нет, поэтому и списка схем нет: "
+                            "загрузите пресет страны. Пока — ключ схемы, как он "
+                            "написан в правилах."),
+        ),
+        # Чем меряется работа этого человека (T164). Прежде задавалось только на
+        # всю группу и только правом `rules.manage`; здесь это условие найма —
+        # ведёт его тот, кто ведёт условия найма, и версия у него та же.
+        _choice_field(
+            "work_measure", _("Чем меряется работа"), rules.measure_choices(preset or {}),
+            (current.work_measure if current else None) or None,
+            required=False, empty_label=_("как у группы"),
+            help=_("Часовая или сдельная — у этого человека. Пусто — как у группы. "
+                   "Сдельному человеку табель спросит величину за месяц вместо часов."),
+            no_rules_help=_("Правил страны в базе нет, поэтому и списка способов нет: "
+                            "загрузите пресет страны."),
+        ),
+        _select(
+            "ledger", _("Регистр учёта"),
+            [(code, ledger_title(code)) for code in LEDGER_CODES
+             if code in who.visible_ledgers],
+            current.ledger if current else None, empty_label=_("как у группы"),
+        ),
+    ]
 
 
 # --- группы, точки, юрлица ----------------------------------------------------
@@ -749,41 +1154,6 @@ def _employee_context(
 # местах путь разъехался бы молча — и правка на одном экране не была бы видна на
 # другом.
 WORK_MEASURE_PATH = "groups.%s.work_measure"
-
-
-def _preset_now(who):
-    """Правила партнёра, действующие сегодня. Нет правил страны — None.
-
-    Сегодня, а не на дату периода: справочник ведут «сейчас», и способ работы
-    показывается тот, по которому считается ближайший месяц. Дата новой версии
-    при этом спрашивается отдельно — см. форму группы.
-    """
-    from core.rules import PresetNotFound, load_rules_at
-
-    try:
-        return load_rules_at(who.tenant_id, _country_of(who), date.today()).base
-    except PresetNotFound:
-        return None
-
-
-def _measure_of(preset, code: str) -> str:
-    """Чем меряется работа группы по действующим правилам.
-
-    Тем же способом, каким её берут табель и расчёт (`payroll.work_measure`):
-    пусто и отсутствие узла означают часы. Своя ветка здесь дала бы третье
-    прочтение одного правила.
-    """
-    from payroll import work_measure
-
-    if preset is None:
-        return "hours"
-    return work_measure(((preset.get("groups") or {}).get(code)) or {})
-
-
-def _measure_title(preset, measure: str) -> str:
-    if preset is None:
-        return measure
-    return ((preset.get("work_measures") or {}).get(measure) or {}).get("title") or measure
 
 
 @login_required
@@ -798,7 +1168,10 @@ def groups(request):
             "cells": [
                 {"text": group.code},
                 {"text": group.title},
-                {"text": group.scheme},
+                # Схема словом, как и мера рядом: столбец, где стоит `direct`,
+                # заставляет читать правила страны глазами, чтобы понять список
+                # групп (T164).
+                {"text": _scheme_title(preset, group.scheme)},
                 {"text": ledger_title(group.ledger)},
                 # Способ работы стоит в списке, а не только в карточке (D032):
                 # у одного партнёра рядом живут почасовая кухня и сдельные
@@ -847,7 +1220,13 @@ def group(request, group_id=None):
         try:
             code = _text(request, "code", _("Код"))
             title = _text(request, "title", _("Название"))
-            scheme = _text(request, "scheme", _("Схема расчёта"))
+            # Схема группы — выбором из правил страны, тем же списком и тем же
+            # разбором, что у человека (T164): два набора схем на соседних
+            # экранах разъехались бы молча.
+            scheme = _from_rules(
+                request, "scheme", _("Схема расчёта"), rules.scheme_choices(preset or {}),
+                item.scheme if item else None, required=True,
+            )
             ledger = _choice(request, "ledger", _("Регистр учёта"), LEDGER_CODES)
             if item is not None and (item.scheme != scheme or item.ledger != ledger):
                 # Схема и регистр группы участвуют в расчёте, а версий у группы
@@ -903,9 +1282,17 @@ def group(request, group_id=None):
                        "Менять — только вместе с правилами.")},
             {"kind": "text", "name": "title", "label": _("Название"), "required": True,
              "value": item.title if item else ""},
-            {"kind": "text", "name": "scheme", "label": _("Схема расчёта"), "required": True,
-             "value": item.scheme if item else "",
-             "help": _("Ключ схемы из правил страны: по ней движок считает людей группы.")},
+            _choice_field(
+                "scheme", _("Схема расчёта"), rules.scheme_choices(preset or {}),
+                item.scheme if item else None, required=True,
+                prompt=_("выберите схему"),
+                help=_("По ней движок считает людей группы. Список — из правил "
+                       "страны: отдельному человеку схема переопределяется в его "
+                       "условиях найма, с датой."),
+                no_rules_help=_("Правил страны в базе нет, поэтому и списка схем нет: "
+                                "загрузите пресет страны. Пока — ключ схемы, как он "
+                                "написан в правилах."),
+            ),
             _select(
                 "ledger", _("Регистр учёта"),
                 [(code, ledger_title(code)) for code in LEDGER_CODES
