@@ -121,6 +121,24 @@
   </nav>
   <span class="appbar__spacer"></span>
   <div class="who">
+    {% comment %}
+    Гайд по продукту (T159) — с любого экрана и до входа, поэтому он стоит вне
+    `{% if principal %}`: половина вопроса, на который он отвечает, — «кем
+    входить». В навигации ему места нет: разделы шапки это то, что роль ведёт, а
+    гайд не ведёт никто.
+
+    На самой странице гайда это не ссылка, а `span[aria-current]` — по тому же
+    доводу, что у текущего раздела (см. `appnav_item.html`): ссылка на открытую
+    страницу обещает мыши переход, которого не будет, а диктору не сообщает,
+    где человек находится.
+    {% endcomment %}
+    {% url 'guide' as guide_url %}
+    {% translate "как это работает" as guide_label %}
+    {% if request.path|in_section:guide_url %}
+      <span class="btn here" aria-current="page">{{ guide_label }}</span>
+    {% else %}
+      <a class="btn" href="{{ guide_url }}">{{ guide_label }}</a>
+    {% endif %}
     {% if languages %}
     <form class="lang seg" method="post" action="{% url 'set_language' %}">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
