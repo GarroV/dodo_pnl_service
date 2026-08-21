@@ -5,17 +5,20 @@
 
 - шапка вынесена в `components/header.html` — туда придут переключатель языка
   (T017) и админка справочников (T018);
-- оформление живёт здесь же одним листом. Своего файла статики у него нет
-  намеренно: под `runserver` с `DJANGO_DEBUG=0` Django статику не отдаёт вовсе,
-  и вынос стилей наружу оставил бы площадку без оформления **всех** страниц
-  (сегодня так теряется только табель — issue у блока `deploy`);
+- оформления здесь нет вовсе: значения дизайн-системы приезжают файлом
+  `web/tokens.css` (T176), правила на них — файлом `web/app.css` (T177).
+  Раньше 336 строк стилей лежали тут же внутри `<style>`, и это была не лень:
+  `runserver` при `DJANGO_DEBUG=0` статику не отдаёт вовсе, и вынос стилей
+  наружу оставил бы площадку без оформления **всех** страниц. Причина ушла —
+  статику отдаёт whitenoise (issue #68), и это проверяется запросом файла при
+  `DEBUG=False` (`tests/test_static_files.py`), а не «по коду»;
 - набор компонентов, из которых собираются экраны, описан в
   `templates/web/components/README.md`. Разметку, у которой уже есть компонент,
   руками не пишут: в ней живут инварианты, купленные дефектами.
 
 Комментарий именно {% comment %}: однострочный {# … #} многострочным не бывает
 и вывалился бы на страницу текстом (проверено в браузере дважды).
-{% endcomment %}{% load i18n %}{% get_current_language as page_language %}<!doctype html>
+{% endcomment %}{% load i18n static %}{% get_current_language as page_language %}<!doctype html>
 <html lang="{{ page_language }}">
 <head>
 <meta charset="utf-8">
@@ -26,343 +29,22 @@
 языках значило бы врать в двух случаях из трёх.
 {% endcomment %}
 <title>{% block title %}{% translate "Периоды" %}{% endblock %} · Dodo P&amp;L</title>
-<style>
-  :root {
-    --ink: #16181d;
-    --muted: #6b7280;
-    --line: #e3e6ea;
-    --bg: #fbfbfc;
-    --accent: #1f4fd8;
-    --warn: #9a3412;
-    --warn-bg: #fff4ed;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font: 15px/1.55 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  }
-  header {
-    display: flex; align-items: baseline; gap: 24px; flex-wrap: wrap;
-    padding: 14px 32px; background: #fff; border-bottom: 1px solid var(--line);
-  }
-  .brand { font-weight: 600; letter-spacing: .02em; text-decoration: none; color: var(--ink); }
-  nav a { color: var(--accent); text-decoration: none; margin-right: 16px; }
-  nav a:hover, .brand:hover { text-decoration: underline; }
-  .who { margin-left: auto; display: flex; align-items: baseline; gap: 10px; color: var(--muted); font-size: 12px; }
-  /* Шапка обязана держаться в ОДНУ строку. Служебное (кем вошли, что видно, чем
-     переключить язык) стоит выше содержания страницы, и когда его столько, что
-     оно переносится на вторую строку, оно начинает спорить с данными, ради
-     которых человек пришёл. Отсюда 12px, короткие подписи языков и метка
-     dev-входа точкой, а не рамкой. */
-  .who .cut { white-space: nowrap; }
-  .who strong { color: var(--ink); font-weight: 600; }
-  /* Метка dev-входа: маленькая и без рамки-кричалки. Она сообщает о настройке
-     стенда, а не о состоянии данных, — и не должна перетягивать взгляд с роли,
-     под которой человек смотрит. */
-  .badge.dot { letter-spacing: .04em; padding: 1px 5px; border: 0; background: #f6f2ee; }
-  .badge {
-    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
-    color: var(--warn); background: var(--warn-bg);
-    border: 1px solid #f3d3bf; border-radius: 3px; padding: 2px 6px;
-  }
-  main { max-width: 1360px; margin: 32px auto; padding: 0 32px; }
-  h1 { font-size: 24px; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 28px; }
-  table { border-collapse: collapse; width: 100%; background: #fff; }
-  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); }
-  th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
-  tbody tr:hover { background: #f6f8ff; }
-  /* Деньги — по правому краю моноширинным: колонка читается столбиком,
-     а ноль не путается с пустым значением. */
-  .num { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
-  tfoot td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; }
-  .empty { color: var(--muted); background: #fff; border: 1px dashed var(--line); padding: 24px; }
-  .note { color: var(--muted); font-size: 13px; margin-top: 24px; }
-  /* Подсказка поля показывается, когда человек в это поле пришёл: у половины
-     полей объяснение длиннее самого поля, и форма из шести полей растягивалась
-     на два экрана.
+{% comment %}
+Значения дизайн-системы: цвет, типографика, плотность, радиусы, длительности
+(T176). Файл — копия эталона «Дизайн-система Dodo P&L», и правится только
+вместе с ним: смысл эталона в том, чтобы палитра была одна на продукт.
 
-     Скрыто ГЛАЗАМИ, а не для всех. Первая редакция прятала подсказку через
-     `display: none` — и это была ошибка: `display: none` выкидывает узел из
-     дерева доступности целиком, то есть для незрячего подсказки не
-     существовало вовсе (нашла сверка). Теперь она всегда в дереве, связана с
-     полем через `aria-describedby`, а прячется прозрачностью.
-
-     Место под подсказку зарезервировано (`min-height`), потому что появление
-     по фокусу двигало форму на 22 пикселя: проходя её табом, человек видел,
-     как кнопка сохранения прыгает на каждом поле. */
-  form.card .field > .note {
-    display: block; margin: 4px 0 0; font-size: 12px; min-height: 1.2em;
-    opacity: 0; transition: opacity .12s ease;
-  }
-  form.card .field:focus-within > .note { opacity: 1; }
-  button, .btn {
-    font: inherit; color: var(--accent); background: none;
-    border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer;
-  }
-  button:hover, .btn:hover { border-color: var(--accent); }
-  button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  form.inline { display: inline; }
-  /* Ключ и значение рядом, а не по краям экрана: при `auto` во второй колонке
-     значение уезжало к правому краю, и глаз проходил три сотни пустых пикселей
-     от подписи до числа.
-
-     Слова подписей здесь не цитируются намеренно: этот лист встроен в страницу,
-     то есть комментарий уезжает к человеку и попадает в её текст. Проверка,
-     которая ищет подпись и берёт следующее значение, нашла её в комментарии и
-     вернула чужое число — поймано сразу, но починка была бы неочевидной. */
-  /* Факты месяца — одной строкой, а не столбцом из пяти. Столбец занимал 130
-     пикселей над кнопками и таблицей, хотя это короткие пары «подпись —
-     значение», которые читаются подряд. На узком экране строка переносится
-     сама, и вид возвращается к прежнему. */
-  dl.facts {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px;
-    margin: 0 0 18px; font-size: 14px;
-  }
-  dl.facts dt { color: var(--muted); }
-  dl.facts dt:not(:first-of-type)::before { content: "·"; margin-right: 8px; color: var(--line); }
-  dl.facts dd { margin: 0 8px 0 0; }
-  /* Откуда взялось число: подпись мельче самой строки — она поясняет, а не спорит. */
-  dl.facts .hint { font-size: 12px; opacity: .75; }
-  h2 { font-size: 17px; margin: 32px 0 12px; }
-  /* Ведомость шире экрана — прокручивается сама, страница по горизонтали не едет. */
-  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; }
-  table.sheet { font-size: 13px; }
-  table.sheet th, table.sheet td { padding: 6px 7px; white-space: nowrap; }
-  /* Заголовки колонок переносятся: названия компонентов приходят из пресета,
-     они длинные, и без переноса колонка «Итого» уезжает за край экрана.
-
-     Прописные и разрядка здесь сняты намеренно, в отличие от остальных таблиц:
-     «КОРРЕКТИРОВКА» вразрядку занимает на треть больше места, чем
-     «Корректировка», и на ведомости из двенадцати колонок эта треть — те самые
-     двести пикселей, из-за которых её приходилось прокручивать вбок. Читаемости
-     это не стоит ничего: длинное слово в обычном начертании читается легче.
-
-     Дат и номеров задач в этом файле нет намеренно: стили едут в разметке
-     каждой страницы, включая страницу входа, и всё написанное здесь читает
-     любой, кто её открыл. Подробности — в журнале блока. */
-  table.sheet th {
-    white-space: normal; vertical-align: bottom;
-    text-transform: none; letter-spacing: 0; font-size: 12px;
-  }
-  table.sheet .strong { font-weight: 600; }
-  /* Колонка «Итого» прилипает к правому краю: главное число строки должно быть
-     видно всегда, а компонентов у страны может стать сколько угодно. */
-  table.sheet th:last-child, table.sheet td:last-child {
-    position: sticky; right: 0; background: #fff; box-shadow: -1px 0 0 var(--line);
-  }
-  table.sheet tbody tr:hover td:last-child { background: #f6f8ff; }
-  table.sheet tfoot .grand td { background: #fff; }
-  /* Переключатель разреза ведомости (T028). Ссылки, а не кнопки: разрез живёт
-     в адресе, и его можно отправить коллеге. Выбранный — не ссылка вовсе:
-     ссылка на текущую страницу обманывает и мышь, и клавиатуру. */
-  nav.cuts, nav.exports { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
-  nav.cuts .cut, nav.exports .cut {
-    font-size: 13px; text-decoration: none; color: var(--muted);
-    border: 1px solid var(--line); border-radius: 4px; padding: 4px 12px; background: #fff;
-  }
-  nav.cuts a.cut:hover, nav.exports a.cut:hover { color: var(--accent); border-color: var(--accent); }
-  nav.cuts .cut.current { color: #fff; background: var(--ink); border-color: var(--ink); }
-  /* Скачивание обязано отличаться от переключения ВИДОМ, а не только разметкой.
-     Ряды стояли одинаковыми кнопками друг под другом: верхний менял то, что на
-     экране, нижний молча скачивал файл. Человек нажимает одинаковое и получает
-     разное — и узнаёт об этом по появившемуся файлу в загрузках.
-     Отсюда стрелка перед подписью и пунктирная рамка: и то и другое читается
-     как «отсюда что-то уедет», а не «здесь переключится». */
-  nav.exports .file { border-style: dashed; }
-  nav.exports .file::before { content: "↓"; margin-right: 6px; opacity: .7; }
-  /* Сверка — не файл и не разрез: это отдельный экран. Стоит в том же ряду по
-     смыслу (всё про «что дальше с этой ведомостью»), но выглядит ссылкой на
-     страницу, а не кнопкой скачивания. */
-  nav.exports .page::before { content: "→"; margin-right: 6px; opacity: .7; }
-  /* Метка регистра, а не заливка строки: заливка мешает читать числа (D023).
-     Начертание обычное: «ДОПОЛНИТЕЛЬНЫЙ» вразрядку — самое широкое слово в
-     колонке, а метка обязана быть заметной, но не главной на строке. */
-  .ledger {
-    font-size: 11px; letter-spacing: 0;
-    color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
-  }
-  /* Причина спора набирается редко, а место занимает в каждой строке. Поле
-     узкое по умолчанию и раскрывается, когда в него встали: подсказка нужна
-     тому, кто пишет, а не всем шестидесяти строкам сразу. */
-  table.sheet td.freeze input {
-    font: inherit; width: 92px; padding: 3px 6px;
-    border: 1px solid transparent; border-radius: 4px; background: transparent;
-    color: var(--muted); transition: width .15s ease;
-  }
-  /* Рамка появляется, когда поле нужно, — на наведении и в фокусе. Тридцать
-     пять рамок с обрезанным текстом внутри читались как поломка таблицы, а не
-     как поле ввода: причину спора набирают в одной строке из тридцати пяти. */
-  table.sheet tr:hover td.freeze input,
-  table.sheet td.freeze input:focus {
-    border-color: var(--line); background: var(--bg); color: var(--ink);
-  }
-  table.sheet td.freeze input:focus { width: 220px; }
-  /* Подсказка внутри поля тоже молчит, пока к строке не подошли: обрезанная
-     фраза, повторённая шестьдесят раз, читается как сломанный текст, а не как
-     приглашение к вводу. Полностью она всё равно не помещается — место под неё
-     появляется только в фокусе, когда поле раскрывается. */
-  table.sheet td.freeze input::placeholder { color: transparent; }
-  table.sheet tr:hover td.freeze input::placeholder,
-  table.sheet td.freeze input:focus::placeholder { color: var(--muted); }
-  /* Кнопка внутри ведомости набрана мельче самих чисел: действие на строке
-     помогает, но спорить с суммами за внимание не должно. Заодно это те
-     последние два десятка пикселей, без которых таблица директора не влезала
-     в 1440. */
-  table.sheet td.freeze button {
-    font-size: 12px; padding: 3px 8px; color: var(--muted);
-    border-color: transparent; background: transparent;
-  }
-  table.sheet tr:hover td.freeze button,
-  table.sheet td.freeze button:focus-visible { color: var(--accent); border-color: var(--line); background: #fff; }
-  button.primary { color: #fff; background: var(--accent); border-color: var(--accent); }
-  button.primary:hover { background: #1740b4; }
-  /* Формы входа и смены пароля: одна колонка, поле шире подписи — читается
-     сверху вниз без метаний глазом. */
-  form.card { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 18px 22px; max-width: 420px; }
-  /* Форма справочника — две колонки на широком экране: шесть полей в одну
-     колонку уводили кнопку сохранения за нижний край, а справа оставалось
-     полтора экрана пустоты. Вход и смена пароля остаются узкими (`max-width`
-     выше): там полей два, и колонка шириной в экран читалась бы хуже. */
-  form.card.wide { max-width: 860px; display: grid; gap: 0 28px; grid-template-columns: 1fr 1fr; }
-  form.card.wide > p, form.card.wide > .field { margin-bottom: 14px; }
-  form.card.wide > .full, form.card.wide > .actions { grid-column: 1 / -1; }
-  form.card p { margin: 0 0 16px; }
-  form.card p:last-child { margin-bottom: 0; }
-  form.card label { color: var(--muted); font-size: 13px; }
-  form.card input, form.card select { font: inherit; width: 100%; padding: 7px 10px; margin-top: 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
-  form.card input:focus-visible, form.card select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  /* Поле — всегда «подпись сверху, ввод под ней». Половина полей раскладывалась
-     иначе (подпись слева, объяснение обтеканием справа) просто потому, что
-     `select` — строчный элемент: получалась не разница стилей, а сломанная
-     вёрстка. */
-  form.card .field { display: block; margin: 0 0 14px; }
-  form.card .field > label { display: block; }
-  /* Заголовок экрана и его главное действие — одной строкой: действие, ради
-     которого на экран пришли, не должно искаться глазами ниже фильтров. */
-  .head { display: flex; align-items: center; gap: 16px; margin: 0 0 4px; }
-  .head h1 { margin: 0; }
-  .head .btn { margin-left: auto; }
-  a.btn.primary { color: #fff; background: var(--accent); border-color: var(--accent); text-decoration: none; }
-  a.btn.primary:hover { background: #1740b4; }
-  /* Фильтры — одной строкой над таблицей. Столбиком они занимали четверть
-     экрана до первой строки данных, хотя пять коротких полей встают в ряд. */
-  form.search.row { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 16px; margin: 0 0 18px; }
-  form.search.row .field { display: flex; flex-direction: column; margin: 0; }
-  form.search.row .field > label { font-size: 12px; color: var(--muted); }
-  form.search.row .field > .note { display: none; }
-  form.search.row input, form.search.row select { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; background: #fff; }
-  /* Пояснение под кнопками. Отрицательного отступа здесь быть не должно: ряд
-     кнопок — flex-блок со своим нижним полем, и подтягивание «поближе» наложило
-     текст прямо на кнопки. Поймано на снимке экрана — в разметке этого не
-     видно вовсе. */
-  p.note.under { margin: 8px 0 20px; font-size: 12px; }
-  /* Свёрнутая история периода: строка-заголовок вместо таблицы на треть экрана. */
-  details.history-box { margin: 0 0 24px; }
-  details.history-box > summary {
-    cursor: pointer; color: var(--muted); font-size: 13px; width: max-content;
-  }
-  details.history-box > summary:hover { color: var(--accent); }
-  details.history-box table { margin-top: 10px; }
-  .alert, .ok { padding: 12px 16px; border-radius: 4px; margin: 0 0 20px; }
-  .alert { color: var(--warn); background: var(--warn-bg); border: 1px solid #f3d3bf; }
-  .alert .details { color: var(--ink); font-size: 13px; margin-top: 6px; }
-  .ok { color: #14532d; background: #f0fdf4; border: 1px solid #bbf7d0; }
-  /* Экран следа расчёта. Сумма строки ведомости — ссылка, а не отдельная
-     колонка: колонка стоила бы ширины, которой у ведомости нет (её едва
-     хватило на 1440), а число и есть то, о чём спрашивают «откуда оно». */
-  table.sheet a.trace { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--muted); }
-  table.sheet a.trace:hover { color: var(--accent); border-bottom-color: var(--accent); }
-  /* Входы шага набраны парами «подпись — число»: по ним сумма повторяется на
-     калькуляторе, поэтому число заметнее подписи. */
-  table.steps td.inputs { color: var(--muted); font-size: 13px; }
-  table.steps td.inputs .pair { display: inline-block; margin-right: 14px; white-space: nowrap; }
-  table.steps td.inputs b { color: var(--ink); font-variant-numeric: tabular-nums; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
-  table.steps .hint { display: block; color: var(--muted); font-size: 11px; }
-  /* Шаг, разошедшийся с сохранённым: следа продукт не хранит, и молчать о
-     расхождении нельзя — иначе экран выдаёт сегодняшний счёт за вчерашний. */
-  table.steps tr.drifted { background: var(--warn-bg); }
-  table.steps tr.drifted .badge { margin-left: 6px; }
-  /* Отчёт расхождений (T030). Отклонение — главное число строки, поэтому оно
-     набрано жирнее прочих, а рост и падение различаются цветом: направление
-     читается быстрее знака. Порог набран мелко: он объясняет, почему строка
-     здесь, но сам по себе не новость. */
-  table.variance td.delta { font-weight: 600; }
-  table.variance tr.grew td.delta { color: var(--warn); }
-  table.variance tr.fell td.delta { color: #14532d; }
-  table.variance .hint { color: var(--muted); font-size: 11px; }
-  table.variance td.threshold { white-space: nowrap; }
-  table.variance td:nth-child(2) .hint { display: block; }
-  /* Ход фонового расчёта (T024). Полоса — не украшение: без неё страница на
-     время расчёта выглядит замершей, и человек жмёт кнопку второй раз. */
-  section.progress { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 16px 20px; margin: 0 0 24px; }
-  section.progress h2 { font-size: 15px; margin: 0 0 8px; }
-  section.progress .stage { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
-  section.progress .counter { margin: 8px 0 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
-  section.progress .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
-  /* Ширина — единственное, что меняется: число приходит с сервера, поэтому
-     переход мягкий, а не рывками между опросами. */
-  section.progress .fill { height: 100%; background: var(--accent); transition: width .3s ease; }
-  section.progress .alert { margin: 16px 0 0; }
-  section.progress .alert form { margin-top: 10px; }
-  /* Правки задним числом (T026). Разница обязана читаться как разница, а не
-     как обычная сумма месяца: у строки своя подложка и своя пометка с
-     месяцем-источником. Подкраска здесь допустима — она отмечает не значение
-     числа (это запрещено D023), а происхождение строки. */
-  section.retro { background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 16px 20px; margin: 0 0 24px; }
-  section.retro h2 { font-size: 15px; margin: 0 0 8px; }
-  section.retro table { margin: 12px 0; }
-  section.retro form { margin-top: 12px; }
-  /* Переключатель языка (T017). Кнопки, а не ссылки: смена языка меняет
-     состояние, и переходом по ссылке это делать нельзя. Выбранный язык не
-     нажимается — как и выбранный разрез ведомости, по той же причине. */
-  form.lang { display: flex; gap: 4px; margin: 0; }
-  .lang-option {
-    font-size: 11px; letter-spacing: .04em; padding: 2px 6px; color: var(--muted);
-    border: 1px solid var(--line); border-radius: 3px; background: #fff;
-  }
-  .lang-option:hover { color: var(--accent); border-color: var(--accent); }
-  .lang-option.current { color: #fff; background: var(--ink); border-color: var(--ink); cursor: default; }
-  /* Онбординг (T077). Три шага месяца стоят полосой над содержимым: человек,
-     впервые открывший продукт, должен увидеть порядок работы раньше, чем
-     первую таблицу. Пройденный шаг гасится, текущий выделен — полоса
-     показывает, где человек сейчас, а не просто перечисляет действия. */
-  ol.steps {
-    display: flex; flex-wrap: wrap; gap: 0; list-style: none;
-    margin: 0 0 24px; padding: 0;
-    background: #fff; border: 1px solid var(--line); border-radius: 4px; overflow: hidden;
-  }
-  ol.steps li {
-    flex: 1 1 220px; padding: 9px 16px; border-right: 1px solid var(--line);
-    color: var(--muted); font-size: 12px;
-  }
-  ol.steps li:last-child { border-right: none; }
-  ol.steps .name { display: block; color: var(--ink); font-weight: 600; font-size: 13px; margin-bottom: 2px; }
-  /* Объяснение шага нужно тому, кто на нём стоит. Пройденный шаг объяснять
-     поздно, будущий — рано: полоса из трёх абзацев занимала 90 пикселей и
-     повторялась на каждом экране месяца, хотя читают её один раз в жизни.
-     Текст остаётся в разметке — он нужен экранному диктору и проверкам. */
-  ol.steps li:not(.now) .what { display: none; }
-  ol.steps li:not(.now) .name { margin-bottom: 0; }
-  ol.steps li.done { background: #f7fbf8; }
-  ol.steps li.done .name::after { content: " ✓"; color: #14532d; }
-  ol.steps li.now { background: #f6f8ff; box-shadow: inset 3px 0 0 var(--accent); }
-  ol.steps li.now .name { color: var(--accent); }
-  /* Пустое состояние объясняет следующий шаг, а не сообщает о пустоте.
-     Поэтому у него есть заголовок, абзац и действие — как у любого экрана. */
-  .empty .next { display: block; margin-top: 12px; }
-  /* Дорога назад со вложенного экрана (T077). Отдельно от `.note`, потому что
-     это не примечание, а навигация: она стоит выше содержимого и читается
-     раньше него. */
-  p.back { margin: -6px 0 18px; font-size: 13px; }
-  p.back a { color: var(--muted); }
-  p.back a:hover { color: var(--accent); }
-  .empty h3 { margin: 0 0 6px; font-size: 15px; color: var(--ink); }
-  tr.retro { background: #fffbeb; }
-  .badge-retro { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 10px; font-size: 11px; color: #7c4a03; background: #fef3c7; border: 1px solid #fde68a; white-space: nowrap; }
-</style>
+Стоит ПЕРЕД остальным оформлением и до любого `{% block head %}`: правила
+читают `var(--…)`, и лист, приехавший раньше значений, рисовал бы страницу
+без них.
+{% endcomment %}
+<link rel="stylesheet" href="{% static 'web/tokens.css' %}">
+{% comment %}
+Оформление продукта: правила на этих значениях (T177). Два файла, а не один,
+потому что у них разная судьба: `tokens.css` — копия эталона и правится вместе
+с ним, `app.css` — наш и меняется на каждом экране.
+{% endcomment %}
+<link rel="stylesheet" href="{% static 'web/app.css' %}">
 {% comment %}
 Своя статика страницы. Пусто на всех экранах, кроме табеля: он единственный
 интерактивный (D017), и тащить htmx на список периодов незачем.

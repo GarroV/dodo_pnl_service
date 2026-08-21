@@ -1,9 +1,10 @@
 {% load ui i18n %}{% comment %}
-Шапка: куда идти, кем вошли и на каком языке читаем.
+Шапка: куда идти, кем вошли и на каком языке читаем. Раздел 08 дизайн-системы.
 
 Отдельным файлом, а не куском базового шаблона: сюда пришёл переключатель языка
-(T017), ссылка на админку справочников (T018) и ссылка на правила расчёта
-(T090), и все правки в одном месте, а не в файле, который правят все.
+(T017), ссылка на админку справочников (T018), ссылка на правила расчёта (T090)
+и каркас по эталону (T178) — все правки в одном месте, а не в файле, который
+правят все.
 
 Разделов в навигации ровно столько, сколько ведёт эта роль: справочники и
 правила — два разных права (`directory.manage` и `rules.manage`), и партнёр
@@ -12,8 +13,15 @@
 
 Что шапка обязана говорить и почему именно так.
 
+**Где человек сейчас.** Раздел, в котором он находится, — не ссылка, а
+`span[aria-current]`; см. `components/appnav_item.html`, там же и почему.
+
 **Роль и партнёр — всегда.** Один и тот же экран показывает разным людям разные
 числа, и человек должен видеть, чьими глазами он смотрит, не нажимая ничего.
+Роль — **одна**: у учётной записи один уровень, а понадобилось больше — человека
+поднимают на ступень выше со сроком и причиной, а не выдают второй набор.
+В эталоне рядом нарисованы все выданные наборы прав; это расхождение разбирается
+отдельно и оформлением не решается.
 
 **Регистры — перечислением того, что видно.** Не «регистры: все», а именно
 названия: «все» у бухгалтера и у директора означают разное. Перечисляется
@@ -30,8 +38,10 @@
 и адрес возврата. Список языков приезжает из настроек — списком в шаблоне он
 разъехался бы с каталогом переводов. При закреплённом языке (демо, UI_LANGUAGE)
 список пуст, и переключателя нет вовсе: выключенная ручка хуже отсутствующей.
-{% endcomment %}<header>
-  <a class="brand" href="{% url 'periods' %}">Dodo P&amp;L</a>
+Выбранный язык — `span`, а не нажимаемая кнопка, по той же причине, что и
+текущий раздел.
+{% endcomment %}<header class="appbar">
+  <a class="brand" href="{% url 'periods' %}"><span class="brand__name">Dodo</span><span class="brand__mark">P&amp;L</span></a>
   {% comment %}
   Ссылка на справочники видна только тому, кто вправе их вести (T018). Это не
   сокрытие адреса: `/directory/` по-прежнему отвечает отказом словами, и
@@ -39,8 +49,7 @@
   которого роль не ведёт, — не пропавшая кнопка посреди работы, а нормальное
   устройство продукта: объяснять здесь нечего, и плашка «вам нельзя» в шапке
   каждой страницы была бы шумом.
-  {% endcomment %}
-  {% comment %}
+
   «Расходы» (T109, T110) видит каждый, кто вошёл: права на внесение первичных
   данных в продукте нет — расход отвергают точка и регистр, а не отдельное
   право. Показывать пункт только части ролей значило бы завести разграничение
@@ -51,16 +60,35 @@
   шапке. Отсюда же ссылка на контрагентов внутри самого раздела, а не здесь:
   справочник читают все, но приходят в него, внося счёт.
   {% endcomment %}
-  <nav aria-label="{% translate "Основная навигация" %}"><a href="{% url 'periods' %}">{% translate "Периоды" %}</a>{% if principal %} <a href="{% url 'expenses' %}">{% translate "Расходы" %}</a> <a href="{% url 'invoices' %}">{% translate "Счета" %}</a>{% endif %}{% if principal|may:"directory.manage" %} <a href="{% url 'directory' %}">{% translate "Справочники" %}</a>{% endif %}{% if principal|may:"rules.manage" %} <a href="{% url 'rules' %}">{% translate "Правила" %}</a>{% endif %}{% if principal|may:"roles.manage" %} <a href="{% url 'roles' %}">{% translate "Роли" %}</a>{% endif %}</nav>
+  <nav class="appnav" aria-label="{% translate "Основная навигация" %}">
+    {% url 'periods' as section_url %}{% translate "Периоды" as section_label %}{% include "web/components/appnav_item.html" %}
+    {% if principal %}
+      {% url 'expenses' as section_url %}{% translate "Расходы" as section_label %}{% include "web/components/appnav_item.html" %}
+      {% url 'invoices' as section_url %}{% translate "Счета" as section_label %}{% include "web/components/appnav_item.html" %}
+    {% endif %}
+    {% if principal|may:"directory.manage" %}
+      {% url 'directory' as section_url %}{% translate "Справочники" as section_label %}{% include "web/components/appnav_item.html" %}
+    {% endif %}
+    {% if principal|may:"rules.manage" %}
+      {% url 'rules' as section_url %}{% translate "Правила" as section_label %}{% include "web/components/appnav_item.html" %}
+    {% endif %}
+    {% if principal|may:"roles.manage" %}
+      {% url 'roles' as section_url %}{% translate "Роли" as section_label %}{% include "web/components/appnav_item.html" %}
+    {% endif %}
+  </nav>
+  <span class="appbar__spacer"></span>
   <div class="who">
     {% if languages %}
-    <form class="lang" method="post" action="{% url 'set_language' %}">{% csrf_token %}
+    <form class="lang seg" method="post" action="{% url 'set_language' %}">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
       {% for language in languages %}
-      <button type="submit" name="language" value="{{ language.code }}"
-              class="lang-option{% if language.current %} current{% endif %}"
-              {% if language.current %}aria-current="true"{% endif %}
+      {% if language.current %}
+      <span class="seg__current" aria-current="true"
+            lang="{{ language.code }}" title="{{ language.title }}">{{ language.short }}</span>
+      {% else %}
+      <button type="submit" name="language" value="{{ language.code }}" class="seg__item"
               lang="{{ language.code }}" title="{{ language.title }}">{{ language.short }}</button>
+      {% endif %}
       {% endfor %}
     </form>
     {% endif %}
@@ -68,10 +96,18 @@
       <span class="badge dot" title="{% translate "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)" %}" aria-label="{% translate "dev-вход" %}">dev</span>
     {% endif %}
     {% if principal %}
-      {% comment %}У учёток сида имя человека совпадает с названием роли — не повторяем его дважды.{% endcomment %}
-      <span><strong>{{ principal.display_name }}</strong>{% if principal.role_title and principal.role_title != principal.display_name %} · {{ principal.role_title }}{% endif %}{% if principal.tenant_title %} · {{ principal.tenant_title }}{% endif %}</span>
-      {% if visible_ledgers_title %}<span>{% blocktranslate with names=visible_ledgers_title %}регистры: {{ names }}{% endblocktranslate %}</span>{% endif %}
-      {% if principal.units_title %}<span title="{% translate "Данные и итоги на всех страницах — только по этой точке" %}">{% blocktranslate with code=principal.units_title %}точка: {{ code }}{% endblocktranslate %}</span>{% endif %}
+      {% comment %}
+      Сильная строка — имя человека, слабая — партнёр, регистры и точка: сначала
+      «кто я», потом «что мне видно». Роль стоит отдельной плашкой и показывается
+      всегда: это единственное, что объясняет, почему на экране именно эти числа.
+      У учёток сида имя человека совпадает с названием роли — тогда сильной
+      строки нет вовсе, чтобы не писать одно и то же дважды.
+      {% endcomment %}
+      <span class="viewer">
+        {% if principal.display_name != principal.role_title %}<span class="viewer__name">{{ principal.display_name }}</span>{% endif %}
+        <span class="viewer__meta">{% if principal.tenant_title %}<span>{{ principal.tenant_title }}</span>{% endif %}{% if visible_ledgers_title %}<span>{% blocktranslate with names=visible_ledgers_title %}регистры: {{ names }}{% endblocktranslate %}</span>{% endif %}{% if principal.units_title %}<span title="{% translate "Данные и итоги на всех страницах — только по этой точке" %}">{% blocktranslate with code=principal.units_title %}точка: {{ code }}{% endblocktranslate %}</span>{% endif %}</span>
+      </span>
+      {% if principal.role_title %}<span class="role">{{ principal.role_title }}</span>{% endif %}
       <a class="btn" href="{% url 'password-change' %}">{% translate "пароль" %}</a>
       <form class="inline" method="post" action="{% url 'logout' %}">{% csrf_token %}
         <button type="submit">{% translate "выйти" %}</button>

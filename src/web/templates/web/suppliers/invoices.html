@@ -62,9 +62,9 @@
       <td>{{ row.unit }}</td>
       <td>{{ row.item }}</td>
       <td>{{ row.period }}</td>
-      <td class="num">{{ row.amount_text }}</td>
-      <td class="num">{{ row.paid_text }}</td>
-      <td class="num">{{ row.left_text }}</td>
+      <td class="{{ row.amount_text|numclass }}">{{ row.amount_text }}</td>
+      <td class="{{ row.paid_text|numclass }}">{{ row.paid_text }}</td>
+      <td class="{{ row.left_text|numclass }}">{{ row.left_text }}</td>
       <td>{{ row.state_title }}{% if row.corrections %} <span class="note">{% translate "исправлен" %}</span>{% endif %}</td>
     </tr>
     {% endfor %}
@@ -72,9 +72,9 @@
   <tfoot>
     <tr data-total="{{ total_raw }}" data-total-left="{{ left_raw }}">
       <th colspan="6">{% blocktranslate count counter=counted %}Итого по {{ counter }} счёту{% plural %}Итого по {{ counter }} счетам{% endblocktranslate %}</th>
-      <th class="num">{{ total_text }}</th>
+      <th class="{{ total_text|numclass }}">{{ total_text }}</th>
       <th class="num"></th>
-      <th class="num">{{ left_text }}</th>
+      <th class="{{ left_text|numclass }}">{{ left_text }}</th>
       <th>{% translate "не оплачено" %}</th>
     </tr>
   </tfoot>
