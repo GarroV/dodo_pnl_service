@@ -399,3 +399,108 @@ def test_nobody_gets_a_paper_without_a_session(client, papers_removed):  # noqa:
     assert client.get(PAPERS).status_code in (302, 403)
     assert client.get(NEW).status_code in (302, 403)
 
+
+
+# --- кто вправе разбирать ------------------------------------------------------
+#
+# Обещание задачи — «в P&L не входит, пока БУХГАЛТЕР не разобрал». До этих
+# проверок оно не выполнялось, и нарушалось не хитрым запросом: карточка бумаги
+# печатала управляющему форму «Разобрать и учесть», нажатие ставило сумму в
+# отчёт немедленно. Ни одной проверки на пути не было — кто пишет факт, решала
+# только видимость строки политиками базы, а она знает про точку и регистр, но
+# не про то, кому положено классифицировать (issue #143).
+
+
+def test_the_one_who_brought_the_paper_is_not_offered_to_sort_it(
+    client, units, papers_removed, payruns_restored, sql,  # noqa: F811
+):
+    """Управляющему форма разбора не показывается — и сказано, чего он ждёт.
+
+    Проверяется и то, чего нет, и то, что есть вместо: исчезнувшая без
+    объяснения форма читается как поломка продукта, а не как порядок.
+    """
+    login_as(client, "manager")
+    card_of(hand_over(client, units))
+    document_id = document_id_of(sql)
+
+    card = body(client.get(f"/papers/{document_id}/"))
+    assert "Разобрать и учесть" not in card, "управляющему предложили разобрать"
+    assert "Разбирает бумагу тот, кто ведёт месяц" in card, card
+    # Фотография и слова управляющего остаются: он вправе видеть, что донёс.
+    assert 'data-waiting="1"' in card, card
+
+
+def test_the_manager_cannot_sort_the_paper_even_by_posting_the_form(
+    client, units, counterparty, item, papers_removed, payruns_restored, sql,  # noqa: F811
+):
+    """Форму убрали — но проверяется запрет, а не отсутствие кнопки.
+
+    Кнопки нет в разметке, и на этом легко остановиться. Остановиться нельзя:
+    POST отправляется и без кнопки, а деньги пишет он, а не она.
+    """
+    login_as(client, "manager")
+    card_of(hand_over(client, units))
+    document_id = document_id_of(sql)
+
+    answer = review(client, counterparty=counterparty, item=item, units=units,
+                    document_id=document_id)
+    assert answer.status_code == 403, body(answer)
+    assert sum_in_pnl(sql, document_id) == Decimal("0.00"), "деньги всё-таки записались"
+
+    # Бумага цела и по-прежнему ждёт: отказ не должен ничего испортить.
+    assert 'data-waiting="1"' in body(client.get(f"/papers/{document_id}/"))
+
+
+def test_the_inbox_endpoint_is_closed_to_the_manager_too(
+    client, units, papers_removed, payruns_restored, sql,  # noqa: F811
+):
+    """Закрыть одну поверхность мало: разбор ведут три, и путь у них общий.
+
+    `/inbox/<id>/classify/` ходит в тот же `record_invoice`, что и карточка
+    бумаги. Починка только на карточке оставила бы дыру, до которой доходят
+    ровно те же двумя щелчками — через экран инбокса.
+    """
+    login_as(client, "manager")
+    answer = client.post(f"/api/inbox/{uuid.uuid4()}/classify/", {})
+
+    # Именно 403, а не 404, и это не придирка: право спрашивается ДО поиска
+    # строки. Ответь эндпоинт «не найдено», и запрет держался бы на том, что
+    # управляющий не угадал номер, — то есть не держался бы вовсе.
+    assert answer.status_code == 403, body(answer)
+    assert "Разбор первички" in body(answer), body(answer)
+
+    # А тот, кому положено, до поиска строки доходит: 404 значит, что проверка
+    # права его пропустила. Без этой половины проверка была бы неотличима от
+    # эндпоинта, который всем отвечает отказом.
+    login_as(client, "accountant")
+    passed = client.post(f"/api/inbox/{uuid.uuid4()}/classify/", {})
+    assert passed.status_code == 404, body(passed)
+
+
+def test_the_manager_still_records_a_cash_expense_of_his_unit(
+    client, units, item, papers_removed, payruns_restored, sql,  # noqa: F811
+):
+    """Право на разбор не отняло у управляющего его собственную работу.
+
+    Ошибка здесь дороже той, от которой закрывались: T109 прямо требует, чтобы
+    управляющий вносил наличный расход своей точки. Слишком широкое право
+    отобрало бы у него это молча — и обнаружилось бы не тестом, а человеком,
+    который не смог внести трату.
+    """
+    login_as(client, "manager")
+    note = "мешки для мусора, проверка права"
+    try:
+        answer = client.post("/expenses/new/", {
+            "date": JULY_DAY,
+            "amount": "1200.00",
+            "item": str(item),
+            "note": note,
+        })
+        assert answer.status_code in (302, 200), body(answer)
+        assert "не входит в права вашей роли" not in body(answer)
+    finally:
+        # Убрать за собой обязательно: расход остаётся в общей базе и ломает
+        # соседние проверки, которые сверяют итоги периода со своими строками.
+        # Поймано прогоном — в одиночку тест зелёный, в наборе валил четыре
+        # чужих.
+        sql.execute("delete from facts where note = %s", [note])

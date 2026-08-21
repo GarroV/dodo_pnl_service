@@ -35,7 +35,7 @@ from django.utils.translation import gettext as _
 
 from core.models import Unit
 
-from . import cash, papers, suppliers, suppliers_views
+from . import cash, papers, permissions, suppliers, suppliers_views
 from .counterparties_views import found as counterparties_found
 from .dbrefusal import BadInput
 from .directory_views import _number, _select, _text
@@ -317,6 +317,21 @@ def _paper_unit_field(who, entered) -> dict:
     )
 
 
+def _refused_to_sort(request, who):
+    """Отказ на попытку разобрать бумагу без права — словами и кодом 403.
+
+    Отдельным помощником, а не `raise`: отказ читает человек, и читает он его
+    на языке страницы. Слова берутся у самого права (`permissions.explain`),
+    поэтому «Разбор первички» на трёх языках пишется один раз и в одном месте.
+    """
+    return render(
+        request,
+        "web/directory/denied.html",
+        {"message": permissions.explain(who, permissions.SUPPLIERS_CLASSIFY)},
+        status=403,
+    )
+
+
 # --- карточка и разбор --------------------------------------------------------
 
 
@@ -335,9 +350,21 @@ def paper(request, document_id):
         raise Http404("бумага не найдена")
 
     lines = papers.lines_of(document)
+    # Разбор — привилегированное действие, и проверяется оно ДО чтения формы.
+    # Управляющий бумагу приносит, но не классифицирует: до T174 карточка
+    # показывала ему форму «Разобрать и учесть», и нажатие ставило сумму в P&L
+    # немедленно, вопреки обещанию задачи «до подтверждения бухгалтером».
+    #
+    # Проверка здесь не отменяет того, что настоящее место такому запрету —
+    # ограничивающая политика в базе (issue #147): пока её нет, прямой POST в
+    # обход интерфейса пройдёт. Приложение закрывает то, что человек видит и
+    # нажимает; база закроет то, что можно отправить.
+    may_sort = permissions.has(who, permissions.SUPPLIERS_CLASSIFY)
     error, status = "", 200
     entered = request.POST if request.method == "POST" else _entered(document)
     if request.method == "POST":
+        if not may_sort:
+            return _refused_to_sort(request, who)
         try:
             return redirect(_sort_out(request, who, document))
         except BadInput as bad:
@@ -371,9 +398,13 @@ def paper(request, document_id):
         "file_url": reverse("paper-file", args=[document.id]),
         "file_size": _size(kept),
         "waiting": not lines,
+        "may_sort": may_sort,
         "lines": [_line(row) for row in lines],
         "invoice_url": reverse("invoice", args=[document.id]) if lines else "",
-        "fields": suppliers_views.invoice_fields(who, entered),
+        # Поля не собираются вовсе, если разбирать некому: часть из них — списки
+        # поставщиков и статей, то есть данные, которых читателю показывать
+        # незачем. Пустой список дешевле и честнее скрытой формы.
+        "fields": suppliers_views.invoice_fields(who, entered) if may_sort else [],
         "closed_note": _closed_note(who, document),
         "back_url": reverse("papers"),
     }, status=status)

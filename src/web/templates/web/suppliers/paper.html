@@ -46,6 +46,7 @@
 
 {% if closed_note %}<p class="note">{{ closed_note }}</p>{% endif %}
 
+{% if may_sort %}
 <h2>{% translate "Разобрать бумагу" %}</h2>
 <form class="card wide" method="post">{% csrf_token %}
   {% comment %}
@@ -57,6 +58,15 @@
   {% include "web/directory/fields.html" with fields=fields %}
   <p class="actions"><button type="submit" class="primary">{% translate "Разобрать и учесть" %}</button></p>
 </form>
+{% else %}
+{% comment %}
+Тому, кто бумагу принёс, форма разбора не показывается: его работа — донести, а
+не посчитать (T174). Но и молчать нельзя — исчезнувшая без объяснения форма
+читается как поломка продукта, а не как порядок. Поэтому вместо формы стоит
+строка о том, чего человек ждёт и от кого.
+{% endcomment %}
+<p class="note">{% translate "Разбирает бумагу тот, кто ведёт месяц: бухгалтер или оперативный директор. Вы её донесли — этого достаточно, дальше сумма встанет в отчёт без вас." %}</p>
+{% endif %}
 {% else %}
 {% translate "Бумага разобрана." as sorted_out %}
 {% notice "ok" title=sorted_out %}<span data-waiting="0">{% translate "Строки учтены и видны в P&L. Дальше правят счёт, а не бумагу." %}</span>{% endnotice %}
