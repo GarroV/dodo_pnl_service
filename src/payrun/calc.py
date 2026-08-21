@@ -177,6 +177,10 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
                     # доступа стоят на нём, и второй источник истины здесь
                     # означал бы показ строки не тому человеку.
                     ledger=term.ledger or term.group.ledger,
+                    # Мера работы этого человека (T164). Пусто — как у группы,
+                    # и решает это одна функция `payroll.work_measure`, а не
+                    # ветка здесь.
+                    work_measure=term.work_measure,
                 ),
                 timesheet=Timesheet(
                     hours={k: d(v) for k, v in (sheet.hours or {}).items()},
@@ -242,7 +246,13 @@ def check_measures(cases: list[Case], rules) -> None:
     unknown: dict[str, list[str]] = {}
     for case in cases:
         preset = rules.preset(group_id=case.group_id, employee_id=case.employee_id)
-        measure = work_measure((preset.get("groups") or {}).get(case.employee.group))
+        # Мера человека сильнее правила группы (T164) — тем же порядком, каким
+        # её берёт движок: одна функция на продукт, иначе расчёт отказывал бы по
+        # мере группы, которую человеку как раз и переопределили.
+        measure = work_measure(
+            (preset.get("groups") or {}).get(case.employee.group),
+            employee=case.employee.work_measure,
+        )
         # Часы объявлять не нужно: это умолчание, работавшее до появления
         # правила вовсе. Иначе пресет страны, загруженный раньше T075, отказал
         # бы считать всех до единого — правило, которое ничего не выбирает, не

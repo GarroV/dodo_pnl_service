@@ -66,7 +66,12 @@ from payrun.retro import mode as retro_mode
 # версия; всё остальное (их сегодня нет) правилось бы по месту. Список нужен
 # затем, чтобы «что считается изменением» было записано один раз, а не выведено
 # из того, какие поля попали в форму.
-VERSIONED_FIELDS = ("group_id", "unit_id", "base_rate", "coefficient", "scheme", "ledger")
+VERSIONED_FIELDS = (
+    "group_id", "unit_id", "base_rate", "coefficient", "scheme", "ledger",
+    # Чем меряется работа этого человека (T164). Деньги считает наравне со
+    # схемой: от него зависит, берётся нето из часов или из сдельной величины.
+    "work_measure",
+)
 
 
 class DirectoryRefused(Exception):

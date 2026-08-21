@@ -195,7 +195,11 @@ def measure_of(rules, term) -> tuple[str, str]:
     if term is None:
         return HOURS, ""
     preset = rules.preset(group_id=term.group_id, employee_id=term.employee_id)
-    measure = work_measure((preset.get("groups") or {}).get(term.group.code))
+    # Мера человека сильнее правила группы (T164): сдельную величину обязан
+    # спрашивать тот, у кого она своя, а не только вся его группа целиком.
+    measure = work_measure(
+        (preset.get("groups") or {}).get(term.group.code), employee=term.work_measure,
+    )
     title = ((preset.get("work_measures") or {}).get(measure) or {}).get("title") or ""
     return measure, title
 
