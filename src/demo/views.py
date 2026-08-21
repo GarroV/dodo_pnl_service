@@ -30,9 +30,11 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 
 from web.auth import login_with_password
+from web.permissions import DIRECTORY_MANAGE, PAYRUN_CALCULATE
 
 from .accountant_table import build_accountant_table
 from .seed import ROLES, demo_password
+from .switching import safe_next
 from .table import accountant_rows, full_slice
 
 __all__ = ["accountant_file", "enter", "landing"]
@@ -78,13 +80,25 @@ def _guard(request) -> None:
 def landing(request):
     """Титульная страница демо. Единственный экран со своими словами."""
     _guard(request)
+    # Роли — все четыре, включая администратора сети (T163). Раньше он не
+    # показывался вовсе: «посетитель, зашедший им первым, решил бы, что продукт
+    # пуст». Довод был про пустой экран, а цена оказалась выше — справочники и
+    # правила ведёт только он, и до них в демо нельзя было добраться ни одной
+    # ролью. Владелец так и прочитал: «не вижу ни групп, ни точек, ничего».
+    # Пустой экран лечится подписью, а недостижимый раздел — нет.
+    #
+    # Что роль ведёт, берётся из её прав, а не из списка рядом: список «роль →
+    # что она делает» разъехался бы с правами молча (issue #91, два списка ролей).
     roles = [
-        {"code": code, "title": title, "ledgers": ledgers, "unit": unit}
-        for code, title, ledgers, unit, _permissions in ROLES
-        # Администратор сети в демо не показывается кнопкой: данных он не
-        # правит и ведомостей не видит, и посетитель, зашедший им первым,
-        # решил бы, что продукт пуст.
-        if code != "admin"
+        {
+            "code": code,
+            "title": title,
+            "ledgers": ledgers,
+            "unit": unit,
+            "keeps_directories": DIRECTORY_MANAGE in permissions,
+            "runs_month": PAYRUN_CALCULATE in permissions,
+        }
+        for code, title, ledgers, unit, permissions in ROLES
     ]
     return render(
         request,
@@ -98,7 +112,13 @@ def landing(request):
 
 
 def enter(request, role: str = DEFAULT_ROLE):
-    """Войти в демо выбранной ролью и оказаться в продукте."""
+    """Войти в демо выбранной ролью и оказаться в продукте.
+
+    Тем же адресом посетитель **переключает** роль посреди осмотра (T163):
+    шапка ведёт сюда с `?next=`, когда раздел ведёт другая роль. Отдельного
+    маршрута для переключения нет намеренно — переключение это тот же вход, и
+    два входа в демо пришлось бы охранять по отдельности.
+    """
     _guard(request)
     known = {code for code, *_rest in ROLES}
     if role not in known:
@@ -114,7 +134,17 @@ def enter(request, role: str = DEFAULT_ROLE):
             {"role": role},
             status=503,
         )
-    return redirect(LANDS_ON)
+
+    # Ключ-спидбамп возвращается в сессию ПОСЛЕ входа, и это не перестраховка.
+    # Django на смене пользователя вычищает сессию целиком (`login()` делает
+    # `flush()`, если в ней уже был другой), поэтому ключ, положенный в
+    # `_guard`, переживает первый вход и теряется на первом же переключении
+    # роли — и следующая ссылка демо отвечала бы 404 при заданном DEMO_KEY.
+    key = (getattr(settings, "DEMO_KEY", "") or "").strip()
+    if key:
+        request.session["demo_key"] = key
+
+    return redirect(safe_next(request.GET.get("next", "")) or LANDS_ON)
 
 
 def accountant_file(request):
