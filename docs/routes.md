@@ -67,6 +67,10 @@
 | `/invoices/new/` | `invoice-new` | `web.suppliers_views.invoice` |
 | `/login/` | `login` | `web.views.login_page` |
 | `/logout/` | `logout` | `web.views.logout_page` |
+| `/papers/` | `papers` | `web.papers_views.paper_list` |
+| `/papers/<uuid:document_id>/` | `paper` | `web.papers_views.paper` |
+| `/papers/<uuid:document_id>/file/` | `paper-file` | `web.papers_views.paper_file` |
+| `/papers/new/` | `paper-new` | `web.papers_views.paper_new` |
 | `/payments/new/` | `payment-new` | `web.suppliers_views.payment_new` |
 | `/payslips/<uuid:payslip_id>/freeze/` | `payslip-freeze` | `web.views.payslip_freeze` |
 | `/payslips/<uuid:payslip_id>/release/` | `payslip-release` | `web.views.payslip_release` |
