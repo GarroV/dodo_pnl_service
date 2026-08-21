@@ -33,7 +33,7 @@ from decimal import Decimal
 
 from django.utils.translation import gettext as _
 
-from . import cash, suppliers, suppliers_views
+from . import cash, permissions, suppliers, suppliers_views
 from .api import _json, _window, endpoint
 from .dbrefusal import BadInput
 
@@ -236,7 +236,17 @@ def _inbox_row(row: dict) -> dict:
 
 @endpoint("POST")
 def inbox_classify(request, who, fact_id):
-    """Назначить строке статью и точку. Только POST: это запись денег."""
+    """Назначить строке статью и точку. Только POST: это запись денег.
+
+    Право спрашивается первым, до поиска строки: разбор первички — то же
+    привилегированное действие, что и на карточке бумаги, и закрывать его надо
+    на всех поверхностях сразу. Закрыть одну значило бы оставить дыру в
+    остальных, которые ходят в тот же `record_invoice` (T174, issue #143).
+    """
+    if not permissions.has(who, permissions.SUPPLIERS_CLASSIFY):
+        return _json(
+            {"error": permissions.explain(who, permissions.SUPPLIERS_CLASSIFY)}, 403,
+        )
     fact = suppliers.unclassified_fact(fact_id)
     if fact is None:
         # Чужая строка, выдуманный номер и уже разобранная — один ответ (D023).

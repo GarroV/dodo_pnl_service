@@ -16,10 +16,12 @@
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import uuid
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
 from django.conf import settings
 from django.db import connection, transaction
@@ -35,6 +37,10 @@ from payrun.lifecycle import approve
 from . import dataset
 from .dataset import MONTHS, PEOPLE, UNITS, Month, Person
 from .guard import require_demo_data
+
+# Готовые снимки бумаг с точек (T174). Лежат файлами в репозитории, а не
+# рисуются наполнением: пересобираются `tools/make_demo_scans.py`.
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 __all__ = ["ROLES", "TENANT_CODE", "det_id", "seed_demo"]
 
@@ -150,6 +156,12 @@ def seed_demo(*, log=None) -> dict:
         _expense_items(tenant, items)
         spent = _expenses(tenant)
         say(f"расходов из кассы: {spent}")
+        counterparties = _counterparties(tenant)
+        say(f"контрагентов: {len(counterparties)}")
+        invoiced, paid = _supplier_documents(tenant, counterparties)
+        say(f"счетов поставщикам: {invoiced}, платежей: {paid}")
+        handed, waiting = _papers(tenant, counterparties)
+        say(f"бумаг с точек: {handed}, из них ждут разбора: {waiting}")
 
     # Расчёт каждого месяца — своей транзакцией, а не общей: `calculate_period`
     # открывает свою и утверждает результат отдельным переходом, у которого
@@ -523,6 +535,275 @@ def _expenses(tenant) -> int:
                 cursor.execute("select allocate_fact(%s)", [fact_id])
         written += 1
     return written
+
+
+# --- поставщики: контрагенты, счета, платежи (T151-T153) -----------------------
+
+
+def _counterparties(tenant) -> dict[str, models.Counterparty]:
+    """Контрагенты демо: поставщики со счетами и платежами.
+
+    Ключ Dodo IS остаётся пустым (T150): сведение со справочником поставщиков
+    Dodo IS случится только в шестой очереди, и заполненное поле сегодня
+    соврало бы про то, что оно уже случилось.
+    """
+    accountant = det_id("user", "accountant")
+    return {
+        title: models.Counterparty.objects.create(
+            id=det_id("counterparty", title), tenant=tenant, title=title,
+            valid_from=date(2023, 1, 1), created_by=accountant,
+        )
+        for title in dataset.counterparties()
+    }
+
+
+def _service_pnl_item(code: str) -> models.PnlItem:
+    """Служебная строка P&L, заведённая миграцией `0243`.
+
+    Ищется по коду, а не по приколоченному uuid — тем же способом, каким её
+    находит продукт (`web.suppliers.line`). Код — то, чем строка названа в
+    схеме, и по нему же читается отказ, если строки вдруг не окажется.
+    """
+    return models.PnlItem.objects.get(tenant__isnull=True, code=code)
+
+
+def _supplier_documents(tenant, counterparties: dict) -> tuple[int, int]:
+    """Счета поставщикам и платежи по ним — через `upsert_document`/`upsert_fact`.
+
+    Тем же путём, каким пишет продукт (`web.suppliers.record_invoice`, `.pay`):
+    свой `insert` здесь не заводится, потому что идемпотентность,
+    версионирование и защита закрытого месяца живут в этих двух функциях базы,
+    а не в наполнении. Документ пишется первым, а строка — вторым: платёж
+    ссылается на документ, которого до записи счёта ещё нет.
+
+    Пять счетов показывают то, ради чего события в продукте разведены:
+    разницу даты документа и периода учёта (№1), частичную оплату — остаток
+    числом (№2), обязательство без единой оплаты на конец месяца (№3), и
+    строку без статьи, из которой инбокс классификации (T152) вообще не пуст
+    (№4).
+    """
+    expense_items = {item.code: item for item in dataset.EXPENSE_ITEMS}
+    unclassified = _service_pnl_item("unclassified")
+    supplier_payment = _service_pnl_item("supplier_payment")
+
+    # Куда лёг счёт — нужно платежам: точка, регистр и автор берутся у счёта,
+    # а не выбираются заново (см. `web.suppliers.pay`).
+    landed: dict[str, dict] = {}
+
+    for inv in dataset.invoices():
+        counterparty = counterparties[inv.counterparty]
+        unit_id = det_id("unit", inv.unit)
+        author = det_id("user", "manager" if inv.unit == "NS1" else "accountant")
+
+        doc_payload = {
+            "tenant_id": str(tenant.id),
+            "counterparty_id": str(counterparty.id),
+            "kind": "invoice",
+            "source": "manual",
+            "external_id": inv.key,
+            "doc_date": inv.doc_date.isoformat(),
+            "period": inv.period.isoformat(),
+            "total_amount": str(inv.amount),
+            "created_by": str(author),
+        }
+        if inv.number:
+            doc_payload["doc_number"] = inv.number
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select upsert_document(%s::jsonb)", [json.dumps(doc_payload)]
+            )
+            document_id = cursor.fetchone()[0]
+
+        if inv.item is None:
+            pnl_item_id = unclassified.id
+            expense_item_id = None
+            title = counterparty.title
+        else:
+            expense_item = expense_items[inv.item]
+            pnl_item_id = det_id("pnl_item", expense_item.pnl_code)
+            expense_item_id = det_id("expense_item", expense_item.code)
+            title = expense_item.title
+
+        line_payload = {
+            "tenant_id": str(tenant.id),
+            "period": inv.period.isoformat(),
+            "doc_date": inv.doc_date.isoformat(),
+            "unit_id": str(unit_id),
+            "pnl_item_id": str(pnl_item_id),
+            "counterparty_id": str(counterparty.id),
+            "ledger": "official",
+            "amount": str(inv.amount),
+            "title": title,
+            "source": "manual",
+            "document_id": str(document_id),
+            "line_no": 1,
+            "dedup_key": f"manual:invoice:{inv.key}",
+            "allocation": "direct",
+            "created_by": str(author),
+        }
+        if expense_item_id is not None:
+            line_payload["expense_item_id"] = str(expense_item_id)
+        if inv.vat:
+            # Только ставка: сумму налога считает база (`vat_of`), а второй
+            # расчёт рядом с первым однажды разошёлся бы с ним на копейку.
+            line_payload["vat_rate"] = inv.vat
+        if inv.note:
+            line_payload["note"] = inv.note
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select fact_id from upsert_fact(%s::jsonb)", [json.dumps(line_payload)]
+            )
+
+        landed[inv.key] = {
+            "document_id": document_id, "unit_id": unit_id,
+            "counterparty_id": counterparty.id, "author": author,
+            "number": inv.number,
+        }
+
+    for pmt in dataset.payments():
+        source_invoice = landed[pmt.invoice_key]
+        payload = {
+            "tenant_id": str(tenant.id),
+            "period": pmt.on.replace(day=1).isoformat(),
+            "doc_date": pmt.on.isoformat(),
+            "unit_id": str(source_invoice["unit_id"]),
+            "pnl_item_id": str(supplier_payment.id),
+            "counterparty_id": str(source_invoice["counterparty_id"]),
+            "ledger": "official",
+            "amount": str(pmt.amount),
+            # Название строки платежа — по счёту, а у счёта без номера по
+            # поставщику: та же развилка, что в `web.suppliers._payment_title`.
+            # Без неё демо однажды показало бы «Payment of invoice » с пустотой
+            # на конце — счёт без номера в жизни обычное дело.
+            "title": (f"Payment of invoice {source_invoice['number']}"
+                      if source_invoice["number"] else "Payment to supplier"),
+            # Канал денег для сверки кассы, а не для P&L — переводы из него
+            # исключены по `kind` во всех отчётах разом (миграция `0243`).
+            "channel": "bank",
+            "source": "manual",
+            "document_id": str(source_invoice["document_id"]),
+            "dedup_key": f"manual:payment:{pmt.key}",
+            "allocation": "direct",
+            "created_by": str(source_invoice["author"]),
+        }
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select fact_id from upsert_fact(%s::jsonb)", [json.dumps(payload)]
+            )
+
+    return len(dataset.INVOICES), len(dataset.PAYMENTS)
+
+
+def _papers(tenant, counterparties: dict) -> tuple[int, int]:
+    """Бумаги, принесённые с точек: шапка, файл и — если разобрана — строка.
+
+    Тем же путём, каким пишет продукт (`web.papers.hand_over`, а разбор —
+    `web.suppliers.record_invoice`): своих `insert` в документы и факты здесь не
+    заводится, потому что идемпотентность, версионирование и защита закрытого
+    месяца живут в функциях базы, а не в наполнении.
+
+    Автор у обеих бумаг — **управляющий**, и это не украшение. Роль управляющего
+    в сборе первички ровно эта: донести бумагу (D047). Поставь автором
+    бухгалтера, и демо показывало бы, что бумаги приносит сам разбирающий, то
+    есть смысла в состоянии «ждёт разбора» не было бы видно.
+
+    Возвращает «сколько принесли» и «сколько ждёт разбора» — второе число демо
+    показывает в инбоксе, и наполнение обязано знать его само, а не выяснять
+    повторной выборкой.
+    """
+    # Тип файла определяется тем же кодом, что и в продукте: второй ответ на
+    # вопрос «что это за файл» однажды разошёлся бы с первым, и демо положило бы
+    # в базу тип, которого продукт не принимает.
+    from web.papers import PAPER_PREFIX, media_type_of
+
+    expense_items = {item.code: item for item in dataset.EXPENSE_ITEMS}
+    author = det_id("user", "manager")
+    waiting = 0
+
+    for paper in dataset.papers():
+        content = (FIXTURES / paper.file).read_bytes()
+        media_type = media_type_of(content)
+        if not media_type:
+            # Молча положить в демо файл, которого продукт не примет, нельзя:
+            # карточка показала бы бумагу, а форма такую же отвергла бы — и
+            # разошлись бы они только на глазах у смотрящего.
+            raise RuntimeError(
+                f"{paper.file}: продукт такой файл не принимает, "
+                f"пересоберите tools/make_demo_scans.py"
+            )
+
+        counterparty = counterparties[paper.counterparty]
+        doc_payload = {
+            "tenant_id": str(tenant.id),
+            "counterparty_id": str(counterparty.id),
+            "kind": paper.kind,
+            "source": "manual",
+            "external_id": PAPER_PREFIX + paper.key,
+            "doc_date": paper.doc_date.isoformat(),
+            "unit_id": str(det_id("unit", paper.unit)),
+            "total_amount": str(paper.stated) if paper.stated is not None else None,
+            # Отметка «бумагу принесли»: по ней бумага стоит в инбоксе и по ней
+            # же отличается от документа, у которого строки не записались.
+            "handed_over_at": now().isoformat(),
+            "payload": {"note": paper.note, "file_name": paper.file},
+            "created_by": str(author),
+        }
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select upsert_document(%s::jsonb)",
+                [json.dumps({k: v for k, v in doc_payload.items() if v is not None})],
+            )
+            document_id = cursor.fetchone()[0]
+
+        models.DocumentFile.objects.update_or_create(
+            document_id=document_id,
+            defaults={
+                "tenant_id": tenant.id,
+                "media_type": media_type,
+                "byte_size": len(content),
+                "content": content,
+                "sha256": hashlib.sha256(content).hexdigest(),
+                "created_by": author,
+            },
+        )
+
+        if paper.item is None:
+            # Ни одной строки учёта — и это главное свойство состояния: суммы
+            # 21 550.00 в P&L нет не потому, что отчёт её отфильтровал, а потому
+            # что фильтровать нечего.
+            waiting += 1
+            continue
+
+        expense_item = expense_items[paper.item]
+        line_payload = {
+            "tenant_id": str(tenant.id),
+            "period": paper.period.isoformat(),
+            "doc_date": paper.doc_date.isoformat(),
+            "unit_id": str(det_id("unit", paper.unit)),
+            "pnl_item_id": str(det_id("pnl_item", expense_item.pnl_code)),
+            "expense_item_id": str(det_id("expense_item", expense_item.code)),
+            "counterparty_id": str(counterparty.id),
+            "ledger": "official",
+            "amount": str(paper.stated),
+            "title": expense_item.title,
+            "source": "manual",
+            "document_id": str(document_id),
+            "line_no": 1,
+            # Ключ строки — приставка счёта плюс внешний ключ бумаги ЦЕЛИКОМ,
+            # ровно как его собирает разбор с карточки
+            # (`papers.document_key` → `suppliers.record_invoice`).
+            "dedup_key": f"manual:invoice:{PAPER_PREFIX}{paper.key}",
+            "allocation": "direct",
+            "vat_rate": "10",
+            "created_by": str(author),
+        }
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select fact_id from upsert_fact(%s::jsonb)", [json.dumps(line_payload)]
+            )
+
+    return len(dataset.PAPERS), waiting
 
 
 def _approve(tenant, month: Month) -> None:

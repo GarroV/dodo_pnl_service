@@ -22,7 +22,8 @@
 </div>
 <p class="sub">{% translate "Что нам выставили поставщики и что из этого оплачено." %}
   <a href="{{ payment_url }}">{% translate "Оплата без счёта" %}</a> ·
-  <a href="{{ inbox_url }}">{% translate "Инбокс" %}</a></p>
+  <a href="{{ inbox_url }}">{% translate "Инбокс" %}</a> ·
+  <a href="{{ papers_url }}">{% translate "Бумаги с точек" %}</a></p>
 
 {% if error %}
 {% translate "Не показано." as failed %}

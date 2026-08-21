@@ -31,19 +31,30 @@ from datetime import date
 from decimal import Decimal
 
 __all__ = [
+    "COUNTERPARTIES",
     "EXPENSE_ITEMS",
     "EXPENSES",
+    "INVOICES",
     "MONTHS",
+    "PAPERS",
+    "PAYMENTS",
     "PEOPLE",
     "UNITS",
     "Expense",
     "ExpenseItem",
+    "Invoice",
     "Month",
+    "Paper",
+    "Payment",
     "Person",
+    "counterparties",
     "employment_versions",
     "expenses",
     "insured_types",
+    "invoices",
     "months",
+    "papers",
+    "payments",
     "timesheet_for",
 ]
 
@@ -378,6 +389,10 @@ EXPENSE_ITEMS = [
     ExpenseItem("repairs", "Small repairs", "other_opex"),
     # А у этой правила нет намеренно — см. `spread` выше.
     ExpenseItem("marketing", "Marketing campaign", "other_opex"),
+    # Накладная на сырьё — самая частая трата поставщику (T151/T153), а статьи
+    # под неё до этой задачи в демо не было вовсе: счёт от Metro лёг бы на
+    # статью, которой продукт не показывает.
+    ExpenseItem("food_supplies", "Food supplies", "food_cost"),
 ]
 
 
@@ -490,3 +505,193 @@ EXPENSES = [
 
 def expenses() -> list[Expense]:
     return list(EXPENSES)
+
+
+# --- поставщики: контрагенты, счета, платежи (T151-T153) -----------------------
+#
+# Зачем они в демо. Без этого раздела демо не знает о четвёртой очереди ничего:
+# ни одного контрагента, ни одного счёта, ни одной строки в инбоксе. Definition
+# of Done блока говорит прямо: демо обязано показывать контрагентов,
+# неоплаченный счёт и непустой инбокс — три состояния продукта, которые нельзя
+# увидеть на пустом справочнике.
+#
+# Ключ Dodo IS у всех контрагентов пуст — намеренно. Поле заведено пустым и
+# заранее (T150): сведение со справочником поставщиков Dodo IS случится только
+# в шестой очереди, и заполненное поле сегодня соврало бы про то, что оно уже
+# случилось.
+COUNTERPARTIES = [
+    "EPS Elektro",
+    "City Water Utility",
+    "Metro Cash & Carry",
+    "Papirus Packaging",
+]
+
+
+def counterparties() -> list[str]:
+    return list(COUNTERPARTIES)
+
+
+@dataclass(frozen=True)
+class Invoice:
+    """Счёт поставщика: три даты и, может быть, строка без статьи (T151).
+
+    `key` — внешний id документа и хвост ключа идемпотентности его строки: та
+    же форма, которой продукт пишет счёт (`web.suppliers.record_invoice`), а не
+    придуманная рядом вторая. `doc_date` и `period` разведены нарочно: счёт за
+    июнь приходит в июле, и без разницы между ними в демо не видно главного
+    свойства продукта.
+
+    `item = None` — статья ещё не выбрана. Строка получает служебную статью
+    «Не разобрано» и встаёт в инбокс классификации (T152) — состояние,
+    Definition of Done требует показать явно, а не подразумевать.
+    """
+
+    key: str
+    counterparty: str
+    unit: str
+    item: str | None
+    amount: Decimal
+    doc_date: date
+    period: date
+    vat: str | None = None
+    number: str = ""
+    note: str = ""
+
+
+# Регистр у всех пяти — официальный: это формальные счета от поставщиков,
+# оплаченные банком, а не наличные из кассы (у наличных — свой раздел выше).
+INVOICES = [
+    # №1 — главное свойство продукта целиком в одной строке: бумага пришла в
+    # июле, а расход лёг в июнь, потому что счёт за июньское электричество.
+    # Месяц при этом уже закрыт — ровно так, как приходят счета в жизни.
+    Invoice(
+        "demo-inv-1", "EPS Elektro", "BG1", "electricity", D("41200.00"),
+        doc_date=date(2026, 7, 3), period=date(2026, 6, 1), vat="20",
+        number="INV-1042", note="Electricity for June, invoice arrived in July",
+    ),
+    # №2 — частичная оплата: остаток не «оплачен/нет», а число (см. платежи
+    # ниже). Заодно единственный счёт со статьёй `food_supplies` — самой частой
+    # тратой поставщику, для которой в демо до этой задачи статьи не было.
+    Invoice(
+        "demo-inv-2", "Metro Cash & Carry", "NS1", "food_supplies", D("96000.00"),
+        doc_date=date(2026, 7, 15), period=date(2026, 7, 1), vat="10",
+        number="INV-2077", note="Food delivery, July",
+    ),
+    # №3 — обязательство на конец открытого месяца: платежа нет вовсе. Это не
+    # недосмотр демо, а состояние, которое партнёр обязан видеть на экране
+    # счетов каждый день.
+    Invoice(
+        "demo-inv-3", "City Water Utility", "NS2", "water", D("7400.00"),
+        doc_date=date(2026, 8, 6), period=date(2026, 8, 1), vat="20",
+        number="INV-3015",
+    ),
+    # №4 — без статьи. Точка у счёта есть (BG1), поэтому в «нераспределённых»
+    # (`facts_unallocated`) он не встанет — он встаёт в инбокс классификации
+    # (T152), и это два разных списка про два разных недостатка данных.
+    Invoice(
+        "demo-inv-4", "Papirus Packaging", "BG1", None, D("18600.00"),
+        doc_date=date(2026, 8, 11), period=date(2026, 8, 1),
+        number="INV-4021",
+    ),
+    Invoice(
+        "demo-inv-5", "EPS Elektro", "NS1", "electricity", D("23900.00"),
+        doc_date=date(2026, 8, 7), period=date(2026, 8, 1), vat="20",
+        number="INV-5033",
+    ),
+]
+
+
+def invoices() -> list[Invoice]:
+    return list(INVOICES)
+
+
+@dataclass(frozen=True)
+class Payment:
+    """Оплата счёта — своим событием и своей датой (T151).
+
+    Период платежа считается от `on` (месяц денег), а не от периода счёта:
+    ровно так же, как это делает `web.suppliers.pay`. Держать эту логику
+    здесь второй раз было бы лишним — она в одну строку и живёт в `seed.py`,
+    рядом с записью.
+    """
+
+    key: str
+    invoice_key: str
+    amount: Decimal
+    on: date
+
+
+PAYMENTS = [
+    # Целиком, банком — то же электричество, что и дата документа/периода
+    # развели: деньги ушли в июле, уже после того, как счёт лёг в закрытый июнь.
+    Payment("demo-pay-1", "demo-inv-1", D("41200.00"), date(2026, 7, 8)),
+    # Частичная: 96000.00 счёта, 50000.00 оплачено — остаток 46000.00 виден
+    # числом, а не текстом «частично».
+    Payment("demo-pay-2", "demo-inv-2", D("50000.00"), date(2026, 8, 5)),
+    Payment("demo-pay-3", "demo-inv-5", D("23900.00"), date(2026, 8, 12)),
+]
+
+
+def payments() -> list[Payment]:
+    return list(PAYMENTS)
+
+
+@dataclass(frozen=True)
+class Paper:
+    """Бумага, принесённая управляющим с точки (T174, D047).
+
+    Показывает состояние, которого в демо до этой задачи не было вовсе:
+    **необработанное вложение**. Управляющий сфотографировал накладную и скинул
+    её — поставщика, статью и период назначает потом бухгалтер, а пока не
+    назначил, суммы в P&L нет. Не «не подтверждено» флагом, а нет: у бумаги ноль
+    строк учёта, и отчёту нечего показать физически.
+
+    `item is None` — бумага ждёт разбора: строка учёта не пишется вовсе, и
+    бумага стоит в инбоксе. Заполненные `item` и `period` — бумага разобрана, и
+    её сумма в P&L уже есть. В наборе есть и то, и другое: одного состояния
+    хватило бы, чтобы показать экран, но не хватило бы, чтобы показать разницу.
+
+    `file` — имя готового файла в `src/demo/fixtures`. Файл лежит в
+    репозитории, а не рисуется в момент наполнения: демо обещает, что с бумаги
+    читаются поставщик, дата и сумма, а нарисовать читаемый текст наполнению
+    нечем (см. `tools/make_demo_scans.py`).
+    """
+
+    key: str
+    kind: str                  # invoice — накладная, receipt — чек
+    unit: str
+    counterparty: str | None
+    stated: Decimal | None
+    doc_date: date
+    file: str
+    note: str
+    item: str | None = None
+    period: date | None = None
+
+
+# Обе бумаги — с NS1, и это не случайность: в демо точку ведёт именно
+# управляющий NS1, и посетитель, переключившийся на его роль, обязан увидеть
+# свои бумаги, а не пустой список.
+PAPERS = [
+    # №1 — то, ради чего задача: накладная принесена, но не разобрана. Стоит в
+    # инбоксе, суммы 21 550.00 в P&L нет. Файл — снимок, поэтому карточка
+    # показывает саму бумагу картинкой.
+    Paper(
+        "demo-paper-1", "invoice", "NS1", "Metro Cash & Carry", D("21550.00"),
+        doc_date=date(2026, 8, 14), file="delivery-note.png",
+        note="Delivery note from the warehouse, brought in by the shift manager",
+    ),
+    # №2 — та же бумага после разбора: у неё появилась статья и период, и сумма
+    # 8 250.00 теперь в P&L. Файл — PDF, то есть вторая ветка карточки: его
+    # отдают на сохранение, а не рисуют в странице.
+    Paper(
+        "demo-paper-2", "receipt", "NS1", "Metro Cash & Carry", D("8250.00"),
+        doc_date=date(2026, 8, 9), file="cash-receipt.pdf",
+        note="Cash receipt, bought on the spot",
+        item="food_supplies", period=date(2026, 8, 1),
+    ),
+]
+
+
+def papers() -> list[Paper]:
+    return list(PAPERS)

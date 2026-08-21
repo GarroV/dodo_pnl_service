@@ -1,0 +1,250 @@
+{
+  "%(kind)s от %(date)s, точка %(unit)s": {
+    "en": "%(kind)s from %(date)s, unit %(unit)s",
+    "sr": "%(kind)s od %(date)s, objekat %(unit)s"
+  },
+  "%(kind)s с точки %(unit)s": {
+    "en": "%(kind)s from unit %(unit)s",
+    "sr": "%(kind)s sa objekta %(unit)s"
+  },
+  "%(size)s КБ": {
+    "en": "%(size)s KB",
+    "sr": "%(size)s KB"
+  },
+  "«%(label)s»: ноль не сумма. Оставьте поле пустым, если сумма неизвестна.": {
+    "en": "“%(label)s”: zero is not an amount. Leave the field empty if the amount is unknown.",
+    "sr": "„%(label)s“: nula nije iznos. Ostavite polje prazno ako iznos nije poznat."
+  },
+  "Бумаг ещё не приносили.": {
+    "en": "No papers have been brought in yet.",
+    "sr": "Papiri još nisu doneti."
+  },
+  "Бумаг на разбор нет.": {
+    "en": "There are no papers waiting to be sorted out.",
+    "sr": "Nema papira koji čekaju razvrstavanje."
+  },
+  "Бумага ещё не разобрана.": {
+    "en": "The paper has not been sorted out yet.",
+    "sr": "Papir još nije razvrstan."
+  },
+  "Бумага принята и ждёт разбора бухгалтером. В P&L её ещё нет: сумма появится там, когда бухгалтер назначит статью и период.": {
+    "en": "The paper has been received and is waiting for the accountant to sort it out. It is not in the P&L yet: the amount will appear there once the accountant assigns the item and the period.",
+    "sr": "Papir je primljen i čeka da ga knjigovođa razvrsta. U P&L-u ga još nema: iznos će se tamo pojaviti kada knjigovođa dodeli stavku i period."
+  },
+  "Бумага разобрана.": {
+    "en": "The paper has been sorted out.",
+    "sr": "Papir je razvrstan."
+  },
+  "Бумага разобрана: строка учтена в периоде %(month)s.": {
+    "en": "The paper has been sorted out: the row has been recorded in period %(month)s.",
+    "sr": "Papir je razvrstan: red je zaveden u period %(month)s."
+  },
+  "Бумаги с точек": {
+    "en": "Papers from the units",
+    "sr": "Papiri sa objekata"
+  },
+  "Бумагу приносят с точки, а не со всей сети: выберите точку, с которой она пришла.": {
+    "en": "A paper comes from a unit, not from the whole network: choose the unit it came from.",
+    "sr": "Papir stiže sa objekta, a ne iz cele mreže: izaberite objekat sa kog je stigao."
+  },
+  "В P&L её нет: там живут строки учёта, а у этой бумаги их пока ни одной. Назначьте поставщика, статью и период — и сумма встанет в отчёт.": {
+    "en": "It is not in the P&L: that is where accounting rows live, and this paper does not have a single one yet. Assign a supplier, an item and a period — and the amount will land in the report.",
+    "sr": "Nije u P&L-u: tamo žive knjigovodstveni redovi, a ovaj papir ih još nema nijednog. Dodelite dobavljača, stavku i period — i iznos će ući u izveštaj."
+  },
+  "Вас ещё не завели ни к одному партнёру, поэтому бумаг у вас нет.": {
+    "en": "You have not been added to any partner yet, so you have no papers.",
+    "sr": "Još niste dodati nijednom partneru, pa nemate papira."
+  },
+  "Вас ещё не завели ни к одному партнёру, поэтому бумаги вам некуда нести. Попросите администратора сети добавить вас.": {
+    "en": "You have not been added to any partner yet, so there is nowhere to bring a paper. Ask the network administrator to add you.",
+    "sr": "Još niste dodati nijednom partneru, pa nema gde da se donese papir. Zamolite administratora mreže da vas doda."
+  },
+  "Всё разобрано.": {
+    "en": "Everything is sorted out.",
+    "sr": "Sve je razvrstano."
+  },
+  "Всё, что принесли с точек, разобрано.": {
+    "en": "Everything brought in from the units has been sorted out.",
+    "sr": "Sve što je doneto sa objekata je razvrstano."
+  },
+  "Выберите, что за бумага: накладная или чек.": {
+    "en": "Choose what kind of paper it is: a delivery note or a receipt.",
+    "sr": "Izaberite kakav je papir: otpremnica ili račun."
+  },
+  "Дата на бумаге": {
+    "en": "Date on the paper",
+    "sr": "Datum na papiru"
+  },
+  "Дата, которая напечатана на самой бумаге.": {
+    "en": "The date printed on the paper itself.",
+    "sr": "Datum koji je odštampan na samom papiru."
+  },
+  "Месяц %(month)s закрыт, поэтому строка легла в открытый период — с исходной датой и не сдвинув закрытый месяц.": {
+    "en": "Month %(month)s is closed, so the row went into the open period — with the original date, without touching the closed month.",
+    "sr": "Mesec %(month)s je zatvoren, pa je red ušao u otvoreni period — sa izvornim datumom, ne dirajući zatvoreni mesec."
+  },
+  "Месяц %(month)s закрыт. Разбор его не тронет: строка ляжет в открытый период с исходной датой документа.": {
+    "en": "Month %(month)s is closed. Sorting it out will not touch it: the row will land in the open period with the document's original date.",
+    "sr": "Mesec %(month)s je zatvoren. Razvrstavanje ga ne dira: red će ući u otvoreni period sa izvornim datumom dokumenta."
+  },
+  "Можно не выбирать: поставщика назначит бухгалтер при разборе.": {
+    "en": "You may leave it empty: the accountant will assign the supplier when sorting it out.",
+    "sr": "Ne morate birati: dobavljača će dodeliti knjigovođa prilikom razvrstavanja."
+  },
+  "Накладная": {
+    "en": "Delivery note",
+    "sr": "Otpremnica"
+  },
+  "Накладная — бумага поставщика на товар. Чек — то, что заплатили на месте.": {
+    "en": "A delivery note is a supplier's paper for goods. A receipt is what was paid for on the spot.",
+    "sr": "Otpremnica je dobavljačev papir za robu. Račun je ono što je plaćeno na licu mesta."
+  },
+  "Накладные и чеки, принесённые с точек. Пока бухгалтер их не разобрал, в P&L их нет.": {
+    "en": "Delivery notes and receipts brought in from the units. Until the accountant sorts them out, they are not in the P&L.",
+    "sr": "Otpremnice i računi doneti sa objekata. Dok ih knjigovođa ne razvrsta, nema ih u P&L-u."
+  },
+  "Не знаю или нет в списке": {
+    "en": "Don't know or not on the list",
+    "sr": "Ne znam ili nema na spisku"
+  },
+  "Не принято.": {
+    "en": "Not accepted.",
+    "sr": "Nije prihvaćeno."
+  },
+  "Не разобрано.": {
+    "en": "Not sorted out.",
+    "sr": "Nije razvrstano."
+  },
+  "Необязательно. Это сумма со слов, а не расход: в P&L она попадёт только после разбора.": {
+    "en": "Optional. This is the amount as stated, not an expense: it will land in the P&L only after sorting out.",
+    "sr": "Nije obavezno. Ovo je iznos po izjavi, a ne trošak: u P&L ulazi tek posle razvrstavanja."
+  },
+  "Ни одна бумага не ждёт: у каждой есть строка в учёте.": {
+    "en": "No paper is waiting: every one already has a row in the accounts.",
+    "sr": "Nijedan papir ne čeka: svaki već ima red u knjigovodstvu."
+  },
+  "Одной строкой: от кого бумага и за что. Поможет бухгалтеру найти поставщика.": {
+    "en": "In one line: who the paper is from and what for. It will help the accountant find the supplier.",
+    "sr": "U jednoj rečenici: od koga je papir i za šta. Pomoći će knjigovođi da pronađe dobavljača."
+  },
+  "Открыть бумагу": {
+    "en": "Open the paper",
+    "sr": "Otvori papir"
+  },
+  "Открыть счёт": {
+    "en": "Open the invoice",
+    "sr": "Otvori fakturu"
+  },
+  "Отправить бумагу": {
+    "en": "Submit the paper",
+    "sr": "Pošalji papir"
+  },
+  "Поставщик": {
+    "en": "Supplier",
+    "sr": "Dobavljač"
+  },
+  "Разобрать бумагу": {
+    "en": "Sort out the paper",
+    "sr": "Razvrstaj papir"
+  },
+  "Разобрать и учесть": {
+    "en": "Sort out and record",
+    "sr": "Razvrstaj i zavedi"
+  },
+  "С какой точки бумага. Не куда ляжет расход — это решает бухгалтер при разборе.": {
+    "en": "Which unit the paper is from. Not where the expense will land — the accountant decides that when sorting it out.",
+    "sr": "Sa kog je objekta papir. Ne gde će trošak pasti — to odlučuje knjigovođa prilikom razvrstavanja."
+  },
+  "Скачать файл (%(size)s)": {
+    "en": "Download the file (%(size)s)",
+    "sr": "Preuzmi fajl (%(size)s)"
+  },
+  "Скинуть накладную или чек": {
+    "en": "Send in a delivery note or a receipt",
+    "sr": "Pošalji otpremnicu ili račun"
+  },
+  "Снимок принесённой бумаги": {
+    "en": "Photo of the paper brought in",
+    "sr": "Snimak donetog papira"
+  },
+  "Снимок с телефона годится. Главное — чтобы читались поставщик, дата и сумма.": {
+    "en": "A phone photo is fine. What matters is that the supplier, date and amount can be read.",
+    "sr": "Snimak telefonom je dovoljan. Bitno je da se vide dobavljač, datum i iznos."
+  },
+  "Строки учтены и видны в P&L. Дальше правят счёт, а не бумагу.": {
+    "en": "The rows are recorded and visible in the P&L. From here on, the invoice is edited, not the paper.",
+    "sr": "Redovi su zavedeni i vidljivi u P&L-u. Dalje se menja faktura, a ne papir."
+  },
+  "Сумма с бумаги": {
+    "en": "Amount on the paper",
+    "sr": "Iznos sa papira"
+  },
+  "Сумма со слов": {
+    "en": "Amount as stated",
+    "sr": "Iznos po izjavi"
+  },
+  "Сфотографируйте бумагу и приложите снимок. Поставщика, статью и период назначит бухгалтер.": {
+    "en": "Take a photo of the paper and attach it. The accountant will assign the supplier, the item and the period.",
+    "sr": "Fotografišite papir i priložite snimak. Dobavljača, stavku i period dodeliće knjigovođa."
+  },
+  "Такой файл продукт не примет: нужна фотография (JPEG, PNG, WebP, HEIC) или PDF.": {
+    "en": "The product will not accept this file: it needs a photo (JPEG, PNG, WebP, HEIC) or a PDF.",
+    "sr": "Proizvod neće prihvatiti ovakav fajl: potrebna je fotografija (JPEG, PNG, WebP, HEIC) ili PDF."
+  },
+  "У бумаги должна быть точка: укажите, с какой она пришла.": {
+    "en": "The paper must have a unit: specify which one it came from.",
+    "sr": "Papir mora imati objekat: navedite sa kog je stigao."
+  },
+  "Управляющий фотографирует накладную или чек и скидывает сюда — считать ему ничего не нужно.": {
+    "en": "The manager photographs a delivery note or a receipt and drops it here — they do not need to calculate anything.",
+    "sr": "Menadžer fotografiše otpremnicu ili račun i šalje ovde — on ne mora ništa da računa."
+  },
+  "Файл больше %(limit)s МБ. Сфотографируйте бумагу ещё раз или уменьшите снимок.": {
+    "en": "The file is larger than %(limit)s MB. Take the photo again or reduce its size.",
+    "sr": "Fajl je veći od %(limit)s MB. Fotografišite papir ponovo ili smanjite snimak."
+  },
+  "Файл не приложен: без фотографии разбирать нечего.": {
+    "en": "No file attached: there is nothing to sort out without a photo.",
+    "sr": "Fajl nije priložen: bez fotografije nema šta da se razvrstava."
+  },
+  "Фотография или PDF": {
+    "en": "Photo or PDF",
+    "sr": "Fotografija ili PDF"
+  },
+  "Чек": {
+    "en": "Receipt",
+    "sr": "Račun"
+  },
+  "Что за бумага": {
+    "en": "What kind of paper",
+    "sr": "Kakav papir"
+  },
+  "ждёт разбора": {
+    "en": "waiting to be sorted out",
+    "sr": "čeka razvrstavanje"
+  },
+  "поставщик: %(party)s": {
+    "en": "supplier: %(party)s",
+    "sr": "dobavljač: %(party)s"
+  },
+  "разобрана, период %(month)s": {
+    "en": "sorted out, period %(month)s",
+    "sr": "razvrstan, period %(month)s"
+  },
+  "сумма со слов, не расход": {
+    "en": "amount as stated, not an expense",
+    "sr": "iznos po izjavi, nije trošak"
+  },
+  "сумма со слов: %(amount)s": {
+    "en": "amount as stated: %(amount)s",
+    "sr": "iznos po izjavi: %(amount)s"
+  },
+  "суммы со слов управляющих, в P&L их нет": {
+    "en": "amounts as stated by managers, not in the P&L",
+    "sr": "iznosi po izjavi menadžera, njih nema u P&L-u"
+  },
+  "← К бумагам": {
+    "en": "← Back to papers",
+    "sr": "← Nazad na papire"
+  }
+}

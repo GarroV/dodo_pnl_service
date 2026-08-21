@@ -17,6 +17,7 @@ import os
 import re
 import subprocess
 import sys
+from decimal import Decimal
 
 import pytest
 
@@ -472,3 +473,226 @@ def test_the_month_a_visitor_lands_on_has_till_and_vat_facts(conn):
     with_till, with_vat = row
     assert with_till > 0, f"в {open_period:%Y-%m} нет ни одного расхода из кассы"
     assert with_vat > 0, f"в {open_period:%Y-%m} нет ни одного расхода с НДС"
+
+
+# --- поставщики: контрагенты, счета, платежи (T151-T153) -----------------------
+#
+# Definition of Done блока suppliers прямо про демо: оно обязано показывать
+# контрагентов, неоплаченный счёт и непустой инбокс. Без этого раздела демо не
+# знает о четвёртой очереди вовсе.
+
+
+def test_the_demo_has_counterparties_with_an_empty_dodo_is_key(conn):
+    """Контрагенты в демо есть, и ключ Dodo IS у них пуст (T150).
+
+    Пусто — не недосмотр: сведение со справочником поставщиков Dodo IS
+    случится только в шестой очереди. Заполненное поле сегодня соврало бы про
+    то, что оно уже случилось.
+    """
+    rows = conn.execute("select title, external_id from counterparties").fetchall()
+    assert len(rows) >= 4, "в демо меньше контрагентов, чем описано в задаче"
+    assert all(external_id is None for _title, external_id in rows), (
+        f"у контрагента демо уже стоит ключ Dodo IS: {rows}"
+    )
+
+
+def _invoice_balances(conn) -> list[tuple]:
+    """Сумма документа и сумма оплат по нему — по каждому счёту поставщика.
+
+    Остаток не хранится колонкой: колонки «оплачено» у счёта нет намеренно
+    (`web/suppliers.py`), он считается сложением платежей, и запрос повторяет
+    именно эту логику, а не читает выдуманный флаг.
+    """
+    return conn.execute(
+        """select d.total_amount, coalesce(p.paid, 0)
+             from source_documents d
+             left join lateral (
+                 select sum(f.amount) as paid
+                   from facts f
+                  where f.document_id = d.id
+                    and f.dedup_key like 'manual:payment:%'
+                    and f.superseded_at is null
+             ) p on true
+            where d.kind = 'invoice' and d.source = 'manual'"""
+    ).fetchall()
+
+
+def test_there_is_an_invoice_that_was_never_paid(conn):
+    """Есть счёт без единой оплаты: остаток равен всей сумме документа.
+
+    Обязательство на конец месяца — законное состояние продукта, а не пробел
+    в демо-данных: партнёр обязан видеть его на экране счетов каждый день.
+    """
+    balances = _invoice_balances(conn)
+    assert balances, "в демо нет ни одного счёта поставщика"
+    unpaid = [amount for amount, paid in balances if paid == 0]
+    assert any(amount > 0 for amount in unpaid), (
+        f"нет счёта без единой оплаты: {balances}"
+    )
+
+
+def test_there_is_a_partially_paid_invoice(conn):
+    """Остаток частично оплаченного счёта — число строго между нулём и суммой.
+
+    Не «оплачено да/нет»: платёж меньше документа — законный промежуточный
+    остаток, и именно так проверяется вариант развилки Q018 про частичную
+    оплату.
+    """
+    balances = _invoice_balances(conn)
+    partial = [(amount, paid) for amount, paid in balances if 0 < paid < amount]
+    assert partial, f"нет частично оплаченного счёта: {balances}"
+
+
+def test_the_classification_inbox_is_not_empty(conn):
+    """В инбоксе классификации (T152) есть действующая строка без статьи.
+
+    Строка без статьи получает служебный код `unclassified` и остаётся
+    видимой числом — не пропадает и не превращается в ноль.
+    """
+    rows = conn.execute(
+        """select f.amount
+             from facts f join pnl_items i on i.id = f.pnl_item_id
+            where i.code = 'unclassified' and f.superseded_at is null"""
+    ).fetchall()
+    assert rows, "в демо нет ни одной строки без статьи — инбокс пуст"
+    assert any(amount > 0 for amount, in rows), (
+        f"строка без статьи есть, но её сумма не положительна: {rows}"
+    )
+
+
+def test_the_demo_has_a_paper_brought_from_a_unit_and_waiting(conn):
+    """Бумага с точки (T174) в демо есть, и она стоит с файлом и без строк.
+
+    Три свойства сразу, и каждое видно только вместе с остальными: у бумаги есть
+    отметка «принесли», есть точка (иначе её не отсечь от чужой) и есть файл —
+    без него разбирать нечего, и в инбоксе она выглядела бы работой, которую
+    кто-то уже сделал.
+    """
+    rows = conn.execute(
+        """select d.external_id, u.code, f.media_type, f.byte_size, d.total_amount
+             from source_documents d
+             join units u on u.id = d.unit_id
+             join document_files f on f.document_id = d.id
+            where d.handed_over_at is not null
+            order by d.external_id"""
+    ).fetchall()
+
+    assert len(rows) == 2, f"бумаг с точек в демо не две, а {len(rows)}: {rows}"
+    waiting = rows[0]
+    assert waiting[0] == "paper:demo-paper-1", waiting
+    assert waiting[1] == "NS1", "бумагу приносит управляющий NS1, а точка другая"
+    assert waiting[2] == "image/png", f"снимок не картинка: {waiting[2]}"
+    assert waiting[3] > 1000, f"файл подозрительно мал: {waiting[3]} байт"
+    assert waiting[4] == Decimal("21550.00"), waiting
+
+
+def test_the_waiting_paper_is_not_in_the_pnl_at_all(conn):
+    """Сумма непринятой бумаги в P&L не просто скрыта — её там нет.
+
+    Это главное свойство состояния, и проверяется оно не флагом, а отсутствием
+    строк: `pnl_lines` собирается из фактов, а у неразобранной бумаги фактов
+    ноль. Появись у неё строка — демо показывало бы расход, которого бухгалтер
+    не признавал.
+    """
+    facts = conn.execute(
+        """select count(*) from facts
+            where document_id = (
+                select id from source_documents where external_id = 'paper:demo-paper-1'
+            ) and superseded_at is null"""
+    ).fetchone()[0]
+    assert facts == 0, f"у ждущей разбора бумаги появилось строк: {facts}"
+
+    in_pnl = conn.execute(
+        """select coalesce(sum(amount), 0) from pnl_lines
+            where document_id = (
+                select id from source_documents where external_id = 'paper:demo-paper-1'
+            )"""
+    ).fetchone()[0]
+    assert in_pnl == 0, f"сумма ждущей бумаги попала в P&L: {in_pnl}"
+
+
+def test_the_sorted_out_paper_is_in_the_pnl_and_keeps_its_kind(conn):
+    """Вторая бумага разобрана: её сумма в P&L есть, а чек остался чеком.
+
+    Вид документа при разборе не переписывается намеренно (`upsert_document` не
+    перечисляет `kind` в обновляемых колонках): чек разбирают формой счёта, но
+    он от этого счётом не становится. Без этой пары в демо не видно разницы
+    между «принесли» и «признали» — а она и есть весь смысл задачи.
+    """
+    row = conn.execute(
+        """select d.kind, coalesce(sum(l.amount), 0)
+             from source_documents d
+             left join pnl_lines l on l.document_id = d.id and l.kind <> 'transfer'
+            where d.external_id = 'paper:demo-paper-2'
+            group by d.kind"""
+    ).fetchone()
+    assert row is not None, "разобранной бумаги в демо нет вовсе"
+    kind, total = row
+    assert kind == "receipt", f"чек перестал быть чеком после разбора: {kind}"
+    assert total == Decimal("8250.00"), f"сумма разобранной бумаги в P&L: {total}"
+
+
+def test_a_supplier_payment_does_not_double_the_expense(conn):
+    """Платёж не удваивает расход: перевод и начисление считаются раздельно.
+
+    `pnl_lines` сама по виду не фильтрует — это делает каждый потребитель
+    (`reports.export.EXPENSE_LINES` и остальные, T151). Счёт №5 и его платёж —
+    единственная пара демо, лежащая в одном периоде (август): не исключи
+    кто-нибудь `kind = 'transfer'`, расход посчитался бы дважды, и именно на
+    этой паре ошибка была бы видна.
+    """
+    row = conn.execute(
+        """select coalesce(sum(amount) filter (where kind <> 'transfer'), 0),
+                  coalesce(sum(amount) filter (where kind = 'transfer'), 0)
+             from pnl_lines
+            where fact_id in (
+                select id from facts
+                 where dedup_key in ('manual:invoice:demo-inv-5', 'manual:payment:demo-pay-3')
+            )"""
+    ).fetchone()
+    expense_total, transfer_total = row
+    assert transfer_total == Decimal("23900.00"), (
+        f"платёж не найден среди переводов в pnl_lines: {transfer_total}"
+    )
+    assert expense_total == Decimal("23900.00"), (
+        f"расход посчитан не той суммой — платёж мог удвоить его: {expense_total}"
+    )
+
+
+def test_the_pnl_export_of_a_closed_month_has_three_parts(demo_db):
+    """Выгрузка закрытого месяца показывает зарплату, наличные и поставщика разом.
+
+    Зарплата видна по `kind = 'Accrual'`. Наличные и счета поставщиков оба идут
+    как `Expense`, и разделяются по статье: `Food cost` в демо получает
+    исключительно счёт поставщика (Metro Cash & Carry, T151) — у трат из кассы
+    такой статьи нет вовсе. Её появление в июльской выгрузке и есть проверка,
+    что счёт поставщика долетает до P&L, а не только до списка счетов на экране.
+    """
+    result = report(demo_db, """
+import io, json
+from datetime import date
+from django.utils import translation
+from core.models import Tenant
+from reports.export import pnl
+from reports.sheet import build_slice
+from web.cash import item_title
+t = Tenant.objects.get(code="demo")
+with translation.override("en"):
+    body, name = pnl(
+        build_slice(t.id, date(2026, 7, 1)), tenant_id=t.id, period=date(2026, 7, 1),
+        title="July 2026", item_title=item_title,
+    )
+import openpyxl
+sheet = openpyxl.load_workbook(io.BytesIO(body)).active
+rows = [r for r in sheet.iter_rows(values_only=True) if r and r[3]]
+print(json.dumps({"kinds": sorted({r[3] for r in rows}),
+                  "articles": sorted({r[0] for r in rows if r[3] == "Expense"})},
+                 ensure_ascii=False))
+""")
+    assert "Accrual" in result["kinds"], f"в выгрузке июля нет зарплаты: {result}"
+    assert "Food cost" in result["articles"], (
+        f"счёт поставщика не долетел до выгрузки P&L: {result['articles']}"
+    )
+    assert any(article != "Food cost" for article in result["articles"]), (
+        f"в выгрузке нет расходов из кассы кроме поставщика: {result['articles']}"
+    )

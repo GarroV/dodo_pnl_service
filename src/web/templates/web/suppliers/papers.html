@@ -1,0 +1,64 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Бумаги с точек: накладные и чеки, которые принёс управляющий (T174).
+
+Экран отвечает на два вопроса сразу, и они разные у двух читателей. Управляющий
+спрашивает «дошла ли моя бумага и разобрали ли её», бухгалтер — «сколько бумаг
+ждёт разбора». Поэтому число ждущих стоит сверху, а состояние — колонкой у каждой
+строки; оба приезжают готовыми из представления, считать их в шаблоне нельзя.
+
+**Сумма здесь — со слов управляющего, и так и подписана.** Это не расход: в P&L
+неразобранной бумаги нет вовсе, потому что нет факта. Подписать колонку просто
+«Сумма» значило бы поставить рядом с суммами P&L число, которого в P&L нет, —
+и однажды кто-то сложил бы их вместе.
+{% endcomment %}
+{% block title %}{% translate "Бумаги с точек" %}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К счетам" %}</a></p>
+<h1>{% translate "Бумаги с точек" %}</h1>
+<p class="sub">{% translate "Накладные и чеки, принесённые с точек. Пока бухгалтер их не разобрал, в P&L их нет." %}</p>
+
+<p class="actions">
+  <a class="btn primary" href="{{ add_url }}">{% translate "Скинуть накладную или чек" %}</a>
+  <a class="btn" href="{{ inbox_url }}">{% translate "Инбокс" %}</a>
+</p>
+
+{% if rows %}
+{% if waiting %}
+{% notice "alert" title=stated_text %}<span data-waiting="{{ waiting }}" data-stated="{{ stated_raw }}">{% blocktranslate count counter=waiting %}ждёт разбора {{ counter }} бумага{% plural %}ждут разбора {{ counter }} бумаг{% endblocktranslate %} — {% translate "сумма со слов, не расход" %}</span>{% endnotice %}
+{% else %}
+{% translate "Всё разобрано." as all_sorted %}
+{% notice "ok" title=all_sorted %}<span data-waiting="0">{% translate "Ни одна бумага не ждёт: у каждой есть строка в учёте." %}</span>{% endnotice %}
+{% endif %}
+
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Дата на бумаге" %}</th>
+      <th>{% translate "Что за бумага" %}</th>
+      <th>{% translate "Точка" %}</th>
+      <th>{% translate "Поставщик" %}</th>
+      <th>{% translate "Что это" %}</th>
+      <th class="num">{% translate "Сумма со слов" %}</th>
+      <th>{% translate "Состояние" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr data-paper="{{ row.id }}" data-waiting="{% if row.waiting %}1{% else %}0{% endif %}">
+      <td><a href="{{ row.url }}">{{ row.date }}</a></td>
+      <td>{{ row.kind }}</td>
+      <td>{{ row.unit }}</td>
+      <td>{{ row.counterparty }}</td>
+      <td>{{ row.note }}</td>
+      <td class="{{ row.amount_text|numclass }}">{{ row.amount_text }}</td>
+      <td>{% if row.waiting %}{% translate "ждёт разбора" %}{% else %}{% blocktranslate with month=row.line_period %}разобрана, период {{ month }}{% endblocktranslate %}{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% else %}
+{% translate "Бумаг ещё не приносили." as empty %}
+{% notice "empty" title=empty %}{% translate "Управляющий фотографирует накладную или чек и скидывает сюда — считать ему ничего не нужно." %}{% endnotice %}
+{% endif %}
+{% endblock %}

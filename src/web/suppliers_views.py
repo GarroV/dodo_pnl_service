@@ -174,6 +174,9 @@ def invoices(request):
         "add_url": reverse("invoice-new"),
         "payment_url": reverse("payment-new"),
         "inbox_url": reverse("inbox"),
+        # Бумаги с точек (T174) живут в этом же разделе: управляющий приходит
+        # сюда, чтобы скинуть накладную, а бухгалтер — чтобы её разобрать.
+        "papers_url": reverse("papers"),
     }, status=status)
 
 
@@ -881,10 +884,22 @@ def inbox(request):
 
     rows = inbox_rows(who)
     total = sum((row["amount"] for row in rows), Decimal("0"))
+    # Бумаги с точек — второй, отдельный список на том же экране (T174).
+    # Импорт здесь, а не в шапке модуля: `papers_views` берёт отсюда поля счёта
+    # и разбор ввода, и встречный импорт в шапке замкнул бы круг. Единственная
+    # причина именно такая — не «так короче».
+    from .papers_views import paper_rows
+
+    handed = paper_rows(who, only_waiting=True)
+    stated = sum((row["amount"] for row in handed), Decimal("0"))
     return render(request, "web/suppliers/inbox.html", {
         "rows": rows,
         "total_raw": f"{total}", "total_text": money(total),
         "counted": len(rows),
+        "papers": handed,
+        "papers_counted": len(handed),
+        "stated_raw": f"{stated}", "stated_text": money(stated),
+        "papers_url": reverse("papers"),
         "notice": _inbox_notice(request),
         "back_url": reverse("invoices"),
     })

@@ -25,6 +25,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -455,4 +456,44 @@ def test_role_titles_are_translated_in_every_language(language):
     assert not broken, (
         f"{language}: название роли осталось ключом, человек увидит "
         f"«role.<код>» вместо слова: {broken}"
+    )
+
+
+needs_msgfmt = pytest.mark.skipif(shutil.which("msgfmt") is None, reason="нет gettext")
+
+
+@needs_msgfmt
+@pytest.mark.parametrize("language", ("en", "sr_Latn", "ru"))
+def test_the_catalog_survives_a_strict_compile(language):
+    """`msgfmt --check` на каждом каталоге. Проверка не формальная — молчаливая.
+
+    `manage.py compilemessages` зовёт `msgfmt` **без** `--check`, а без него
+    msgfmt проглатывает запись, у которой форм множественного числа меньше, чем
+    объявлено в заголовке каталога. Сборка проходит, `.mo` собирается, страница
+    рендерится — и на числе, которому нужна недостающая форма, человек получает
+    **пустую строку** вместо перевода. Ни одна другая проверка этого не видит:
+    запись в каталоге есть, перевод непустой, число форм никто не считает.
+
+    Так и жило: у сербского в заголовке `nplurals=3`, а две записи блока
+    поставщиков (T151/T152) имели две формы — «Итого по N счетам» и «ждут
+    разбора N строк» пропадали на 5, 11, 21 и так далее. Найдено при разборе
+    T174 прогоном `msgfmt --check` руками, то есть случайно; этот тест — то,
+    что стоит на месте случайности.
+
+    Заодно `--check` ловит расхождение подстановок (`%(counter)s` в оригинале и
+    `%(count)s` в переводе) — второй способ показать человеку пустоту вместо
+    строки, только уже исключением.
+    """
+    catalog_path = LOCALE / language / "LC_MESSAGES" / "django.po"
+    done = subprocess.run(
+        ["msgfmt", "--check", "-o", os.devnull, str(catalog_path)],
+        capture_output=True, text=True,
+    )
+    # Предупреждения о полях заголовка (`Last-Translator` и прочие) нас не
+    # касаются: это каталоги, которые ведут руками, а не бюро переводов.
+    assert done.returncode == 0, (
+        f"{language}: каталог не проходит строгую сборку —\n"
+        + "\n".join(
+            line for line in done.stderr.splitlines() if "warning:" not in line
+        )
     )
