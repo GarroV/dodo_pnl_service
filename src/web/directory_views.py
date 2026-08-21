@@ -424,6 +424,19 @@ def _measure_title(preset, measure: str) -> str:
     return ((preset.get("work_measures") or {}).get(measure) or {}).get("title") or measure
 
 
+def _scheme_title(preset, code: str) -> str:
+    """Схема расчёта словом, а не ключом из правил.
+
+    Пока в истории версий стоял сам ключ, карточка отвечала `direct` — то есть
+    человеку, который выбрал схему из списка, читать её обратно приходилось на
+    языке YAML. Незнакомая правилам схема показывается ключом: подменять её
+    выдуманной подписью значило бы скрыть, что расчёт по ней не пойдёт.
+    """
+    if not code:
+        return code
+    return ((preset or {}).get("schemes") or {}).get(code, {}).get("title") or code
+
+
 def _effective_measure(preset, term) -> str:
     """Чем на самом деле меряется работа этого человека сейчас (T164).
 
@@ -460,8 +473,8 @@ def _with_current(rows: list, current: str | None) -> list:
 
 
 def _choice_field(name: str, label: str, rows: list, current: str | None, *,
-                  required: bool, empty_label: str = "", help: str = "",
-                  no_rules_help: str = "") -> dict:
+                  required: bool, empty_label: str = "", prompt: str = "",
+                  help: str = "", no_rules_help: str = "") -> dict:
     """Поле выбора из правил страны — или текстовое поле, если правил нет вовсе.
 
     Пустого списка выбора здесь быть не должно: `<select>` без вариантов
@@ -469,11 +482,19 @@ def _choice_field(name: str, label: str, rows: list, current: str | None, *,
     условиям найма отношения не имеющей (пресет не загружен). Тогда поле
     остаётся текстовым и **говорит**, почему списка нет: молча подменённый вид
     поля читается как поломка.
+
+    `prompt` — подпись пустого варианта у обязательного поля, пока ничего не
+    выбрано. Без него браузер отмечает первый вариант списка сам, и человек,
+    не тронувший поле, «выбирает» его не глядя: у новой группы это была бы
+    случайная схема расчёта. Найдено смоуком в браузере — в разметке такого не
+    видно, а тест на «поле есть» зеленел.
     """
     options = _with_current(rows, current)
     if not options:
         return {"kind": "text", "name": name, "label": label,
                 "value": current or "", "required": required, "help": no_rules_help}
+    if required and not current:
+        empty_label = prompt or empty_label
     return _select(name, label, options, current, required=required,
                    empty_label=empty_label, help=help)
 
@@ -948,7 +969,10 @@ def _employee_context(
                 # есть, без округления до копеек (`format.exact`, T116).
                 "rate": exact(term.base_rate),
                 "coefficient": exact(term.coefficient),
-                "scheme": term.scheme or term.group.scheme,
+                # Схема — словом из правил страны, а не ключом: `direct` в
+                # истории означал бы, что выбранное из списка читается обратно
+                # на языке YAML.
+                "scheme": _scheme_title(preset, term.scheme or term.group.scheme),
                 # Мера версии — только своя, а не унаследованная (T164).
                 # Подставить сюда меру группы значило бы показать в июньской
                 # строке сегодняшнее правило: мера группы версионируется
@@ -1057,6 +1081,13 @@ def _terms_fields(who, current: EmploymentTerm | None) -> list[dict]:
             "group", _("Группа"),
             _visible_groups(who).order_by("title").values_list("id", "title"),
             current.group_id if current else None, required=True,
+            # Пустой вариант, пока группа не выбрана, — и это не украшение.
+            # Обязательный список без него браузер отмечает первым вариантом
+            # сам: человек, заполнивший имя и ставку, завёл бы сотрудника в
+            # первую по алфавиту группу, не выбрав её. У группы своя схема
+            # расчёта и свой регистр учёта, то есть это другие деньги и другая
+            # видимость строки. Найдено смоуком в браузере.
+            empty_label="" if current else _("выберите группу"),
         ),
         _select(
             "unit", _("Точка"),
@@ -1128,7 +1159,10 @@ def groups(request):
             "cells": [
                 {"text": group.code},
                 {"text": group.title},
-                {"text": group.scheme},
+                # Схема словом, как и мера рядом: столбец, где стоит `direct`,
+                # заставляет читать правила страны глазами, чтобы понять список
+                # групп (T164).
+                {"text": _scheme_title(preset, group.scheme)},
                 {"text": ledger_title(group.ledger)},
                 # Способ работы стоит в списке, а не только в карточке (D032):
                 # у одного партнёра рядом живут почасовая кухня и сдельные
@@ -1242,6 +1276,7 @@ def group(request, group_id=None):
             _choice_field(
                 "scheme", _("Схема расчёта"), rules.scheme_choices(preset or {}),
                 item.scheme if item else None, required=True,
+                prompt=_("выберите схему"),
                 help=_("По ней движок считает людей группы. Список — из правил "
                        "страны: отдельному человеку схема переопределяется в его "
                        "условиях найма, с датой."),

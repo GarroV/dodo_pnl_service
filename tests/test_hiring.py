@@ -350,6 +350,40 @@ def test_the_scheme_is_chosen_from_the_country_rules_not_typed(client, web_env, 
     client.post("/logout/")
 
 
+def selected_option(html: str, name: str) -> str:
+    """Значение варианта, отмеченного в списке при загрузке страницы."""
+    block = re.search(rf'<select[^>]*name="{name}"[^>]*>(.*?)</select>', html, re.S)
+    assert block, f"на странице нет списка выбора «{name}»"
+    chosen = re.findall(r'<option value="([^"]*)"[^>]*\sselected', block.group(1))
+    return chosen[0] if chosen else ""
+
+
+def test_the_form_does_not_choose_the_group_for_the_human(client, web_env):
+    """Обязательный список не выбирает сам: пока не выбрали — не выбрано ничего.
+
+    Найдено смоуком в браузере, и в разметке этого не видно вовсе: `<select>`
+    без пустого варианта браузер отмечает первым пунктом сам. На форме
+    заведения это означало человека, попавшего в первую по алфавиту группу —
+    «Временные работы», — не выбранную никем. У группы своя схема расчёта и свой
+    регистр учёта, то есть это другие деньги и другая видимость строки.
+
+    Проверяются оба обязательных списка, где выбирать не из чего заранее: группа
+    у нового человека и схема расчёта у новой группы.
+    """
+    login_as(client, "admin")
+    people = body(client.get(NEW))
+    assert selected_option(people, "group") == "", (
+        "форма заведения выбрала группу за человека"
+    )
+    assert "выберите группу" in people, "пустой вариант не подписан словами"
+
+    group = body(client.get("/directory/groups/new/"))
+    assert selected_option(group, "scheme") == "", (
+        "форма новой группы выбрала схему расчёта за человека"
+    )
+    client.post("/logout/")
+
+
 def test_a_scheme_that_is_not_in_the_rules_is_refused(
     client, web_env, sql, only_seeded_people,
 ):
@@ -415,6 +449,37 @@ def test_a_stored_scheme_unknown_to_the_rules_is_kept_and_marked(
         "select scheme from employment_terms where employee_id = %s "
         "order by valid_from desc limit 1", (person,),
     ).fetchone()[0] == "привет_из_прошлого"
+    client.post("/logout/")
+
+
+def test_the_card_reads_the_scheme_back_in_words_not_in_yaml(
+    client, web_env, sql, only_seeded_people,
+):
+    """Выбрал из списка — прочитал словом. Ключ из YAML на экран не выходит.
+
+    «Ни разу не открыв YAML» — это про оба направления. Пока история версий
+    показывала сам ключ, человек выбирал «Прямая выплата без пересчета», а
+    читал обратно `direct`: чтобы понять карточку, приходилось идти в правила
+    страны глазами. Найдено смоуком в браузере.
+    """
+    login_as(client, "admin")
+    assert client.post(NEW, hire_form()).status_code == 302
+    person = created(sql)[0]
+
+    html = body(client.get(f"{LIST}{person}/"))
+    table = re.search(r"<table>.*?</table>", html, re.S)
+    assert table, "на карточке нет истории условий найма"
+    cells = [re.sub(r"<[^>]+>", "", cell).strip()
+             for cell in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", table.group(0), re.S)]
+    for key in schemes_in_rules(sql):
+        assert key not in cells, f"в истории стоит ключ схемы из правил: {key}"
+    # И подпись действующей схемы там есть — иначе «ключа нет» доказывало бы,
+    # что столбец просто пуст.
+    titles = set(sql.execute(
+        "select array(select value -> 'title' ->> 'ru' from rule_presets, "
+        "jsonb_each(body -> 'schemes') where country_code = 'RS')"
+    ).fetchone()[0])
+    assert titles & set(cells), f"схема не названа словом: {cells}"
     client.post("/logout/")
 
 
