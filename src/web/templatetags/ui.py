@@ -125,6 +125,42 @@ def may(who, code: str) -> bool:
     return permissions.has(who, code)
 
 
+# Экраны, живущие под своим корнем адреса, но принадлежащие чужому разделу
+# шапки. След расчёта, расчётный лист и табель открываются из ведомости и
+# остаются «Периодами»; накладная и платёж — «Счетами». Карта короткая
+# намеренно: она про адреса, а не про права, и разрастание здесь означало бы,
+# что разделы шапки разъехались с устройством адресов.
+NAV_BELONGS = {
+    "payslips": "periods",
+    "timesheets": "periods",
+    "payments": "invoices",
+    "inbox": "invoices",
+}
+
+
+def _nav_root(path: str) -> str:
+    """Корень адреса, приведённый к разделу шапки."""
+    parts = [part for part in (path or "").split("/") if part]
+    root = parts[0] if parts else ""
+    return NAV_BELONGS.get(root, root)
+
+
+@register.filter("in_section")
+def in_section(request_path: str, section_url: str) -> bool:
+    """Человек сейчас в этом разделе шапки: `{% if request.path|in_section:url %}`.
+
+    Сравниваются корни адресов, а не адреса целиком. Иначе выделение пропадало
+    бы на каждом вложенном экране — на следе расчёта, в табеле, на карточке
+    счёта, — а пункт, потерявший выделение, читается как «вы ушли из раздела»,
+    хотя человек внутри него.
+
+    Фильтром, а не полем контекста: раздел — это оформление шапки, и
+    дописывать его в контекст, который собирает блок доступа, значило бы
+    править чужой контракт ради своей разметки.
+    """
+    return bool(section_url) and _nav_root(request_path) == _nav_root(section_url)
+
+
 @register.simple_tag
 def ledger(title):
     """Метка регистра учёта: `{% ledger row.ledger %}`.

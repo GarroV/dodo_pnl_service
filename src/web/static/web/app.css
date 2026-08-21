@@ -81,28 +81,126 @@ p.back { margin: calc(-1 * var(--space-3)) 0 var(--space-8); font-size: var(--fs
 p.back a { color: var(--ink-2); }
 p.back a:hover { color: var(--accent); }
 
-/* ── Шапка ───────────────────────────────────────────────────── */
+/* ── Шапка приложения ────────────────────────────────────────── */
 
-header {
-  display: flex; align-items: baseline; gap: var(--space-9); flex-wrap: wrap;
-  padding: var(--space-6) var(--space-10);
+/* Раздел 08 эталона: имя продукта, разделы, тенант, роль. Высота 50 —
+   единственная «магическая» цифра шапки, и она из эталона: ряд в 50 пикселей
+   держит две строки служебного текста (кто и что видит) и при этом не съедает
+   первую строку данных. */
+.appbar {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-9);
+  padding: 0 var(--gutter);
   background: var(--surface);
   border-bottom: 1px solid var(--line-control);
 }
-.brand { font-weight: var(--w-semibold); letter-spacing: .02em; text-decoration: none; color: var(--ink); }
-nav a { color: var(--accent); text-decoration: none; margin-right: var(--space-7); }
-nav a:hover, .brand:hover { text-decoration: underline; }
-/* Шапка обязана держаться в ОДНУ строку. Служебное (кем вошли, что видно, чем
-   переключить язык) стоит выше содержания страницы, и когда его столько, что
-   оно переносится на вторую строку, оно начинает спорить с данными, ради
-   которых человек пришёл. Отсюда мелкий кегль, короткие подписи языков и метка
-   dev-входа точкой, а не рамкой. */
+
+/* Имя продукта: «Dodo» начертанием, «P&L» акцентом. Ссылка ведёт на первый
+   экран месяца — по имени продукта уходят «в начало», это привычка, а не
+   украшение. */
+.brand {
+  display: flex; align-items: baseline; gap: var(--space-3);
+  text-decoration: none; color: var(--ink); flex: 0 0 auto;
+}
+.brand:hover { text-decoration: none; }
+.brand__name { font-weight: var(--w-bold); font-size: var(--fs-lead); letter-spacing: -.01em; }
+.brand__mark { font-weight: var(--w-medium); font-size: var(--fs-lead); color: var(--accent); }
+
+.appnav { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; }
+/* Раздел, в котором человек сейчас, — не ссылка, а `span[aria-current]`:
+   ссылка на текущую страницу обманывает и мышь, и клавиатуру. Тот же
+   инвариант, что у переключателя разреза ведомости, и по той же причине. */
+.appnav__current {
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--r-control);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: var(--w-semibold);
+  white-space: nowrap;
+}
+.appnav__link {
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--r-control);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.appnav__link:hover { background: var(--surface-3); text-decoration: none; color: var(--ink); }
+
+.appbar__spacer { flex: 1 1 auto; }
+
+/* Правый край шапки. Шапка обязана держаться в ОДНУ строку: служебное (кем
+   вошли, что видно, чем переключить язык) стоит выше содержания страницы, и
+   когда его столько, что оно переносится на вторую строку, оно начинает
+   спорить с данными, ради которых человек пришёл. Отсюда мелкий кегль,
+   короткие подписи языков и метка dev-входа точкой, а не рамкой. */
 .who {
-  margin-left: auto; display: flex; align-items: baseline; gap: var(--space-5);
+  display: flex; align-items: center; gap: var(--space-5);
   color: var(--ink-2); font-size: var(--fs-meta);
+  flex: 0 1 auto; min-width: 0;
 }
 .who .cut { white-space: nowrap; }
-.who strong { color: var(--ink); font-weight: var(--w-semibold); }
+
+/* Кто смотрит и на что. Сильная строка — имя человека, слабая — партнёр,
+   регистры и точка: сначала «кто я», потом «что мне видно».
+
+   В эталоне в сильной строке стоит название юрлица, а имени человека нет
+   вовсе — его заменяет кружок с инициалами. Здесь наоборот, и это не вкус:
+   один и тот же экран показывает разным людям разные числа, и человек должен
+   видеть, чьими глазами смотрит, не наводя мышь ни на что. Кружок при
+   показанном имени становится вторым способом сказать то же самое — то есть
+   шумом в строке, которой и без него тесно. */
+.viewer { text-align: right; line-height: 1.25; min-width: 0; }
+.viewer__name {
+  font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.viewer__meta { font-size: var(--fs-meta); color: var(--ink-3); }
+.viewer__meta span:not(:first-child)::before { content: " · "; color: var(--line-strong); }
+
+/* Роль — одна. В эталоне рядом стоят все выданные наборы прав, но владелец
+   решил иначе: у человека один уровень, а понадобилось больше — его поднимают
+   на ступень выше со сроком и причиной. Поэтому здесь одна плашка и нет
+   пунктирной «временной»: расхождение с эталоном разбирается отдельно и не
+   решается оформлением. */
+.role {
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--r-control);
+  font-size: var(--fs-meta);
+  font-weight: var(--w-semibold);
+  white-space: nowrap;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+}
+
+/* Переключатель языка — сегментированный переключатель дизайн-системы.
+   Кнопки, а не ссылки: смена языка меняет состояние (cookie), и делать это
+   переходом по ссылке нельзя — такую ссылку пройдёт любой предзагрузчик.
+   Выбранный язык — `span`, а не кнопка: см. `.appnav__current`. */
+.seg {
+  display: inline-flex; margin: 0;
+  background: var(--seg-track); border-radius: var(--r-control);
+  padding: var(--space-1); gap: var(--space-1);
+}
+.seg__item, .seg__current {
+  display: inline-flex; align-items: center;
+  height: 22px; padding: 0 var(--space-4);
+  border: 0; border-radius: var(--r-control);
+  font: var(--w-regular) var(--fs-micro) / 1 var(--font-ui);
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.seg__item { background: transparent; color: var(--ink-2); cursor: pointer; }
+.seg__item:hover { color: var(--ink); background: transparent; border-color: transparent; }
+.seg__current {
+  background: var(--surface); color: var(--ink);
+  font-weight: var(--w-semibold); box-shadow: var(--sh-xs);
+}
+
+/* Действия учётной записи набраны мельче разделов: уходят по ним редко. */
+.who .btn, .who button { height: var(--control-h-sm); font-size: var(--fs-meta); }
 
 /* ── Плашки состояния и метки ────────────────────────────────── */
 
@@ -548,3 +646,70 @@ ol.steps li.done { background: var(--ok-soft); }
 ol.steps li.done .name::after { content: " ✓"; color: var(--ok); }
 ol.steps li.now { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
 ol.steps li.now .name { color: var(--accent); }
+
+/* ── Узкий экран ─────────────────────────────────────────────── */
+
+/* Продукт десктоп-первый: рабочие ширины бухгалтера 1280–1920. Ниже 1024
+   начинается планшет, и здесь нужна одна вещь — чтобы страница не поехала
+   вбок целиком. В эталоне за это отвечает `min-width` у body: страница держит
+   1280 и прокручивается вся. Здесь так нельзя: продукт обязан работать на 768,
+   а прокрутка всей страницы вместе с шапкой и есть «рассыпалось».
+
+   Поэтому шапка переносится на две строки: разделы сверху, «кто смотрит» под
+   ними. Разрыв делает распорка — на широком экране она растягивает пустоту
+   между навигацией и правым краем, на узком занимает всю строку и переносит
+   правый край вниз. Одно правило вместо перестановки элементов. */
+@media (max-width: 1023px) {
+  .appbar {
+    height: auto; flex-wrap: wrap;
+    padding: var(--space-4) var(--space-6);
+    gap: var(--space-4) var(--space-6);
+  }
+  .appbar__spacer { flex: 1 1 100%; }
+  .who { flex-wrap: wrap; row-gap: var(--space-3); }
+  .viewer { text-align: left; }
+
+  main { margin: var(--space-8) auto; padding: 0 var(--space-7); }
+  form.card.wide { grid-template-columns: 1fr; max-width: 560px; }
+}
+
+/* Сценарии управляющего точки: телефон, 375, заходит на две минуты — отметить
+   часы, внести расход, сфотографировать накладную. Всё, что он нажимает, — не
+   меньше 44 пикселей: это не пожелание доступности, а физика пальца.
+
+   Растягивать на всю ширину нужно кнопки форм, а не любые: кнопка в шапке или
+   в строке таблицы, растянутая на экран, ломает саму строку. */
+@media (max-width: 767px) {
+  main { margin: var(--space-6) auto; padding: 0 var(--space-6); }
+  h1 { font-size: var(--fs-title); line-height: var(--lh-title); }
+
+  form.card { max-width: none; padding: var(--space-6); }
+  form.card input, form.card select, form.card .btn, form.card button {
+    min-height: var(--tap-min); font-size: var(--fs-lead);
+  }
+  form.card .actions .btn, form.card .actions button { width: 100%; }
+  form.card .actions { display: flex; flex-direction: column; gap: var(--space-4); }
+
+  /* Фильтры столбиком: пять коротких полей в ряд на 375 превращаются в пять
+     обрезанных. */
+  form.search.row { flex-direction: column; align-items: stretch; }
+  form.search.row input, form.search.row select { min-height: var(--tap-min); }
+
+  /* Полоса шагов месяца — столбиком: три шага по 220 пикселей в ряд на 375 не
+     встают, а перенос по одному оставляет их читаемыми. */
+  ol.steps li { flex: 1 1 100%; border-right: 0; border-bottom: 1px solid var(--line-2); }
+  ol.steps li:last-child { border-bottom: 0; }
+}
+
+/* ── Печать ──────────────────────────────────────────────────── */
+
+/* Ведомость иногда уносят на бумаге. Служебное на бумаге не нужно: шапка,
+   кнопки, переключатели — это способы что-то сделать, а с листа ничего не
+   делают. Прокрутку контейнера тоже снимаем, иначе на печать уйдёт видимая
+   часть таблицы, а остальное молча пропадёт. */
+@media print {
+  .appbar, nav.cuts, nav.exports, .actions, button, .btn { display: none; }
+  .scroll { overflow: visible; border: 0; }
+  table.sheet th:last-child, table.sheet td:last-child { position: static; }
+  body { background: var(--surface); }
+}
