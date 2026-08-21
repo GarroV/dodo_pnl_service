@@ -36,6 +36,7 @@ __all__ = [
     "EXPENSES",
     "INVOICES",
     "MONTHS",
+    "PAPERS",
     "PAYMENTS",
     "PEOPLE",
     "UNITS",
@@ -43,6 +44,7 @@ __all__ = [
     "ExpenseItem",
     "Invoice",
     "Month",
+    "Paper",
     "Payment",
     "Person",
     "counterparties",
@@ -51,6 +53,7 @@ __all__ = [
     "insured_types",
     "invoices",
     "months",
+    "papers",
     "payments",
     "timesheet_for",
 ]
@@ -631,3 +634,64 @@ PAYMENTS = [
 
 def payments() -> list[Payment]:
     return list(PAYMENTS)
+
+
+@dataclass(frozen=True)
+class Paper:
+    """Бумага, принесённая управляющим с точки (T174, D047).
+
+    Показывает состояние, которого в демо до этой задачи не было вовсе:
+    **необработанное вложение**. Управляющий сфотографировал накладную и скинул
+    её — поставщика, статью и период назначает потом бухгалтер, а пока не
+    назначил, суммы в P&L нет. Не «не подтверждено» флагом, а нет: у бумаги ноль
+    строк учёта, и отчёту нечего показать физически.
+
+    `item is None` — бумага ждёт разбора: строка учёта не пишется вовсе, и
+    бумага стоит в инбоксе. Заполненные `item` и `period` — бумага разобрана, и
+    её сумма в P&L уже есть. В наборе есть и то, и другое: одного состояния
+    хватило бы, чтобы показать экран, но не хватило бы, чтобы показать разницу.
+
+    `file` — имя готового файла в `src/demo/fixtures`. Файл лежит в
+    репозитории, а не рисуется в момент наполнения: демо обещает, что с бумаги
+    читаются поставщик, дата и сумма, а нарисовать читаемый текст наполнению
+    нечем (см. `tools/make_demo_scans.py`).
+    """
+
+    key: str
+    kind: str                  # invoice — накладная, receipt — чек
+    unit: str
+    counterparty: str | None
+    stated: Decimal | None
+    doc_date: date
+    file: str
+    note: str
+    item: str | None = None
+    period: date | None = None
+
+
+# Обе бумаги — с NS1, и это не случайность: в демо точку ведёт именно
+# управляющий NS1, и посетитель, переключившийся на его роль, обязан увидеть
+# свои бумаги, а не пустой список.
+PAPERS = [
+    # №1 — то, ради чего задача: накладная принесена, но не разобрана. Стоит в
+    # инбоксе, суммы 21 550.00 в P&L нет. Файл — снимок, поэтому карточка
+    # показывает саму бумагу картинкой.
+    Paper(
+        "demo-paper-1", "invoice", "NS1", "Metro Cash & Carry", D("21550.00"),
+        doc_date=date(2026, 8, 14), file="delivery-note.png",
+        note="Delivery note from the warehouse, brought in by the shift manager",
+    ),
+    # №2 — та же бумага после разбора: у неё появилась статья и период, и сумма
+    # 8 250.00 теперь в P&L. Файл — PDF, то есть вторая ветка карточки: его
+    # отдают на сохранение, а не рисуют в странице.
+    Paper(
+        "demo-paper-2", "receipt", "NS1", "Metro Cash & Carry", D("8250.00"),
+        doc_date=date(2026, 8, 9), file="cash-receipt.pdf",
+        note="Cash receipt, bought on the spot",
+        item="food_supplies", period=date(2026, 8, 1),
+    ),
+]
+
+
+def papers() -> list[Paper]:
+    return list(PAPERS)

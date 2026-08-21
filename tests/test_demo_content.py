@@ -560,6 +560,78 @@ def test_the_classification_inbox_is_not_empty(conn):
     )
 
 
+def test_the_demo_has_a_paper_brought_from_a_unit_and_waiting(conn):
+    """Бумага с точки (T174) в демо есть, и она стоит с файлом и без строк.
+
+    Три свойства сразу, и каждое видно только вместе с остальными: у бумаги есть
+    отметка «принесли», есть точка (иначе её не отсечь от чужой) и есть файл —
+    без него разбирать нечего, и в инбоксе она выглядела бы работой, которую
+    кто-то уже сделал.
+    """
+    rows = conn.execute(
+        """select d.external_id, u.code, f.media_type, f.byte_size, d.total_amount
+             from source_documents d
+             join units u on u.id = d.unit_id
+             join document_files f on f.document_id = d.id
+            where d.handed_over_at is not null
+            order by d.external_id"""
+    ).fetchall()
+
+    assert len(rows) == 2, f"бумаг с точек в демо не две, а {len(rows)}: {rows}"
+    waiting = rows[0]
+    assert waiting[0] == "paper:demo-paper-1", waiting
+    assert waiting[1] == "NS1", "бумагу приносит управляющий NS1, а точка другая"
+    assert waiting[2] == "image/png", f"снимок не картинка: {waiting[2]}"
+    assert waiting[3] > 1000, f"файл подозрительно мал: {waiting[3]} байт"
+    assert waiting[4] == Decimal("21550.00"), waiting
+
+
+def test_the_waiting_paper_is_not_in_the_pnl_at_all(conn):
+    """Сумма непринятой бумаги в P&L не просто скрыта — её там нет.
+
+    Это главное свойство состояния, и проверяется оно не флагом, а отсутствием
+    строк: `pnl_lines` собирается из фактов, а у неразобранной бумаги фактов
+    ноль. Появись у неё строка — демо показывало бы расход, которого бухгалтер
+    не признавал.
+    """
+    facts = conn.execute(
+        """select count(*) from facts
+            where document_id = (
+                select id from source_documents where external_id = 'paper:demo-paper-1'
+            ) and superseded_at is null"""
+    ).fetchone()[0]
+    assert facts == 0, f"у ждущей разбора бумаги появилось строк: {facts}"
+
+    in_pnl = conn.execute(
+        """select coalesce(sum(amount), 0) from pnl_lines
+            where document_id = (
+                select id from source_documents where external_id = 'paper:demo-paper-1'
+            )"""
+    ).fetchone()[0]
+    assert in_pnl == 0, f"сумма ждущей бумаги попала в P&L: {in_pnl}"
+
+
+def test_the_sorted_out_paper_is_in_the_pnl_and_keeps_its_kind(conn):
+    """Вторая бумага разобрана: её сумма в P&L есть, а чек остался чеком.
+
+    Вид документа при разборе не переписывается намеренно (`upsert_document` не
+    перечисляет `kind` в обновляемых колонках): чек разбирают формой счёта, но
+    он от этого счётом не становится. Без этой пары в демо не видно разницы
+    между «принесли» и «признали» — а она и есть весь смысл задачи.
+    """
+    row = conn.execute(
+        """select d.kind, coalesce(sum(l.amount), 0)
+             from source_documents d
+             left join pnl_lines l on l.document_id = d.id and l.kind <> 'transfer'
+            where d.external_id = 'paper:demo-paper-2'
+            group by d.kind"""
+    ).fetchone()
+    assert row is not None, "разобранной бумаги в демо нет вовсе"
+    kind, total = row
+    assert kind == "receipt", f"чек перестал быть чеком после разбора: {kind}"
+    assert total == Decimal("8250.00"), f"сумма разобранной бумаги в P&L: {total}"
+
+
 def test_a_supplier_payment_does_not_double_the_expense(conn):
     """Платёж не удваивает расход: перевод и начисление считаются раздельно.
 

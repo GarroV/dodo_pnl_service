@@ -16,10 +16,12 @@
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import uuid
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
 from django.conf import settings
 from django.db import connection, transaction
@@ -35,6 +37,10 @@ from payrun.lifecycle import approve
 from . import dataset
 from .dataset import MONTHS, PEOPLE, UNITS, Month, Person
 from .guard import require_demo_data
+
+# Готовые снимки бумаг с точек (T174). Лежат файлами в репозитории, а не
+# рисуются наполнением: пересобираются `tools/make_demo_scans.py`.
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 __all__ = ["ROLES", "TENANT_CODE", "det_id", "seed_demo"]
 
@@ -154,6 +160,8 @@ def seed_demo(*, log=None) -> dict:
         say(f"контрагентов: {len(counterparties)}")
         invoiced, paid = _supplier_documents(tenant, counterparties)
         say(f"счетов поставщикам: {invoiced}, платежей: {paid}")
+        handed, waiting = _papers(tenant, counterparties)
+        say(f"бумаг с точек: {handed}, из них ждут разбора: {waiting}")
 
     # Расчёт каждого месяца — своей транзакцией, а не общей: `calculate_period`
     # открывает свою и утверждает результат отдельным переходом, у которого
@@ -685,6 +693,117 @@ def _supplier_documents(tenant, counterparties: dict) -> tuple[int, int]:
             )
 
     return len(dataset.INVOICES), len(dataset.PAYMENTS)
+
+
+def _papers(tenant, counterparties: dict) -> tuple[int, int]:
+    """Бумаги, принесённые с точек: шапка, файл и — если разобрана — строка.
+
+    Тем же путём, каким пишет продукт (`web.papers.hand_over`, а разбор —
+    `web.suppliers.record_invoice`): своих `insert` в документы и факты здесь не
+    заводится, потому что идемпотентность, версионирование и защита закрытого
+    месяца живут в функциях базы, а не в наполнении.
+
+    Автор у обеих бумаг — **управляющий**, и это не украшение. Роль управляющего
+    в сборе первички ровно эта: донести бумагу (D047). Поставь автором
+    бухгалтера, и демо показывало бы, что бумаги приносит сам разбирающий, то
+    есть смысла в состоянии «ждёт разбора» не было бы видно.
+
+    Возвращает «сколько принесли» и «сколько ждёт разбора» — второе число демо
+    показывает в инбоксе, и наполнение обязано знать его само, а не выяснять
+    повторной выборкой.
+    """
+    # Тип файла определяется тем же кодом, что и в продукте: второй ответ на
+    # вопрос «что это за файл» однажды разошёлся бы с первым, и демо положило бы
+    # в базу тип, которого продукт не принимает.
+    from web.papers import PAPER_PREFIX, media_type_of
+
+    expense_items = {item.code: item for item in dataset.EXPENSE_ITEMS}
+    author = det_id("user", "manager")
+    waiting = 0
+
+    for paper in dataset.papers():
+        content = (FIXTURES / paper.file).read_bytes()
+        media_type = media_type_of(content)
+        if not media_type:
+            # Молча положить в демо файл, которого продукт не примет, нельзя:
+            # карточка показала бы бумагу, а форма такую же отвергла бы — и
+            # разошлись бы они только на глазах у смотрящего.
+            raise RuntimeError(
+                f"{paper.file}: продукт такой файл не принимает, "
+                f"пересоберите tools/make_demo_scans.py"
+            )
+
+        counterparty = counterparties[paper.counterparty]
+        doc_payload = {
+            "tenant_id": str(tenant.id),
+            "counterparty_id": str(counterparty.id),
+            "kind": paper.kind,
+            "source": "manual",
+            "external_id": PAPER_PREFIX + paper.key,
+            "doc_date": paper.doc_date.isoformat(),
+            "unit_id": str(det_id("unit", paper.unit)),
+            "total_amount": str(paper.stated) if paper.stated is not None else None,
+            # Отметка «бумагу принесли»: по ней бумага стоит в инбоксе и по ней
+            # же отличается от документа, у которого строки не записались.
+            "handed_over_at": now().isoformat(),
+            "payload": {"note": paper.note, "file_name": paper.file},
+            "created_by": str(author),
+        }
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select upsert_document(%s::jsonb)",
+                [json.dumps({k: v for k, v in doc_payload.items() if v is not None})],
+            )
+            document_id = cursor.fetchone()[0]
+
+        models.DocumentFile.objects.update_or_create(
+            document_id=document_id,
+            defaults={
+                "tenant_id": tenant.id,
+                "media_type": media_type,
+                "byte_size": len(content),
+                "content": content,
+                "sha256": hashlib.sha256(content).hexdigest(),
+                "created_by": author,
+            },
+        )
+
+        if paper.item is None:
+            # Ни одной строки учёта — и это главное свойство состояния: суммы
+            # 21 550.00 в P&L нет не потому, что отчёт её отфильтровал, а потому
+            # что фильтровать нечего.
+            waiting += 1
+            continue
+
+        expense_item = expense_items[paper.item]
+        line_payload = {
+            "tenant_id": str(tenant.id),
+            "period": paper.period.isoformat(),
+            "doc_date": paper.doc_date.isoformat(),
+            "unit_id": str(det_id("unit", paper.unit)),
+            "pnl_item_id": str(det_id("pnl_item", expense_item.pnl_code)),
+            "expense_item_id": str(det_id("expense_item", expense_item.code)),
+            "counterparty_id": str(counterparty.id),
+            "ledger": "official",
+            "amount": str(paper.stated),
+            "title": expense_item.title,
+            "source": "manual",
+            "document_id": str(document_id),
+            "line_no": 1,
+            # Ключ строки — приставка счёта плюс внешний ключ бумаги ЦЕЛИКОМ,
+            # ровно как его собирает разбор с карточки
+            # (`papers.document_key` → `suppliers.record_invoice`).
+            "dedup_key": f"manual:invoice:{PAPER_PREFIX}{paper.key}",
+            "allocation": "direct",
+            "vat_rate": "10",
+            "created_by": str(author),
+        }
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select fact_id from upsert_fact(%s::jsonb)", [json.dumps(line_payload)]
+            )
+
+    return len(dataset.PAPERS), waiting
 
 
 def _approve(tenant, month: Month) -> None:

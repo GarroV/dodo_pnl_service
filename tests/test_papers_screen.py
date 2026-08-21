@@ -81,9 +81,9 @@ def papers_removed(sql, tenant):  # noqa: F811
     )
 
 
-def hand_over(client, units, *, kind="invoice", unit="NS1", amount="18600.00",
-              note="Delivery note from the warehouse", entry_key=None,
-              file=None, **extra):
+def hand_over(client, units, *, kind="invoice", unit="NS1",  # noqa: F811
+              amount="18600.00", note="Delivery note from the warehouse",
+              entry_key=None, file=None, **extra):
     """Скинуть бумагу так, как это делает человек: форма и файл одним POST."""
     form = {
         "entry_key": entry_key or key(),
@@ -226,8 +226,8 @@ def test_a_handed_paper_stands_in_the_classification_inbox(
 # --- разбор -------------------------------------------------------------------
 
 
-def review(client, *, counterparty, item, units, unit="NS1", amount="18600.00",
-           document_id, **extra):
+def review(client, *, counterparty, item, units,  # noqa: F811
+           unit="NS1", amount="18600.00", document_id, **extra):
     """Разобрать бумагу с её же карточки: поля те же, что у счёта."""
     return client.post(f"/papers/{document_id}/", {
         "entry_key": key(),
