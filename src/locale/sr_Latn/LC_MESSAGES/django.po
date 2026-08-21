@@ -4963,3 +4963,35 @@ msgstr "Regionalni menadžer"
 #: src/web/i18n.py
 msgid "role.shift_manager"
 msgstr "Menadžer smene"
+
+#: src/web/directory_views.py
+msgid ""
+"Вас ещё не завели ни к одному партнёру, поэтому сотрудников у вас нет. "
+"Попросите администратора сети добавить вас."
+msgstr "Još niste dodati nijednom partneru, pa nemate zaposlene. Zamolite administratora mreže da vas doda."
+
+#: src/web/directory_views.py
+msgid ""
+"Люди вашей точки: в какой группе человек считается и по какой ставке. Только "
+"чтение — карточки ведёт администратор сети."
+msgstr "Ljudi vašeg objekta: u kojoj grupi se osoba obračunava i po kojoj stopi. Samo čitanje — kartice vodi administrator mreže."
+
+#: src/web/directory_views.py
+msgid "Поиск по имени"
+msgstr "Pretraga po imenu"
+
+#: src/web/directory_views.py
+msgid ""
+"Здесь появятся люди вашей точки — вместе с их условиями найма. Пока их нет, "
+"спросите администратора сети."
+msgstr "Ovde će se pojaviti ljudi vašeg objekta — zajedno sa uslovima zapošljavanja. Dok ih nema, pitajte administratora mreže."
+
+#: src/web/directory_views.py
+msgid "Попробуйте другое написание имени или фамилии."
+msgstr "Probajte drugi ispis imena ili prezimena."
+
+#: src/web/templates/web/directory/employee.html
+msgid ""
+"Без них расчёт не знает ни группы, ни точки, и человек не попадёт в "
+"ведомость. Заводит их администратор сети."
+msgstr "Bez njih obračun ne poznaje ni grupu ni objekat, i osoba neće ući u obračunsku listu. Zavodi ih administrator mreže."

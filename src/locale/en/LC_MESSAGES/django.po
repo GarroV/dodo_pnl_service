@@ -5029,3 +5029,35 @@ msgstr "Regional Manager"
 #: src/web/i18n.py
 msgid "role.shift_manager"
 msgstr "Shift Manager"
+
+#: src/web/directory_views.py
+msgid ""
+"Вас ещё не завели ни к одному партнёру, поэтому сотрудников у вас нет. "
+"Попросите администратора сети добавить вас."
+msgstr "You have not been added to any partner yet, so you have no employees. Ask the network administrator to add you."
+
+#: src/web/directory_views.py
+msgid ""
+"Люди вашей точки: в какой группе человек считается и по какой ставке. Только "
+"чтение — карточки ведёт администратор сети."
+msgstr "The people of your unit: which group a person is calculated in and at which rate. Read-only — the cards are kept by the network administrator."
+
+#: src/web/directory_views.py
+msgid "Поиск по имени"
+msgstr "Search by name"
+
+#: src/web/directory_views.py
+msgid ""
+"Здесь появятся люди вашей точки — вместе с их условиями найма. Пока их нет, "
+"спросите администратора сети."
+msgstr "The people of your unit will appear here together with their employment terms. While there are none, ask the network administrator."
+
+#: src/web/directory_views.py
+msgid "Попробуйте другое написание имени или фамилии."
+msgstr "Try another spelling of the first or last name."
+
+#: src/web/templates/web/directory/employee.html
+msgid ""
+"Без них расчёт не знает ни группы, ни точки, и человек не попадёт в "
+"ведомость. Заводит их администратор сети."
+msgstr "Without them the calculation knows neither the group nor the unit, and the person will not make it into the payroll sheet. The network administrator creates them."

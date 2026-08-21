@@ -1,0 +1,26 @@
+{
+  "Вас ещё не завели ни к одному партнёру, поэтому сотрудников у вас нет. Попросите администратора сети добавить вас.": {
+    "en": "You have not been added to any partner yet, so you have no employees. Ask the network administrator to add you.",
+    "sr": "Još niste dodati nijednom partneru, pa nemate zaposlene. Zamolite administratora mreže da vas doda."
+  },
+  "Люди вашей точки: в какой группе человек считается и по какой ставке. Только чтение — карточки ведёт администратор сети.": {
+    "en": "The people of your unit: which group a person is calculated in and at which rate. Read-only — the cards are kept by the network administrator.",
+    "sr": "Ljudi vašeg objekta: u kojoj grupi se osoba obračunava i po kojoj stopi. Samo čitanje — kartice vodi administrator mreže."
+  },
+  "Поиск по имени": {
+    "en": "Search by name",
+    "sr": "Pretraga po imenu"
+  },
+  "Здесь появятся люди вашей точки — вместе с их условиями найма. Пока их нет, спросите администратора сети.": {
+    "en": "The people of your unit will appear here together with their employment terms. While there are none, ask the network administrator.",
+    "sr": "Ovde će se pojaviti ljudi vašeg objekta — zajedno sa uslovima zapošljavanja. Dok ih nema, pitajte administratora mreže."
+  },
+  "Попробуйте другое написание имени или фамилии.": {
+    "en": "Try another spelling of the first or last name.",
+    "sr": "Probajte drugi ispis imena ili prezimena."
+  },
+  "Без них расчёт не знает ни группы, ни точки, и человек не попадёт в ведомость. Заводит их администратор сети.": {
+    "en": "Without them the calculation knows neither the group nor the unit, and the person will not make it into the payroll sheet. The network administrator creates them.",
+    "sr": "Bez njih obračun ne poznaje ni grupu ni objekat, i osoba neće ući u obračunsku listu. Zavodi ih administrator mreže."
+  }
+}

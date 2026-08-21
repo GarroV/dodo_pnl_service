@@ -317,6 +317,11 @@ def test_the_dash_and_the_zero_are_painted_differently():
 # непереехавший экран здесь нечего, а вот переехавший обязан таким остаться.
 MIGRATED = [
     "web/period.html",
+    # Справочники переехали вместе с T173: в списке сотрудников появилась
+    # ставка, а на карточке ставка и коэффициент перестали печататься сырым
+    # значением из базы (`300.0000`) — их собирает `format.exact`.
+    "web/directory/list.html",
+    "web/directory/employee.html",
     "web/cash/expenses.html",
     "web/cash/unallocated.html",
     "web/suppliers/invoices.html",
