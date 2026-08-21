@@ -468,6 +468,12 @@ table.sheet th:last-child, table.sheet td:last-child {
   position: sticky; right: 0;
   background: var(--surface); box-shadow: -1px 0 0 var(--line-strong);
 }
+/* Подпись «Итого» остаётся частью строки заголовков. Заливка выше нужна самим
+   ячейкам — прилипшая колонка обязана быть непрозрачной, иначе под ней видны
+   уезжающие числа, — но у заголовка она перекрывала `--surface-head` и
+   выбивала последнюю подпись белым прямоугольником посреди серой шапки
+   таблицы. Поймано на снимке экрана: в разметке этого не видно вовсе. */
+table.sheet th:last-child { background: var(--surface-head); }
 table.sheet tbody tr:hover td:last-child { background: var(--surface-2); }
 table.sheet tfoot .grand td { background: var(--surface-total); }
 
