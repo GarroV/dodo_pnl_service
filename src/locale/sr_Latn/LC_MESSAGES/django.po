@@ -4870,6 +4870,7 @@ msgid "Итого по %(counter)s счёту"
 msgid_plural "Итого по %(counter)s счетам"
 msgstr[0] "Ukupno za %(counter)s fakturu"
 msgstr[1] "Ukupno za %(counter)s fakture"
+msgstr[2] "Ukupno za %(counter)s faktura"
 
 #: src/web/templates/web/suppliers/invoices.html:77
 msgid "не оплачено"
@@ -4955,6 +4956,7 @@ msgid "ждёт разбора %(counter)s строка"
 msgid_plural "ждут разбора %(counter)s строки"
 msgstr[0] "%(counter)s red čeka razvrstavanje"
 msgstr[1] "%(counter)s reda čeka razvrstavanje"
+msgstr[2] "%(counter)s redova čeka razvrstavanje"
 
 #: src/web/i18n.py
 msgid "role.regional_manager"
@@ -4963,3 +4965,316 @@ msgstr "Regionalni menadžer"
 #: src/web/i18n.py
 msgid "role.shift_manager"
 msgstr "Menadžer smene"
+
+#: src/web/papers.py:149
+msgid "Выберите, что за бумага: накладная или чек."
+msgstr "Izaberite kakav je papir: otpremnica ili račun."
+
+#: src/web/papers.py:151
+msgid "Файл не приложен: без фотографии разбирать нечего."
+msgstr "Fajl nije priložen: bez fotografije nema šta da se razvrstava."
+
+#: src/web/papers.py:154
+#, python-format
+msgid ""
+"Файл больше %(limit)s МБ. Сфотографируйте бумагу ещё раз или уменьшите "
+"снимок."
+msgstr "Fajl je veći od %(limit)s MB. Fotografišite papir ponovo ili smanjite snimak."
+
+#: src/web/papers.py:160
+msgid ""
+"Такой файл продукт не примет: нужна фотография (JPEG, PNG, WebP, HEIC) или "
+"PDF."
+msgstr "Proizvod neće prihvatiti ovakav fajl: potrebna je fotografija (JPEG, PNG, WebP, HEIC) ili PDF."
+
+#: src/web/papers.py:231
+msgid "У бумаги должна быть точка: укажите, с какой она пришла."
+msgstr "Papir mora imati objekat: navedite sa kog je stigao."
+
+#: src/web/papers_views.py:54
+msgid "Накладная"
+msgstr "Otpremnica"
+
+#: src/web/papers_views.py:55
+msgid "Чек"
+msgstr "Račun"
+
+#: src/web/papers_views.py:84 src/web/papers_views.py:173
+msgid ""
+"Вас ещё не завели ни к одному партнёру, поэтому бумаги вам некуда нести. "
+"Попросите администратора сети добавить вас."
+msgstr "Još niste dodati nijednom partneru, pa nema gde da se donese papir. Zamolite administratora mreže da vas doda."
+
+#: src/web/papers_views.py:204 src/web/papers_views.py:280
+#: src/web/templates/web/suppliers/inbox.html:85
+#: src/web/templates/web/suppliers/papers.html:37
+msgid "Дата на бумаге"
+msgstr "Datum na papiru"
+
+#: src/web/papers_views.py:206 src/web/papers_views.py:212
+#: src/web/papers_views.py:295
+msgid "Сумма с бумаги"
+msgstr "Iznos sa papira"
+
+#: src/web/papers_views.py:211
+#, python-format
+msgid ""
+"«%(label)s»: ноль не сумма. Оставьте поле пустым, если сумма неизвестна."
+msgstr "„%(label)s“: nula nije iznos. Ostavite polje prazno ako iznos nije poznat."
+
+#: src/web/papers_views.py:230 src/web/papers_views.py:274
+#: src/web/templates/web/suppliers/inbox.html:86
+#: src/web/templates/web/suppliers/papers.html:38
+msgid "Что за бумага"
+msgstr "Kakav papir"
+
+#: src/web/papers_views.py:247
+msgid ""
+"Бумагу приносят с точки, а не со всей сети: выберите точку, с которой она "
+"пришла."
+msgstr "Papir stiže sa objekta, a ne iz cele mreže: izaberite objekat sa kog je stigao."
+
+#: src/web/papers_views.py:277
+msgid ""
+"Накладная — бумага поставщика на товар. Чек — то, что заплатили на месте."
+msgstr "Otpremnica je dobavljačev papir za robu. Račun je ono što je plaćeno na licu mesta."
+
+#: src/web/papers_views.py:282
+msgid "Дата, которая напечатана на самой бумаге."
+msgstr "Datum koji je odštampan na samom papiru."
+
+#: src/web/papers_views.py:284
+msgid "Фотография или PDF"
+msgstr "Fotografija ili PDF"
+
+#: src/web/papers_views.py:286
+msgid ""
+"Снимок с телефона годится. Главное — чтобы читались поставщик, дата и сумма."
+msgstr "Snimak telefonom je dovoljan. Bitno je da se vide dobavljač, datum i iznos."
+
+#: src/web/papers_views.py:289 src/web/templates/web/suppliers/inbox.html:88
+#: src/web/templates/web/suppliers/papers.html:40
+msgid "Поставщик"
+msgstr "Dobavljač"
+
+#: src/web/papers_views.py:292
+msgid "Не знаю или нет в списке"
+msgstr "Ne znam ili nema na spisku"
+
+#: src/web/papers_views.py:293
+msgid "Можно не выбирать: поставщика назначит бухгалтер при разборе."
+msgstr "Ne morate birati: dobavljača će dodeliti knjigovođa prilikom razvrstavanja."
+
+#: src/web/papers_views.py:297
+msgid ""
+"Необязательно. Это сумма со слов, а не расход: в P&L она попадёт только "
+"после разбора."
+msgstr "Nije obavezno. Ovo je iznos po izjavi, a ne trošak: u P&L ulazi tek posle razvrstavanja."
+
+#: src/web/papers_views.py:301
+msgid ""
+"Одной строкой: от кого бумага и за что. Поможет бухгалтеру найти поставщика."
+msgstr "U jednoj rečenici: od koga je papir i za šta. Pomoći će knjigovođi da pronađe dobavljača."
+
+#: src/web/papers_views.py:315
+msgid ""
+"С какой точки бумага. Не куда ляжет расход — это решает бухгалтер при "
+"разборе."
+msgstr "Sa kog je objekta papir. Ne gde će trošak pasti — to odlučuje knjigovođa prilikom razvrstavanja."
+
+#: src/web/papers_views.py:329
+msgid "Вас ещё не завели ни к одному партнёру, поэтому бумаг у вас нет."
+msgstr "Još niste dodati nijednom partneru, pa nemate papira."
+
+#: src/web/papers_views.py:354
+#, python-format
+msgid "%(kind)s с точки %(unit)s"
+msgstr "%(kind)s sa objekta %(unit)s"
+
+#: src/web/papers_views.py:427
+msgid ""
+"Бумага принята и ждёт разбора бухгалтером. В P&L её ещё нет: сумма появится "
+"там, когда бухгалтер назначит статью и период."
+msgstr "Papir je primljen i čeka da ga knjigovođa razvrsta. U P&L-u ga još nema: iznos će se tamo pojaviti kada knjigovođa dodeli stavku i period."
+
+#: src/web/papers_views.py:433
+#, python-format
+msgid "Бумага разобрана: строка учтена в периоде %(month)s."
+msgstr "Papir je razvrstan: red je zaveden u period %(month)s."
+
+#: src/web/papers_views.py:438
+#, python-format
+msgid ""
+"Месяц %(month)s закрыт, поэтому строка легла в открытый период — с исходной "
+"датой и не сдвинув закрытый месяц."
+msgstr "Mesec %(month)s je zatvoren, pa je red ušao u otvoreni period — sa izvornim datumom, ne dirajući zatvoreni mesec."
+
+#: src/web/papers_views.py:450
+#, python-format
+msgid ""
+"Месяц %(month)s закрыт. Разбор его не тронет: строка ляжет в открытый период "
+"с исходной датой документа."
+msgstr "Mesec %(month)s je zatvoren. Razvrstavanje ga ne dira: red će ući u otvoreni period sa izvornim datumom dokumenta."
+
+#: src/web/papers_views.py:470
+#, python-format
+msgid "%(size)s КБ"
+msgstr "%(size)s KB"
+
+#: src/web/templates/web/suppliers/inbox.html:27
+#: src/web/templates/web/suppliers/inbox.html:78
+#: src/web/templates/web/suppliers/invoices.html:26
+#: src/web/templates/web/suppliers/papers.html:15
+#: src/web/templates/web/suppliers/papers.html:18
+msgid "Бумаги с точек"
+msgstr "Papiri sa objekata"
+
+#: src/web/templates/web/suppliers/inbox.html:80
+#: src/web/templates/web/suppliers/papers.html:28
+#, python-format
+msgid "ждёт разбора %(counter)s бумага"
+msgid_plural "ждут разбора %(counter)s бумаг"
+msgstr[0] "%(counter)s papir čeka razvrstavanje"
+msgstr[1] "%(counter)s papira čeka razvrstavanje"
+msgstr[2] "%(counter)s papira čeka razvrstavanje"
+
+#: src/web/templates/web/suppliers/inbox.html:80
+msgid "суммы со слов управляющих, в P&L их нет"
+msgstr "iznosi po izjavi menadžera, njih nema u P&L-u"
+
+#: src/web/templates/web/suppliers/inbox.html:90
+#: src/web/templates/web/suppliers/papers.html:42
+msgid "Сумма со слов"
+msgstr "Iznos po izjavi"
+
+#: src/web/templates/web/suppliers/inbox.html:103
+msgid "Открыть бумагу"
+msgstr "Otvori papir"
+
+#: src/web/templates/web/suppliers/inbox.html:109
+msgid "Бумаг на разбор нет."
+msgstr "Nema papira koji čekaju razvrstavanje."
+
+#: src/web/templates/web/suppliers/inbox.html:110
+msgid "Всё, что принесли с точек, разобрано."
+msgstr "Sve što je doneto sa objekata je razvrstano."
+
+#: src/web/templates/web/suppliers/paper.html:20
+#: src/web/templates/web/suppliers/paper_new.html:17
+msgid "← К бумагам"
+msgstr "← Nazad na papire"
+
+#: src/web/templates/web/suppliers/paper.html:26
+msgid "Не разобрано."
+msgstr "Nije razvrstano."
+
+#: src/web/templates/web/suppliers/paper.html:31
+#, python-format
+msgid "%(kind)s от %(date)s, точка %(unit)s"
+msgstr "%(kind)s od %(date)s, objekat %(unit)s"
+
+#: src/web/templates/web/suppliers/paper.html:32
+#, python-format
+msgid "поставщик: %(party)s"
+msgstr "dobavljač: %(party)s"
+
+#: src/web/templates/web/suppliers/paper.html:33
+#, python-format
+msgid "сумма со слов: %(amount)s"
+msgstr "iznos po izjavi: %(amount)s"
+
+#: src/web/templates/web/suppliers/paper.html:38
+msgid "Снимок принесённой бумаги"
+msgstr "Snimak donetog papira"
+
+#: src/web/templates/web/suppliers/paper.html:40
+#, python-format
+msgid "Скачать файл (%(size)s)"
+msgstr "Preuzmi fajl (%(size)s)"
+
+#: src/web/templates/web/suppliers/paper.html:44
+msgid "Бумага ещё не разобрана."
+msgstr "Papir još nije razvrstan."
+
+#: src/web/templates/web/suppliers/paper.html:45
+msgid ""
+"В P&L её нет: там живут строки учёта, а у этой бумаги их пока ни одной. "
+"Назначьте поставщика, статью и период — и сумма встанет в отчёт."
+msgstr "Nije u P&L-u: tamo žive knjigovodstveni redovi, a ovaj papir ih još nema nijednog. Dodelite dobavljača, stavku i period — i iznos će ući u izveštaj."
+
+#: src/web/templates/web/suppliers/paper.html:49
+msgid "Разобрать бумагу"
+msgstr "Razvrstaj papir"
+
+#: src/web/templates/web/suppliers/paper.html:59
+msgid "Разобрать и учесть"
+msgstr "Razvrstaj i zavedi"
+
+#: src/web/templates/web/suppliers/paper.html:62
+msgid "Бумага разобрана."
+msgstr "Papir je razvrstan."
+
+#: src/web/templates/web/suppliers/paper.html:63
+msgid "Строки учтены и видны в P&L. Дальше правят счёт, а не бумагу."
+msgstr "Redovi su zavedeni i vidljivi u P&L-u. Dalje se menja faktura, a ne papir."
+
+#: src/web/templates/web/suppliers/paper.html:86
+msgid "Открыть счёт"
+msgstr "Otvori fakturu"
+
+#: src/web/templates/web/suppliers/paper_new.html:15
+#: src/web/templates/web/suppliers/paper_new.html:18
+#: src/web/templates/web/suppliers/papers.html:22
+msgid "Скинуть накладную или чек"
+msgstr "Pošalji otpremnicu ili račun"
+
+#: src/web/templates/web/suppliers/paper_new.html:19
+msgid ""
+"Сфотографируйте бумагу и приложите снимок. Поставщика, статью и период "
+"назначит бухгалтер."
+msgstr "Fotografišite papir i priložite snimak. Dobavljača, stavku i period dodeliće knjigovođa."
+
+#: src/web/templates/web/suppliers/paper_new.html:22
+msgid "Не принято."
+msgstr "Nije prihvaćeno."
+
+#: src/web/templates/web/suppliers/paper_new.html:29
+msgid "Отправить бумагу"
+msgstr "Pošalji papir"
+
+#: src/web/templates/web/suppliers/papers.html:19
+msgid ""
+"Накладные и чеки, принесённые с точек. Пока бухгалтер их не разобрал, в P&L "
+"их нет."
+msgstr "Otpremnice i računi doneti sa objekata. Dok ih knjigovođa ne razvrsta, nema ih u P&L-u."
+
+#: src/web/templates/web/suppliers/papers.html:28
+msgid "сумма со слов, не расход"
+msgstr "iznos po izjavi, nije trošak"
+
+#: src/web/templates/web/suppliers/papers.html:30
+msgid "Всё разобрано."
+msgstr "Sve je razvrstano."
+
+#: src/web/templates/web/suppliers/papers.html:31
+msgid "Ни одна бумага не ждёт: у каждой есть строка в учёте."
+msgstr "Nijedan papir ne čeka: svaki već ima red u knjigovodstvu."
+
+#: src/web/templates/web/suppliers/papers.html:55
+msgid "ждёт разбора"
+msgstr "čeka razvrstavanje"
+
+#: src/web/templates/web/suppliers/papers.html:55
+#, python-format
+msgid "разобрана, период %(month)s"
+msgstr "razvrstan, period %(month)s"
+
+#: src/web/templates/web/suppliers/papers.html:61
+msgid "Бумаг ещё не приносили."
+msgstr "Papiri još nisu doneti."
+
+#: src/web/templates/web/suppliers/papers.html:62
+msgid ""
+"Управляющий фотографирует накладную или чек и скидывает сюда — считать ему "
+"ничего не нужно."
+msgstr "Menadžer fotografiše otpremnicu ili račun i šalje ovde — on ne mora ništa da računa."

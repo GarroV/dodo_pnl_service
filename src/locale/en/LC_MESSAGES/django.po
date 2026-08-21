@@ -5029,3 +5029,315 @@ msgstr "Regional Manager"
 #: src/web/i18n.py
 msgid "role.shift_manager"
 msgstr "Shift Manager"
+
+#: src/web/papers.py:149
+msgid "Выберите, что за бумага: накладная или чек."
+msgstr "Choose what kind of paper it is: a delivery note or a receipt."
+
+#: src/web/papers.py:151
+msgid "Файл не приложен: без фотографии разбирать нечего."
+msgstr "No file attached: there is nothing to sort out without a photo."
+
+#: src/web/papers.py:154
+#, python-format
+msgid ""
+"Файл больше %(limit)s МБ. Сфотографируйте бумагу ещё раз или уменьшите "
+"снимок."
+msgstr "The file is larger than %(limit)s MB. Take the photo again or reduce its size."
+
+#: src/web/papers.py:160
+msgid ""
+"Такой файл продукт не примет: нужна фотография (JPEG, PNG, WebP, HEIC) или "
+"PDF."
+msgstr "The product will not accept this file: it needs a photo (JPEG, PNG, WebP, HEIC) or a PDF."
+
+#: src/web/papers.py:231
+msgid "У бумаги должна быть точка: укажите, с какой она пришла."
+msgstr "The paper must have a unit: specify which one it came from."
+
+#: src/web/papers_views.py:54
+msgid "Накладная"
+msgstr "Delivery note"
+
+#: src/web/papers_views.py:55
+msgid "Чек"
+msgstr "Receipt"
+
+#: src/web/papers_views.py:84 src/web/papers_views.py:173
+msgid ""
+"Вас ещё не завели ни к одному партнёру, поэтому бумаги вам некуда нести. "
+"Попросите администратора сети добавить вас."
+msgstr "You have not been added to any partner yet, so there is nowhere to bring a paper. Ask the network administrator to add you."
+
+#: src/web/papers_views.py:204 src/web/papers_views.py:280
+#: src/web/templates/web/suppliers/inbox.html:85
+#: src/web/templates/web/suppliers/papers.html:37
+msgid "Дата на бумаге"
+msgstr "Date on the paper"
+
+#: src/web/papers_views.py:206 src/web/papers_views.py:212
+#: src/web/papers_views.py:295
+msgid "Сумма с бумаги"
+msgstr "Amount on the paper"
+
+#: src/web/papers_views.py:211
+#, python-format
+msgid ""
+"«%(label)s»: ноль не сумма. Оставьте поле пустым, если сумма неизвестна."
+msgstr "“%(label)s”: zero is not an amount. Leave the field empty if the amount is unknown."
+
+#: src/web/papers_views.py:230 src/web/papers_views.py:274
+#: src/web/templates/web/suppliers/inbox.html:86
+#: src/web/templates/web/suppliers/papers.html:38
+msgid "Что за бумага"
+msgstr "What kind of paper"
+
+#: src/web/papers_views.py:247
+msgid ""
+"Бумагу приносят с точки, а не со всей сети: выберите точку, с которой она "
+"пришла."
+msgstr "A paper comes from a unit, not from the whole network: choose the unit it came from."
+
+#: src/web/papers_views.py:277
+msgid ""
+"Накладная — бумага поставщика на товар. Чек — то, что заплатили на месте."
+msgstr "A delivery note is a supplier's paper for goods. A receipt is what was paid for on the spot."
+
+#: src/web/papers_views.py:282
+msgid "Дата, которая напечатана на самой бумаге."
+msgstr "The date printed on the paper itself."
+
+#: src/web/papers_views.py:284
+msgid "Фотография или PDF"
+msgstr "Photo or PDF"
+
+#: src/web/papers_views.py:286
+msgid ""
+"Снимок с телефона годится. Главное — чтобы читались поставщик, дата и сумма."
+msgstr "A phone photo is fine. What matters is that the supplier, date and amount can be read."
+
+#: src/web/papers_views.py:289 src/web/templates/web/suppliers/inbox.html:88
+#: src/web/templates/web/suppliers/papers.html:40
+msgid "Поставщик"
+msgstr "Supplier"
+
+#: src/web/papers_views.py:292
+msgid "Не знаю или нет в списке"
+msgstr "Don't know or not on the list"
+
+#: src/web/papers_views.py:293
+msgid "Можно не выбирать: поставщика назначит бухгалтер при разборе."
+msgstr "You may leave it empty: the accountant will assign the supplier when sorting it out."
+
+#: src/web/papers_views.py:297
+msgid ""
+"Необязательно. Это сумма со слов, а не расход: в P&L она попадёт только "
+"после разбора."
+msgstr "Optional. This is the amount as stated, not an expense: it will land in the P&L only after sorting out."
+
+#: src/web/papers_views.py:301
+msgid ""
+"Одной строкой: от кого бумага и за что. Поможет бухгалтеру найти поставщика."
+msgstr "In one line: who the paper is from and what for. It will help the accountant find the supplier."
+
+#: src/web/papers_views.py:315
+msgid ""
+"С какой точки бумага. Не куда ляжет расход — это решает бухгалтер при "
+"разборе."
+msgstr "Which unit the paper is from. Not where the expense will land — the accountant decides that when sorting it out."
+
+#: src/web/papers_views.py:329
+msgid "Вас ещё не завели ни к одному партнёру, поэтому бумаг у вас нет."
+msgstr "You have not been added to any partner yet, so you have no papers."
+
+#: src/web/papers_views.py:354
+#, python-format
+msgid "%(kind)s с точки %(unit)s"
+msgstr "%(kind)s from unit %(unit)s"
+
+#: src/web/papers_views.py:427
+msgid ""
+"Бумага принята и ждёт разбора бухгалтером. В P&L её ещё нет: сумма появится "
+"там, когда бухгалтер назначит статью и период."
+msgstr "The paper has been received and is waiting for the accountant to sort it out. It is not in the P&L yet: the amount will appear there once the accountant assigns the item and the period."
+
+#: src/web/papers_views.py:433
+#, python-format
+msgid "Бумага разобрана: строка учтена в периоде %(month)s."
+msgstr "The paper has been sorted out: the row has been recorded in period %(month)s."
+
+#: src/web/papers_views.py:438
+#, python-format
+msgid ""
+"Месяц %(month)s закрыт, поэтому строка легла в открытый период — с исходной "
+"датой и не сдвинув закрытый месяц."
+msgstr "Month %(month)s is closed, so the row went into the open period — with the original date, without touching the closed month."
+
+#: src/web/papers_views.py:450
+#, python-format
+msgid ""
+"Месяц %(month)s закрыт. Разбор его не тронет: строка ляжет в открытый период "
+"с исходной датой документа."
+msgstr "Month %(month)s is closed. Sorting it out will not touch it: the row will land in the open period with the document's original date."
+
+#: src/web/papers_views.py:470
+#, python-format
+msgid "%(size)s КБ"
+msgstr "%(size)s KB"
+
+#: src/web/templates/web/suppliers/inbox.html:27
+#: src/web/templates/web/suppliers/inbox.html:78
+#: src/web/templates/web/suppliers/invoices.html:26
+#: src/web/templates/web/suppliers/papers.html:15
+#: src/web/templates/web/suppliers/papers.html:18
+msgid "Бумаги с точек"
+msgstr "Papers from the units"
+
+#: src/web/templates/web/suppliers/inbox.html:80
+#: src/web/templates/web/suppliers/papers.html:28
+#, python-format
+msgid "ждёт разбора %(counter)s бумага"
+msgid_plural "ждут разбора %(counter)s бумаг"
+msgstr[0] "%(counter)s paper is waiting to be sorted out"
+msgstr[1] "%(counter)s papers are waiting to be sorted out"
+
+#: src/web/templates/web/suppliers/inbox.html:80
+msgid "суммы со слов управляющих, в P&L их нет"
+msgstr "amounts as stated by managers, not in the P&L"
+
+#: src/web/templates/web/suppliers/inbox.html:90
+#: src/web/templates/web/suppliers/papers.html:42
+msgid "Сумма со слов"
+msgstr "Amount as stated"
+
+#: src/web/templates/web/suppliers/inbox.html:103
+msgid "Открыть бумагу"
+msgstr "Open the paper"
+
+#: src/web/templates/web/suppliers/inbox.html:109
+msgid "Бумаг на разбор нет."
+msgstr "There are no papers waiting to be sorted out."
+
+#: src/web/templates/web/suppliers/inbox.html:110
+msgid "Всё, что принесли с точек, разобрано."
+msgstr "Everything brought in from the units has been sorted out."
+
+#: src/web/templates/web/suppliers/paper.html:20
+#: src/web/templates/web/suppliers/paper_new.html:17
+msgid "← К бумагам"
+msgstr "← Back to papers"
+
+#: src/web/templates/web/suppliers/paper.html:26
+msgid "Не разобрано."
+msgstr "Not sorted out."
+
+#: src/web/templates/web/suppliers/paper.html:31
+#, python-format
+msgid "%(kind)s от %(date)s, точка %(unit)s"
+msgstr "%(kind)s from %(date)s, unit %(unit)s"
+
+#: src/web/templates/web/suppliers/paper.html:32
+#, python-format
+msgid "поставщик: %(party)s"
+msgstr "supplier: %(party)s"
+
+#: src/web/templates/web/suppliers/paper.html:33
+#, python-format
+msgid "сумма со слов: %(amount)s"
+msgstr "amount as stated: %(amount)s"
+
+#: src/web/templates/web/suppliers/paper.html:38
+msgid "Снимок принесённой бумаги"
+msgstr "Photo of the paper brought in"
+
+#: src/web/templates/web/suppliers/paper.html:40
+#, python-format
+msgid "Скачать файл (%(size)s)"
+msgstr "Download the file (%(size)s)"
+
+#: src/web/templates/web/suppliers/paper.html:44
+msgid "Бумага ещё не разобрана."
+msgstr "The paper has not been sorted out yet."
+
+#: src/web/templates/web/suppliers/paper.html:45
+msgid ""
+"В P&L её нет: там живут строки учёта, а у этой бумаги их пока ни одной. "
+"Назначьте поставщика, статью и период — и сумма встанет в отчёт."
+msgstr "It is not in the P&L: that is where accounting rows live, and this paper does not have a single one yet. Assign a supplier, an item and a period — and the amount will land in the report."
+
+#: src/web/templates/web/suppliers/paper.html:49
+msgid "Разобрать бумагу"
+msgstr "Sort out the paper"
+
+#: src/web/templates/web/suppliers/paper.html:59
+msgid "Разобрать и учесть"
+msgstr "Sort out and record"
+
+#: src/web/templates/web/suppliers/paper.html:62
+msgid "Бумага разобрана."
+msgstr "The paper has been sorted out."
+
+#: src/web/templates/web/suppliers/paper.html:63
+msgid "Строки учтены и видны в P&L. Дальше правят счёт, а не бумагу."
+msgstr "The rows are recorded and visible in the P&L. From here on, the invoice is edited, not the paper."
+
+#: src/web/templates/web/suppliers/paper.html:86
+msgid "Открыть счёт"
+msgstr "Open the invoice"
+
+#: src/web/templates/web/suppliers/paper_new.html:15
+#: src/web/templates/web/suppliers/paper_new.html:18
+#: src/web/templates/web/suppliers/papers.html:22
+msgid "Скинуть накладную или чек"
+msgstr "Send in a delivery note or a receipt"
+
+#: src/web/templates/web/suppliers/paper_new.html:19
+msgid ""
+"Сфотографируйте бумагу и приложите снимок. Поставщика, статью и период "
+"назначит бухгалтер."
+msgstr "Take a photo of the paper and attach it. The accountant will assign the supplier, the item and the period."
+
+#: src/web/templates/web/suppliers/paper_new.html:22
+msgid "Не принято."
+msgstr "Not accepted."
+
+#: src/web/templates/web/suppliers/paper_new.html:29
+msgid "Отправить бумагу"
+msgstr "Submit the paper"
+
+#: src/web/templates/web/suppliers/papers.html:19
+msgid ""
+"Накладные и чеки, принесённые с точек. Пока бухгалтер их не разобрал, в P&L "
+"их нет."
+msgstr "Delivery notes and receipts brought in from the units. Until the accountant sorts them out, they are not in the P&L."
+
+#: src/web/templates/web/suppliers/papers.html:28
+msgid "сумма со слов, не расход"
+msgstr "amount as stated, not an expense"
+
+#: src/web/templates/web/suppliers/papers.html:30
+msgid "Всё разобрано."
+msgstr "Everything is sorted out."
+
+#: src/web/templates/web/suppliers/papers.html:31
+msgid "Ни одна бумага не ждёт: у каждой есть строка в учёте."
+msgstr "No paper is waiting: every one already has a row in the accounts."
+
+#: src/web/templates/web/suppliers/papers.html:55
+msgid "ждёт разбора"
+msgstr "waiting to be sorted out"
+
+#: src/web/templates/web/suppliers/papers.html:55
+#, python-format
+msgid "разобрана, период %(month)s"
+msgstr "sorted out, period %(month)s"
+
+#: src/web/templates/web/suppliers/papers.html:61
+msgid "Бумаг ещё не приносили."
+msgstr "No papers have been brought in yet."
+
+#: src/web/templates/web/suppliers/papers.html:62
+msgid ""
+"Управляющий фотографирует накладную или чек и скидывает сюда — считать ему "
+"ничего не нужно."
+msgstr "The manager photographs a delivery note or a receipt and drops it here — they do not need to calculate anything."
