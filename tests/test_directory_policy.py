@@ -126,6 +126,56 @@ def test_a_role_without_the_right_cannot_write_a_directory(db, rows, user, table
 
 
 @pytest.mark.parametrize("user", ROLES_WITHOUT_RIGHT)
+def test_a_role_without_the_right_cannot_hire(db, rows, user):
+    """Завести человека и его условия найма база не даёт (T164).
+
+    Раньше проверять здесь `insert` в эти две таблицы было почти не за чем:
+    экраном сотрудник не заводился вовсе (D029), а загрузка таблицы шла ролью, у
+    которой право есть. Экран заведения появился — и вставка стала тем самым
+    действием, которое попробуют мимо интерфейса первым.
+
+    Обе таблицы, а не одна: карточка без условий найма и условия найма чужому
+    человеку — разные записи, и каждая закрыта своей политикой.
+    """
+    with as_app_user(db, user) as conn:
+        conn.execute("savepoint attempt")
+        with pytest.raises(DENIED):
+            conn.execute(
+                """insert into employees (tenant_id, external_id, first_name, last_name)
+                   values (%s, 'pol-hire', 'Свой', 'Человек')""",
+                (T1,),
+            )
+        conn.execute("rollback to savepoint attempt")
+
+        conn.execute("savepoint attempt")
+        with pytest.raises(DENIED):
+            conn.execute(
+                """insert into employment_terms
+                       (tenant_id, employee_id, group_id, unit_id, base_rate, valid_from)
+                   values (%s, %s, %s, %s, 999, '2026-09-01')""",
+                (T1, rows["employee"], rows["group"], U_NS1),
+            )
+        conn.execute("rollback to savepoint attempt")
+
+
+def test_the_network_administrator_hires(db, rows):
+    """Обратная сторона: у кого право есть — заводит. Иначе запрет неотличим от поломки."""
+    with as_app_user(db, USER_ADMIN) as conn:
+        person = conn.execute(
+            """insert into employees (tenant_id, external_id, first_name, last_name)
+               values (%s, 'pol-hire-ok', 'Свой', 'Человек') returning id""",
+            (T1,),
+        ).fetchone()[0]
+        assert conn.execute(
+            """insert into employment_terms
+                   (tenant_id, employee_id, group_id, unit_id, base_rate, valid_from,
+                    work_measure)
+               values (%s, %s, %s, %s, 999, '2026-09-01', 'fixed_amount')""",
+            (T1, person, rows["group"], U_NS1),
+        ).rowcount == 1
+
+
+@pytest.mark.parametrize("user", ROLES_WITHOUT_RIGHT)
 def test_a_role_without_the_right_cannot_create_a_directory_row(db, user):
     """Не только правка: завести точку или юрлицо тоже нельзя."""
     with as_app_user(db, user) as conn:

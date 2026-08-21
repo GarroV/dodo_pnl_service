@@ -128,21 +128,40 @@ def test_the_admin_opens_every_directory(client):
     client.post("/logout/")
 
 
-def test_there_is_no_way_to_create_an_employee(client):
-    """D029: карточки появляются из данных партнёра, а не заводятся экраном.
+def test_the_way_to_create_an_employee_exists_and_is_offered(client):
+    """Заведение сотрудника есть — и кнопкой, и адресом (T164).
 
-    Проверяется отсутствие и кнопки, и адреса: кнопка могла бы просто не
-    попасть в разметку, а рабочий адрес остался бы — и тогда решение держалось
-    бы на вёрстке.
+    Проверка перевёрнута сознательно: раньше она стерегла обратное (D029 —
+    карточки приезжают загрузкой таблицы партнёра, экраном не заводятся). Для
+    стройки на тестовых данных этого хватало, для передачи продукта партнёру —
+    нет: человек выходит на работу пятнадцатого числа, и до следующей загрузки
+    его в системе не существует.
+
+    Проверяются и кнопка, и адрес, ровно как раньше: кнопка без адреса — обещание
+    без исполнения, адрес без кнопки — возможность, о которой человек не узнает.
     """
-    from django.urls import NoReverseMatch, reverse
-
     login_as(client, "admin")
     html = body(client.get("/directory/employees/"))
-    assert "/directory/employees/new/" not in html
-    assert client.get("/directory/employees/new/").status_code == 404
-    with pytest.raises(NoReverseMatch):
-        reverse("directory-employee-new")
+    assert "/directory/employees/new/" in html, "кнопки «Завести сотрудника» нет на списке"
+    assert "Завести сотрудника" in html
+    assert client.get("/directory/employees/new/").status_code == 200
+    client.post("/logout/")
+
+
+@pytest.mark.parametrize("role", ROLES_WITHOUT_RIGHT)
+def test_creating_an_employee_is_refused_to_the_others_in_words(client, role):
+    """Форма записи целиком — значит и открывать её тому, кто не вправе, нечего.
+
+    Отличие от списка и карточки: там право решает «правка или чтение»,
+    управляющему нужны ставки своих людей (T173, D047). Здесь читать нечего, и
+    отказ приходит на весь экран — словами, называя действие, а не пустой
+    страницей и не 404.
+    """
+    login_as(client, role)
+    for method in ("get", "post"):
+        answer = getattr(client, method)("/directory/employees/new/", {})
+        assert answer.status_code == 403, f"{role} {method}: {answer.status_code}"
+        assert "Ведение справочников" in body(answer), f"{role} {method}: отказ без действия"
     client.post("/logout/")
 
 
@@ -443,6 +462,14 @@ def test_the_group_scheme_is_frozen_while_a_month_is_closed(client, sql, web_env
 
     Название группы при этом править можно: оно денег не считает. Проверяется и
     то и другое, иначе запрет мог бы оказаться запретом на любую правку группы.
+
+    Новая схема берётся **настоящая**, из правил страны, и это не косметика
+    (T164). Раньше сюда подставлялась строка «совсем другая», и ответ 409
+    получался бы теперь только по счастливой случайности: схема выбирается из
+    списка правил страны, и выдуманное значение отвергается раньше — как ввод
+    (400), а не как состояние данных (409). Проверять запрет на правку закрытого
+    месяца надо тем значением, которое форма действительно предлагает, иначе
+    проверка перестаёт доходить до самого запрета.
     """
     approve_june(client, web_env)
     client.post("/logout/")
@@ -451,11 +478,16 @@ def test_the_group_scheme_is_frozen_while_a_month_is_closed(client, sql, web_env
         "where ledger = 'official' and tenant_id in "
         "(select id from tenants where code = 'rs-dev') limit 1"
     ).fetchone()
+    other = sql.execute(
+        "select key from rule_presets, jsonb_object_keys(body -> 'schemes') as key "
+        "where country_code = 'RS' and key <> %s limit 1", (scheme,),
+    ).fetchone()
+    assert other, "в правилах страны меньше двух схем — менять не на что"
 
     login_as(client, "admin")
     try:
         refused = client.post(f"/directory/groups/{group_id}/", {
-            "code": code, "title": title, "scheme": "совсем другая", "ledger": ledger,
+            "code": code, "title": title, "scheme": other[0], "ledger": ledger,
         })
         assert refused.status_code == 409, refused.status_code
         assert sql.execute(
