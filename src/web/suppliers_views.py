@@ -83,6 +83,20 @@ def _last_day(first: date) -> date:
     return (first.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
 
+def narrowed(chosen: dict) -> bool:
+    """Отбор сужен по сравнению с умолчанием — пустота может быть от него.
+
+    Нужно пустому списку (T160): «счетов за месяц ещё нет» и «отбор ничего не
+    пропустил» — разные сообщения с разным следующим действием. Первое ведёт
+    вносить счёт, второе — снимать отбор.
+
+    Считается по присланному запросу, а не по данным: сравнение с умолчанием не
+    требует ничего спрашивать у базы, и поэтому сообщение о сужении не способно
+    выдать существование скрытых строк (D023).
+    """
+    return chosen != filters_default()
+
+
 def filters_from(request) -> dict:
     """Что человек выбрал в адресе — одинаково для экрана и для вызова по HTTP.
 
@@ -171,6 +185,8 @@ def invoices(request):
         "left_raw": f"{left}", "left_text": money(left),
         "counted": len(rows),
         "filters": _filter_fields(who, chosen),
+        # Сужен ли отбор — от этого зависит, что говорит пустой список (T160).
+        "narrowed": narrowed(chosen),
         "add_url": reverse("invoice-new"),
         "payment_url": reverse("payment-new"),
         "inbox_url": reverse("inbox"),

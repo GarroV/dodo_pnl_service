@@ -27,6 +27,12 @@ from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
 from core.models import Calendar, Payrun, Payslip, Period, Tenant, Timesheet
+
+# Демо спрашивают ровно об одном: показывать ли путь внутрь (T160).
+# Импортируется `demo.access`, а не `demo.views`: тот сам зовёт `web.auth`, и
+# импорт в обратную сторону замкнул бы кольцо. В `demo.access` нет ничего,
+# кроме настроек, — в продукте он честно отвечает «демо нет».
+from demo import access as demo_access
 from payrun import freezing, jobs, lifecycle, retro
 from payrun.errors import PayrunRefused
 from reports import export as exports
@@ -64,6 +70,20 @@ def status_title(code: str) -> str:
 
 
 def index(request):
+    """Корень. На демо-стенде — в демо, в продукте — к периодам.
+
+    T160: на стенде корень уводил на `/periods/`, оттуда `@login_required` на
+    форму входа, а форма предлагала пароль от продукта, которого у гостя нет.
+    Посетитель, потерявший `?key=…` в ссылке, оказывался в тупике, который
+    читается как «продукт сломан».
+
+    Спрашивается не «включено ли демо», а «ведёт ли дверь внутрь для ЭТОГО
+    посетителя» (`demo.access.reachable`): со включённым ключом гость без ключа
+    получил бы `404`, то есть тупик поменялся бы на другой. Ключ остаётся
+    спидбампом — такого гостя корень по-прежнему ведёт к периодам.
+    """
+    if demo_access.reachable(request):
+        return redirect(demo_access.URL)
     return redirect("periods")
 
 
@@ -1278,6 +1298,24 @@ def safe_next(request) -> str:
     return reverse("periods")
 
 
+def login_context(request) -> dict:
+    """Что форма входа показывает помимо самой формы.
+
+    Одним местом, потому что форма рисуется дважды — на `GET` и на неудачный
+    `POST`. Пока список собирался в каждой ветке отдельно, добавленное в одну
+    пропадало в другой: человек, ошибшийся паролем на демо-стенде, терял путь в
+    демо ровно тогда, когда он ему и нужен.
+    """
+    return {
+        "dev_users": auth.DEV_USERS.values() if auth.dev_login_is_enabled() else [],
+        # Путь в демо — только на стенде и только тому, кого демо пустит
+        # (T160). Не «включено ли демо»: со включённым ключом гость без ключа
+        # получил бы по этой кнопке `404`, то есть форма входа обещала бы вход
+        # и не пускала.
+        "demo_url": demo_access.URL if demo_access.reachable(request) else "",
+    }
+
+
 def login_page(request):
     """Вход по логину и паролю — единственный способ доказать личность."""
     if request.method == "POST":
@@ -1294,7 +1332,7 @@ def login_page(request):
                 "error": _("Логин или пароль не подходят"),
                 "username": username,
                 "next": safe_next(request),
-                "dev_users": auth.DEV_USERS.values() if auth.dev_login_is_enabled() else [],
+                **login_context(request),
             },
             status=200,
         )
@@ -1302,10 +1340,7 @@ def login_page(request):
     return render(
         request,
         "web/login.html",
-        {
-            "next": safe_next(request),
-            "dev_users": auth.DEV_USERS.values() if auth.dev_login_is_enabled() else [],
-        },
+        {"next": safe_next(request), **login_context(request)},
     )
 
 

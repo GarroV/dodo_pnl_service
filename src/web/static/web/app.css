@@ -234,7 +234,20 @@ p.back a:hover { color: var(--accent); }
   padding: var(--space-9);
 }
 .empty h3 { margin: 0 0 var(--space-3); font-size: var(--fs-lead); color: var(--ink); }
-.empty .next { display: block; margin-top: var(--space-6); }
+/* Действие пустого состояния — кнопка, а не полоса во всю ширину. Раньше стоял
+   `display: block` без ширины, и кнопка растягивалась на всю страницу: на 1440
+   это 1800 пикселей рамки, которая читается как пустое поле ввода, а не как
+   то, что нажимают.
+
+   `block` остаётся — своя строка нужна, действие идёт ПОСЛЕ объяснения, а не в
+   его последней строке (пустое состояние — это `<p>`, и вложить блок внутрь
+   нельзя, поэтому строку даёт само правило). Ширину задаёт `max-content`:
+   кнопка ровно по подписи. `max-width` — чтобы длинная подпись на узком экране
+   не вылезла за край. */
+.empty .next {
+  display: block; width: max-content; max-width: 100%;
+  margin-top: var(--space-6);
+}
 
 /* Примечание — абзац, а не блок: это текст рядом с данными. */
 .note { color: var(--ink-2); font-size: var(--fs-meta); margin-top: var(--space-9); }
@@ -672,6 +685,109 @@ ol.steps li.now .name { color: var(--accent); }
   border-radius: var(--r-block);
 }
 
+/* ── Гайд по продукту ────────────────────────────────────────── */
+
+/* Экран, который читают, а не заполняют (T159). Всё остальное в продукте —
+   плотные таблицы на всю колонку в 1360; здесь наоборот: длина строки главнее
+   ширины окна. 66 знаков — та мера, на которой глаз находит начало следующей
+   строки без промаха, и растягивать прозу на 1360 значило бы сделать
+   единственную читаемую страницу продукта нечитаемой.
+
+   Своя мера ставится тексту, а не всему разделу: карточкам ролей нужна ширина
+   под два столбца, и загонять их в ту же колонку незачем. */
+.guide { max-width: 940px; }
+.guide p, .guide__list, .guide__walk { max-width: 66ch; }
+
+/* Ритм разделов задаёт линия, а не отступ. Разделов шесть, они разной длины, и
+   на одних отступах человек не видит, где кончился предыдущий: длинный список
+   внутри раздела выглядит как новый раздел. */
+.guide__part { border-top: 1px solid var(--line); padding-top: var(--space-9); margin-top: var(--space-10); }
+.guide__part:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+.guide__part > h2 { margin-top: 0; }
+
+/* Первый абзац раздела — крупнее остальных: он несёт мысль раздела целиком, и
+   читатель, прочитавший только его, должен понять главное. */
+.guide__lead { font-size: var(--fs-lead); line-height: var(--lh-lead); color: var(--ink); margin: 0 0 var(--space-8); }
+.guide p { margin: 0 0 var(--space-7); }
+.guide__note { color: var(--ink-2); font-size: var(--fs-meta); line-height: var(--lh-meta); }
+
+/* Перечисление, где у пункта есть имя и объяснение. Маркер — короткая линия, а
+   не точка: имя пункта набрано полужирным и уже работает маркером, а точка
+   рядом с ним даёт два маркера на один пункт. */
+.guide__list { list-style: none; margin: 0 0 var(--space-7); padding: 0; }
+.guide__list > li { position: relative; padding-left: var(--space-9); margin-bottom: var(--space-6); }
+.guide__list > li::before {
+  content: ""; position: absolute; left: 0; top: calc(var(--lh-body) / 2);
+  width: var(--space-6); height: 1px; background: var(--line-strong);
+}
+.guide__list b { color: var(--ink); font-weight: var(--w-semibold); }
+
+/* Сквозной месяц. Номер шага рисует счётчик, а не цифра в разметке: шаг,
+   вставленный посередине, иначе пришлось бы перенумеровывать руками в трёх
+   языках — и один из трёх однажды остался бы с прежними номерами.
+
+   Рельс слева непрерывен через все шаги: порядок здесь обязательный (каждый шаг
+   невозможен без предыдущего), и четыре отдельные карточки читались бы как
+   четыре независимых действия на выбор. */
+.guide__walk { counter-reset: walk; list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--line-strong); }
+.guide__walk > li { counter-increment: walk; position: relative; padding: 0 0 var(--space-9) var(--space-10); }
+.guide__walk > li:last-child { padding-bottom: 0; }
+.guide__walk > li::before {
+  content: counter(walk);
+  position: absolute; left: 0; top: 0; transform: translateX(-50%);
+  display: grid; place-items: center; width: 20px; height: 20px;
+  border-radius: 999px; background: var(--accent); color: var(--ink-inverse);
+  font-family: var(--font-num); font-size: var(--fs-micro); font-weight: var(--w-bold);
+}
+.guide__walk h3 { margin: 0 0 var(--space-4); font-size: var(--fs-lead); line-height: var(--lh-lead); }
+.guide__walk p:last-child { margin-bottom: 0; }
+.guide__meta { color: var(--ink-2); font-size: var(--fs-meta); line-height: var(--lh-meta); }
+
+/* Роли — сеткой, а не таблицей: у каждой роли есть абзац прозы, а абзац в
+   ячейке таблицы делает строки разной высоты и растаскивает столбцы. Две
+   колонки, потому что ролей четыре: в один столбец страница уезжает вниз, в
+   четыре — карточка становится уже своего текста. */
+.guide__roles {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-7); margin: 0 0 var(--space-8);
+}
+.guide__role {
+  background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--r-block); padding: var(--space-7) var(--space-8);
+  transition: border-color var(--t-state) var(--ease);
+}
+.guide__role:hover { border-color: var(--line-control-2); }
+.guide__role h3 { margin: 0 0 var(--space-5); font-size: var(--fs-lead); line-height: var(--lh-lead); }
+.guide__role p { max-width: none; margin: 0 0 var(--space-6); }
+
+/* Факты о роли приезжают из формы роли (`core.roles`) и потому набраны иначе,
+   чем проза рядом: это не рассказ, а справка, и её читают выборочно. */
+.guide__facts {
+  display: grid; grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-6); margin: 0;
+  padding-top: var(--space-6); border-top: 1px solid var(--line);
+  font-size: var(--fs-meta); line-height: var(--lh-meta);
+}
+.guide__facts dt { color: var(--ink-3); }
+.guide__facts dd { margin: 0; color: var(--ink-2); }
+
+/* Ссылка на гайд в шапке. Не `.btn`, и это не косметика: шапка у вошедшего и
+   без неё плотная (разделы, язык, партнёр, регистры, роль, пароль, выход), а
+   рамка с отступами кнопки добавляет к ней ещё тридцать пикселей и заставляет
+   разделы переноситься на вторую строку. Гайд — не действие и не раздел,
+   которым человек работает, поэтому и весит меньше их.
+
+   `nowrap` обязателен: подпись из трёх слов иначе ломается посередине, и в
+   шапке появляется двухстрочный элемент высотой больше самой шапки. */
+.who .guide-link {
+  color: var(--ink-2); font-size: var(--fs-meta); white-space: nowrap;
+  align-self: center;
+}
+.who a.guide-link:hover { color: var(--accent); text-decoration: none; }
+/* Гайд уже открыт: не ссылка, а метка места — тот же инвариант, что у текущего
+   раздела навигации (см. `appnav_item.html`). */
+.who .guide-link.here { color: var(--accent); font-weight: var(--w-semibold); cursor: default; }
+
 /* ── Узкий экран ─────────────────────────────────────────────── */
 
 /* Продукт десктоп-первый: рабочие ширины бухгалтера 1280–1920. Ниже 1024
@@ -724,6 +840,11 @@ ol.steps li.now .name { color: var(--accent); }
      встают, а перенос по одному оставляет их читаемыми. */
   ol.steps li { flex: 1 1 100%; border-right: 0; border-bottom: 1px solid var(--line-2); }
   ol.steps li:last-child { border-bottom: 0; }
+
+  /* Гайд: две колонки ролей на 375 дают карточку в 170 пикселей — уже своего
+     заголовка. Проза читается столбиком. */
+  .guide__roles { grid-template-columns: 1fr; }
+  .guide__walk > li { padding-left: var(--space-9); }
 }
 
 /* ── Печать ──────────────────────────────────────────────────── */

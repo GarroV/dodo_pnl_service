@@ -8,6 +8,7 @@ from . import (
     directory_views,
     expense_items_views,
     expenses_views,
+    guide,
     papers_views,
     reports_views,
     roles_views,
@@ -20,6 +21,10 @@ from . import (
 
 urlpatterns = [
     path("", views.index, name="index"),
+    # Гайд по продукту (T159). Без `@login_required` намеренно: половина
+    # вопроса, на который он отвечает, — «кем входить», и страница, видимая
+    # только после входа, на него ответить не может по устройству.
+    path("guide/", guide.page, name="guide"),
     path("periods/", views.periods, name="periods"),
     path("periods/<uuid:period_id>/", views.period_detail, name="period"),
     path("periods/<uuid:period_id>/calculate/", views.period_calculate, name="period-calculate"),

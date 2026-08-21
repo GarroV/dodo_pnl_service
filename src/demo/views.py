@@ -25,13 +25,13 @@ from __future__ import annotations
 
 from datetime import date
 
-from django.conf import settings
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 
 from web.auth import login_with_password
 from web.permissions import DIRECTORY_MANAGE, PAYRUN_CALCULATE
 
+from . import access
 from .accountant_table import build_accountant_table
 from .seed import ROLES, demo_password
 from .switching import safe_next
@@ -54,27 +54,24 @@ RECONCILE_PERIOD = date(2026, 6, 1)
 
 
 def enabled() -> bool:
-    return bool(getattr(settings, "DEMO_MODE", False))
-
-
-def _key_ok(request) -> bool:
-    """Спидбамп. Ключа не задано — открыто всем, и это осознанный режим."""
-    key = (getattr(settings, "DEMO_KEY", "") or "").strip()
-    if not key:
-        return True
-    return request.GET.get("key", "") == key or request.session.get("demo_key") == key
+    """Оставлено именем этого модуля: его знают вызывающие снаружи."""
+    return access.enabled()
 
 
 def _guard(request) -> None:
-    if not enabled():
+    """Пустить или отказать. Правило — общее с остальными дверями в демо.
+
+    Само правило живёт в `demo.access`, потому что спрашивают его теперь ещё
+    два места: корень стенда и форма входа продукта (T160). Разъехавшиеся
+    ответы означали бы тупик — одна дверь пустила, вторая показала `404`.
+    """
+    if not access.enabled():
         raise Http404("demo is off")
-    if not _key_ok(request):
+    if not access.key_ok(request):
         raise Http404("demo key required")
-    key = (getattr(settings, "DEMO_KEY", "") or "").strip()
-    if key:
-        # Ключ запоминается в сессии, чтобы посетителю не пришлось таскать его
-        # в каждой ссылке внутри демо.
-        request.session["demo_key"] = key
+    # Ключ запоминается в сессии, чтобы посетителю не пришлось таскать его
+    # в каждой ссылке внутри демо.
+    access.remember_key(request)
 
 
 def landing(request):
@@ -140,9 +137,14 @@ def enter(request, role: str = DEFAULT_ROLE):
     # `flush()`, если в ней уже был другой), поэтому ключ, положенный в
     # `_guard`, переживает первый вход и теряется на первом же переключении
     # роли — и следующая ссылка демо отвечала бы 404 при заданном DEMO_KEY.
-    key = (getattr(settings, "DEMO_KEY", "") or "").strip()
+    #
+    # Кладётся напрямую, а не через `access.remember_key`: тот сначала
+    # спрашивает, отдан ли ключ, — а после `flush()` в сессии пусто и в адресе
+    # ключа уже нет, так что честный ответ «не отдан». Здесь же известно
+    # больше: посетителя только что пустил `_guard`, то есть ключ он отдал.
+    key = access.key()
     if key:
-        request.session["demo_key"] = key
+        request.session[access.SESSION_KEY] = key
 
     return redirect(safe_next(request.GET.get("next", "")) or LANDS_ON)
 

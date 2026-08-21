@@ -6,6 +6,25 @@
 
 {% if error %}{% notice "alert" %}{{ error }}{% endnotice %}{% endif %}
 
+{% comment %}
+Путь в демо — первым, до формы пароля (T160). Посетитель демо-стенда,
+потерявший `?key=…` в ссылке, попадал сюда и читал «логин и пароль выдаёт
+администратор сети» — то есть тупик, который выглядит как поломка продукта.
+
+Блок рисуется, только когда демо действительно пустит этого посетителя
+(`demo_url` даёт `web.views.login_context`). В продукте переменной нет, и на
+форме входа не остаётся ни слова про демо: дверь, которая «всё равно никуда не
+ведёт», однажды поведёт.
+{% endcomment %}
+{% if demo_url %}
+{% translate "Это демо-стенд" as demo_stand %}
+{% notice "empty" title=demo_stand %}
+  {% blocktranslate %}Учётка здесь не нужна: демо открывается одним кликом и наполнено выдуманной
+  сетью — два юрлица, три точки, тридцать человек и три месяца расчёта.{% endblocktranslate %}
+  <a class="btn next" href="{{ demo_url }}">{% translate "Открыть демо" %}</a>
+{% endnotice %}
+{% endif %}
+
 <form method="post" action="{% url 'login' %}" class="card">{% csrf_token %}
   <input type="hidden" name="next" value="{{ next }}">
   {% translate "Логин" as login_label %}

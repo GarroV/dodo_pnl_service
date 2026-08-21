@@ -81,6 +81,8 @@ def expenses(request):
         "total_text": money(total),
         "counted": sum(1 for row in rows if row["state"] == ACTIVE),
         "filters": _filter_fields(who, chosen),
+        # Сужен ли отбор — от этого зависит, что говорит пустой список (T160).
+        "narrowed": narrowed(chosen),
         "add_url": reverse("expense-new"),
     }, status=status)
 
@@ -109,6 +111,23 @@ def filters_default() -> dict:
 
 def _last_day(first: date) -> date:
     return (first.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+
+
+def narrowed(chosen: dict) -> bool:
+    """Отбор сужен по сравнению с умолчанием — то есть пустота может быть от него.
+
+    Нужно пустому состоянию (T160): «за этот месяц расходов ещё нет» и «отбор
+    ничего не пропустил» — это два разных сообщения и два разных следующих
+    действия. Первое предлагает внести первый расход, второе — снять отбор;
+    свести их в одно значило бы предлагать человеку заводить запись, которая у
+    него, возможно, уже есть и просто отфильтрована.
+
+    Считается по тому, что человек прислал сам, а не по данным: сравнить с
+    умолчанием можно, ничего не спрашивая у базы. Это важно ровно тем, что
+    сообщение о сужении не может выдать существование скрытых строк (D023) —
+    оно про запрос, а не про их наличие.
+    """
+    return chosen != filters_default()
 
 
 def filters_from(request) -> dict:
