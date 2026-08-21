@@ -420,6 +420,38 @@ def test_a_scheme_that_is_not_in_the_rules_is_refused(
     client.post("/logout/")
 
 
+def test_a_measure_that_is_not_in_the_rules_is_refused(
+    client, web_env, sql, only_seeded_people,
+):
+    """То же и для меры оплаты: список в браузере — не защита.
+
+    Проверка зеркальна проверке схемы нарочно, а не «для симметрии»: оба поля
+    собираются одним кодом (`_from_rules` и `_choice_field`), и именно поэтому
+    легко решить, что достаточно проверить одно. Не достаточно: разбор дифа
+    свежим взглядом отметил, что у меры такой проверки в наборе нет, а поведение
+    он подтвердил руками — то есть правильное поведение держалось ни на чём.
+    Рефакторинг общего кода, сломавший ветку меры, прошёл бы незамеченным.
+    """
+    login_as(client, "admin")
+    assert client.post(NEW, hire_form()).status_code == 302
+    person = created(sql)[0]
+
+    refused = client.post(f"{LIST}{person}/", {
+        "what": "terms", "valid_from": "2026-07-01",
+        "group": str(a_group().id), "unit": str(a_unit().id),
+        "base_rate": "400", "coefficient": "1",
+        "scheme": "standard",
+        "work_measure": "not_a_real_measure",
+        "ledger": "",
+    })
+    assert refused.status_code == 400, refused.status_code
+    assert "такого варианта нет" in body(refused)
+    assert sql.execute(
+        "select count(*) from employment_terms where employee_id = %s", (person,),
+    ).fetchone()[0] == 1, "версия завелась при отказе"
+    client.post("/logout/")
+
+
 def test_a_stored_scheme_unknown_to_the_rules_is_kept_and_marked(
     client, web_env, sql, only_seeded_people,
 ):
