@@ -18,12 +18,18 @@
 не на слово «opacity» в шаблоне: лист один на весь продукт, и правило вернуть
 обратно можно только в нём.
 
+Лист с T177 лежит файлом статики, а не внутри страницы, поэтому правило читается
+из файла. Одного файла мало: правило, живущее в листе, который страница не
+просит, не действует, — поэтому рядом проверяется и то, что страница этот лист
+подключает.
+
 Почему тест такой. Он идёт от **готовой страницы**, а не от компонента:
 подсказка собирается тремя разными шаблонами (поле, выбор, форма справочника), и
 проверка одного из них осталась бы зелёной, когда разъедется другой.
 """
 from __future__ import annotations
 
+import pathlib
 import re
 
 from conftest import body, login_as
@@ -63,10 +69,19 @@ def test_the_hint_is_hidden_from_eyes_but_not_from_the_tree(client, web_env):
     доступности, и подсказка перестаёт существовать для того, кто читает
     страницу диктором.
     """
+    from django.contrib.staticfiles import finders
+
     login_as(client, "admin")
     html = body(client.get(FORMS[0]))
+    assert "web/app.css" in html, (
+        "страница не просит лист оформления — правило ниже на ней не действует"
+    )
 
-    rule = re.search(r"form\.card \.field > \.note \{([^}]*)\}", html)
+    stylesheet = finders.find("web/app.css")
+    assert stylesheet, "листа оформления нет в статике вовсе"
+    css = pathlib.Path(stylesheet).read_text(encoding="utf-8")
+
+    rule = re.search(r"form\.card \.field > \.note \{([^}]*)\}", css)
     assert rule, "правило показа подсказки пропало из листа стилей"
     body_of_rule = rule.group(1)
     assert "display: none" not in body_of_rule, (

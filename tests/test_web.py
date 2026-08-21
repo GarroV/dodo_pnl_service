@@ -8,6 +8,7 @@
 """
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 
 import pytest
@@ -173,8 +174,19 @@ def test_period_page_opens_on_seed_data(client):
     assert response.status_code == 200
     text = body(response)
     assert "Dodo Serbia" in text
-    # Сотрудники сида с табелем за июнь — заготовка под ведомость должна их считать.
-    assert "32" in text
+    # Сотрудники сида с табелем за июнь — заготовка под ведомость должна их
+    # считать. Число берётся у своей подписи, а не поиском по странице целиком:
+    # до T177 здесь стояло `assert "32" in text`, и зеленел он на «32» из
+    # `padding: 14px 32px` в листе стилей, который лежал инлайном в разметке.
+    # Сотрудников в сиде 35, а не 32, — то есть проверка не проверяла ничего и
+    # покраснела только тогда, когда лист уехал в статику. Счёт сида пришит и в
+    # `test_payrun_lifecycle` (`count(*) from employees == 35`): разъедутся —
+    # покраснеет оба места, а не одно.
+    employees = re.search(r"Сотрудников в табеле</dt><dd>(\d+)</dd>", text)
+    assert employees, "на странице периода нет подписи «Сотрудников в табеле» со числом"
+    assert employees.group(1) == "35", (
+        f"в табеле сида {employees.group(1)} человек вместо 35 — разъехался сид или страница"
+    )
 
 
 def test_unknown_period_is_not_found(client):
