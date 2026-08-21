@@ -20,16 +20,30 @@
 """
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 from django.test.utils import override_settings
 
-# Файлы экрана табеля. Список нарочно записан здесь руками, а не собран из
-# каталога: собранный из того же места, откуда берёт продукт, он подтвердил бы
-# сам себя и остался бы зелёным, даже если файл из шаблона исчез.
+# Файлы, без которых экран ломается. Список нарочно записан здесь руками, а не
+# собран из каталога: собранный из того же места, откуда берёт продукт, он
+# подтвердил бы сам себя и остался бы зелёным, даже если файл из шаблона исчез.
+#
+# Оформление здесь наравне со скриптами табеля, и это не вкусовщина: до T177
+# лист стилей лежал инлайном в `base.html` именно из страха перед этим 404, и
+# страх был обоснован (issue #68). Как только оформление уехало в статику,
+# неотданный `app.css` означает нечитаемый продукт на **всех** страницах —
+# ровно то состояние, из-за которого владелец не мог его протестировать.
 FILES = [
     ("timesheets/htmx-2.0.10.min.js", b"htmx", "web/components/htmx.html"),
     ("timesheets/grid.js", None, "timesheets/grid.html"),
     ("timesheets/grid.css", None, "timesheets/grid.html"),
+    # Значения дизайн-системы (T176).
+    ("web/tokens.css", b"--canvas", "web/base.html"),
+    # Шрифты локально: внешние загрузки в проде запрещены, а без файла продукт
+    # молча уезжает на системный шрифт — метрики другие, вёрстка «почти та же».
+    ("web/fonts/golos-text-cyrillic.woff2", b"wOF2", "web/tokens.css"),
+    ("web/fonts/ibm-plex-mono-400-latin.woff2", b"wOF2", "web/tokens.css"),
 ]
 
 
@@ -56,9 +70,24 @@ def test_the_pages_ask_for_those_very_files():
     просит и который не отдаётся. Подключение htmx живёт отдельным включаемым
     куском (D017: версия и путь названы в продукте один раз), поэтому у каждого
     файла в списке записано, какой шаблон его просит.
+
+    Просящий не всегда шаблон. Шрифт просит не страница, а `@font-face` внутри
+    `tokens.css`: путь там относительный, `{% static %}` внутри CSS не работает,
+    и опечатка в имени файла не видна нигде — страница откроется системным
+    шрифтом, «почти той же» вёрсткой. Поэтому CSS проверяется как файл статики,
+    а не через загрузчик шаблонов, который его не найдёт вовсе.
     """
+    from django.contrib.staticfiles import finders
     from django.template.loader import get_template
 
-    for path, _, template in FILES:
-        source = get_template(template).template.source
-        assert path in source, f"{template} больше не просит {path} — список устарел"
+    for path, _, asker in FILES:
+        if asker.endswith(".css"):
+            found = finders.find(asker)
+            assert found, f"не нашёлся сам {asker} — а он просит {path}"
+            source = pathlib.Path(found).read_text(encoding="utf-8")
+            # В CSS путь относительный: от /static/web/ до /static/web/fonts/.
+            expected = path.removeprefix(asker.rsplit("/", 1)[0] + "/")
+        else:
+            source = get_template(asker).template.source
+            expected = path
+        assert expected in source, f"{asker} больше не просит {path} — список устарел"
