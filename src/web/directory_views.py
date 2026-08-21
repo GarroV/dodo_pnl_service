@@ -19,6 +19,27 @@
 админку нет вовсе у того, кому она запрещена: экран не предлагает того, что сам
 же отвергнет (T072).
 
+**Сотрудники — единственный справочник, который читают все, а ведёт один**
+(T173, D047). Управляющему точки нужны имена, должности и ставки своих людей:
+ставок в Dodo IS нет вовсе — это условия найма, наши данные, — и проверить их
+можно только здесь. Поэтому `directory.manage` решает у этих двух экранов не
+«видно или нет», а **правка или чтение**:
+
+* строки режет база — `unit_visibility` на `employees` (`0020`) и на
+  `employment_terms` (`0011`) плюс отбор по регистру роли (D023). Управляющий
+  физически не может прочитать человека чужой точки, и это не свойство того,
+  что экран не спросил лишнего;
+* право решает, показывать формы или нет. Формы нет — есть объяснение, теми же
+  словами, которыми ответит сам отказ: пропавшая без слов форма читается как
+  поломка продукта (T072);
+* адрес при этом остаётся рабочим на чтение, а `POST` отвечает 403 словами.
+  Прятать адрес значило бы завести третий контур доступа — в разметке, где его
+  никто не проверит.
+
+Остальные семь справочников по-прежнему целиком под `directory.manage`: у них
+нет читателя, которому они нужны для своей работы. Восьмой — контрагенты —
+открыт на чтение по тому же доводу, но своим (`counterparties_views`).
+
 **Правка с датой внутри закрытого месяца проходит, и продукт объясняет, что при
 этом произошло** (T121, D020): закрытый месяц остаётся прежним, разница едет
 вперёд помеченной строкой. Отказ остался только у того, у чего версий по датам
@@ -50,7 +71,7 @@ from core.models import (
 
 from . import directory, permissions, rules
 from .dbrefusal import BadInput, ConstraintRefused, saving
-from .format import hours, ledger_title
+from .format import EMPTY, exact, hours, ledger_title
 from .i18n import month_title
 from .principal import get_current_principal
 
@@ -128,6 +149,31 @@ def _guard(request):
         permissions.check(who, permissions.DIRECTORY_MANAGE)
     except permissions.PermissionRefused as refusal:
         return who, _refusal(request, refusal)
+    return who, None
+
+
+def _reader(request):
+    """Пропустить любого, кого завели к партнёру: строки режет база, а не право (T173).
+
+    Отдельно от `_guard`, потому что решает другой вопрос. `_guard` спрашивает
+    «вправе ли этот человек вести справочник» — и отвечает отказом на весь
+    экран. Здесь спрашивается только «есть ли партнёр, чьи данные показывать»:
+    без членства политики пусты, и открывать пустой экран с поиском значило бы
+    предлагать искать в ничём.
+
+    Всё остальное решает база. Управляющий точки видит своих людей и не видит
+    чужих (`0020`), регистр отбирается по роли (D023) — и ни одна строка этого
+    отбора не написана здесь. Забытый фильтр в новом экране обязан давать пустой
+    список, а не чужой.
+    """
+    who = _who(request)
+    if who is None or who.tenant_id is None:
+        return None, render(request, "web/directory/denied.html", {
+            "message": _(
+                "Вас ещё не завели ни к одному партнёру, поэтому сотрудников у вас нет. "
+                "Попросите администратора сети добавить вас."
+            ),
+        }, status=403)
     return who, None
 
 
@@ -313,37 +359,71 @@ def _select(name: str, label: str, rows, selected, **extra) -> dict:
 
 @login_required
 def employees(request):
-    who, denied = _guard(request)
+    who, denied = _reader(request)
     if denied is not None:
         return denied
+    may_manage = permissions.has(who, permissions.DIRECTORY_MANAGE)
 
     query = (request.GET.get("q") or "").strip()
-    rows = _employee_rows(who, query)
+    rows = _employee_rows(who, query, with_key=may_manage)
+
+    # Сквозной ключ показывается только тому, кто ведёт справочник. Это не
+    # оформление: в Сербии там JMBG — национальный идентификатор, и загрузка
+    # табеля сходится по нему, то есть нужен он администратору, а не
+    # управляющему. Управляющему по D047 нужны имена, должности и ставки; лишний
+    # столбец персональных данных к работе точки не добавляет ничего.
+    #
+    # Поиск сужается вместе со столбцом (`with_key`): искать по значению,
+    # которого на экране нет, — это способ его подобрать.
+    columns = [{"label": _("Сотрудник")}]
+    if may_manage:
+        columns.append({"label": _("Внешний ключ")})
+    columns += [
+        {"label": _("Группа")},
+        {"label": _("Точка")},
+        {"label": _("Ставка"), "num": True},
+        {"label": _("Уволен")},
+    ]
 
     return render(request, "web/directory/list.html", {
         "heading": _("Сотрудники"),
         "about": _(
             "Карточки заводятся вместе с данными партнёра, а не здесь: "
             "имя, коэффициент и ставку приносит загрузка таблицы. Править — можно."
+        ) if may_manage else _(
+            "Люди вашей точки: в какой группе человек считается и по какой ставке. "
+            "Только чтение — карточки ведёт администратор сети."
         ),
         "search_value": query,
-        "search_label": _("Поиск по имени или внешнему ключу"),
-        "columns": [
-            {"label": _("Сотрудник")},
-            {"label": _("Внешний ключ")},
-            {"label": _("Группа")},
-            {"label": _("Точка")},
-            {"label": _("Уволен")},
-        ],
+        "search_label": (
+            _("Поиск по имени или внешнему ключу") if may_manage else _("Поиск по имени")
+        ),
+        # Куда возвращаться, зависит от того, кто смотрит: администратор сети
+        # пришёл сюда из справочников, остальные — из навигации, и раздела
+        # справочников у них нет вовсе. Ссылка на раздел, который ответит
+        # отказом, была бы обещанием отказа (то же решение, что у контрагентов).
+        "back_url": reverse("directory") if may_manage else "",
+        "back_label": _("← К справочникам"),
+        "standalone": not may_manage,
+        "columns": columns,
         "rows": rows,
         # Пустое состояние говорит, что делать дальше, а не что данных нет:
         # заголовок — факт, тело — следующий шаг. Кнопки «Завести» у сотрудников
         # нет (D029), поэтому шаг здесь — загрузка таблицы партнёра.
-        "empty": _("Сотрудников нет."),
-        "empty_next": _(
-            "Карточки заводит загрузка таблицы партнёра: откройте месяц и "
-            "загрузите табель — люди появятся вместе с часами."
-        ),
+        #
+        # Читателю следующий шаг называется другой: загрузить табель он не
+        # может, и совет «загрузите таблицу» отправил бы его на экран, который
+        # ответит отказом.
+        "empty": _("Сотрудников нет.") if not query else _("Ничего не нашлось."),
+        "empty_next": (
+            _(
+                "Карточки заводит загрузка таблицы партнёра: откройте месяц и "
+                "загрузите табель — люди появятся вместе с часами."
+            ) if may_manage else _(
+                "Здесь появятся люди вашей точки — вместе с их условиями найма. "
+                "Пока их нет, спросите администратора сети."
+            )
+        ) if not query else _("Попробуйте другое написание имени или фамилии."),
     })
 
 
@@ -360,13 +440,22 @@ def _current_terms(who) -> dict:
     return terms
 
 
-def _employee_rows(who, query: str = "") -> list[dict]:
+def _employee_rows(who, query: str = "", *, with_key: bool = True) -> list[dict]:
     """Строки списка сотрудников — уже отобранные по регистру роли (D023).
 
     Человек без условий найма показывается всем: регистра у него ещё нет, и
     скрывать нечего. Спрятать его было бы хуже прямой ошибки — именно такой
     человек и требует внимания администратора: без условий найма он не попадёт
     ни в табель, ни в ведомость.
+
+    Точку здесь никто не проверяет — и не должен: управляющему её режет политика
+    `unit_visibility` (`0020`), то есть человека чужой точки не отдаёт база.
+    Второй фильтр в коде был бы второй копией правила «свой человек», а
+    разъехавшиеся копии одного правила и есть способ, которым доступ ломается
+    незаметно.
+
+    `with_key` — показывать ли сквозной ключ (JMBG). Он же решает, ищет ли поиск
+    по нему: искать по значению, которого на экране нет, — способ его подобрать.
     """
     found = Employee.objects.order_by("last_name", "first_name")
     if query:
@@ -374,11 +463,10 @@ def _employee_rows(who, query: str = "") -> list[dict]:
         # внешнему ключу. Тридцать человек листаются, три тысячи — нет.
         from django.db.models import Q
 
-        found = found.filter(
-            Q(last_name__icontains=query)
-            | Q(first_name__icontains=query)
-            | Q(external_id__icontains=query)
-        )
+        where = Q(last_name__icontains=query) | Q(first_name__icontains=query)
+        if with_key:
+            where |= Q(external_id__icontains=query)
+        found = found.filter(where)
 
     terms = _current_terms(who)
     seen = set(who.visible_ledgers)
@@ -387,15 +475,22 @@ def _employee_rows(who, query: str = "") -> list[dict]:
         term = terms.get(person.id)
         if term is not None and _effective_ledger(term) not in seen:
             continue
+        cells = [{"text": f"{person.last_name} {person.first_name}".strip()}]
+        if with_key:
+            cells.append({"text": person.external_id})
+        cells += [
+            {"text": term.group.title if term else EMPTY},
+            {"text": term.unit.code if term and term.unit else EMPTY},
+            # Ставка — не деньги, а основание расчёта: показывается как есть,
+            # без округления до копеек (`format.exact`, T116). 152 × 421,08
+            # даёт не ту сумму, что 152 × 421,085, и человек, повторяющий
+            # расчёт на калькуляторе, обязан видеть настоящее основание.
+            {"text": exact(term.base_rate) if term else EMPTY, "num": True},
+            {"text": person.dismissed_at.isoformat() if person.dismissed_at else EMPTY},
+        ]
         rows.append({
             "url": reverse("directory-employee", args=[person.id]),
-            "cells": [
-                {"text": f"{person.last_name} {person.first_name}".strip()},
-                {"text": person.external_id},
-                {"text": term.group.title if term else "—"},
-                {"text": term.unit.code if term and term.unit else "—"},
-                {"text": person.dismissed_at.isoformat() if person.dismissed_at else "—"},
-            ],
+            "cells": cells,
         })
     return rows
 
@@ -416,10 +511,15 @@ def _employee_or_404(who, employee_id) -> Employee:
 
 @login_required
 def employee(request, employee_id):
-    who, denied = _guard(request)
+    who, denied = _reader(request)
     if denied is not None:
         return denied
+    # Человек ищется ДО проверки права (T173): чужой сотрудник обязан отвечать
+    # 404 всем одинаково. Если бы право спрашивалось первым, читатель получал бы
+    # на своего человека 200, а на чужого — 403, то есть узнавал бы о его
+    # существовании ровно по коду ответа (D023).
     person = _employee_or_404(who, employee_id)
+    may_manage = permissions.has(who, permissions.DIRECTORY_MANAGE)
 
     notice = error = ""
     # Код ответа формы: 200, пока ничего не отклонено. Отказ по состоянию данных
@@ -428,6 +528,14 @@ def employee(request, employee_id):
     # журнал сервера, будущий API.
     status = 200
     if request.method == "POST":
+        # Правка — по праву, и отказ здесь громкий: 403 словами. База отвергла
+        # бы запись и сама (`0130`), но человеку из её ошибки не понятно ничего,
+        # а «сохранено» и «отказано» не должны быть неразличимы для того, кто
+        # смотрит на код ответа.
+        try:
+            permissions.check(who, permissions.DIRECTORY_MANAGE)
+        except permissions.PermissionRefused as refusal:
+            return _refusal(request, refusal)
         try:
             carried = ""
             # Запись целиком внутри `saving()`: отказ базы по ограничению
@@ -466,7 +574,7 @@ def employee(request, employee_id):
         notice = " ".join(filter(None, [notice, directory.closed_month_notice(who.tenant_id)]))
 
     return render(request, "web/directory/employee.html", _employee_context(
-        request, who, person, notice=notice, error=error,
+        request, who, person, notice=notice, error=error, may_manage=may_manage,
     ), status=status)
 
 
@@ -515,7 +623,9 @@ def _save_terms(request, who, person: Employee) -> tuple[str, str]:
     return "terms", ("&retro=1" if carried else "")
 
 
-def _employee_context(request, who, person: Employee, *, notice: str, error: str) -> dict:
+def _employee_context(
+    request, who, person: Employee, *, notice: str, error: str, may_manage: bool = True
+) -> dict:
     versions = _visible_terms(who, list(
         EmploymentTerm.objects.filter(employee_id=person.id)
         .select_related("group", "unit")
@@ -523,11 +633,66 @@ def _employee_context(request, who, person: Employee, *, notice: str, error: str
     ))
     current = versions[-1] if versions else None
     edge = directory.closed_through(who.tenant_id)
-    return {
+    shown = {
         "person": person,
         "back_url": reverse("directory-employees"),
         "notice": notice,
         "error": error,
+        "may_manage": may_manage,
+        "versions": [
+            {
+                "from": term.valid_from.isoformat(),
+                "to": term.valid_to.isoformat() if term.valid_to else EMPTY,
+                "group": term.group.title,
+                "unit": term.unit.code if term.unit else EMPTY,
+                # Ставка и коэффициент — основания расчёта, а не деньги: как
+                # есть, без округления до копеек (`format.exact`, T116).
+                "rate": exact(term.base_rate),
+                "coefficient": exact(term.coefficient),
+                "scheme": term.scheme or term.group.scheme,
+                "ledger": ledger_title(term.ledger or term.group.ledger),
+            }
+            for term in versions
+        ],
+    }
+    if not may_manage:
+        # Чтение (T173, D047). Форм нет — вместо них факты и объяснение, почему
+        # правки нет: пропавшая без слов форма читается как поломка продукта, а
+        # не как запрет (T072). Слова берутся из `permissions.explain`, то есть
+        # те же самые, которыми ответит сам отказ на `POST`.
+        return {
+            **shown,
+            "denied": permissions.explain(who, permissions.DIRECTORY_MANAGE),
+            # Сквозного ключа среди фактов нет намеренно — там JMBG, и на этом
+            # экране он нужен тому, кто сводит загрузку табеля, а не точке.
+            "facts": [
+                {"label": _("Группа"), "value": current.group.title if current else EMPTY},
+                {
+                    "label": _("Точка"),
+                    "value": current.unit.code if current and current.unit else EMPTY,
+                },
+                {
+                    "label": _("Ставка"),
+                    "value": exact(current.base_rate) if current else EMPTY,
+                    "num": True,
+                },
+                {
+                    "label": _("Коэффициент"),
+                    "value": exact(current.coefficient) if current else EMPTY,
+                    "num": True,
+                },
+                {
+                    "label": _("Принят"),
+                    "value": person.hired_at.isoformat() if person.hired_at else EMPTY,
+                },
+                {
+                    "label": _("Уволен"),
+                    "value": person.dismissed_at.isoformat() if person.dismissed_at else EMPTY,
+                },
+            ],
+        }
+    return {
+        **shown,
         "closed_through": edge,
         "closed_note": directory.closed_month_warning(who.tenant_id),
         "person_fields": [
@@ -543,19 +708,6 @@ def _employee_context(request, who, person: Employee, *, notice: str, error: str
              "value": person.hired_at.isoformat() if person.hired_at else ""},
             {"kind": "date", "name": "dismissed_at", "label": _("Уволен"),
              "value": person.dismissed_at.isoformat() if person.dismissed_at else ""},
-        ],
-        "versions": [
-            {
-                "from": term.valid_from.isoformat(),
-                "to": term.valid_to.isoformat() if term.valid_to else "—",
-                "group": term.group.title,
-                "unit": term.unit.code if term.unit else "—",
-                "rate": term.base_rate,
-                "coefficient": term.coefficient,
-                "scheme": term.scheme or term.group.scheme,
-                "ledger": ledger_title(term.ledger or term.group.ledger),
-            }
-            for term in versions
         ],
         "terms_fields": [
             {"kind": "date", "name": "valid_from", "label": _("Действует с"),
