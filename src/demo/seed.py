@@ -150,6 +150,10 @@ def seed_demo(*, log=None) -> dict:
         _expense_items(tenant, items)
         spent = _expenses(tenant)
         say(f"расходов из кассы: {spent}")
+        counterparties = _counterparties(tenant)
+        say(f"контрагентов: {len(counterparties)}")
+        invoiced, paid = _supplier_documents(tenant, counterparties)
+        say(f"счетов поставщикам: {invoiced}, платежей: {paid}")
 
     # Расчёт каждого месяца — своей транзакцией, а не общей: `calculate_period`
     # открывает свою и утверждает результат отдельным переходом, у которого
@@ -523,6 +527,164 @@ def _expenses(tenant) -> int:
                 cursor.execute("select allocate_fact(%s)", [fact_id])
         written += 1
     return written
+
+
+# --- поставщики: контрагенты, счета, платежи (T151-T153) -----------------------
+
+
+def _counterparties(tenant) -> dict[str, models.Counterparty]:
+    """Контрагенты демо: поставщики со счетами и платежами.
+
+    Ключ Dodo IS остаётся пустым (T150): сведение со справочником поставщиков
+    Dodo IS случится только в шестой очереди, и заполненное поле сегодня
+    соврало бы про то, что оно уже случилось.
+    """
+    accountant = det_id("user", "accountant")
+    return {
+        title: models.Counterparty.objects.create(
+            id=det_id("counterparty", title), tenant=tenant, title=title,
+            valid_from=date(2023, 1, 1), created_by=accountant,
+        )
+        for title in dataset.counterparties()
+    }
+
+
+def _service_pnl_item(code: str) -> models.PnlItem:
+    """Служебная строка P&L, заведённая миграцией `0243`.
+
+    Ищется по коду, а не по приколоченному uuid — тем же способом, каким её
+    находит продукт (`web.suppliers.line`). Код — то, чем строка названа в
+    схеме, и по нему же читается отказ, если строки вдруг не окажется.
+    """
+    return models.PnlItem.objects.get(tenant__isnull=True, code=code)
+
+
+def _supplier_documents(tenant, counterparties: dict) -> tuple[int, int]:
+    """Счета поставщикам и платежи по ним — через `upsert_document`/`upsert_fact`.
+
+    Тем же путём, каким пишет продукт (`web.suppliers.record_invoice`, `.pay`):
+    свой `insert` здесь не заводится, потому что идемпотентность,
+    версионирование и защита закрытого месяца живут в этих двух функциях базы,
+    а не в наполнении. Документ пишется первым, а строка — вторым: платёж
+    ссылается на документ, которого до записи счёта ещё нет.
+
+    Пять счетов показывают то, ради чего события в продукте разведены:
+    разницу даты документа и периода учёта (№1), частичную оплату — остаток
+    числом (№2), обязательство без единой оплаты на конец месяца (№3), и
+    строку без статьи, из которой инбокс классификации (T152) вообще не пуст
+    (№4).
+    """
+    expense_items = {item.code: item for item in dataset.EXPENSE_ITEMS}
+    unclassified = _service_pnl_item("unclassified")
+    supplier_payment = _service_pnl_item("supplier_payment")
+
+    # Куда лёг счёт — нужно платежам: точка, регистр и автор берутся у счёта,
+    # а не выбираются заново (см. `web.suppliers.pay`).
+    landed: dict[str, dict] = {}
+
+    for inv in dataset.invoices():
+        counterparty = counterparties[inv.counterparty]
+        unit_id = det_id("unit", inv.unit)
+        author = det_id("user", "manager" if inv.unit == "NS1" else "accountant")
+
+        doc_payload = {
+            "tenant_id": str(tenant.id),
+            "counterparty_id": str(counterparty.id),
+            "kind": "invoice",
+            "source": "manual",
+            "external_id": inv.key,
+            "doc_date": inv.doc_date.isoformat(),
+            "period": inv.period.isoformat(),
+            "total_amount": str(inv.amount),
+            "created_by": str(author),
+        }
+        if inv.number:
+            doc_payload["doc_number"] = inv.number
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select upsert_document(%s::jsonb)", [json.dumps(doc_payload)]
+            )
+            document_id = cursor.fetchone()[0]
+
+        if inv.item is None:
+            pnl_item_id = unclassified.id
+            expense_item_id = None
+            title = counterparty.title
+        else:
+            expense_item = expense_items[inv.item]
+            pnl_item_id = det_id("pnl_item", expense_item.pnl_code)
+            expense_item_id = det_id("expense_item", expense_item.code)
+            title = expense_item.title
+
+        line_payload = {
+            "tenant_id": str(tenant.id),
+            "period": inv.period.isoformat(),
+            "doc_date": inv.doc_date.isoformat(),
+            "unit_id": str(unit_id),
+            "pnl_item_id": str(pnl_item_id),
+            "counterparty_id": str(counterparty.id),
+            "ledger": "official",
+            "amount": str(inv.amount),
+            "title": title,
+            "source": "manual",
+            "document_id": str(document_id),
+            "line_no": 1,
+            "dedup_key": f"manual:invoice:{inv.key}",
+            "allocation": "direct",
+            "created_by": str(author),
+        }
+        if expense_item_id is not None:
+            line_payload["expense_item_id"] = str(expense_item_id)
+        if inv.vat:
+            # Только ставка: сумму налога считает база (`vat_of`), а второй
+            # расчёт рядом с первым однажды разошёлся бы с ним на копейку.
+            line_payload["vat_rate"] = inv.vat
+        if inv.note:
+            line_payload["note"] = inv.note
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select fact_id from upsert_fact(%s::jsonb)", [json.dumps(line_payload)]
+            )
+
+        landed[inv.key] = {
+            "document_id": document_id, "unit_id": unit_id,
+            "counterparty_id": counterparty.id, "author": author,
+            "number": inv.number,
+        }
+
+    for pmt in dataset.payments():
+        source_invoice = landed[pmt.invoice_key]
+        payload = {
+            "tenant_id": str(tenant.id),
+            "period": pmt.on.replace(day=1).isoformat(),
+            "doc_date": pmt.on.isoformat(),
+            "unit_id": str(source_invoice["unit_id"]),
+            "pnl_item_id": str(supplier_payment.id),
+            "counterparty_id": str(source_invoice["counterparty_id"]),
+            "ledger": "official",
+            "amount": str(pmt.amount),
+            # Название строки платежа — по счёту, а у счёта без номера по
+            # поставщику: та же развилка, что в `web.suppliers._payment_title`.
+            # Без неё демо однажды показало бы «Payment of invoice » с пустотой
+            # на конце — счёт без номера в жизни обычное дело.
+            "title": (f"Payment of invoice {source_invoice['number']}"
+                      if source_invoice["number"] else "Payment to supplier"),
+            # Канал денег для сверки кассы, а не для P&L — переводы из него
+            # исключены по `kind` во всех отчётах разом (миграция `0243`).
+            "channel": "bank",
+            "source": "manual",
+            "document_id": str(source_invoice["document_id"]),
+            "dedup_key": f"manual:payment:{pmt.key}",
+            "allocation": "direct",
+            "created_by": str(source_invoice["author"]),
+        }
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "select fact_id from upsert_fact(%s::jsonb)", [json.dumps(payload)]
+            )
+
+    return len(dataset.INVOICES), len(dataset.PAYMENTS)
 
 
 def _approve(tenant, month: Month) -> None:
