@@ -84,20 +84,50 @@ def _on_date(request) -> date:
         raise Http404("дата пишется как 2026-06-01") from None
 
 
-def _rules_at(who, on_date):
-    """Правила партнёра на дату вместе с их видимой частью.
+def _assembled_at(who, on_date):
+    """Правила партнёра на дату целиком: общая часть и слои по объектам.
 
-    Возвращает `(preset, hidden)` либо `(None, ())`, если правил страны в базе
+    Возвращает `(RuleSet, hidden)` либо `(None, ())`, если правил страны в базе
     нет вовсе. Второй случай — не ошибка продукта, а несделанная первичная
     загрузка, и сказать об этом надо словами, а не пятисотой.
+
+    Отдаётся весь набор, а не только общая часть: правка ложится на любой из
+    уровней, и значение, действующее для группы, собирается тем же кодом, каким
+    его собирает расчёт (`RuleSet.preset`). Собрать его здесь своим способом
+    значило бы завести второй порядок наложения слоёв рядом с настоящим.
     """
     country = directory.country_of(who.tenant_id)
     try:
         assembled = load_rules_at(who.tenant_id, country, on_date)
     except PresetNotFound:
         return None, ()
-    preset = assembled.base
-    return preset, rules.hidden_paths(preset, who.visible_ledgers)
+    return assembled, rules.hidden_paths(assembled.base, who.visible_ledgers)
+
+
+def _rules_at(who, on_date):
+    """Общая часть правил партнёра на дату — страна плюс сам партнёр."""
+    assembled, hidden = _assembled_at(who, on_date)
+    return (None, ()) if assembled is None else (assembled.base, hidden)
+
+
+def _preset_for(who, assembled, target, on_date):
+    """Правила, действующие для адресата правки: тем же кодом, что у расчёта.
+
+    У человека к его слою добавляется слой его группы — так же, как это делает
+    расчёт (`payrun.calc`: `rules.preset(group_id=case.group_id,
+    employee_id=case.employee_id)`). Без группы «сейчас действует» показывало бы
+    человеку значение партнёра, хотя расчёт взял бы значение его группы, и
+    правка «на то же самое» заводила бы пустую версию.
+    """
+    if target.scope_type == "group":
+        return assembled.preset(group_id=target.scope_id)
+    if target.scope_type == "employee":
+        term = directory.term_at(who.tenant_id, target.scope_id, on_date)
+        return assembled.preset(
+            group_id=term.group_id if term is not None else None,
+            employee_id=target.scope_id,
+        )
+    return assembled.base
 
 
 def _no_rules_notice(request, who, on_date, *, heading):
@@ -148,6 +178,12 @@ def index(request):
     if preset is None:
         return _no_rules_notice(request, who, on_date, heading=_("Правила расчёта"))
 
+    # Правила, у которых ниже партнёра есть своё значение. Список показывает
+    # общую часть — то, что действует у всех, — и без этой пометки версия,
+    # заведённая одной группе, не была бы видна ни здесь, ни где-либо ещё.
+    lower = rules.override_counts(
+        who.tenant_id, on_date, rules.titles_of_targets(who, on_date),
+    )
     return render(request, "web/rules/index.html", {
         "heading": _("Правила расчёта"),
         "on_date": on_date.isoformat(),
@@ -163,6 +199,7 @@ def index(request):
                         "value": leaf.value,
                         "origin": rules.level_title(leaf.level),
                         "since": leaf.valid_from.isoformat() if leaf.valid_from else "",
+                        "lower": rules.counts_words(lower.get(leaf.path, {})),
                         "url": (
                             f"{reverse('rule', args=[leaf.path])}?on={on_date.isoformat()}"
                             if leaf.editable else ""
@@ -198,9 +235,10 @@ def rule(request, path: str):
         return denied
 
     on_date = _on_date(request)
-    preset, hidden = _rules_at(who, on_date)
-    if preset is None:
+    assembled, hidden = _assembled_at(who, on_date)
+    if assembled is None:
         raise Http404("правил страны на эту дату нет")
+    preset = assembled.base
 
     # Скрытое роли правило и несуществующее отвечают одинаково (D023): «нельзя
     # смотреть» и «нет такого» отличались бы кодом ответа, и по нему можно было
@@ -213,10 +251,22 @@ def rule(request, path: str):
         raise Http404("правило не найдено") from None
 
     error, status, notice = "", 200, ""
+    target = rules.TENANT_TARGET
     if request.method == "POST":
         try:
             valid_from = _posted_date(request)
-            wanted = rules.parse(request.POST.get("value", ""), current, path)
+            # Адресат разбирается ДО значения: список допустимых значений тот же
+            # на всех уровнях, но отказ «нет такой группы» человеку понятнее,
+            # чем отказ про значение, набранное для этой группы.
+            target = rules.target_from(
+                who, request.POST.get("target", ""), path=path, on_date=on_date,
+            )
+            for_target = _preset_for(who, assembled, target, on_date)
+            current = rules.value_at(for_target, path)
+            wanted = rules.parse(
+                request.POST.get("value", ""), current, path,
+                allowed=tuple(code for code, _title in rules.choices_for(preset, path)),
+            )
             # Запись целиком внутри `saving()` — тем же приёмом, что на шести
             # формах справочников (T136, T142). Пересечение версий здесь
             # отсекает сама `save_override`, поэтому ограничение базы
@@ -228,7 +278,7 @@ def rule(request, path: str):
             # оставлять за собой закрытую версию без пришедшей ей на смену.
             with saving():
                 change = rules.save_override(
-                    who.tenant_id, path, wanted,
+                    who.tenant_id, path, wanted, target=target,
                     valid_from=valid_from, actor_id=who.user_id, effective=current,
                 )
             if not change.changed:
@@ -260,11 +310,13 @@ def rule(request, path: str):
             error, status = refusal.message, refusal.http_status
         # Значение могло поменяться этим же запросом — перечитываем, чтобы
         # страница показывала базу, а не то, что было до неё.
-        preset, hidden = _rules_at(who, on_date)
+        assembled, hidden = _assembled_at(who, on_date)
+        preset = assembled.base
         current = rules.value_at(preset, path)
 
     where = preset.origin_of(path)
     options = rules.choices_for(preset, path)
+    names = rules.titles_of_targets(who, on_date)
     return render(request, "web/rules/rule.html", {
         "heading": path,
         "on_date": on_date.isoformat(),
@@ -287,13 +339,26 @@ def rule(request, path: str):
         # Подсказка под полем даты приходит готовой — из того же места, что и
         # слова после правки. Две формулировки одного правила разъехались бы.
         "from_help": rules.monthly_help(),
+        # Кому кладём правку. Список собран с уровнями и объектами сразу, а
+        # выбранное сохраняется через отвергнутую форму: человек, ошибшийся в
+        # дате, не должен заново искать свою группу среди тридцати строк.
+        "targets": rules.targets_for(who, path, on_date, chosen=target.key),
+        # Уровни, на которых это правило не заводится, названы словами — до
+        # правки, а не отказом после. Пусто, если заводится на всех.
+        "scope_note": rules.scope_refusal(path, "group"),
         "versions": [
             {
                 "from": row.valid_from.isoformat(),
                 "to": row.valid_to.isoformat() if row.valid_to else "—",
                 "value": rules.show(row.value),
+                "level": rules.level_title(row.scope_type),
+                # Имя объекта, а не его uuid: строка истории должна читаться
+                # («группе Курьеры»), а не расшифровываться. У уровня партнёра
+                # объекта нет, и шаблон ставит прочерк — пустая ячейка читалась
+                # бы как потерянное название.
+                "who": names.get((row.scope_type, row.scope_id), ""),
             }
-            for row in rules.versions(who.tenant_id, path)
+            for row in rules.visible_only(rules.versions(who.tenant_id, path), names)
         ],
         "closed_note": directory.closed_month_warning(who.tenant_id),
     }, status=status)

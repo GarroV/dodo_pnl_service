@@ -29,11 +29,24 @@
 
 <p class="sub">{% blocktranslate with value=value origin=origin %}Сейчас действует: {{ value }} — {{ origin }}{% endblocktranslate %}{% if since %} ({% blocktranslate with day=since %}с {{ day }}{% endblocktranslate %}){% endif %}</p>
 
-<h2>{% translate "Версии настройки партнёра" %}</h2>
+<h2>{% translate "Версии переопределений" %}</h2>
+{% comment %}
+Все уровни в одной таблице, а не только слой партнёра. Пока история показывала
+один уровень, версия, заведённая группе, действовала и не была видна ни на одном
+экране — правило меняло деньги, а прочитать о нём было негде (T165). Уровень
+поэтому стоит первой колонкой: он важнее даты, потому что отвечает на вопрос
+«кого это касается».
+
+Строки объектов, которых роль не видит, сюда не попадают вовсе (D023) — их
+отбирает представление, и оговорки «показано не всё» здесь нет намеренно: она
+называла бы существование того, что и скрывается.
+{% endcomment %}
 {% if versions %}
 {% scroll %}<table>
   <thead>
     <tr>
+      <th>{% translate "Уровень" %}</th>
+      <th>{% translate "Кому" %}</th>
       <th>{% translate "Действует с" %}</th>
       <th>{% translate "По" %}</th>
       <th>{% translate "Значение" %}</th>
@@ -42,6 +55,8 @@
   <tbody>
     {% for version in versions %}
     <tr>
+      <td>{{ version.level }}</td>
+      <td>{{ version.who|default:"—" }}</td>
       <td>{{ version.from }}</td>
       <td>{{ version.to }}</td>
       <td class="num">{{ version.value }}</td>
@@ -50,8 +65,8 @@
   </tbody>
 </table>{% endscroll %}
 {% else %}
-{% translate "Партнёр это правило не менял." as never_changed %}
-{% notice "empty" title=never_changed %}{% translate "Значение приходит из правил страны. Первая же версия ниже станет настройкой партнёра — с той даты, которую вы укажете." %}{% endnotice %}
+{% translate "Это правило никто не переопределял." as never_changed %}
+{% notice "empty" title=never_changed %}{% translate "Значение приходит из правил страны. Первая же версия ниже станет переопределением — на том уровне и с той даты, которые вы укажете." %}{% endnotice %}
 {% endif %}
 
 <h2>{% translate "Новая версия правила" %}</h2>
@@ -71,6 +86,23 @@
 <p class="note">{{ closed_note }}</p>
 {% endif %}
 <form class="card" method="post">{% csrf_token %}
+  {% comment %}
+  «Кому» стоит первым полем — до даты и до значения, и это не порядок вёрстки.
+  Уровень решает, кого правка заденет: партнёра целиком, одну группу или одного
+  человека. Спрошенный последним, он читался бы как уточнение к уже набранному
+  значению, тогда как это первое решение из трёх.
+
+  Уровни, на которых это правило не действует, в список не попадают, а причина
+  сказана словами рядом (`scope_note`) — до правки, а не отказом после неё.
+  {% endcomment %}
+  <p class="field">
+    {% translate "Кому" as target_label %}
+    {% translate "Уровни складываются: значение группы сильнее значения партнёра, значение человека сильнее обоих." as target_help %}
+    {% include "web/components/select.html" with id="target" name="target" label=target_label options=targets required=True help=target_help %}
+  </p>
+  {% if scope_note %}
+  <p class="note">{{ scope_note }}</p>
+  {% endif %}
   <p class="field">
     {% translate "Действует с" as from_label %}
     {% comment %}

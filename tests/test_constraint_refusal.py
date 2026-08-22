@@ -154,10 +154,11 @@ def test_the_rules_screen_refuses_an_overlap_in_words(client, sql, monkeypatch):
     """
     from web import rules
 
-    def overlapping(tenant_id, path, value, *, valid_from, actor_id=None, effective=None):
+    def overlapping(tenant_id, path, value, *, valid_from, target=rules.TENANT_TARGET,
+                    actor_id=None, effective=None):
         for start in (date(2026, 9, 1), date(2026, 10, 1)):
             RuleOverride.objects.create(
-                tenant_id=tenant_id, scope_type=rules.SCOPE, scope_id=None,
+                tenant_id=tenant_id, scope_type=target.scope_type, scope_id=target.scope_id,
                 path=path, value=value, valid_from=start, valid_to=None,
                 created_by=actor_id,
             )
