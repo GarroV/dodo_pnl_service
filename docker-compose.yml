@@ -255,6 +255,13 @@ services:
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      # Демо стоит за публичным HTTPS-адресом (Tailscale Funnel), а TLS
+      # терминирует прокси: без этих двух Django отвергает любую форму на
+      # публичном адресе — «Origin checking failed», и выглядит это как
+      # сломанный вход, а не как настройка. У продукта они уже есть (T161),
+      # демо их не получало, потому что живёт на своём наборе переменных.
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS-}
+      BEHIND_TLS_PROXY: ${BEHIND_TLS_PROXY-}
       # Демо всегда англоязычное, независимо от языка продукта. Не настройка
       # вкуса: демо показывают заказчику и кладут в портфолио.
       UI_LANGUAGE: en
