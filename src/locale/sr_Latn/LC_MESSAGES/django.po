@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-22 08:17+0000\n"
+"POT-Creation-Date: 2026-08-22 08:34+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2374,11 +2374,52 @@ msgid ""
 "перестало бы применяться. Схема расчёта, регистр и мера работы конкретного "
 "человека задаются в его условиях найма."
 msgstr ""
+"Pravila grupe se adresiraju njenim kodom, pa ispod partnera ne važe: posle "
+"prebacivanja osobe u drugu grupu takva izmena bi prestala da se primenjuje, "
+"i to neprimetno. Šema obračuna, knjiga i mera rada konkretne osobe se zadaju "
+"u njenim uslovima zapošljavanja."
 
 msgid ""
 "Пороги отчёта расхождений читаются один раз на партнёра, поэтому версия для "
 "группы или человека в отчёт не попала бы вовсе."
 msgstr ""
+"Pragovi izveštaja o odstupanjima se čitaju jednom po partneru, pa verzija za "
+"grupu ili osobu uopšte ne bi ušla u izveštaj."
+
+msgid "всему партнёру"
+msgstr "celom partneru"
+
+msgid "группе"
+msgstr "grupi"
+
+msgid "одному человеку"
+msgstr "jednoj osobi"
+
+#, python-format
+msgid "Уровень «%(level)s» не из тех, на которые кладутся правила."
+msgstr "Nivo „%(level)s“ nije jedan od onih na koje se postavljaju pravila."
+
+msgid "У уровня «всему партнёру» объекта нет."
+msgstr "Nivo „ceo partner“ nema objekat."
+
+msgid "Не нашлось того, кому адресована правка. Выберите из списка."
+msgstr "Nije pronađen onaj kome je izmena upućena. Izaberite sa liste."
+
+#, python-format
+msgid "%(count)s группе"
+msgstr "%(count)s grupi"
+
+#, python-format
+msgid "%(count)s группам"
+msgstr "%(count)s grupama"
+
+#, python-format
+msgid "%(count)s человеку"
+msgstr "%(count)s osobi"
+
+#, python-format
+msgid "%(count)s людям"
+msgstr "%(count)s osobama"
 
 msgid "Константы страны"
 msgstr "Konstante zemlje"
@@ -2413,32 +2454,13 @@ msgstr "izmena grupe"
 msgid "переопределение по человеку"
 msgstr "izmena zaposlenog"
 
-msgid "всему партнёру"
-msgstr "celom partneru"
-
-msgid "группе"
-msgstr "grupi"
-
-msgid "одному человеку"
-msgstr "jednoj osobi"
-
-#, python-format
-msgid "Уровень «%(level)s» не из тех, на которые кладутся правила."
-msgstr "Nivo „%(level)s“ nije jedan od onih na koje se postavljaju pravila."
-
-msgid "У уровня «всему партнёру» объекта нет."
-msgstr "Nivo „ceo partner“ nema objekat."
-
-msgid "Не нашлось того, кому адресована правка. Выберите из списка."
-msgstr "Nije pronađen onaj kome je izmena upućena. Izaberite sa liste."
-
 #, python-format
 msgid ""
 "«%(label)s»: значения «%(value)s» нет в правилах страны. Допустимо: "
 "%(allowed)s."
 msgstr ""
-"„%(label)s“: vrednost „%(value)s“ ne postoji u pravilima zemlje. "
-"Dozvoljeno: %(allowed)s."
+"„%(label)s“: vrednost „%(value)s“ ne postoji u pravilima zemlje. Dozvoljeno: "
+"%(allowed)s."
 
 #, python-format
 msgid "«%(label)s»: нужно «да» или «нет», а не «%(value)s»."
@@ -2470,50 +2492,35 @@ msgstr ""
 "obračunat kao ranije — ako vam je trebala izmena od početka meseca, zavedite "
 "verziju od %(first)s."
 
-#, python-format
-msgid "%(count)s группе"
-msgstr "%(count)s grupi"
-
-#, python-format
-msgid "%(count)s группам"
-msgstr "%(count)s grupama"
-
-#, python-format
-msgid "%(count)s человеку"
-msgstr "%(count)s osobi"
-
-#, python-format
-msgid "%(count)s людям"
-msgstr "%(count)s osobama"
-
 msgid ""
 "Правила страны — общая база для всех партнёров этой страны, поэтому их ведёт "
 "не партнёр, а администратор платформы. Для себя любое из них можно "
 "переопределить формой ниже: правило страны от этого не меняется."
 msgstr ""
-"Pravila zemlje su zajednička osnova za sve partnere te zemlje, pa ih ne "
-"vodi partner nego administrator platforme. Za sebe možete da izmenite bilo "
-"koje od njih formom ispod: pravilo zemlje se time ne menja."
+"Pravila zemlje su zajednička osnova za sve partnere te zemlje, pa ih ne vodi "
+"partner nego administrator platforme. Za sebe možete da izmenite bilo koje "
+"od njih formom ispod: pravilo zemlje se time ne menja."
 
 msgid ""
 "Название правила страны заведено на всех языках сразу, и меняется оно вместе "
 "с пресетом страны, а не с этого экрана."
 msgstr ""
-"Naziv pravila zemlje je zaveden na svim jezicima odjednom i menja se "
-"zajedno sa presetom zemlje, a ne sa ovog ekrana."
+"Naziv pravila zemlje je zaveden na svim jezicima odjednom i menja se zajedno "
+"sa presetom zemlje, a ne sa ovog ekrana."
 
 msgid ""
 "Правил этой страны на указанную дату в базе нет — менять нечего. Сначала "
 "загрузите пресет страны: python manage.py load_presets"
 msgstr ""
-"Za ovu zemlju na ovaj datum u bazi nema pravila — nema šta da se menja. "
-"Prvo učitajte preset zemlje: python manage.py load_presets"
+"Za ovu zemlju na ovaj datum u bazi nema pravila — nema šta da se menja. Prvo "
+"učitajte preset zemlje: python manage.py load_presets"
 
 msgid "Правила расчёта"
 msgstr "Pravila obračuna"
 
 msgid "Правил этой страны на указанную дату в базе нет — менять нечего."
-msgstr "Za ovu zemlju na ovaj datum u bazi nema pravila — nema šta da se menja."
+msgstr ""
+"Za ovu zemlju na ovaj datum u bazi nema pravila — nema šta da se menja."
 
 msgid "Правило страны и так такое — новая версия не заведена."
 msgstr "Pravilo zemlje je već takvo — nova verzija nije zavedena."
@@ -4197,6 +4204,8 @@ msgid ""
 "Уровни складываются: значение группы сильнее значения партнёра, значение "
 "человека сильнее обоих."
 msgstr ""
+"Nivoi se nadograđuju: vrednost grupe je jača od vrednosti partnera, a "
+"vrednost osobe je jača od obe."
 
 msgid "Через запятую."
 msgstr "Odvojeno zarezom."

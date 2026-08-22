@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-22 08:17+0000\n"
+"POT-Creation-Date: 2026-08-22 08:34+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2422,11 +2422,52 @@ msgid ""
 "перестало бы применяться. Схема расчёта, регистр и мера работы конкретного "
 "человека задаются в его условиях найма."
 msgstr ""
+"Group rules are addressed by the group's code, so they don't apply below the "
+"partner level: after moving a person to another group, such an override "
+"would silently stop applying. The calculation scheme, ledger, and work "
+"measure for a specific person are set in their employment terms."
 
 msgid ""
 "Пороги отчёта расхождений читаются один раз на партнёра, поэтому версия для "
 "группы или человека в отчёт не попала бы вовсе."
 msgstr ""
+"Variance report thresholds are read once per partner, so a version for a "
+"group or a person would never make it into the report at all."
+
+msgid "всему партнёру"
+msgstr "the whole partner"
+
+msgid "группе"
+msgstr "a group"
+
+msgid "одному человеку"
+msgstr "one person"
+
+#, python-format
+msgid "Уровень «%(level)s» не из тех, на которые кладутся правила."
+msgstr "Level \"%(level)s\" is not one of the levels rules can be set on."
+
+msgid "У уровня «всему партнёру» объекта нет."
+msgstr "The \"whole partner\" level has no object."
+
+msgid "Не нашлось того, кому адресована правка. Выберите из списка."
+msgstr "Couldn't find who the edit is addressed to. Pick from the list."
+
+#, python-format
+msgid "%(count)s группе"
+msgstr "%(count)s group"
+
+#, python-format
+msgid "%(count)s группам"
+msgstr "%(count)s groups"
+
+#, python-format
+msgid "%(count)s человеку"
+msgstr "%(count)s person"
+
+#, python-format
+msgid "%(count)s людям"
+msgstr "%(count)s people"
 
 msgid "Константы страны"
 msgstr "Country constants"
@@ -2460,25 +2501,6 @@ msgstr "group override"
 
 msgid "переопределение по человеку"
 msgstr "employee override"
-
-msgid "всему партнёру"
-msgstr "the whole partner"
-
-msgid "группе"
-msgstr "a group"
-
-msgid "одному человеку"
-msgstr "one person"
-
-#, python-format
-msgid "Уровень «%(level)s» не из тех, на которые кладутся правила."
-msgstr "Level \"%(level)s\" is not one of the levels rules can be set on."
-
-msgid "У уровня «всему партнёру» объекта нет."
-msgstr "The \"whole partner\" level has no object."
-
-msgid "Не нашлось того, кому адресована правка. Выберите из списка."
-msgstr "Couldn't find who the edit is addressed to. Pick from the list."
 
 #, python-format
 msgid ""
@@ -2518,22 +2540,6 @@ msgstr ""
 "stays calculated as before — if you needed the edit from the start of the "
 "month, create a version dated %(first)s instead."
 
-#, python-format
-msgid "%(count)s группе"
-msgstr "%(count)s group"
-
-#, python-format
-msgid "%(count)s группам"
-msgstr "%(count)s groups"
-
-#, python-format
-msgid "%(count)s человеку"
-msgstr "%(count)s person"
-
-#, python-format
-msgid "%(count)s людям"
-msgstr "%(count)s people"
-
 msgid ""
 "Правила страны — общая база для всех партнёров этой страны, поэтому их ведёт "
 "не партнёр, а администратор платформы. Для себя любое из них можно "
@@ -2555,8 +2561,8 @@ msgid ""
 "Правил этой страны на указанную дату в базе нет — менять нечего. Сначала "
 "загрузите пресет страны: python manage.py load_presets"
 msgstr ""
-"There are no rules for this country on this date in the database — "
-"there's nothing to change. First load the country preset: python manage.py "
+"There are no rules for this country on this date in the database — there's "
+"nothing to change. First load the country preset: python manage.py "
 "load_presets"
 
 msgid "Правила расчёта"
@@ -2564,8 +2570,8 @@ msgstr "Calculation rules"
 
 msgid "Правил этой страны на указанную дату в базе нет — менять нечего."
 msgstr ""
-"There are no rules for this country on this date in the database — "
-"there's nothing to change."
+"There are no rules for this country on this date in the database — there's "
+"nothing to change."
 
 msgid "Правило страны и так такое — новая версия не заведена."
 msgstr "The country rule is already like that — no new version was created."
@@ -4238,9 +4244,9 @@ msgid ""
 "расчёту: hour_types.night.pay_percent. Очистите поле, чтобы увидеть весь "
 "набор."
 msgstr ""
-"The search matches the rule code — the exact string the rule is addressed "
-"to in the calculation: hour_types.night.pay_percent. Clear the field to "
-"see the whole set."
+"The search matches the rule code — the exact string the rule is addressed to "
+"in the calculation: hour_types.night.pay_percent. Clear the field to see the "
+"whole set."
 
 msgid "Правил расчёта для этой страны на эту дату в базе нет."
 msgstr ""
@@ -4285,10 +4291,10 @@ msgid ""
 "закрывается днём начала новой и остаётся в истории: уже посчитанные месяцы "
 "собираются своей версией и не двигаются."
 msgstr ""
-"A new version of the country rules applies to every partner in that "
-"country. The previous version closes on the day the new one starts and "
-"stays in the history: months already calculated are assembled from their "
-"own version and don't shift."
+"A new version of the country rules applies to every partner in that country. "
+"The previous version closes on the day the new one starts and stays in the "
+"history: months already calculated are assembled from their own version and "
+"don't shift."
 
 msgid "Значение в правилах страны"
 msgstr "Value in the country rules"
@@ -4319,8 +4325,8 @@ msgid ""
 "Значение приходит из правил страны. Первая же версия ниже станет "
 "переопределением — на том уровне и с той даты, которые вы укажете."
 msgstr ""
-"The value comes from the country rules. The first version below becomes "
-"an override — at the level and from the date you specify."
+"The value comes from the country rules. The first version below becomes an "
+"override — at the level and from the date you specify."
 
 msgid "Новая версия правила"
 msgstr "New version of the rule"
@@ -4329,6 +4335,8 @@ msgid ""
 "Уровни складываются: значение группы сильнее значения партнёра, значение "
 "человека сильнее обоих."
 msgstr ""
+"Levels stack: a group's value overrides the partner's, and a person's value "
+"overrides both."
 
 msgid "Через запятую."
 msgstr "Comma-separated."
