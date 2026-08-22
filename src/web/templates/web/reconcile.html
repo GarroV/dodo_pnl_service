@@ -13,23 +13,6 @@
 
 {% block title %}{% blocktranslate with period_title=title %}Сверка · {{ period_title }}{% endblocktranslate %}{% endblock %}
 
-{% block head %}
-{% comment %}
-Стили этой страницы — здесь, а не в общем шаблоне: общий принадлежит блоку web.
-Состояние показано словом и начертанием, а не только цветом: строки,
-отличающиеся одним оттенком, не читаются ни на проекторе, ни при дальтонизме.
-{% endcomment %}
-<style>
-  .reconcile .muted { color: var(--muted); }
-  .reconcile .strong { font-weight: 600; }
-  .reconcile tr.off td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
-  .reconcile td.off { color: var(--warn); font-weight: 600; }
-  .reconcile .why { color: var(--muted); font-size: 12px; }
-  .reconcile .why li { list-style: none; margin: 0; padding: 0; }
-  .reconcile form.upload { margin: 12px 0 20px; }
-  .reconcile .names { line-height: 1.7; }
-</style>
-{% endblock %}
 
 {% block content %}
 <div class="reconcile">
