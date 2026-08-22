@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-21 21:03+0000\n"
+"POT-Creation-Date: 2026-08-22 08:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2366,6 +2366,40 @@ msgstr ""
 "%(action)s is outside the permissions of your role. Ask someone who has this "
 "permission."
 
+msgid ""
+"«Начислено» — сумма показанных строк. Бруто, налог, взносы и каналы выплаты "
+"посчитаны по всем регистрам учёта сразу, поэтому показываются тому, кому "
+"видны все регистры, и по месяцам не складываются."
+msgstr "“Accrued” is the sum of the shown rows. Gross, tax, contributions, and payout channels are calculated across all ledgers at once, so they are shown only to whoever can see all ledgers, and are not summed by month."
+
+#, python-format
+msgid "на карту %(bank)s · в кассу %(cash)s"
+msgstr "by bank %(bank)s · in cash %(cash)s"
+
+msgid "Начислено за всё время"
+msgstr "Accrued, all time"
+
+msgid "Сумма показанных строк по всем месяцам"
+msgstr "Sum of the shown rows across all months"
+
+msgid "Месяцев с выплатами"
+msgstr "Months with payouts"
+
+msgid "Считаются только месяцы, строки которых вам видно"
+msgstr "Only months whose rows are visible to you are counted"
+
+msgid "В среднем за месяц"
+msgstr "Average per month"
+
+msgid "Начислено, поделённое на число этих месяцев"
+msgstr "Accrued divided by the number of these months"
+
+msgid "Часов отработано"
+msgstr "Hours worked"
+
+msgid "По табелю за те же месяцы; часы регистром не делятся"
+msgstr "From the timesheet for the same months; hours are not split by ledger"
+
 msgid "К выплате (нето)"
 msgstr "Payable (net)"
 
@@ -2973,6 +3007,9 @@ msgstr "← To the periods"
 
 msgid "Не сохранено."
 msgstr "Not saved."
+
+msgid "Выплаты по месяцам"
+msgstr "Payouts by month"
 
 msgid "Карточка"
 msgstr "Card"
@@ -3856,6 +3893,47 @@ msgstr ""
 "Until you log in, the database shows nothing: without a user, access "
 "policies\n"
 "  return an empty result, not someone else's data."
+
+#, python-format
+msgid "Выплаты: %(name)s"
+msgstr "Payouts: %(name)s"
+
+msgid "← К карточке сотрудника"
+msgstr "← To the employee card"
+
+msgid "Как это шло"
+msgstr "How it went"
+
+msgid "Месяц за месяцем"
+msgstr "Month by month"
+
+msgid "Часы"
+msgstr "Hours"
+
+msgid "Начислено"
+msgstr "Accrued"
+
+msgid "На руки"
+msgstr "Net pay"
+
+msgid "Итого за всё время"
+msgstr "Total, all time"
+
+msgid "Из чего складывается"
+msgstr "What it adds up to"
+
+msgid ""
+"Строка — месяц и регистр учёта: регистр это свойство компонента, а не "
+"человека, и у одного месяца их бывает два."
+msgstr "A row is a month and a ledger: the ledger is a property of the component, not of the person, and one month can have two of them."
+
+msgid "Выплат по этому человеку не видно."
+msgstr "No payouts are visible for this person."
+
+msgid ""
+"Месяц появляется здесь после расчёта — и только те месяцы, строки которых "
+"видно вашей роли. Посчитать месяц можно на странице периода."
+msgstr "A month appears here after the calculation — and only months whose rows your role can see. You can calculate a month on the period page."
 
 #, python-format
 msgid "Сверка · %(period_title)s"

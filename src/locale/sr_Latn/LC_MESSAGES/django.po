@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-21 21:03+0000\n"
+"POT-Creation-Date: 2026-08-22 08:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2318,6 +2318,40 @@ msgstr ""
 "%(action)s nije u ovlašćenjima vaše uloge. Zamolite nekoga ko ima to "
 "ovlašćenje."
 
+msgid ""
+"«Начислено» — сумма показанных строк. Бруто, налог, взносы и каналы выплаты "
+"посчитаны по всем регистрам учёта сразу, поэтому показываются тому, кому "
+"видны все регистры, и по месяцам не складываются."
+msgstr "„Obračunati iznos“ je zbir prikazanih redova. Bruto, porez, doprinosi i kanali isplate se računaju za sve knjige odjednom, zato se prikazuju samo onome ko vidi sve knjige, i ne sabiraju se po mesecima."
+
+#, python-format
+msgid "на карту %(bank)s · в кассу %(cash)s"
+msgstr "preko banke %(bank)s · gotovinom %(cash)s"
+
+msgid "Начислено за всё время"
+msgstr "Obračunato za sve vreme"
+
+msgid "Сумма показанных строк по всем месяцам"
+msgstr "Zbir prikazanih redova za sve mesece"
+
+msgid "Месяцев с выплатами"
+msgstr "Meseci sa isplatama"
+
+msgid "Считаются только месяцы, строки которых вам видно"
+msgstr "Računaju se samo meseci čiji su redovi vama vidljivi"
+
+msgid "В среднем за месяц"
+msgstr "Prosek po mesecu"
+
+msgid "Начислено, поделённое на число этих месяцев"
+msgstr "Obračunati iznos podeljen brojem tih meseci"
+
+msgid "Часов отработано"
+msgstr "Odrađeni sati"
+
+msgid "По табелю за те же месяцы; часы регистром не делятся"
+msgstr "Prema evidenciji sati za iste mesece; sati se ne dele po knjigama"
+
 msgid "К выплате (нето)"
 msgstr "Za isplatu (neto)"
 
@@ -2906,6 +2940,9 @@ msgstr "← Na periode"
 
 msgid "Не сохранено."
 msgstr "Nije sačuvano."
+
+msgid "Выплаты по месяцам"
+msgstr "Isplate po mesecima"
 
 msgid "Карточка"
 msgstr "Kartica"
@@ -3743,6 +3780,47 @@ msgstr ""
 "Dok se ne prijavite, baza ne prikazuje ništa: bez korisnika, politike "
 "pristupa\n"
 "  vraćaju prazan rezultat, a ne tuđe podatke."
+
+#, python-format
+msgid "Выплаты: %(name)s"
+msgstr "Isplate: %(name)s"
+
+msgid "← К карточке сотрудника"
+msgstr "← Na karticu zaposlenog"
+
+msgid "Как это шло"
+msgstr "Kako je teklo"
+
+msgid "Месяц за месяцем"
+msgstr "Mesec po mesec"
+
+msgid "Часы"
+msgstr "Sati"
+
+msgid "Начислено"
+msgstr "Obračunati iznos"
+
+msgid "На руки"
+msgstr "Neto za isplatu"
+
+msgid "Итого за всё время"
+msgstr "Ukupno za sve vreme"
+
+msgid "Из чего складывается"
+msgstr "Od čega se sastoji"
+
+msgid ""
+"Строка — месяц и регистр учёта: регистр это свойство компонента, а не "
+"человека, и у одного месяца их бывает два."
+msgstr "Red je mesec i knjiga: knjiga je svojstvo komponente, a ne osobe, i jedan mesec ih ponekad ima dve."
+
+msgid "Выплат по этому человеку не видно."
+msgstr "Nema vidljivih isplata za ovu osobu."
+
+msgid ""
+"Месяц появляется здесь после расчёта — и только те месяцы, строки которых "
+"видно вашей роли. Посчитать месяц можно на странице периода."
+msgstr "Mesec se ovde pojavljuje nakon obračuna — i to samo oni meseci čije redove vidi vaša uloga. Mesec možete obračunati na stranici perioda."
 
 #, python-format
 msgid "Сверка · %(period_title)s"
