@@ -15,6 +15,7 @@
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -228,3 +229,53 @@ def test_exports_carry_the_cut_the_person_is_looking_at(client):
     assert "/export/payout/?ledger=official" in one
     assert "/export/pnl/?ledger=official" in one
     assert "/export/partner/?ledger=official" in one
+
+
+# --- Пустое состояние — абзац, и это ограничивает его тело ---------------------
+
+# Плашка `empty` рисуется тегом `<p>` (см. `NoticeNode.render`), а браузер
+# закрывает абзац перед любым блочным элементом внутри него. Поэтому блочное
+# тело здесь — не «неаккуратная разметка», а разъехавшаяся плашка: рамка
+# остаётся пустой, а текст оказывается снаружи неё.
+BLOCK_LEVEL = re.compile(
+    r"<\s*(h[1-6]|p|div|ul|ol|li|dl|table|section|article|form|blockquote|hr|pre)\b",
+    re.I,
+)
+
+EMPTY_NOTICE = re.compile(
+    r"\{%\s*notice\s+[\"']empty[\"'][^%]*%\}(.*?)\{%\s*endnotice\s*%\}", re.S
+)
+
+
+def test_the_empty_notice_never_gets_a_block_element_in_its_body():
+    """Заголовок пустого состояния передаётся `title=`, а не `<h3>` внутрь плашки.
+
+    Так это выглядело живьём на странице 404 (issue #141): под заголовком
+    экрана стояла **пустая пунктирная рамка**, а текст «Здесь ничего нет /
+    Проверьте адрес…» лежал под ней, вне плашки. Причина не в стилях:
+    `{% notice "empty" %}` рендерит абзац, `<h3>` внутри `<p>` — невалидная
+    вложенность, и браузер закрывает абзац перед заголовком. Остаётся
+    `<p class="empty">` без содержимого — это и есть пустая рамка.
+
+    Ни одна прежняя проверка этого не видела: плашка проверялась по классу, а
+    не по тому, что из неё получится в браузере. Отсюда и эта — статическая, по
+    всем шаблонам сразу: дефект такого рода воспроизводится в любом новом
+    пустом состоянии, стоит написать заголовок разметкой вместо параметра.
+    """
+    assert SCREENS, "шаблоны не нашлись — проверка проверяет пустоту"
+    problems = []
+    for path in SCREENS:
+        for found_body in EMPTY_NOTICE.findall(path.read_text(encoding="utf-8")):
+            # Комментарии внутри тела на страницу не попадают.
+            body = re.sub(
+                r"\{%\s*comment\s*%\}.*?\{%\s*endcomment\s*%\}", "", found_body, flags=re.S
+            )
+            body = re.sub(r"<!--.*?-->", "", body, flags=re.S)
+            for tag in BLOCK_LEVEL.findall(body):
+                problems.append(f"{path.relative_to(ROOT)}: <{tag}> внутри плашки empty")
+    assert not problems, (
+        "плашка empty — это абзац, и браузер закроет его перед блочным "
+        "элементом: рамка останется пустой, а текст окажется снаружи. "
+        "Заголовок передаётся параметром title=, остальное — строчной "
+        "разметкой:\n" + "\n".join(problems)
+    )

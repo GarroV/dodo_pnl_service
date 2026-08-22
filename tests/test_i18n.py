@@ -38,8 +38,20 @@ ROOT = Path(__file__).resolve().parent.parent
 LOCALE = ROOT / "src" / "locale"
 COMPONENTS = ROOT / "src" / "web" / "templates" / "web" / "components"
 
-# Языки перевода: русский — сам исходник, каталога у него нет.
+# Языки перевода: русский — сам исходник, полноценного каталога у него нет.
 TRANSLATED = {"en": LOCALE / "en", "sr-latn": LOCALE / "sr_Latn"}
+
+# Каталоги, которые реально лежат на диске, включая `ru` (issue #146): у
+# русского каталог частичный — названия ролей и формы множественного числа
+# `blocktranslate` (см. шапку src/locale/ru/LC_MESSAGES/django.po), но то, что
+# в нём есть, обязано быть непустым, без fuzzy и собранным в `.mo` точно так
+# же, как у любого другого языка. `ru` НЕ добавлен в саму `TRANSLATED`, а
+# только сюда: `TRANSLATED` — это языки, каталог которых сверяется с
+# `makemessages` (test_catalog_covers_everything_extracted_from_sources` и
+# обратная проверка), а для исходного языка такая сверка бессмысленна —
+# `makemessages` для ru не запускается вообще (см. предупреждение в шапке
+# каталога), и извлекать из него что-то было бы не с чем сравнивать.
+CATALOG_DIRS = {**TRANSLATED, "ru": LOCALE / "ru"}
 
 TEMPLATES = sorted(ROOT.glob("src/*/templates/**/*.html"))
 
@@ -253,7 +265,7 @@ def _blank_entry() -> dict:
 
 
 def catalog(language: str) -> list[dict]:
-    path = TRANSLATED[language] / "LC_MESSAGES" / "django.po"
+    path = CATALOG_DIRS[language] / "LC_MESSAGES" / "django.po"
     assert path.exists(), f"нет каталога {path.relative_to(ROOT)}"
     # Первая запись с пустым msgid — служебная шапка, а не строка интерфейса.
     return [item for item in read_po(path) if item["msgid"]]
@@ -284,11 +296,14 @@ def test_the_catalog_reader_understands_plural_forms(tmp_path):
     )
 
 
-@pytest.mark.parametrize("language", sorted(TRANSLATED))
+@pytest.mark.parametrize("language", sorted(CATALOG_DIRS))
 def test_catalog_has_no_empty_or_fuzzy_translations(language):
     """Пустой перевод и `fuzzy` — это непереведённая строка, только в каталоге.
 
-    `fuzzy` gettext не показывает вовсе: строка молча остаётся русской.
+    `fuzzy` gettext не показывает вовсе: строка молча остаётся русской. Русский
+    участвует здесь наравне с остальными: то немногое, что в его каталоге есть
+    (роли, формы множественного числа), обязано быть настоящим переводом, а не
+    пустышкой или угаданным `fuzzy`.
     """
     missing = [
         item["msgid"]
@@ -301,16 +316,20 @@ def test_catalog_has_no_empty_or_fuzzy_translations(language):
     assert not missing, f"{language}: без перевода {len(missing)}:\n" + "\n".join(missing)
 
 
-@pytest.mark.parametrize("language", sorted(TRANSLATED))
+@pytest.mark.parametrize("language", sorted(CATALOG_DIRS))
 def test_compiled_catalog_matches_the_source_one(language):
     """`.mo` собран из нынешнего `.po`.
 
     Забытая сборка — самый тихий способ потерять перевод: каталог полон, экран
-    русский, тесты каталога зелёные.
+    русский, тесты каталога зелёные. Русский участвует здесь намеренно: именно
+    для него легче всего забыть пересборку `.mo`, потому что «каталог для языка
+    исходника» не то место, где привычно ждать `compilemessages` после правки
+    `.po`. Без этой строки можно дописать запись в `ru/django.po`, забыть
+    собрать `.mo` — и ни один тест не покраснеет, а экран останется сломанным.
     """
     import gettext as gettext_module
 
-    mo = TRANSLATED[language] / "LC_MESSAGES" / "django.mo"
+    mo = CATALOG_DIRS[language] / "LC_MESSAGES" / "django.mo"
     assert mo.exists(), f"нет собранного каталога {mo.relative_to(ROOT)}"
     with mo.open("rb") as handle:
         compiled = gettext_module.GNUTranslations(handle)
