@@ -1,0 +1,168 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Выплаты одного человека (T166). Экран из одних чисел, поэтому весь он собран по
+первому принципу дизайн-системы: деньги — правый край, моноширинное, табличные
+цифры; ноль — цифра, отсутствие значения — прочерк. Ни одной числовой ячейки без
+`numclass` здесь быть не должно — фильтр решает это по уже сложившемуся тексту, а
+не по данным, поэтому прочерк и ноль перепутаться не могут.
+
+Читается сверху вниз как ответ на три вопроса подряд: сколько всего (плитки), как
+это шло по месяцам (полосы), из чего сложился каждый месяц (две таблицы).
+
+Оговорка о производных числах стоит **всегда**, а не когда что-то скрыто. Она
+свойство роли, а не данных: появляясь только при скрытых строках, она сама
+рассказывала бы об их существовании — та же утечка на один бит, из-за которой в
+`web.runslice` объяснение тоже показывается всем.
+
+Порядок в таблице и на полосах разный намеренно. В таблице свежий месяц первым:
+её открывают, чтобы посмотреть последний расчёт. На полосах время идёт слева
+направо: там читают ход по годам, а не одну строку.
+
+Сумма месяца — ссылка на след расчёта, а не отдельная колонка «объяснить». Приём
+взят у ведомости (`a.trace` в листе стилей) и не случайно: объяснение относится к
+числу, и стрелка от него к числу не должна пересекать полтаблицы.
+{% endcomment %}
+{% block title %}{% blocktranslate with name=person.last_name %}Выплаты: {{ name }}{% endblocktranslate %}{% endblock %}
+{% block content %}
+<p class="back"><a href="{{ back_url }}">{% translate "← К карточке сотрудника" %}</a></p>
+<h1>{% translate "Выплаты по месяцам" %}</h1>
+<p class="sub">{{ person.last_name }} {{ person.first_name }}</p>
+
+{% if months %}
+{% comment %}
+Плитки — не сводка «вообще»: каждая отвечает на вопрос, который иначе пришлось бы
+считать глазами по таблице. Под числом подписано, из чего он посчитан, — тот же
+приём, что в эталоне модуля 12: доля без базы врёт.
+{% endcomment %}
+<section class="kpi">
+  {% for card in cards %}
+  <div class="kpi__cell">
+    <div class="kpi__label">{{ card.label }}</div>
+    <div class="kpi__value {{ card.value|numclass }}">{{ card.value }}</div>
+    <div class="kpi__about">{{ card.about }}</div>
+  </div>
+  {% endfor %}
+</section>
+
+<p class="note">{{ derived_note }}</p>
+
+<h2>{% translate "Как это шло" %}</h2>
+{% comment %}
+Полоса мерится самым большим месяцем этого человека, а не абсолютной шкалой: у
+одного человека месяцы отличаются на проценты, и полоса «от нуля до сколько
+бывает вообще» не показала бы ничего. Ширина приходит числом с сервера — это
+данные, а не оформление, и второго её источника в разметке нет.
+{% endcomment %}
+<section class="chart">
+  {% for bar in bars %}
+  <div class="chart__row">
+    <div class="chart__month">{{ bar.title }}</div>
+    <div class="chart__track"><div class="chart__fill" style="width: {{ bar.share }}%"></div></div>
+    <div class="chart__value {{ bar.amount|numclass }}">{{ bar.amount }}</div>
+  </div>
+  {% endfor %}
+</section>
+
+<h2>{% translate "Месяц за месяцем" %}</h2>
+{% scroll %}<table class="sheet person">
+  <thead>
+    <tr>
+      <th>{% translate "Месяц" %}</th>
+      <th>{% translate "Точка" %}</th>
+      <th class="num">{% translate "Часы" %}</th>
+      <th class="num">{% translate "Норма" %}</th>
+      <th class="num">{% translate "Начислено" %}</th>
+      <th class="num">{% translate "Бруто" %}</th>
+      <th class="num">{% translate "Налог" %}</th>
+      <th class="num">{% translate "Взносы" %}</th>
+      <th class="num">{% translate "На руки" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for month in months %}
+    <tr>
+      <td>
+        {% if month.url %}<a href="{{ month.url }}">{{ month.title }}</a>{% else %}{{ month.title }}{% endif %}
+        {% if month.frozen %}<span class="badge">{% translate "Заморожена" %}</span>{% endif %}
+        {% comment %}
+        Вклад каждого видимого регистра — под месяцем, а не отдельной колонкой:
+        регистров у месяца бывает два, и колонка на каждый заставила бы экран
+        перечислять регистры, которых роли может быть не видно (D023). Метка, а
+        не заливка строки: заливка мешает читать числа.
+        {% endcomment %}
+        <span class="hint">{% for part in month.ledgers %}{% ledger part.title %} <span class="{{ part.amount|numclass }}">{{ part.amount }}</span> {% endfor %}</span>
+      </td>
+      <td>{{ month.unit }}</td>
+      <td class="{{ month.hours|numclass }}">{{ month.hours }}</td>
+      <td class="{{ month.norm|numclass }}">{{ month.norm }}</td>
+      <td class="{{ month.accrued|numclass }} strong">{% if month.trace_url %}<a class="trace" href="{{ month.trace_url }}">{{ month.accrued }}</a>{% else %}{{ month.accrued }}{% endif %}</td>
+      <td class="{{ month.gross|numclass }}">{{ month.gross }}</td>
+      <td class="{{ month.tax|numclass }}">{{ month.tax }}</td>
+      <td class="{{ month.contributions|numclass }}">{{ month.contributions }}</td>
+      <td class="{{ month.net|numclass }} strong">{{ month.net }}
+        {% comment %}
+        Чем выплачено — подписью под суммой, а не двумя колонками: наличная часть
+        бывает не у всех, а место в таблице занимала бы у всех. Подписи нет
+        вместе с самими итогами: они приходят и исчезают одной группой.
+        {% endcomment %}
+        {% if month.channels %}<span class="hint">{{ month.channels }}</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    {% comment %}
+    В подвале складывается только то, что складывается честно. Начислено — сумма
+    показанных строк, часы — сумма табелей. Бруто, налог, взносы и «на руки»
+    посчитаны по всем регистрам строки сразу и приходят по месяцам поштучно:
+    сумма, в которую вошла бы часть месяцев, читалась бы как итог за всё время.
+    Поэтому прочерк, а причина названа оговоркой выше — она стоит там всегда.
+    {% endcomment %}
+    <tr>
+      <td colspan="2">{% translate "Итого за всё время" %}</td>
+      <td class="{{ total_hours|numclass }}">{{ total_hours }}</td>
+      <td class="num num--empty">{{ dash }}</td>
+      <td class="{{ accrued|numclass }} strong">{{ accrued }}</td>
+      <td class="num num--empty">{{ dash }}</td>
+      <td class="num num--empty">{{ dash }}</td>
+      <td class="num num--empty">{{ dash }}</td>
+      <td class="num num--empty">{{ dash }}</td>
+    </tr>
+  </tfoot>
+</table>{% endscroll %}
+
+<h2>{% translate "Из чего складывается" %}</h2>
+<p class="note">{% translate "Строка — месяц и регистр учёта: регистр это свойство компонента, а не человека, и у одного месяца их бывает два." %}</p>
+{% scroll %}<table class="sheet">
+  <thead>
+    <tr>
+      <th>{% translate "Месяц" %}</th>
+      <th>{% translate "Регистр учёта" %}</th>
+      {% for column in columns %}<th class="num">{{ column }}</th>{% endfor %}
+      <th class="num">{% translate "Итого" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for piece in pieces %}
+    <tr{% if piece.is_retro %} class="retro"{% endif %}>
+      <td>{{ piece.title }}{% if piece.is_retro %}
+        <span class="badge-retro">{% blocktranslate with title=piece.retro_title %}Перерасчёт за {{ title }}{% endblocktranslate %}</span>{% endif %}</td>
+      <td>{% ledger piece.ledger %}</td>
+      {% for cell in piece.cells %}<td class="{{ cell|numclass }}">{{ cell }}</td>{% endfor %}
+      <td class="{{ piece.total|numclass }} strong">{{ piece.total }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="2">{% translate "Итого за всё время" %}</td>
+      {% for cell in column_totals %}<td class="{{ cell|numclass }}">{{ cell }}</td>{% endfor %}
+      <td class="{{ accrued|numclass }} strong">{{ accrued }}</td>
+    </tr>
+  </tfoot>
+</table>{% endscroll %}
+{% else %}
+{% translate "Выплат по этому человеку не видно." as no_pay %}
+{% notice "empty" title=no_pay %}{% translate "Месяц появляется здесь после расчёта — и только те месяцы, строки которых видно вашей роли. Посчитать месяц можно на странице периода." %}{% endnotice %}
+{% endif %}
+{% endblock %}

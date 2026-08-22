@@ -788,6 +788,63 @@ ol.steps li.now .name { color: var(--accent); }
    раздела навигации (см. `appnav_item.html`). */
 .who .guide-link.here { color: var(--accent); font-weight: var(--w-semibold); cursor: default; }
 
+/* ── Выплаты по человеку ─────────────────────────────────────── */
+
+/* Плитки итогов (T166, эталон модуля 12). Число крупное, подпись над ним, а под
+   числом — из чего он посчитан: доля или средняя величина без базы врёт, и
+   эталон требует называть базу рядом. */
+.kpi {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-5); margin: 0 0 var(--space-7);
+}
+.kpi__cell {
+  background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--r-block); padding: var(--space-6) var(--space-7);
+}
+.kpi__label {
+  font-size: var(--fs-micro); line-height: var(--lh-micro);
+  letter-spacing: var(--tracking-micro); text-transform: uppercase;
+  color: var(--ink-3); font-weight: var(--w-semibold);
+}
+/* Левый край — единственное место в продукте, где число не прижато вправо, и
+   это не отступление от первого принципа, а его условие: правый край нужен
+   столбику, в котором числа сравнивают друг с другом. Здесь их четыре, они
+   разной природы (деньги, штуки, часы), и каждое стоит под своей подписью —
+   прижатое вправо, оно уехало бы от подписи на всю ширину плитки. */
+.kpi .kpi__value {
+  font-size: var(--fs-num-hero); font-weight: var(--w-bold);
+  margin-top: var(--space-3); text-align: left;
+}
+.kpi__about {
+  font-size: var(--fs-meta); line-height: var(--lh-meta);
+  color: var(--ink-3); margin-top: var(--space-2);
+}
+
+/* Динамика по месяцам. Полосы лежат, а не стоят, в отличие от эталона: месяцев
+   у человека бывает и шесть, и тридцать, а рядом с каждой полосой обязана стоять
+   сама сумма — у стоящих столбиков подпись пришлось бы либо крутить, либо
+   прятать. Лежащая полоса растёт вправо, месяц читается слева, сумма справа
+   столбиком по правому краю, как все деньги продукта. */
+.chart {
+  background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--r-block); padding: var(--space-6) var(--space-7);
+  margin: 0 0 var(--space-9);
+}
+.chart__row { display: flex; align-items: center; gap: var(--space-6); padding: var(--space-2) 0; }
+.chart__month { flex: 0 0 140px; font-size: var(--fs-dense); color: var(--ink-2); }
+.chart__track {
+  flex: 1 1 auto; height: 10px; border-radius: 999px;
+  background: var(--surface-3); overflow: hidden;
+}
+/* Ширина — единственное, что меняется: она приходит числом с сервера. */
+.chart__fill { height: 100%; background: var(--accent); border-radius: 999px; }
+.chart__value { flex: 0 0 140px; }
+
+/* Под месяцем в таблице стоят две подписи — вклад регистров и чем выплачено.
+   Обе строкой ниже самого числа: в строку они не встают, а перенос внутри
+   ячейки с `nowrap` не случится вовсе. */
+table.sheet.person td .hint { display: block; margin-top: var(--space-1); }
+
 /* ── Узкий экран ─────────────────────────────────────────────── */
 
 /* Продукт десктоп-первый: рабочие ширины бухгалтера 1280–1920. Ниже 1024
@@ -812,6 +869,10 @@ ol.steps li.now .name { color: var(--accent); }
 
   main { margin: var(--space-8) auto; padding: 0 var(--space-7); }
   form.card.wide { grid-template-columns: 1fr; max-width: 560px; }
+
+  /* Четыре плитки в ряд на планшете дают 150 пикселей на плитку — уже своего
+     заголовка. По две в ряд читаются. */
+  .kpi { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* Сценарии управляющего точки: телефон, 375, заходит на две минуты — отметить
@@ -845,6 +906,13 @@ ol.steps li.now .name { color: var(--accent); }
      заголовка. Проза читается столбиком. */
   .guide__roles { grid-template-columns: 1fr; }
   .guide__walk > li { padding-left: var(--space-9); }
+
+  /* Плитки и полосы на 375: плитка одна в ряд, у полосы месяц и сумма
+     сжимаются — иначе на саму полосу остаётся десяток пикселей и она перестаёт
+     что-либо показывать. */
+  .kpi { grid-template-columns: 1fr; }
+  .chart__month { flex: 0 0 92px; }
+  .chart__value { flex: 0 0 104px; }
 }
 
 /* ── Печать ──────────────────────────────────────────────────── */

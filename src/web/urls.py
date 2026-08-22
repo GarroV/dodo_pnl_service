@@ -10,6 +10,7 @@ from . import (
     expenses_views,
     guide,
     papers_views,
+    person_views,
     reports_views,
     roles_views,
     rules_views,
@@ -114,6 +115,17 @@ urlpatterns = [
         "directory/employees/<uuid:employee_id>/",
         directory_views.employee,
         name="directory-employee",
+    ),
+    # Выплаты человека по месяцам (T166). Адрес под карточкой, а не отдельным
+    # корнем: приходят сюда с карточки, и вложенность делает это видно по адресу.
+    # Экран при этом не справочник, а данные расчёта — открыт он тому, у кого есть
+    # `payrun.calculate`, и отвечает отказом словами тому, кому не положено
+    # (разбор — в шапке `web/person_views.py`). Карточка того же человека остаётся
+    # открытой на чтение управляющему точки: справочник и расчёт — разные вещи.
+    path(
+        "directory/employees/<uuid:employee_id>/pay/",
+        person_views.employee_pay,
+        name="directory-employee-pay",
     ),
     path("directory/groups/", directory_views.groups, name="directory-groups"),
     path("directory/groups/new/", directory_views.group, name="directory-group-new"),
