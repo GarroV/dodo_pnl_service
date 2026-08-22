@@ -1,0 +1,94 @@
+{
+  "Начислено за всё время": {
+    "en": "Accrued, all time",
+    "sr": "Obračunato za sve vreme"
+  },
+  "Сумма показанных строк по всем месяцам": {
+    "en": "Sum of the shown rows across all months",
+    "sr": "Zbir prikazanih redova za sve mesece"
+  },
+  "Месяцев с выплатами": {
+    "en": "Months with payouts",
+    "sr": "Meseci sa isplatama"
+  },
+  "В среднем за месяц": {
+    "en": "Average per month",
+    "sr": "Prosek po mesecu"
+  },
+  "Часов отработано": {
+    "en": "Hours worked",
+    "sr": "Odrađeni sati"
+  },
+  "Выплаты по месяцам": {
+    "en": "Payouts by month",
+    "sr": "Isplate po mesecima"
+  },
+  "Выплаты: %(name)s": {
+    "en": "Payouts: %(name)s",
+    "sr": "Isplate: %(name)s"
+  },
+  "← К карточке сотрудника": {
+    "en": "← To the employee card",
+    "sr": "← Na karticu zaposlenog"
+  },
+  "Как это шло": {
+    "en": "How it went",
+    "sr": "Kako je teklo"
+  },
+  "Месяц за месяцем": {
+    "en": "Month by month",
+    "sr": "Mesec po mesec"
+  },
+  "Часы": {
+    "en": "Hours",
+    "sr": "Sati"
+  },
+  "Начислено": {
+    "en": "Accrued",
+    "sr": "Obračunati iznos"
+  },
+  "Итого за всё время": {
+    "en": "Total, all time",
+    "sr": "Ukupno za sve vreme"
+  },
+  "Из чего складывается": {
+    "en": "What it consists of",
+    "sr": "Od čega se sastoji"
+  },
+  "«Начислено» — сумма показанных строк. Бруто, налог, взносы и каналы выплаты посчитаны по всем регистрам учёта сразу, поэтому показываются тому, кому видны все регистры, и по месяцам не складываются.": {
+    "en": "“Accrued” is the sum of the shown rows. Gross, tax, contributions, and payout channels are calculated across all ledgers at once, so they are shown only to whoever can see all ledgers, and are not summed by month.",
+    "sr": "„Obračunati iznos“ je zbir prikazanih redova. Bruto, porez, doprinosi i kanali isplate se računaju za sve knjige odjednom, zato se prikazuju samo onome ko vidi sve knjige, i ne sabiraju se po mesecima."
+  },
+  "на карту %(bank)s · в кассу %(cash)s": {
+    "en": "by bank %(bank)s · in cash %(cash)s",
+    "sr": "preko banke %(bank)s · gotovinom %(cash)s"
+  },
+  "Считаются только месяцы, строки которых вам видно": {
+    "en": "Only months whose rows are visible to you are counted",
+    "sr": "Računaju se samo meseci čiji su redovi vama vidljivi"
+  },
+  "Начислено, поделённое на число этих месяцев": {
+    "en": "Accrued divided by the number of these months",
+    "sr": "Obračunati iznos podeljen brojem tih meseci"
+  },
+  "По табелю за те же месяцы; часы регистром не делятся": {
+    "en": "From the timesheet for the same months; hours are not split by ledger",
+    "sr": "Prema evidenciji sati za iste mesece; sati se ne dele po knjigama"
+  },
+  "На руки": {
+    "en": "Net pay",
+    "sr": "Neto za isplatu"
+  },
+  "Строка — месяц и регистр учёта: регистр это свойство компонента, а не человека, и у одного месяца их бывает два.": {
+    "en": "A row is a month and a ledger: the ledger is a property of the component, not of the person, and one month can have two of them.",
+    "sr": "Red je mesec i knjiga: knjiga je svojstvo komponente, a ne osobe, i jedan mesec ih ponekad ima dve."
+  },
+  "Выплат по этому человеку не видно.": {
+    "en": "No payouts are visible for this person.",
+    "sr": "Nema vidljivih isplata za ovu osobu."
+  },
+  "Месяц появляется здесь после расчёта — и только те месяцы, строки которых видно вашей роли. Посчитать месяц можно на странице периода.": {
+    "en": "A month appears here after the calculation — and only months whose rows your role can see. You can calculate a month on the period page.",
+    "sr": "Mesec se ovde pojavljuje nakon obračuna — i to samo oni meseci čije redove vidi vaša uloga. Mesec možete obračunati na stranici perioda."
+  }
+}
