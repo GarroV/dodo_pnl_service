@@ -18,11 +18,18 @@
 именно он открыл, вместе с историей версий — до того, как наберёт новое
 значение.
 
-Чего здесь нет.
+**Выбор уровня: партнёр, группа, человек** (T165). Раньше уровень был один и
+зашит константой, хотя база умела все четыре, а расчёт их применял. Значение
+«сейчас действует» и проверка «а изменилось ли» считаются для выбранного
+адресата тем же кодом, каким слои складывает расчёт.
 
-**Правки тела пресета страны.** Она общая для всех партнёров страны (`0004_rls`,
-`SHARED_TABLES`), и правка с экрана одного поменяла бы расчёт другому. Правки
-ложатся слоем партнёра — см. `web/rules.py`, правило первое.
+**Слой страны — рядом, но своим правом** (T165). На карточке правила виден
+слой страны: значение, с какого числа, история версий и кто их ведёт. Править
+его вправе не партнёр: тело общее для всех партнёров страны (`0004_rls`,
+`SHARED_TABLES`), и правка с экрана одного поменяла бы расчёт другому. Право
+лежит в `platform_admins`, механика версий — в `web/rules_country.py`.
+
+Чего здесь нет.
 
 **Экрана ролей.** `roles.manage` по-прежнему без потребителя, и это не забыто:
 задача T090 про правила, а заводить экран, которого никто не просил, — тот же
@@ -42,6 +49,7 @@ from core.rules import PresetNotFound, load_rules_at
 
 from . import directory, permissions, rules, rules_country
 from .dbrefusal import ConstraintRefused, saving
+from .format import EMPTY
 from .principal import get_current_principal
 
 
@@ -184,9 +192,14 @@ def index(request):
     lower = rules.override_counts(
         who.tenant_id, on_date, rules.titles_of_targets(who, on_date),
     )
+    # Искомое приезжает адресом и возвращается в поле формы: иначе после
+    # «Показать» поле оказывалось бы пустым при отфильтрованной таблице, и
+    # человек читал бы неполный список как полный.
+    query = (request.GET.get("q") or "").strip()
     return render(request, "web/rules/index.html", {
         "heading": _("Правила расчёта"),
         "on_date": on_date.isoformat(),
+        "query": query,
         "country": directory.country_of(who.tenant_id),
         "preset_code": preset.get("preset", ""),
         "sections": [
@@ -208,7 +221,7 @@ def index(request):
                     for leaf in section["rows"]
                 ],
             }
-            for section in rules.sections(preset, hidden=hidden)
+            for section in rules.sections(preset, hidden=hidden, query=query)
         ],
         "closed_note": directory.closed_month_warning(who.tenant_id),
         "notice": _carried_notice(request, who),
@@ -482,7 +495,10 @@ def _country_block(who, path: str, on_date: date) -> dict:
             {
                 "from": row.valid_from.isoformat(),
                 "to": row.valid_to.isoformat() if row.valid_to else "—",
-                "value": rules.show(_country_value_or_dash(row, path)),
+                # Прочерк, а не пустая ячейка: правила в той версии могло
+                # ещё не быть, и это разные вещи — «не задано» и «пусто»
+                # (`format.EMPTY`, тот же источник прочерка на весь продукт).
+                "value": rules.show(_country_value_or_dash(row, path)) or EMPTY,
                 "edited": bool(row.edited_at),
             }
             for row in rules_country.country_versions(country)

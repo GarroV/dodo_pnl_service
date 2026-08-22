@@ -775,3 +775,22 @@ def test_the_levels_never_name_a_group_the_role_cannot_see(client, sql, override
     assert sql.execute(
         "select count(*) from rule_overrides where path = %s", (NIGHT_PERCENT,)
     ).fetchone()[0] == 0
+
+
+def test_the_registry_finds_a_rule_by_its_code(client):
+    """Правило находится поиском, а не прокруткой.
+
+    В наборе страны больше сотни правил, разложенных по десяти разделам, —
+    эталон модуля 17 поэтому и называет экран реестром. Поиск идёт по коду:
+    он один на все языки, в отличие от подписи.
+    """
+    login_as(client, "admin")
+    html = body(client.get("/rules/?q=night"))
+    assert NIGHT_PERCENT in html, "поиск не нашёл правило по части кода"
+    assert NET_FACTOR not in html, "поиск ничего не отобрал — показан весь набор"
+    # Пустая выборка объясняется отдельно от «правил вообще нет»: правила есть,
+    # просто не эти, и советовать грузить пресет тут было бы не по делу.
+    empty = body(client.get("/rules/?q=такого-правила-нет"))
+    assert "По этому запросу правил нет" in empty, empty[:600]
+    assert "load_presets" not in empty, "пустой поиск советует грузить пресет"
+    client.post("/logout/")

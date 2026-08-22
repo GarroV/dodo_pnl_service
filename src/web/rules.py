@@ -597,7 +597,22 @@ def leaves(preset, *, hidden: tuple[str, ...] = ()) -> list[Leaf]:
     return rows
 
 
-def sections(preset, *, hidden: tuple[str, ...] = ()) -> list[dict]:
+def matching(rows: list[Leaf], query: str) -> list[Leaf]:
+    """Правила, чей код содержит искомое. Пустой запрос — все.
+
+    Ищется по **коду** правила, а не по подписи, и это не экономия. Код — то,
+    чем правило адресуется расчёту (`hour_types.night.pay_percent`), он один на
+    все языки и он же написан в строке таблицы. Поиск по подписи нашёл бы
+    «Ночные» по-русски и не нашёл бы то же правило на сербском экране — то есть
+    работал бы по-разному в зависимости от языка страницы.
+    """
+    wanted = (query or "").strip().lower()
+    if not wanted:
+        return rows
+    return [leaf for leaf in rows if wanted in leaf.path.lower()]
+
+
+def sections(preset, *, hidden: tuple[str, ...] = (), query: str = "") -> list[dict]:
     """Правила, разложенные по разделам: так их и читают.
 
     Порядок разделов задан здесь (`SECTION_TITLES`), а не приходит из данных, по
@@ -607,7 +622,7 @@ def sections(preset, *, hidden: tuple[str, ...] = ()) -> list[dict]:
     """
     known = list(SECTION_TITLES)
     grouped: dict[str, list[Leaf]] = {}
-    for leaf in leaves(preset, hidden=hidden):
+    for leaf in matching(leaves(preset, hidden=hidden), query):
         grouped.setdefault(leaf.path.split(".")[0], []).append(leaf)
     order = [name for name in known if name in grouped]
     order += sorted(name for name in grouped if name not in known)

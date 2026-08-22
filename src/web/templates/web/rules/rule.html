@@ -57,7 +57,7 @@
     <tr>
       <td>{{ version.from }}</td>
       <td>{{ version.to }}</td>
-      <td class="num">{{ version.value|default:"—" }}</td>
+      <td class="{{ version.value|numclass }}">{{ version.value }}</td>
       {% comment %}
       Откуда версия: из пресета страны (файл, команда load_presets) или заведена
       на этом экране. Различие не косметическое — версию, заведённую в продукте,
@@ -130,7 +130,7 @@
       <td>{{ version.who|default:"—" }}</td>
       <td>{{ version.from }}</td>
       <td>{{ version.to }}</td>
-      <td class="num">{{ version.value }}</td>
+      <td class="{{ version.value|numclass }}">{{ version.value }}</td>
     </tr>
     {% endfor %}
   </tbody>
