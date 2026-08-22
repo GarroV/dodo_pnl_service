@@ -195,6 +195,23 @@ def numclass(shown) -> str:
 
 
 @register.simple_tag
+def state(title):
+    """Плашка состояния: `{% state payrun_status %}`.
+
+    Раздел 08 эталона: состояние — не строчка текста наравне с нормой часов, а
+    плашка с точкой своего цвета. Ради чего человек и открыл экран, то и должно
+    читаться первым.
+
+    Цвет берётся из кода, который название несёт с собой (`CodedTitle`): текст
+    зависит от языка страницы, код — нет.
+    """
+    code = getattr(title, "code", "")
+    known = ("draft", "calculated", "approved", "reopened", "paid")
+    css = f"state state--{code}" if code in known else "state"
+    return format_html('<span class="{}"><i></i>{}</span>', css, title)
+
+
+@register.simple_tag
 def ledger(title):
     """Метка регистра учёта: `{% ledger row.ledger %}`.
 

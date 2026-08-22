@@ -48,7 +48,23 @@ LEDGER_TITLES = {
 }
 
 
-class LedgerTitle(str):
+class CodedTitle(str):
+    """Название, помнящее код того, что оно называет.
+
+    Ведёт себя как обычная строка везде, где нужен текст, но несёт рядом код —
+    чтобы компонент интерфейса мог покрасить метку своим цветом, не таща код
+    через все представления и шаблоны вторым полем.
+    """
+
+    code: str
+
+    def __new__(cls, title: str, code: str) -> CodedTitle:
+        obj = super().__new__(cls, title)
+        obj.code = code
+        return obj
+
+
+class LedgerTitle(CodedTitle):
     """Название регистра, помнящее свой код.
 
     Ведёт себя как обычная строка везде, где название уже используется —
@@ -62,12 +78,6 @@ class LedgerTitle(str):
     существующих регистрах не даёт.
     """
 
-    code: str
-
-    def __new__(cls, title: str, code: str) -> LedgerTitle:
-        obj = super().__new__(cls, title)
-        obj.code = code
-        return obj
 
 
 def ledger_title(value: str) -> str:

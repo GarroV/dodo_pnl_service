@@ -189,6 +189,16 @@ p.back a:hover { color: var(--accent); }
 }
 .viewer__meta { font-size: var(--fs-meta); color: var(--ink-3); }
 .viewer__meta span:not(:first-child)::before { content: " · "; color: var(--line-strong); }
+/* Регистры в шапке — своими метками, как в таблицах. Строкой «регистры: A, B, C»
+   они занимали треть шапки серым текстом и роняли её на второй ряд; цвет
+   сообщает то же самое короче и связывает шапку с ведомостью, где у этих же
+   строк те же цвета. */
+.viewer__ledgers { display: inline-flex; gap: var(--space-2); vertical-align: middle; }
+.viewer__ledgers::before { content: none !important; }
+.viewer__ledgers .ledger { padding: 0 var(--space-2); }
+/* Разделитель перед ролью — раздел 08 эталона: «кто смотрит» и «чьими правами»
+   это два разных ответа, и в один ряд они читаются как один. */
+.who .role { margin-left: var(--space-3); }
 
 /* Роль — одна. В эталоне рядом стоят все выданные наборы прав, но владелец
    решил иначе: у человека один уровень, а понадобилось больше — его поднимают
@@ -356,6 +366,24 @@ p.note.under { margin: var(--space-4) 0 var(--space-8); font-size: var(--fs-meta
 .num.off { color: var(--err); font-weight: var(--w-semibold); }
 
 /* ── Кнопки ──────────────────────────────────────────────────── */
+
+/* Плашка состояния — раздел 08 эталона: высота 22, точка цвета слева, фон и
+   рамка спокойные, цветом говорит сам текст. Состояние расчёта — то, ради чего
+   человек открыл экран, и оно не должно читаться наравне с нормой часов. */
+.state {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  height: 22px; padding: 0 var(--space-4);
+  border-radius: var(--r-control);
+  background: var(--surface-3); border: 1px solid var(--line-strong);
+  font-size: var(--fs-meta); font-weight: var(--w-semibold);
+  color: var(--ink-2); white-space: nowrap;
+}
+.state i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: none; }
+.state--draft      { color: var(--st-draft); }
+.state--calculated { color: var(--st-calculated); background: var(--accent-soft); border-color: var(--accent-line); }
+.state--approved   { color: var(--st-approved); background: var(--ok-soft);     border-color: var(--ok-line); }
+.state--reopened   { color: var(--st-reopened); background: var(--warn-soft);   border-color: var(--warn-line); }
+.state--paid       { color: var(--st-approved); background: var(--ok-soft);     border-color: var(--ok-line); }
 
 /* Экран входа — «Модуль 10, Вход» эталона. Размеры оттуда: карточка 396,
    поля во всю ширину, кнопка тоже — на этом экране действие ровно одно, и

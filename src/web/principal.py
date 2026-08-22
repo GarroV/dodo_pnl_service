@@ -191,6 +191,14 @@ def principal(request) -> dict:
         "visible_ledgers_title": (
             ", ".join(ledger_title(name) for name in who.visible_ledgers) if who else ""
         ),
+        # То же самое списком: шапка рисует регистры метками их цвета (раздел
+        # «Семантика регистров» эталона), а не серой строкой через запятую.
+        # Строка выше остаётся — её берут гайд и заголовок страницы, где метки
+        # неуместны. Названия те же и в том же порядке, поэтому расхождения
+        # между двумя видами быть не может.
+        "visible_ledgers": (
+            [ledger_title(name) for name in who.visible_ledgers] if who else []
+        ),
         # Метка в шапке обязана смотреть на флаг: иначе она обещает то, чего на
         # площадке нет.
         "dev_login": dev_login_is_enabled(),

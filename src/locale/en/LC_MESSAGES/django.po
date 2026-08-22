@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-22 08:57+0000\n"
+"POT-Creation-Date: 2026-08-22 17:29+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3072,10 +3072,6 @@ msgstr ""
 
 msgid "dev-вход"
 msgstr "dev login"
-
-#, python-format
-msgid "регистры: %(names)s"
-msgstr "ledgers: %(names)s"
 
 msgid "Данные и итоги на всех страницах — только по этой точке"
 msgstr "Data and totals on all pages — for this unit only"

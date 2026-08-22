@@ -16,66 +16,41 @@
   {# Демо не должно попадать в поисковую выдачу: это стенд, а не продукт. #}
   <meta name="robots" content="noindex, nofollow">
   <title>Dodo P&amp;L — live demo</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'web/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'web/app.css' %}">
   <style>
-    :root {
-      --ink: #16181d;
-      --muted: #5d646f;
-      --line: #e2e5ea;
-      --paper: #ffffff;
-      --ground: #f5f6f8;
-      --accent: #c8102e;
-      --accent-ink: #ffffff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--ground);
-      color: var(--ink);
-      font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    .wrap { max-width: 52rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+    /* Только раскладка этой страницы. Цвета, шрифты, отбивки и радиусы —
+       из дизайн-системы продукта: до переноса здесь жила ВТОРАЯ палитра
+       (красный акцент, системный шрифт, свои радиусы), и первое, что видел
+       гость демо, было сделано не по эталону (issue #153). */
+    .wrap { max-width: 52rem; margin: 0 auto; padding: var(--space-10) var(--gutter); }
     header p.kicker {
-      margin: 0 0 .5rem;
-      text-transform: uppercase;
-      letter-spacing: .14em;
-      font-size: .75rem;
-      color: var(--accent);
-      font-weight: 700;
+      margin: 0 0 var(--space-4);
+      text-transform: uppercase; letter-spacing: var(--tracking-micro);
+      font-size: var(--fs-micro); color: var(--accent); font-weight: var(--w-bold);
     }
-    h1 { margin: 0 0 .75rem; font-size: clamp(1.9rem, 1.2rem + 2.4vw, 2.75rem); line-height: 1.15; }
-    .lede { margin: 0 0 2rem; font-size: 1.1rem; color: var(--muted); max-width: 42rem; }
+    h1 {
+      margin: 0 0 var(--space-6);
+      font-size: var(--fs-display); line-height: var(--lh-display);
+      font-weight: var(--w-semibold); letter-spacing: -.015em;
+    }
+    .lede { margin: 0 0 var(--space-10); font-size: var(--fs-lead); color: var(--ink-2); max-width: 42rem; }
     .card {
-      background: var(--paper);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 1.5rem;
-      margin-bottom: 1.25rem;
+      background: var(--surface); border: 1px solid var(--line-strong);
+      border-radius: var(--r-block); padding: var(--space-9);
+      margin-bottom: var(--space-7); box-shadow: var(--sh-xs);
     }
-    .card h2 { margin: 0 0 .75rem; font-size: 1.05rem; letter-spacing: .01em; }
-    .go {
-      display: inline-block;
-      background: var(--accent);
-      color: var(--accent-ink);
-      text-decoration: none;
-      font-weight: 700;
-      padding: .85rem 1.6rem;
-      border-radius: 10px;
-    }
-    .go:hover, .go:focus { filter: brightness(1.08); }
-    .roles { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: .6rem; }
-    .roles a { color: var(--ink); text-decoration: none; font-weight: 600; }
-    .roles a:hover, .roles a:focus { color: var(--accent); text-decoration: underline; }
-    .roles span { color: var(--muted); font-weight: 400; }
-    ol.tour { margin: 0; padding-left: 1.2rem; }
-    ol.tour li { margin-bottom: .55rem; }
-    .note { color: var(--muted); font-size: .9rem; }
-    code {
-      background: var(--ground);
-      border: 1px solid var(--line);
-      border-radius: 5px;
-      padding: .05rem .3rem;
-      font-size: .88em;
-    }
+    .card h2 { margin: 0 0 var(--space-6); font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold); }
+    .note { color: var(--ink-2); font-size: var(--fs-body); }
+    /* Главное действие страницы — кнопка продукта, а не своя. */
+    .go { height: 40px; padding: 0 var(--space-9); font-size: var(--fs-lead); }
+    .roles { list-style: none; margin: var(--space-7) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+    .roles li { font-size: var(--fs-body); color: var(--ink-2); }
+    .roles a { font-weight: var(--w-semibold); }
+    .tour { margin: 0; padding-left: var(--space-9); display: flex; flex-direction: column; gap: var(--space-4); color: var(--ink-2); }
+    .tour strong { color: var(--ink); }
+    footer { margin-top: var(--space-10); color: var(--ink-3); font-size: var(--fs-meta); }
   </style>
 </head>
 <body>
@@ -98,7 +73,7 @@
       unit and all three ledgers.
     </p>
     <p style="margin:1rem 0 0">
-      <a class="go" href="{% url 'demo-enter-as' default_role %}">Enter the demo →</a>
+      <a class="btn primary go" href="{% url 'demo-enter-as' default_role %}">Enter the demo →</a>
     </p>
 
     <ul class="roles">

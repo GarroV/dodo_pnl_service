@@ -41,7 +41,7 @@ from reports.trace import TraceNotFound, build_trace
 from reports.variance import ThresholdsMissing, build_variance
 
 from . import auth, onboarding, permissions, runslice
-from .format import cut_title, exact, hours, ledger_title, money, percent, threshold
+from .format import CodedTitle, cut_title, exact, hours, ledger_title, money, percent, threshold
 from .i18n import month_title
 from .labels import labeller
 from .principal import get_current_principal
@@ -448,7 +448,12 @@ def period_page(
             "calculate_denied": calculate_denied
             or (gettext(lifecycle.APPROVED_REFUSAL) if frozen else ""),
             # --- цикл периода (T025) ---
-            "payrun_status": lifecycle.status_title(payrun_status) if payrun else "",
+            # Название состояния несёт свой код: плашка на экране красится по
+            # нему (токены --st-*), а не по тексту, который зависит от языка.
+            "payrun_status": (
+                CodedTitle(lifecycle.status_title(payrun_status), payrun_status or "")
+                if payrun else ""
+            ),
             "can_approve": lifecycle.APPROVED in allowed and not approve_denied,
             "approve_denied": approve_denied,
             "can_reopen": lifecycle.REOPENED in allowed and not reopen_denied,

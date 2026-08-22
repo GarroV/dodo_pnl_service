@@ -166,7 +166,7 @@
       {% endcomment %}
       <span class="viewer">
         {% if principal.display_name != principal.role_title %}<span class="viewer__name">{{ principal.display_name }}</span>{% endif %}
-        <span class="viewer__meta">{% if principal.tenant_title %}<span>{{ principal.tenant_title }}</span>{% endif %}{% if visible_ledgers_title %}<span>{% blocktranslate with names=visible_ledgers_title %}регистры: {{ names }}{% endblocktranslate %}</span>{% endif %}{% if principal.units_title %}<span title="{% translate "Данные и итоги на всех страницах — только по этой точке" %}">{% blocktranslate with code=principal.units_title %}точка: {{ code }}{% endblocktranslate %}</span>{% endif %}</span>
+        <span class="viewer__meta">{% if principal.tenant_title %}<span>{{ principal.tenant_title }}</span>{% endif %}{% if visible_ledgers %}<span class="viewer__ledgers">{% for name in visible_ledgers %}{% ledger name %}{% endfor %}</span>{% endif %}{% if principal.units_title %}<span title="{% translate "Данные и итоги на всех страницах — только по этой точке" %}">{% blocktranslate with code=principal.units_title %}точка: {{ code }}{% endblocktranslate %}</span>{% endif %}</span>
       </span>
       {% if principal.role_title %}<span class="role">{{ principal.role_title }}</span>{% endif %}
       <a class="btn" href="{% url 'password-change' %}">{% translate "пароль" %}</a>

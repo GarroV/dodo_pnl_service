@@ -120,7 +120,7 @@
   разными строками намеренно: утверждение зарплаты не закрывает месяц целиком,
   в нём ещё будут платежи поставщикам и выручка (решено в T023).
   {% endcomment %}
-  {% if payrun_status %}<dt>{% translate "Расчёт зарплаты" %}</dt><dd>{{ payrun_status }}</dd>{% endif %}
+  {% if payrun_status %}<dt>{% translate "Расчёт зарплаты" %}</dt><dd>{% state payrun_status %}</dd>{% endif %}
   <dt>{% translate "Сотрудников в табеле" %}</dt><dd>{{ employees }}</dd>
   {% comment %}
   Норма часов показывается всегда, даже когда её нет. Пропасть строке нельзя:
