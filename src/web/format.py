@@ -64,7 +64,7 @@ class LedgerTitle(str):
 
     code: str
 
-    def __new__(cls, title: str, code: str) -> "LedgerTitle":
+    def __new__(cls, title: str, code: str) -> LedgerTitle:
         obj = super().__new__(cls, title)
         obj.code = code
         return obj
