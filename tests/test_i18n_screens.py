@@ -187,6 +187,20 @@ def screens(client, web_env):
         found.append(grid.group(1))
     if trace:
         found.append(trace.group(1))
+    # Карточка сотрудника и его выплаты по месяцам (T166). Берутся переходом со
+    # списка людей — так же, как до них доходит человек. Добавлены потому, что
+    # без них дефект прожил бы до глаз владельца: на экране выплат две строки
+    # собирались в Python константами модуля, то есть переводились ОДИН РАЗ при
+    # импорте, и английская страница показывала русский текст при полностью
+    # зелёном каталоге. Ни одна проверка по файлам такого не видит — только
+    # нарисованная страница.
+    card = re.search(
+        r'href="(/directory/employees/[0-9a-f-]+/)"',
+        body(client.get("/directory/employees/")),
+    )
+    if card:
+        found.append(card.group(1))
+        found.append(card.group(1) + "pay/")
     client.post("/logout/")
     return found
 

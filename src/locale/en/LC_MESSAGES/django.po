@@ -3920,7 +3920,7 @@ msgid "Итого за всё время"
 msgstr "Total, all time"
 
 msgid "Из чего складывается"
-msgstr "What it adds up to"
+msgstr "What it consists of"
 
 msgid ""
 "Строка — месяц и регистр учёта: регистр это свойство компонента, а не "

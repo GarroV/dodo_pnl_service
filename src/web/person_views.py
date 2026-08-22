@@ -31,6 +31,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_noop
 
 from core.models import Period, Tenant
 from payrun import person as history
@@ -43,7 +44,17 @@ from web.labels import labeller
 # Почему объяснение стоит всегда, а не когда есть что прятать. Оно свойство
 # роли, а не данных: появляясь только при скрытых строках, оно само рассказывало
 # бы об их существовании — та же утечка на один бит, что в `web.runslice`.
-DERIVED_NOTE = _(
+#
+# `gettext_noop`, а не `gettext` (T017). Значение константы модуля вычисляется
+# **один раз при импорте**, а язык страницы — у каждого запроса свой: переведённая
+# на импорте строка осталась бы русской навсегда. Поймано в браузере: на
+# английской странице половина текста была русской при полностью зелёном
+# каталоге — сравнивать было не с чем. Перевод делается в месте использования.
+#
+# И вызывается пометка **своим полным именем**: извлечение строк смотрит на имя
+# функции в тексте файла, а не на то, что она делает, — под псевдонимом строка
+# молча не попала бы в каталог вовсе.
+DERIVED_NOTE = gettext_noop(
     "«Начислено» — сумма показанных строк. Бруто, налог, взносы и каналы "
     "выплаты посчитаны по всем регистрам учёта сразу, поэтому показываются "
     "тому, кому видны все регистры, и по месяцам не складываются."
@@ -52,8 +63,9 @@ DERIVED_NOTE = _(
 
 # Чем выплачено. Обе половины называются всегда, в том числе нулевые: «в кассу
 # 0,00» — это ответ «наличными не платили», а пропавшая половина строки читалась
-# бы как «про наличные ничего не известно».
-CHANNELS = _("на карту %(bank)s · в кассу %(cash)s")
+# бы как «про наличные ничего не известно». `gettext_noop` — по той же причине,
+# что у объяснения выше.
+CHANNELS = gettext_noop("на карту %(bank)s · в кассу %(cash)s")
 
 
 def _derived(month) -> dict:
@@ -77,7 +89,7 @@ def _derived(month) -> dict:
         "tax": money(month.totals.tax),
         "contributions": money(month.totals.contributions),
         "net": money(month.totals.net),
-        "channels": CHANNELS % {
+        "channels": _(CHANNELS) % {
             "bank": money(month.totals.to_bank),
             "cash": money(month.totals.to_cash),
         },
@@ -144,7 +156,7 @@ def employee_pay(request, employee_id):
     return render(request, "web/person_pay.html", {
         "person": person,
         "back_url": reverse("directory-employee", args=[person.id]),
-        "derived_note": DERIVED_NOTE,
+        "derived_note": _(DERIVED_NOTE),
         "cards": [
             {
                 "label": _("Начислено за всё время"),
