@@ -47,7 +47,7 @@ from django.utils.translation import gettext as _
 
 from core.rules import PresetNotFound, load_rules_at
 
-from . import directory, permissions, rules, rules_country
+from . import directory, permissions, rule_targets, rules, rules_country
 from .dbrefusal import ConstraintRefused, saving
 from .format import EMPTY
 from .principal import get_current_principal
@@ -189,8 +189,8 @@ def index(request):
     # Правила, у которых ниже партнёра есть своё значение. Список показывает
     # общую часть — то, что действует у всех, — и без этой пометки версия,
     # заведённая одной группе, не была бы видна ни здесь, ни где-либо ещё.
-    lower = rules.override_counts(
-        who.tenant_id, on_date, rules.titles_of_targets(who, on_date),
+    lower = rule_targets.override_counts(
+        who.tenant_id, on_date, rule_targets.titles_of_targets(who, on_date),
     )
     # Искомое приезжает адресом и возвращается в поле формы: иначе после
     # «Показать» поле оказывалось бы пустым при отфильтрованной таблице, и
@@ -212,7 +212,7 @@ def index(request):
                         "value": leaf.value,
                         "origin": rules.level_title(leaf.level),
                         "since": leaf.valid_from.isoformat() if leaf.valid_from else "",
-                        "lower": rules.counts_words(lower.get(leaf.path, {})),
+                        "lower": rule_targets.counts_words(lower.get(leaf.path, {})),
                         "url": (
                             f"{reverse('rule', args=[leaf.path])}?on={on_date.isoformat()}"
                             if leaf.editable else ""
@@ -332,7 +332,7 @@ def rule(request, path: str):
         raise Http404("правило не найдено") from None
 
     error, status, notice = "", 200, ""
-    target = rules.TENANT_TARGET
+    target = rule_targets.TENANT_TARGET
     if request.method == "POST":
         try:
             valid_from = _posted_date(request)
@@ -347,7 +347,7 @@ def rule(request, path: str):
             # Адресат разбирается ДО значения: список допустимых значений тот же
             # на всех уровнях, но отказ «нет такой группы» человеку понятнее,
             # чем отказ про значение, набранное для этой группы.
-            target = rules.target_from(
+            target = rule_targets.target_from(
                 who, request.POST.get("target", ""), path=path, on_date=on_date,
             )
             for_target = _preset_for(who, assembled, target, on_date)
@@ -369,7 +369,8 @@ def rule(request, path: str):
             # оставлять за собой закрытую версию без пришедшей ей на смену.
             with saving():
                 change = rules.save_override(
-                    who.tenant_id, path, wanted, target=target,
+                    who.tenant_id, path, wanted,
+                    scope_type=target.scope_type, scope_id=target.scope_id,
                     valid_from=valid_from, actor_id=who.user_id, effective=current,
                 )
             if not change.changed:
@@ -400,7 +401,7 @@ def rule(request, path: str):
 
     where = preset.origin_of(path)
     options = rules.choices_for(preset, path, who=who)
-    names = rules.titles_of_targets(who, on_date)
+    names = rule_targets.titles_of_targets(who, on_date)
     return render(request, "web/rules/rule.html", {
         "heading": path,
         "on_date": on_date.isoformat(),
@@ -426,10 +427,10 @@ def rule(request, path: str):
         # Кому кладём правку. Список собран с уровнями и объектами сразу, а
         # выбранное сохраняется через отвергнутую форму: человек, ошибшийся в
         # дате, не должен заново искать свою группу среди тридцати строк.
-        "targets": rules.targets_for(who, path, on_date, chosen=target.key),
+        "targets": rule_targets.targets_for(who, path, on_date, chosen=target.key),
         # Уровни, на которых это правило не заводится, названы словами — до
         # правки, а не отказом после. Пусто, если заводится на всех.
-        "scope_note": rules.scope_refusal(path, "group"),
+        "scope_note": rule_targets.scope_refusal(path, "group"),
         "versions": [
             {
                 "from": row.valid_from.isoformat(),
@@ -442,7 +443,7 @@ def rule(request, path: str):
                 # бы как потерянное название.
                 "who": names.get((row.scope_type, row.scope_id), ""),
             }
-            for row in rules.visible_only(rules.versions(who.tenant_id, path), names)
+            for row in rule_targets.visible_only(rules.versions(who.tenant_id, path), names)
         ],
         "closed_note": directory.closed_month_warning(who.tenant_id),
         **_country_block(who, path, on_date),
