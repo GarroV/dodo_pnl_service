@@ -30,7 +30,7 @@ def render(title) -> str:
 def test_every_state_gets_its_own_class():
     for code in STATES:
         html = render(CodedTitle("Название", code))
-        assert f"state--{code}" in html, f"{code} без своего класса: {html}"
+        assert f"status--{code}" in html, f"{code} без своего класса: {html}"
 
 
 def test_states_are_told_apart_by_class_not_by_words():
@@ -51,19 +51,19 @@ def test_the_badge_carries_a_dot():
 
 def test_a_title_without_a_code_stays_neutral():
     html = render("Что-то своё")
-    assert 'class="state"' in html
-    assert "state--" not in html
+    assert 'class="status"' in html
+    assert "status--" not in html
 
 
 def test_unknown_code_does_not_leak_into_markup():
     html = render(CodedTitle("Придуманное", 'x" onmouseover="alert(1)'))
     assert "onmouseover" not in html
-    assert "state--" not in html
+    assert "status--" not in html
 
 
 def test_each_state_colour_comes_from_its_token():
     css = CSS.read_text(encoding="utf-8")
     for code in STATES:
-        rule = re.search(rf"\.state--{code}\s*\{{([^}}]*)\}}", css)
+        rule = re.search(rf"\.status--{code}\s*\{{([^}}]*)\}}", css)
         assert rule, f"нет правила для состояния {code}"
         assert f"var(--st-{code})" in rule.group(1), f"{code} покрашен мимо токена"

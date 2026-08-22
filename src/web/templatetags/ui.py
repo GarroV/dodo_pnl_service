@@ -36,6 +36,16 @@ register = template.Library()
 # Четвёртый вид не заводится, пока нельзя объяснить, чем он отличается от этих.
 NOTICE_KINDS = ("ok", "alert", "empty")
 
+# Классы плашек в разметке. Пока НЕ эталонные, и это осознанно: в эталоне
+# плашка называется `.note`, а у нас это имя с самого начала занято мелким
+# пояснительным текстом — 75 мест в шаблонах. Взять эталонное имя значит
+# перебить их все разом. Расхождение и цена разбора записаны в issue #165.
+NOTICE_CLASSES = {
+    "ok": "ok",
+    "alert": "alert",
+    "empty": "empty",
+}
+
 
 class NoticeNode(Node):
     def __init__(self, kind, kwargs, nodelist):
@@ -55,7 +65,12 @@ class NoticeNode(Node):
         body = self.nodelist.render(context).strip()
         title = values.get("title") or ""
         extra = values.get("extra") or ""
-        classes = f"{kind} {escape(extra)}".strip() if extra else kind
+        # Вид плашки остаётся нашим словарём («ok», «alert», «empty» — три
+        # разных смысла, см. выше), а классы в разметке — эталонные. Так вызовы
+        # в семидесяти местах не переписываются, а лист стилей говорит с
+        # дизайн-системой на одном языке (issue #165).
+        css = NOTICE_CLASSES[kind]
+        classes = f"{css} {escape(extra)}".strip() if extra else css
         # Пустое состояние — абзац, а не блок: это текст на месте данных, и
         # рамка вокруг него уже нарисована стилем `.empty`.
         tag = "p" if kind == "empty" else "div"
@@ -226,7 +241,7 @@ def state(title):
     """
     code = getattr(title, "code", "")
     known = ("draft", "calculated", "approved", "reopened", "paid")
-    css = f"state state--{code}" if code in known else "state"
+    css = f"status status--{code}" if code in known else "status"
     return format_html('<span class="{}"><i></i>{}</span>', css, title)
 
 

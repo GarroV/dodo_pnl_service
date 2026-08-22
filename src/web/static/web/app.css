@@ -443,7 +443,7 @@ table.sheet tbody tr.is-frozen td:first-child {
 /* Плашка состояния — раздел 08 эталона: высота 22, точка цвета слева, фон и
    рамка спокойные, цветом говорит сам текст. Состояние расчёта — то, ради чего
    человек открыл экран, и оно не должно читаться наравне с нормой часов. */
-.state {
+.status {
   display: inline-flex; align-items: center; gap: var(--space-3);
   height: 22px; padding: 0 var(--space-4);
   border-radius: var(--r-control);
@@ -451,12 +451,12 @@ table.sheet tbody tr.is-frozen td:first-child {
   font-size: var(--fs-meta); font-weight: var(--w-semibold);
   color: var(--ink-2); white-space: nowrap;
 }
-.state i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: none; }
-.state--draft      { color: var(--st-draft); }
-.state--calculated { color: var(--st-calculated); background: var(--accent-soft); border-color: var(--accent-line); }
-.state--approved   { color: var(--st-approved); background: var(--ok-soft);     border-color: var(--ok-line); }
-.state--reopened   { color: var(--st-reopened); background: var(--warn-soft);   border-color: var(--warn-line); }
-.state--paid       { color: var(--st-approved); background: var(--ok-soft);     border-color: var(--ok-line); }
+.status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex: none; }
+.status--draft      { color: var(--st-draft); }
+.status--calculated { color: var(--st-calculated); background: var(--accent-soft); border-color: var(--accent-line); }
+.status--approved   { color: var(--st-approved); background: var(--ok-soft);     border-color: var(--ok-line); }
+.status--reopened   { color: var(--st-reopened); background: var(--warn-soft);   border-color: var(--warn-line); }
+.status--paid       { color: var(--st-approved); background: var(--ok-soft);     border-color: var(--ok-line); }
 
 /* Экран входа — «Модуль 10, Вход» эталона. Размеры оттуда: карточка 396,
    поля во всю ширину, кнопка тоже — на этом экране действие ровно одно, и
