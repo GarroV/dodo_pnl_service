@@ -399,6 +399,25 @@ p.note.under { margin: var(--space-4) 0 var(--space-8); font-size: var(--fs-meta
 .pagehead { display: flex; align-items: baseline; gap: var(--space-6); flex-wrap: wrap; }
 .pagehead h1 { margin: 0; }
 
+/* Числовые модификаторы эталона. Итог тяжелее обычной суммы, рост и падение
+   говорят цветом — в отчёте расхождений это единственное, ради чего его
+   открывают. */
+.num--total { font-weight: var(--w-bold); }
+.num--up    { color: var(--up);   font-weight: var(--w-semibold); }
+.num--down  { color: var(--down); font-weight: var(--w-semibold); }
+.num--lead  { font-size: var(--fs-lead); }
+.num--muted { color: var(--ink-2); }
+
+/* Метка строки — полоска слева, а не заливка: заливка спорит с чтением чисел
+   (тот же довод, что у меток регистров). Перерасчёт за прошлый месяц и
+   замороженная строка — разные вещи и разные цвета. */
+table.sheet tbody tr.retro td:first-child {
+  box-shadow: inset 3px 0 0 var(--origin-mark), 1px 0 0 var(--line-strong);
+}
+table.sheet tbody tr.is-frozen td:first-child {
+  box-shadow: inset 3px 0 0 var(--line-control-2), 1px 0 0 var(--line-strong);
+}
+
 /* Плашка состояния — раздел 08 эталона: высота 22, точка цвета слева, фон и
    рамка спокойные, цветом говорит сам текст. Состояние расчёта — то, ради чего
    человек открыл экран, и оно не должно читаться наравне с нормой часов. */

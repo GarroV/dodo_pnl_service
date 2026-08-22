@@ -369,7 +369,13 @@
   </thead>
   <tbody>
     {% for row in sheet.rows %}
-    <tr{% if row.is_retro %} class="retro"{% endif %}>
+    {% comment %}
+    Метка у строки одна, и полоска слева тоже одна: заморозка важнее
+    перерасчёта — она объясняет, почему строка не изменилась после пересчёта.
+    Класс не ставится вовсе, когда метки нет: пустой class="" в каждой из 35
+    строк — мусор в разметке, и он же ломает разбор таблицы в проверках.
+    {% endcomment %}
+    <tr{% if row.frozen %} class="is-frozen"{% elif row.is_retro %} class="retro"{% endif %}>
       {% comment %}
       Разница за закрытый месяц (T026) — отдельная строка, а не слитая с
       обычной: у неё те же колонки компонентов, поэтому без пометки она стала бы
@@ -418,8 +424,8 @@
   <tfoot>
     <tr class="grand">
       <td colspan="4">{% blocktranslate with employees=sheet.employees %}Итого · {{ employees }} чел.{% endblocktranslate %}</td>
-      {% for cell in sheet.column_totals %}<td class="{{ cell|numclass }}">{{ cell }}</td>{% endfor %}
-      <td class="{{ total|numclass }}">{{ total }}</td>
+      {% for cell in sheet.column_totals %}<td class="{{ cell|numclass }} num--total">{{ cell }}</td>{% endfor %}
+      <td class="{{ total|numclass }} num--total">{{ total }}</td>
     </tr>
   </tfoot>
 </table>

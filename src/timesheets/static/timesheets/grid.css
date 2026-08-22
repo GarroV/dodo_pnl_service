@@ -14,15 +14,19 @@
 table.grid td.cellbox { padding: 0; }
 
 table.grid input.cell {
-  font: inherit;
+  /* Ячейка ввода — компонент `cell-input` эталона. Шрифт и размер оттуда же,
+     а не системный моноширинный: числа табеля и числа ведомости стоят в одной
+     системе, и разные начертания у них читаются как разные единицы. */
+  font-family: var(--font-num);
+  font-size: var(--fs-num);
   font-variant-numeric: tabular-nums;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
   text-align: right;
   width: 100%;
   min-width: 84px;
-  padding: 6px 10px;
+  height: var(--row);
+  padding: 0 var(--space-3);
   border: 1px solid transparent;
-  border-radius: 0;
+  border-radius: var(--r-mark);
   background: transparent;
   color: var(--ink);
 }

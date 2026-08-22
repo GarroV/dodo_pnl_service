@@ -119,6 +119,22 @@ def det_id(*parts: str) -> uuid.UUID:
     return uuid.uuid5(NS, "/".join(parts))
 
 
+# Простой вход для того, кто оказался на форме пароля: логины ролей там не
+# угадать. Значения намеренно простые и намеренно лежат в коде — в демо-базе
+# только выдуманные люди, а вход в демо и так открыт одной кнопкой.
+GUEST_LOGIN = "demodemo"
+# Роль простой учётки — та же, которой открывается демо по кнопке. Константа
+# своя, а не импорт из `views`: сид не должен зависеть от слоя представлений.
+# Согласие двух значений держит тест — разъедься они молча, гость входил бы
+# паролем в одну роль, а кнопкой в другую.
+GUEST_ROLE = "director"
+
+
+def demo_guest_password() -> str:
+    """Пароль простой учётки демо. Меняется переменной, как и остальные."""
+    return getattr(settings, "DEMO_GUEST_PASSWORD", None) or "password"
+
+
 def demo_password() -> str:
     """Пароль демо-учёток.
 
@@ -356,6 +372,22 @@ def _roles_and_users(tenant) -> None:
             user_id=user.pk, role=role,
             unit_ids=[units[unit].id] if unit else None,
         )
+
+    # Простая учётка на случай, когда человек вышел из демо и попал на форму
+    # входа: логины ролей («accountant», «director») там не угадать, а спросить
+    # не у кого. Заводится здесь, а не руками на площадке, — иначе исчезала бы
+    # при каждом ночном сбросе демо, и «у меня вчера работало» повторялось бы
+    # каждое утро. Права те же, что у оперативного директора: демо показывают
+    # целиком, урезать смотрящему нечего.
+    guest = models.User.objects.create_user(
+        username=GUEST_LOGIN, password=demo_guest_password(),
+        id=det_id("user", GUEST_LOGIN), full_name="Demo guest",
+    )
+    models.Membership.objects.create(
+        id=det_id("membership", GUEST_LOGIN), tenant=tenant,
+        user_id=guest.pk, role=models.Role.objects.get(tenant=tenant, code=GUEST_ROLE),
+        unit_ids=None,
+    )
 
 
 def _calendar() -> None:
