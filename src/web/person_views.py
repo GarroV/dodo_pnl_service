@@ -127,12 +127,13 @@ def employee_pay(request, employee_id):
     if denied is not None:
         return denied
     person = _employee_or_404(who, employee_id)
+    # Право спрашивает сама `build_history` — здесь мы только превращаем её
+    # отказ в страницу. Раньше проверка стояла тут, и это означало, что защита
+    # живёт в вызывающем: второй вызов из другого места её бы не унаследовал.
     try:
-        permissions.check(who, permissions.PAYRUN_CALCULATE)
+        found = history.build_history(who.tenant_id, person.id, who=who)
     except permissions.PermissionRefused as refusal:
         return _refusal(request, refusal)
-
-    found = history.build_history(who.tenant_id, person.id)
     periods = _period_urls(who.tenant_id, found.months)
 
     # Подписи компонентов — на языке страницы (T092). Правила берутся по

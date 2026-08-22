@@ -37,12 +37,15 @@ security`, поэтому проверка доступа обязана пер�
 from __future__ import annotations
 
 import re
+import uuid
 from decimal import Decimal
 
 import psycopg
 import pytest
 
-from conftest import JULY, JUNE, as_app_user, body, login_as, narrowed_ledgers, wipe_payruns
+from conftest import (
+    JULY, JUNE, T1, as_app_user, body, login_as, narrowed_ledgers, wipe_payruns,
+)
 
 AUGUST = "2026-08-01"
 
@@ -640,3 +643,44 @@ def test_a_person_without_payslips_is_told_why_the_screen_is_empty(client, web_e
     client.post("/logout/")
     assert "Выплат по этому человеку не видно" in text
     assert "после расчёта" in text, "пустое состояние не говорит, откуда возьмутся месяцы"
+
+
+# --- запрет живёт в вызываемом, а не в вызывающем -------------------------------
+
+
+def test_the_history_itself_refuses_a_role_without_the_right(web_env, sql):
+    """`build_history` отказывает сама, без экрана.
+
+    Почему это отдельная проверка, а не дубль проверки страницы. Разбор дифа
+    свежим взглядом доказал прогоном: под ролью управляющего точки **база
+    отдаёт** суммы официального регистра по его собственной точке. Политики
+    режут по регистру и по точке, но не по праву вести расчёт — и это решение
+    осознанное, его причина записана в миграции `0022`.
+
+    Значит на этой оси база не подстрахует, и пока проверка стояла в
+    представлении, запрет держался ровно одной строкой в одном месте. Второй
+    вызов — выгрузка, API, фоновая задача — унаследовал бы данные, но не запрет.
+
+    Проверка смотрит именно на функцию, а не на страницу: страница уже покрыта
+    отдельно (`test_the_unit_manager_is_refused_with_words`), и её зелёный цвет
+    ничего не говорит о том, безопасно ли звать функцию мимо неё.
+    """
+    from types import SimpleNamespace
+
+    from web import permissions
+    from payrun import person as history
+
+    nobody = SimpleNamespace(
+        tenant_id=T1, permissions=["timesheet.edit", "unit.close"],
+        role_title="Управляющий точки", visible_ledgers=["official"],
+    )
+    with pytest.raises(permissions.PermissionRefused):
+        history.build_history(T1, uuid.uuid4(), who=nobody)
+
+    allowed = SimpleNamespace(
+        tenant_id=T1, permissions=["payrun.calculate"],
+        role_title="Бухгалтер", visible_ledgers=["official"],
+    )
+    # Тому, кому положено, функция отвечает историей, а не отказом: без этой
+    # половины проверка была бы зелёной и у функции, которая отказывает всем.
+    assert history.build_history(T1, uuid.uuid4(), who=allowed).months == []
