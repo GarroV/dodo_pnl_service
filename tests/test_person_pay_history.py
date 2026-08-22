@@ -44,7 +44,14 @@ import psycopg
 import pytest
 
 from conftest import (
-    JULY, JUNE, T1, as_app_user, body, login_as, narrowed_ledgers, wipe_payruns,
+    JULY,
+    JUNE,
+    T1,
+    as_app_user,
+    body,
+    login_as,
+    narrowed_ledgers,
+    wipe_payruns,
 )
 
 AUGUST = "2026-08-01"
@@ -667,8 +674,8 @@ def test_the_history_itself_refuses_a_role_without_the_right(web_env, sql):
     """
     from types import SimpleNamespace
 
-    from web import permissions
     from payrun import person as history
+    from web import permissions
 
     nobody = SimpleNamespace(
         tenant_id=T1, permissions=["timesheet.edit", "unit.close"],
