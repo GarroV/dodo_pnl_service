@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-22 17:29+0000\n"
+"POT-Creation-Date: 2026-08-22 17:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3635,9 +3635,6 @@ msgstr ""
 
 msgid "Заморозка снята. Человек вернулся в общий расчёт."
 msgstr "Zamrzavanje je uklonjeno. Osoba se vratila u zajednički obračun."
-
-msgid "Расчёт зарплаты"
-msgstr "Obračun zarade"
 
 msgid "Сотрудников в табеле"
 msgstr "Zaposlenih u evidenciji sati"

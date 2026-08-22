@@ -367,6 +367,18 @@ p.note.under { margin: var(--space-4) 0 var(--space-8); font-size: var(--fs-meta
 
 /* ── Кнопки ──────────────────────────────────────────────────── */
 
+/* Путь над заголовком — раздел 08 эталона. Отвечает на «где я», когда человек
+   пришёл по ссылке из письма и контекста у него нет. */
+.crumbs { margin: 0 0 var(--space-3); font-size: var(--fs-meta); color: var(--ink-3); }
+.crumbs a { color: var(--ink-3); }
+.crumbs a:hover { color: var(--accent); }
+/* Название и состояние — одна строка: состояние относится к тому, что названо,
+   и оторванное вниз читается как ещё один факт из списка.
+   Имя `pagehead`, а не `head`: `.head` в этом листе уже занят строкой «заголовок
+   плюс кнопка» на других экранах, и второй такой же класс тихо перебил бы её. */
+.pagehead { display: flex; align-items: baseline; gap: var(--space-6); flex-wrap: wrap; }
+.pagehead h1 { margin: 0; }
+
 /* Плашка состояния — раздел 08 эталона: высота 22, точка цвета слева, фон и
    рамка спокойные, цветом говорит сам текст. Состояние расчёта — то, ради чего
    человек открыл экран, и оно не должно читаться наравне с нормой часов. */
@@ -672,7 +684,29 @@ table.sheet th:last-child, table.sheet td:last-child {
    таблицы. Поймано на снимке экрана: в разметке этого не видно вовсе. */
 table.sheet th:last-child { background: var(--surface-head); }
 table.sheet tbody tr:hover td:last-child { background: var(--surface-2); }
+/* Строка итогов держится внизу — раздел «Сетка и плотность» эталона. В
+   ведомости на 35 человек итог месяца лежал под последней строкой, и чтобы
+   свериться с ним, приходилось прокручивать таблицу до конца и обратно. */
+table.sheet tfoot td, table.sheet tfoot th {
+  position: sticky; bottom: 0; z-index: 4;
+  background: var(--surface-2);
+  border-top: 2px solid var(--line-strong);
+  border-bottom: 0;
+  font-weight: var(--w-semibold);
+}
 table.sheet tfoot .grand td { background: var(--surface-total); }
+/* Имя человека держится слева. Колонок полтора десятка, и при прокрутке вправо
+   строка превращалась в ряд чисел без хозяина — сверять их было не с кем.
+   Правая липкая колонка (итог) у нас уже была; левая — вторая половина того же
+   приёма эталона. */
+table.sheet th:first-child, table.sheet td:first-child {
+  position: sticky; left: 0; z-index: 2;
+  background: var(--surface);
+  box-shadow: 1px 0 0 var(--line-strong);
+}
+table.sheet th:first-child { background: var(--surface-head); z-index: 4; }
+table.sheet tbody tr:hover td:first-child { background: var(--surface-2); }
+table.sheet tfoot td:first-child { z-index: 6; background: var(--surface-total); }
 
 /* Причина спора набирается редко, а место занимает в каждой строке. Поле
    узкое по умолчанию и раскрывается, когда в него встали: подсказка нужна

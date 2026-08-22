@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-22 17:29+0000\n"
+"POT-Creation-Date: 2026-08-22 17:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3747,9 +3747,6 @@ msgstr "Row frozen. Recalculation skips it; the rest are calculated as before."
 
 msgid "Заморозка снята. Человек вернулся в общий расчёт."
 msgstr "Freeze removed. The person is back in the shared calculation."
-
-msgid "Расчёт зарплаты"
-msgstr "Payroll calculation"
 
 msgid "Сотрудников в табеле"
 msgstr "Employees in timesheet"
