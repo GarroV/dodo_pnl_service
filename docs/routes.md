@@ -37,6 +37,7 @@
 | `/directory/counterparties/new/` | `directory-counterparty-new` | `web.counterparties_views.counterparty` |
 | `/directory/employees/` | `directory-employees` | `web.directory_views.employees` |
 | `/directory/employees/<uuid:employee_id>/` | `directory-employee` | `web.directory_views.employee` |
+| `/directory/employees/<uuid:employee_id>/pay/` | `directory-employee-pay` | `web.person_views.employee_pay` |
 | `/directory/employees/new/` | `directory-employee-new` | `web.directory_views.employee_new` |
 | `/directory/expense-items/` | `directory-expense-items` | `web.expense_items_views.expense_items` |
 | `/directory/expense-items/<uuid:item_id>/` | `directory-expense-item` | `web.expense_items_views.expense_item` |
