@@ -110,7 +110,12 @@ SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 # лежит в memberships.user_id.
 AUTH_USER_MODEL = "core.User"
 AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
-LOGIN_URL = "/login/"
+# Куда отправляют того, кто не вошёл. На демо-стенде — к двери демо с кнопками
+# ролей, а не к форме пароля: у гостя пароля нет и быть не может, и форма со
+# словами «логин и пароль выдаёт администратор сети» для него тупик. Поймано на
+# владельце 2026-08-22: он нажал в шапке «Periods», получил форму входа и
+# спросил, где вообще кнопки (issue #116).
+LOGIN_URL = "/login/"          # на демо-стенде переопределяется ниже
 LOGIN_REDIRECT_URL = "/periods/"
 
 # Требования к паролю — штатные проверки Django, своих нет.
@@ -140,6 +145,13 @@ DEMO_KEY = os.environ.get("DEMO_KEY", "")
 # Пароль демо-учёток. Той же природы, что пароль базы в .env.example: нужен не
 # для тайны, а чтобы его можно было сменить, не пересобирая образ.
 DEMO_USER_PASSWORD = os.environ.get("DEMO_USER_PASSWORD", "demo-only-not-a-secret")
+
+if DEMO_MODE:
+    # Гостя, не вошедшего в демо, отправляем к двери с кнопками ролей, а не к
+    # форме пароля: пароля у него нет и быть не может, а форма говорит «логин и
+    # пароль выдаёт администратор сети» — тупик. Поймано на владельце
+    # 2026-08-22: он нажал в шапке «Periods» и оказался именно там (issue #116).
+    LOGIN_URL = "/demo/"
 
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"

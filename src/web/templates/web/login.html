@@ -25,7 +25,7 @@
 {% endnotice %}
 {% endif %}
 
-<form method="post" action="{% url 'login' %}" class="card">{% csrf_token %}
+<form method="post" action="{% url 'login' %}" class="card card--auth">{% csrf_token %}
   <input type="hidden" name="next" value="{{ next }}">
   {% translate "Логин" as login_label %}
   {% translate "Пароль" as password_label %}

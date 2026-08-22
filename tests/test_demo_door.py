@@ -54,6 +54,9 @@ out["login_status"] = page.status_code
 html = page.content.decode()
 out["login_offers_demo"] = 'href="/demo/"' in html
 out["login_says_demo"] = "demo" in html.lower()
+# Куда отправляет продукт гостя, который нажал раздел в шапке, не войдя.
+locked = c.get("/periods/")
+out["locked_goes_to"] = locked.headers.get("Location", "").split("?")[0]
 # Куда попадает тот, кто нажал «выйти», и остаётся ли у него путь назад.
 bye = c.post("/logout/")
 out["logout_goes_to"] = bye.headers.get("Location", "")
@@ -187,3 +190,20 @@ def test_in_the_product_logging_out_goes_to_the_login_form(demo_db):
     """В продукте выход ведёт на форму входа: возвращать некуда, демо нет."""
     seen = probe(demo_db, DEMO_MODE="0")
     assert "/login/" in seen["logout_goes_to"], seen["logout_goes_to"]
+
+
+def test_a_guest_clicking_a_section_lands_at_the_demo_door(demo_db):
+    """Гость нажал раздел в шапке — попадает к двери демо, а не к форме пароля.
+
+    Владелец 2026-08-22: «я всего лишь перешёл на экран периоды» — и увидел
+    форму со словами «логин и пароль выдаёт администратор сети». Пароля у гостя
+    демо нет и быть не может: его дверь — кнопки ролей на титульной.
+    """
+    seen = probe(demo_db, DEMO_MODE="1", DEMO_KEY="")
+    assert seen["locked_goes_to"] == "/demo/", seen["locked_goes_to"]
+
+
+def test_in_the_product_a_locked_page_still_asks_for_a_password(demo_db):
+    """В продукте закрытая страница по-прежнему ведёт на форму входа."""
+    seen = probe(demo_db, DEMO_MODE="0")
+    assert seen["locked_goes_to"] == "/login/", seen["locked_goes_to"]

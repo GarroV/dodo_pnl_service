@@ -357,6 +357,32 @@ p.note.under { margin: var(--space-4) 0 var(--space-8); font-size: var(--fs-meta
 
 /* ── Кнопки ──────────────────────────────────────────────────── */
 
+/* Экран входа — «Модуль 10, Вход» эталона. Размеры оттуда: карточка 396,
+   поля во всю ширину, кнопка тоже — на этом экране действие ровно одно, и
+   растянутая кнопка сама показывает, где оно. До переноса форма занимала
+   половину экрана и выглядела черновиком: поля разной ширины, кнопка сбоку. */
+form.card--auth {
+  max-width: 396px;
+  padding: 26px 28px 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: var(--sh-xs);
+}
+form.card--auth > p { margin: 0 0 var(--space-7); }
+form.card--auth > p:last-child { margin-bottom: 0; }
+/* Подпись поля — та же микро-прописная, что у остальных форм продукта. */
+form.card--auth label {
+  display: block;
+  font-size: var(--fs-micro); letter-spacing: var(--tracking-micro);
+  text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold);
+  margin-bottom: var(--space-2);
+}
+/* Поле идёт сразу под своей подписью: общий отступ форм продукта здесь
+   отрывал подпись от поля, и пара читалась как два разных блока. */
+form.card--auth input { height: 38px; font-size: var(--fs-lead); margin-top: 0; }
+form.card--auth button[type="submit"] { width: 100%; height: 40px; font-size: var(--fs-lead); }
+
 /* Кнопки — раздел «Кнопки» эталона. До переноса база была «акцентный текст на
    прозрачном фоне»: она не читалась как нажимаемое и сливалась со ссылками.
    В эталоне база — поверхность с рамкой и обычным текстом, а акцентом окрашена
