@@ -210,3 +210,33 @@ def test_a_piece_of_a_page_stays_a_piece(client, web_env):
         response = client.get("/no-such-address/", headers={"hx-request": "true"})
     assert response.status_code == 404
     assert 'class="brand"' not in body(response)
+
+
+def test_the_missing_page_keeps_its_message_inside_the_plaque(client, web_env):
+    """Текст отказа лежит ВНУТРИ плашки, а не под ней.
+
+    Проверка разметки, а не оформления, и это принципиально: рамку рисует
+    `.empty`, и по классу страница была правильной всё время, пока выглядела
+    сломанной. `{% notice "empty" %}` рендерит абзац, а в тело шаблон кладёт
+    `<h3>` — браузер закрывает `<p>` перед заголовком, и от плашки остаётся
+    пустая пунктирная рамка, а совет и дорога назад оказываются снаружи
+    (issue #141). Первый экран, который видит человек, промахнувшийся адресом,
+    читался как поломка продукта.
+
+    Общий запрет на блочное тело у пустых состояний стоит отдельно
+    (`tests/test_web_components.py`); здесь проверяется собранная страница —
+    правило может быть верным, а страница собранной мимо него.
+    """
+    import re as regex
+
+    html = missing_page(client)
+    plaque = regex.search(r'<p class="empty">(.*?)</p>', html, regex.S)
+    assert plaque, "плашки пустого состояния на странице 404 нет вовсе"
+    inside = plaque.group(1)
+
+    assert "Здесь ничего нет" in inside, "заголовок плашки выпал из неё"
+    assert "Проверьте адрес" in inside, "совет лежит снаружи плашки — она пустая рамка"
+    assert 'href="/periods/"' in inside, "дорога назад лежит снаружи плашки"
+    # Заголовка внутри абзаца быть не может по определению: именно он и
+    # выталкивал текст наружу.
+    assert "<h3" not in html, "заголовок внутри плашки-абзаца вернулся"
