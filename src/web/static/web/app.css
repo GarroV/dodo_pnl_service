@@ -159,6 +159,26 @@ p.back a:hover { color: var(--accent); }
 }
 .appnav__link:hover { background: var(--surface-3); text-decoration: none; color: var(--ink); }
 
+/* Раздел, который ведёт другая роль (только демо). Оформления у него не было
+   вовсе — в шапке висела голая ссылка со стрелкой в тексте, и ряд читался как
+   «Directories → Rules → Roles →», будто это путь (issue #160).
+   Теперь это обычный пункт навигации, но приглушённый и с пунктиром: пунктир в
+   этой системе значит «поведение отличается от соседей» — здесь переключится
+   роль, а не только страница. Стрелка ушла в оформление и появляется при
+   наведении, когда человек и так собрался нажать. */
+.appnav .nav-offer {
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--r-control);
+  color: var(--ink-3);
+  border-bottom: 1px dashed var(--line-control-2);
+  white-space: nowrap;
+}
+.appnav .nav-offer:hover {
+  background: var(--surface-3); color: var(--ink-2);
+  text-decoration: none; border-bottom-color: var(--accent-line);
+}
+.appnav .nav-offer:hover::after { content: " →"; opacity: .6; }
+
 .appbar__spacer { flex: 1 1 auto; }
 
 /* Правый край шапки. Шапка обязана держаться в ОДНУ строку: служебное (кем
