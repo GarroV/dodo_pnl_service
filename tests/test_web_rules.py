@@ -492,3 +492,352 @@ def test_the_rule_page_names_the_closed_month_before_the_edit(
     html = body(client.get(f"/rules/{NIGHT_PERCENT}/"))
     assert "2026-06-30" in html, "страница не называет границу закрытого месяца"
     client.post("/logout/")
+
+
+# --- четыре уровня, а не один (T165) ------------------------------------------
+#
+# До этой задачи экран умел один уровень — партнёра. `rule_overrides` умел
+# `group` и `employee`, сборка пресета их читала, расчёт применял — а завести их
+# было нечем: уровень был зашит константой. Проверки ниже держат обе половины
+# требования: правка ложится на выбранный уровень и **не задевает** остальные, а
+# завести уровень, до которого правило не доезжает, нельзя.
+
+
+def tenant_id_of(code: str = "rs-dev"):
+    from core.models import Tenant
+
+    return Tenant.objects.filter(code=code).values_list("id", flat=True).first()
+
+
+def group_id(code: str):
+    from core.models import EmployeeGroup
+
+    return (
+        EmployeeGroup.objects.filter(tenant_id=tenant_id_of(), code=code)
+        .values_list("id", flat=True)
+        .first()
+    )
+
+
+def someone_from(group_code: str):
+    """Человек, который в июне числится в этой группе. Нужен уровню `employee`."""
+    from core.models import EmploymentTerm
+
+    return (
+        EmploymentTerm.objects.filter(
+            tenant_id=tenant_id_of(), group__code=group_code, valid_from__lte=JUNE,
+        )
+        .exclude(valid_to__lte=JUNE)
+        .values_list("employee_id", flat=True)
+        .first()
+    )
+
+
+def scoped_rule(web_env, path: str, when: date, *, group=None, employee=None):
+    """Значение правила, которое расчёт возьмёт для этой группы или человека.
+
+    Собирается **тем же кодом**, каким его собирает расчёт: свой порядок
+    наложения слоёв в тесте проверял бы тест, а не продукт.
+    """
+    from core.rules import load_rules_at
+    from web import rules
+    from web.directory import country_of
+
+    tenant_id = tenant_id_of()
+    assembled = load_rules_at(tenant_id, country_of(tenant_id), when)
+    return rules.value_at(assembled.preset(group_id=group, employee_id=employee), path)
+
+
+def post_scoped(client, path: str, *, value: str, valid_from: str, target: str):
+    return client.post(
+        f"/rules/{path}/", {"value": value, "valid_from": valid_from, "target": target}
+    )
+
+
+def test_a_rule_is_set_for_one_group_and_leaves_the_others_alone(
+    client, web_env, overrides_restored,
+):
+    """Коэффициент ночных — одной группе. Ровно то, чего экран не умел."""
+    couriers = group_id("couriers")
+    kitchen = group_id("kitchen")
+    before = june_rule(web_env, NIGHT_PERCENT)
+
+    login_as(client, "admin")
+    answer = post_scoped(
+        client, NIGHT_PERCENT, value="1.55", valid_from="2026-06-01",
+        target=f"group:{couriers}",
+    )
+    assert answer.status_code == 302, body(answer)[:600]
+    client.post("/logout/")
+
+    assert scoped_rule(web_env, NIGHT_PERCENT, JUNE, group=couriers) == 1.55
+    # Ни общая часть, ни соседняя группа не двинулись: уровни складываются, а
+    # не растекаются. Без этой половины проверка была бы про «записалось», а не
+    # про «записалось туда, куда просили».
+    assert june_rule(web_env, NIGHT_PERCENT) == before
+    assert scoped_rule(web_env, NIGHT_PERCENT, JUNE, group=kitchen) == before
+
+
+def test_a_rule_is_set_for_one_person(client, web_env, overrides_restored):
+    """Тот же коэффициент — одному человеку, поверх его группы."""
+    couriers = group_id("couriers")
+    person = someone_from("couriers")
+    assert person is not None, "в сиде некому завести правило по человеку"
+
+    login_as(client, "admin")
+    assert post_scoped(
+        client, NIGHT_PERCENT, value="1.40", valid_from="2026-06-01",
+        target=f"group:{couriers}",
+    ).status_code == 302
+    assert post_scoped(
+        client, NIGHT_PERCENT, value="1.80", valid_from="2026-06-01",
+        target=f"employee:{person}",
+    ).status_code == 302
+    client.post("/logout/")
+
+    # Человек сильнее группы, группа сильнее партнёра — тем же порядком, каким
+    # это читает расчёт.
+    assert scoped_rule(web_env, NIGHT_PERCENT, JUNE, group=couriers, employee=person) == 1.80
+    assert scoped_rule(web_env, NIGHT_PERCENT, JUNE, group=couriers) == 1.40
+
+
+def test_a_group_version_does_not_close_the_partner_version(
+    client, web_env, sql, overrides_restored,
+):
+    """Версия группы не закрывает версию партнёра: уровни не спорят друг с другом."""
+    couriers = group_id("couriers")
+    login_as(client, "admin")
+    assert post_rule(
+        client, NIGHT_PERCENT, value="1.40", valid_from="2026-09-01"
+    ).status_code == 302
+    assert post_scoped(
+        client, NIGHT_PERCENT, value="1.55", valid_from="2026-09-01",
+        target=f"group:{couriers}",
+    ).status_code == 302
+    client.post("/logout/")
+
+    # Порядок по тексту, а не по самому `scope_type`: это enum, и база
+    # сортирует его в порядке ОБЪЯВЛЕНИЯ значений (страна, партнёр, группа,
+    # человек), а не по алфавиту. Ожидание, написанное по алфавиту, краснело бы
+    # на верных данных.
+    rows = sql.execute(
+        "select scope_type, valid_from, valid_to, value from rule_overrides "
+        "where path = %s order by scope_type::text",
+        (NIGHT_PERCENT,),
+    ).fetchall()
+    assert [(a, str(b), str(c), d) for a, b, c, d in rows] == [
+        ("group", "2026-09-01", "None", 1.55),
+        ("tenant", "2026-09-01", "None", 1.40),
+    ], rows
+
+
+def test_a_group_rule_from_a_later_month_does_not_change_the_earlier_one(
+    client, web_env, overrides_restored,
+):
+    """Версия правила группы с сентября не переписывает июнь этой же группы.
+
+    Версионирование по датам — сердце продукта, и на уровне группы оно обязано
+    работать так же, как на уровне партнёра: закрытый период считается своей
+    версией. Проверяется тем же кодом, каким правила берёт расчёт.
+    """
+    couriers = group_id("couriers")
+    before = june_rule(web_env, NIGHT_PERCENT)
+
+    login_as(client, "admin")
+    assert post_scoped(
+        client, NIGHT_PERCENT, value="1.90", valid_from="2026-09-01",
+        target=f"group:{couriers}",
+    ).status_code == 302
+    client.post("/logout/")
+
+    assert scoped_rule(web_env, NIGHT_PERCENT, JUNE, group=couriers) == before, (
+        "правка с сентября достала до июня"
+    )
+    assert scoped_rule(web_env, NIGHT_PERCENT, date(2026, 9, 1), group=couriers) == 1.90
+
+
+def test_a_group_override_is_visible_in_the_list(client, web_env, overrides_restored):
+    """Правило, заведённое одной группе, видно в списке правил.
+
+    Список показывает общую часть — то, что действует у всех. Пока пометки о
+    нижних уровнях не было, версия группы не была видна **ни на одном** экране:
+    расчёт по ней шёл, а найти её было нечем.
+    """
+    couriers = group_id("couriers")
+    login_as(client, "admin")
+    assert post_scoped(
+        client, NIGHT_PERCENT, value="1.55", valid_from="2026-06-01",
+        target=f"group:{couriers}",
+    ).status_code == 302
+    html = body(client.get("/rules/?on=2026-06-15"))
+    assert "1 группе" in html, "переопределение группы нигде не названо"
+    # И на карточке правила видно, кому именно оно задано.
+    page = body(client.get(f"/rules/{NIGHT_PERCENT}/?on=2026-06-15"))
+    assert "переопределение группы" in page, page[:600]
+    client.post("/logout/")
+
+
+def test_a_rule_addressed_by_group_code_is_refused_below_the_partner(
+    client, sql, overrides_restored,
+):
+    """Правило, адресованное кодом группы, ниже партнёра не заводится (D032).
+
+    Не потому, что база не пустит, а потому, что оно молча перестало бы
+    применяться: путь несёт код группы, и после перевода человека в другую
+    группу расчёт вернулся бы к мере новой группы, ничего не сказав. Тот же
+    довод, по которому мера работы человека заведена колонкой условий найма
+    (миграция `0247`).
+    """
+    couriers = group_id("couriers")
+    login_as(client, "admin")
+    answer = post_scoped(
+        client, COURIERS_MEASURE, value="fixed_payout", valid_from="2026-09-01",
+        target=f"group:{couriers}",
+    )
+    assert answer.status_code == 400, answer.status_code
+    html = body(answer)
+    assert "условиях найма" in html, html[:800]
+    client.post("/logout/")
+    assert sql.execute(
+        "select count(*) from rule_overrides where path = %s", (COURIERS_MEASURE,)
+    ).fetchone()[0] == 0, "отвергнутая форма всё-таки записала строку"
+
+
+def test_a_value_that_is_not_in_the_country_rules_is_refused(
+    client, sql, overrides_restored,
+):
+    """Мера работы, которой в правилах нет, не принимается и мимо формы.
+
+    Список на форме — удобство, а не запрет: запрос, собранный без неё, приносил
+    бы в jsonb любую строку, и увидел бы её расчёт — отказом на середине периода
+    либо счётом мимо правила. Вчера на этом попалась мера оплаты в условиях
+    найма; здесь полей больше, поэтому проверка одна на все.
+    """
+    login_as(client, "admin")
+    answer = post_rule(client, COURIERS_MEASURE, value="на глазок", valid_from="2026-09-01")
+    assert answer.status_code == 400, answer.status_code
+    assert "нет в правилах страны" in body(answer)
+    client.post("/logout/")
+    assert sql.execute(
+        "select count(*) from rule_overrides where path = %s", (COURIERS_MEASURE,)
+    ).fetchone()[0] == 0
+
+
+def test_a_target_that_is_not_the_partners_own_is_refused(client, sql, overrides_restored):
+    """Чужая группа в подменённом запросе — отказ, а не строка на всех.
+
+    Молчаливая подстановка партнёра была бы худшим исходом: человек метил в
+    группу, а правило легло бы на всех, и узнал бы он об этом по деньгам.
+    """
+    from uuid import uuid4
+
+    login_as(client, "admin")
+    for target in (f"group:{uuid4()}", f"employee:{uuid4()}", "country", "tenant:1"):
+        answer = post_scoped(
+            client, NIGHT_PERCENT, value="1.55", valid_from="2026-09-01", target=target,
+        )
+        assert answer.status_code == 400, f"{target}: ответ {answer.status_code}"
+    client.post("/logout/")
+    assert sql.execute(
+        "select count(*) from rule_overrides where path = %s", (NIGHT_PERCENT,)
+    ).fetchone()[0] == 0
+
+
+def test_the_levels_never_name_a_group_the_role_cannot_see(client, sql, overrides_restored):
+    """Список «кому» отобран по регистру роли — так же, как сам список правил (D023).
+
+    Роль без внутреннего регистра не должна узнать о группе курьеров ни из
+    правил, ни из выбора уровня: имя в списке — такое же сообщение о
+    существовании группы, как её строка в справочнике. И задать ей правило
+    подменённым запросом тоже нельзя — иначе срез держался бы на разметке.
+    """
+    couriers = group_id("couriers")
+    sql.execute(
+        "update roles set permissions = permissions || '[\"rules.manage\"]'::jsonb "
+        "where code = 'manager' and tenant_id is not null"
+    )
+    try:
+        login_as(client, "manager")
+        html = body(client.get(f"/rules/{NIGHT_PERCENT}/"))
+        assert "Кому" in html, "выбора уровня на форме нет вовсе"
+        assert "couriers" not in html and "Курьеры" not in html, html[:900]
+        answer = post_scoped(
+            client, NIGHT_PERCENT, value="1.55", valid_from="2026-09-01",
+            target=f"group:{couriers}",
+        )
+        assert answer.status_code == 400, answer.status_code
+        client.post("/logout/")
+    finally:
+        sql.execute(
+            "update roles set permissions = permissions - 'rules.manage' "
+            "where code = 'manager' and tenant_id is not null"
+        )
+    assert sql.execute(
+        "select count(*) from rule_overrides where path = %s", (NIGHT_PERCENT,)
+    ).fetchone()[0] == 0
+
+
+def test_the_registry_finds_a_rule_by_its_code(client):
+    """Правило находится поиском, а не прокруткой.
+
+    В наборе страны больше сотни правил, разложенных по десяти разделам, —
+    эталон модуля 17 поэтому и называет экран реестром. Поиск идёт по коду:
+    он один на все языки, в отличие от подписи.
+    """
+    login_as(client, "admin")
+    html = body(client.get("/rules/?q=night"))
+    assert NIGHT_PERCENT in html, "поиск не нашёл правило по части кода"
+    assert NET_FACTOR not in html, "поиск ничего не отобрал — показан весь набор"
+    # Пустая выборка объясняется отдельно от «правил вообще нет»: правила есть,
+    # просто не эти, и советовать грузить пресет тут было бы не по делу.
+    empty = body(client.get("/rules/?q=такого-правила-нет"))
+    assert "По этому запросу правил нет" in empty, empty[:600]
+    assert "load_presets" not in empty, "пустой поиск советует грузить пресет"
+    client.post("/logout/")
+
+
+ALLOWANCE_LEDGER = "allowances.meal_and_vacation_bonus.ledger"
+
+
+def test_the_ledger_of_a_rule_is_chosen_from_what_the_role_sees(
+    client, sql, overrides_restored,
+):
+    """Регистр в правиле — выбор из видимых роли, а не свободная строка (D023).
+
+    Два исхода свободного ввода, и оба плохие. Опечатка («oficial») роняла бы
+    расчёт периода на середине: тип-перечисление в базе такого значения не
+    примет, и узнал бы об этом не тот, кто набрал. Осмысленный чужой регистр
+    («internal» у роли, которая его не видит) заводил бы строки расчёта,
+    которых сама эта роль потом не увидит — то есть роль выписывала бы себе
+    невидимую работу.
+
+    Право выдаётся управляющему временно — тем же приёмом, что в проверке среза
+    выше: `rules.manage` есть только у администратора, а он видит все три
+    регистра, и проверять отбор было бы не на ком.
+    """
+    sql.execute(
+        "update roles set permissions = permissions || '[\"rules.manage\"]'::jsonb "
+        "where code = 'manager' and tenant_id is not null"
+    )
+    try:
+        login_as(client, "manager")
+        html = body(client.get(f"/rules/{ALLOWANCE_LEDGER}/"))
+        assert "Официальный" in html, "видимый регистр не предложен вовсе"
+        assert "Внутренний" not in html, "роли назван регистр, которого она не видит"
+        for wrong in ("internal", "oficial"):
+            answer = post_rule(
+                client, ALLOWANCE_LEDGER, value=wrong, valid_from="2026-09-01",
+            )
+            assert answer.status_code == 400, f"{wrong}: ответ {answer.status_code}"
+            assert "нет в правилах страны" in body(answer)
+        # А видимый регистр принимается — иначе проверка запрещала бы всё, и
+        # запрет был бы неотличим от сломанного списка.
+        assert post_rule(
+            client, ALLOWANCE_LEDGER, value="supplementary", valid_from="2026-09-01",
+        ).status_code == 302
+        client.post("/logout/")
+    finally:
+        sql.execute(
+            "update roles set permissions = permissions - 'rules.manage' "
+            "where code = 'manager' and tenant_id is not null"
+        )

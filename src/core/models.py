@@ -597,6 +597,11 @@ class RulePreset(models.Model):
     body = models.JSONField()  # то, что сейчас в YAML
     valid_from = models.DateField()
     valid_to = models.DateField(null=True, blank=True)
+    # Правили ли тело в продукте (T165). Не пусто — `import_presets` эту версию
+    # не перезаписывает: повторный `load_presets` вернул бы файл поверх правки и
+    # не сказал бы об этом ни слова.
+    edited_at = models.DateTimeField(null=True, blank=True)
+    edited_by = models.UUIDField(null=True, blank=True)
 
     class Meta:
         db_table = "rule_presets"
@@ -614,6 +619,29 @@ class RulePreset(models.Model):
                 ],
             ),
         ]
+
+
+class PlatformAdmin(models.Model):
+    """Учётка, которая вправе вести правила стран (T165).
+
+    Право не партнёрское и потому не роль: тело пресета общее для всех партнёров
+    страны, и право «на всю страну», выданное внутри одного тенанта, разрешило
+    бы ему менять расчёт соседу — ровно то, против чего возражала миграция
+    `0180_rules_permissions`.
+
+    Из приложения не пишется вовсе: политик на запись у таблицы нет, а права
+    роли `app_user` отозваны. Первая строка кладётся так же, как первая
+    учётка — администратором базы (`manage.py platform_admin`).
+    """
+
+    user = models.OneToOneField(
+        "User", on_delete=models.CASCADE, db_column="user_id", primary_key=True,
+    )
+    granted_at = models.DateTimeField(db_default=now_default())
+    note = models.TextField(db_default="")
+
+    class Meta:
+        db_table = "platform_admins"
 
 
 class RuleOverride(models.Model):

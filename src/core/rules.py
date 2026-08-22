@@ -33,7 +33,8 @@ from payroll.presets import (
 
 from .models import RuleOverride, RulePreset
 
-__all__ = ["PresetNotFound", "RuleSet", "import_presets", "load_preset_at", "load_rules_at"]
+__all__ = ["Imported", "PresetNotFound", "RuleSet", "import_presets",
+           "import_presets_detailed", "load_preset_at", "load_rules_at"]
 
 
 class PresetNotFound(LookupError):
@@ -177,27 +178,60 @@ def load_preset_at(tenant_id: UUID, country_code: str, on_date: date, *,
     return rules.preset(group_id=group_id, employee_id=employee_id)
 
 
+@dataclass(frozen=True)
+class Imported:
+    """Что сделала первичная загрузка: что положено и что не тронуто.
+
+    Пропущенное возвращается отдельно, а не молча остаётся прежним: см. ниже,
+    почему тихий пропуск здесь был бы хуже отказа.
+    """
+
+    loaded: list[str] = field(default_factory=list)
+    skipped: list[str] = field(default_factory=list)
+
+
 def import_presets(codes: list[str] | None = None) -> list[str]:
     """Первичная загрузка стран из YAML в таблицу. Идемпотентна.
 
     Ключ — код пресета и дата начала действия: повторный прогон обновляет ту же
     строку, а не заводит вторую версию того же месяца (её всё равно не пустило
     бы ограничение непересечения периодов).
+
+    **Версию, которую правили в продукте, загрузка не трогает** (T165). До
+    появления экрана правил страны это было неважно: тело менялось только
+    файлом, и `update_or_create` возвращал ровно то, что в файле. Теперь у той
+    же строки два источника, и повторный `load_presets` вернул бы файл поверх
+    правки — то есть откатил бы ставку взносов к прошлогодней и не сказал бы об
+    этом ни слова. Отметка `edited_at` останавливает загрузку по этой строке;
+    сказать о пропуске вслух — дело вызывающего (`Command.handle`).
     """
-    loaded = []
+    return import_presets_detailed(codes).loaded
+
+
+def import_presets_detailed(codes: list[str] | None = None) -> Imported:
+    """То же, но с ответом о пропущенных версиях."""
+    result = Imported()
     for code in codes or list_presets():
         # Тело как в файле — со всеми языками подписей (T092). Свёрнутое здесь
         # оставило бы партнёра навсегда на одном языке: база и есть источник
         # правил после первичной загрузки, второго шанса положить языки нет.
         body = load_preset_body(code)
+        preset_code = body.get("preset", code)
+        valid_from = preset_valid_from(body)
+        edited = RulePreset.objects.filter(
+            code=preset_code, valid_from=valid_from, edited_at__isnull=False,
+        ).exists()
+        if edited:
+            result.skipped.append(code)
+            continue
         RulePreset.objects.update_or_create(
-            code=body.get("preset", code),
-            valid_from=preset_valid_from(body),
+            code=preset_code,
+            valid_from=valid_from,
             defaults={
                 "title": body.get("title", code),
                 "country_code": str(body.get("country", "")).upper(),
                 "body": to_jsonable(dict(body)),
             },
         )
-        loaded.append(code)
-    return loaded
+        result.loaded.append(code)
+    return result

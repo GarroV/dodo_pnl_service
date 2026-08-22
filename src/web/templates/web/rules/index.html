@@ -20,9 +20,20 @@
 <h1>{{ heading }}</h1>
 <p class="sub">{% blocktranslate %}Страна поставляется готовым набором правил. Партнёр меняет только отличия — новой версией с датой: закрытый месяц от этого не двигается, потому что расчёт берёт версию, действовавшую в считаемом месяце.{% endblocktranslate %}</p>
 
+{% comment %}
+Поиск рядом с датой, а не отдельной формой: и то и другое — вопрос «что мне
+показать», и разными формами человек терял бы одно, задавая другое.
+
+Правил в наборе страны больше сотни, и разложены они по десяти разделам —
+эталон модуля 17 поэтому и говорит «реестр, а не форма настроек» и ищет по коду
+и по названию. Без поиска правило находится прокруткой, то есть глазами.
+{% endcomment %}
 <form class="search" method="get">
   {% translate "Действующие на" as on_label %}
   {% include "web/components/field.html" with id="on" name="on" label=on_label value=on_date type="date" %}
+  {% translate "Правило" as q_label %}
+  {% translate "Часть кода правила: night, sick, net_factor" as q_help %}
+  {% include "web/components/field.html" with id="q" name="q" label=q_label value=query help=q_help %}
   <button type="submit">{% translate "Показать" %}</button>
 </form>
 
@@ -42,20 +53,38 @@
       <th>{% translate "Значение" %}</th>
       <th>{% translate "Откуда" %}</th>
       <th>{% translate "Действует с" %}</th>
+      <th>{% translate "Задано отдельно" %}</th>
     </tr>
   </thead>
   <tbody>
     {% for row in section.rows %}
     <tr>
       <td>{% if row.url %}<a href="{{ row.url }}">{{ row.path }}</a>{% else %}{{ row.path }}{% endif %}</td>
-      <td class="num">{{ row.value }}</td>
+      <td class="{{ row.value|numclass }}">{{ row.value }}</td>
       <td>{{ row.origin }}</td>
       <td>{{ row.since|default:"—" }}</td>
+      {% comment %}
+      Колонка про то, что таблица НЕ показывает. Значение в строке — общее: страна
+      плюс партнёр, то есть то, что действует у всех. Версия, заведённая одной
+      группе, в него не входит, и без этой пометки её не было бы видно ни здесь,
+      ни на одном другом экране: правило считало бы деньги, а найти его было бы
+      нечем (T165).
+      {% endcomment %}
+      <td>{{ row.lower|default:"—" }}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>{% endscroll %}
 {% endfor %}
+{% elif query %}
+{% comment %}
+Пустой поиск и отсутствие правил вовсе — разные события, и объясняются они
+по-разному: в первом случае правила есть, просто не эти, и человеку надо сказать,
+по чему идёт поиск. Одна плашка на два случая советовала бы грузить пресет тому,
+кто просто опечатался.
+{% endcomment %}
+{% translate "По этому запросу правил нет." as nothing_found %}
+{% notice "empty" title=nothing_found %}{% blocktranslate %}Поиск идёт по коду правила — той самой строке, которой правило адресуется расчёту: hour_types.night.pay_percent. Очистите поле, чтобы увидеть весь набор.{% endblocktranslate %}{% endnotice %}
 {% else %}
 {% translate "Правил расчёта для этой страны на эту дату в базе нет." as no_rules %}
 {% notice "empty" title=no_rules %}{% blocktranslate %}Первичная загрузка страны делается командой load_presets — до неё считать нечем, и показывать здесь тоже нечего.{% endblocktranslate %}{% endnotice %}
