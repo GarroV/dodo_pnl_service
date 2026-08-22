@@ -55,7 +55,9 @@
   <tbody>
     {% for version in country_versions %}
     <tr>
-      <td>{{ version.from }}</td>
+      <td>{{ version.from }}
+        {% if version.state == "active" %}<span class="version version--active">{% translate "действует" %}</span>
+        {% elif version.state == "future" %}<span class="version version--future">{% translate "с будущей даты" %}</span>{% endif %}</td>
       <td>{{ version.to }}</td>
       <td class="{{ version.value|numclass }}">{{ version.value }}</td>
       {% comment %}

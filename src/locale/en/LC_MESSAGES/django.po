@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-22 17:56+0000\n"
+"POT-Creation-Date: 2026-08-22 19:10+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4357,6 +4357,12 @@ msgstr "In %(country)s rules: %(value)s — %(preset)s preset"
 
 msgid "Заведена"
 msgstr "Created"
+
+msgid "действует"
+msgstr "in force"
+
+msgid "с будущей даты"
+msgstr "from a future date"
 
 msgid "в продукте"
 msgstr "in the product"

@@ -195,6 +195,25 @@ def numclass(shown) -> str:
 
 
 @register.simple_tag
+def role_badge(title):
+    """Плашка роли: `{% role_badge principal.role_title %}`.
+
+    Раздел «Роли» эталона: у каждого набора прав свой цвет — человек узнаёт,
+    чьими глазами смотрит, не вчитываясь. Цвет из кода роли, который название
+    несёт с собой; при двух ролях кода нет и плашка нейтральная, потому что
+    цвет одной роли врал бы про вторую.
+    """
+    known = {
+        "accountant": "role--accountant",
+        "admin": "role--admin",
+        "director": "role--ops",
+        "manager": "role--manager",
+    }
+    css = known.get(getattr(title, "code", ""), "")
+    return format_html('<span class="role {}">{}</span>', css, title)
+
+
+@register.simple_tag
 def state(title):
     """Плашка состояния: `{% state payrun_status %}`.
 

@@ -225,16 +225,24 @@ p.back a:hover { color: var(--accent); }
    на ступень выше со сроком и причиной. Поэтому здесь одна плашка и нет
    пунктирной «временной»: расхождение с эталоном разбирается отдельно и не
    решается оформлением. */
+/* Плашка роли — раздел «Роли» эталона: у каждого набора прав свой цвет, чтобы
+   человек узнавал, чьими глазами смотрит, не вчитываясь в слово. Нейтральный
+   вид остаётся запасным: партнёр вправе завести свою роль, а при двух ролях
+   сразу цвет одной врал бы про вторую. */
 .role {
   padding: var(--space-1) var(--space-4);
   border-radius: var(--r-control);
   font-size: var(--fs-meta);
   font-weight: var(--w-semibold);
   white-space: nowrap;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-line);
+  color: var(--ink-2);
+  background: var(--surface-3);
+  border: 1px solid var(--line-control);
 }
+.role--admin      { color: var(--accent);       background: var(--accent-soft);       border-color: var(--accent-line); }
+.role--accountant { color: var(--reg-supp);     background: var(--reg-supp-soft);     border-color: var(--reg-supp-line); }
+.role--ops        { color: var(--reg-internal); background: var(--reg-internal-soft); border-color: var(--reg-internal-line); }
+.role--manager    { color: var(--warn-ink);     background: var(--warn-soft);         border-color: var(--warn-line); }
 
 /* Переключатель языка — сегментированный переключатель дизайн-системы.
    Кнопки, а не ссылки: смена языка меняет состояние (cookie), и делать это
@@ -398,6 +406,20 @@ p.note.under { margin: var(--space-4) 0 var(--space-8); font-size: var(--fs-meta
    плюс кнопка» на других экранах, и второй такой же класс тихо перебил бы её. */
 .pagehead { display: flex; align-items: baseline; gap: var(--space-6); flex-wrap: wrap; }
 .pagehead h1 { margin: 0; }
+
+/* Версия правила — раздел «Плашки версий» эталона. Три состояния, а не два:
+   ставку заводят заранее, и «действует с первого числа следующего месяца» —
+   обычный случай. Прошлая версия не помечается вовсе: помечать нужно то, что
+   действует, и то, что ещё не наступило. */
+.version {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  height: 21px; padding: 0 var(--space-3);
+  border-radius: var(--r-control); font-size: var(--fs-meta); white-space: nowrap;
+  margin-left: var(--space-3);
+}
+.version--active { color: var(--ok);     background: var(--ok-soft);     border: 1px solid var(--ok-line);     font-weight: var(--w-semibold); }
+.version--past   { color: var(--ink-2);  background: var(--surface-3);   border: 1px solid var(--line-control); }
+.version--future { color: var(--accent); background: var(--accent-soft); border: 1px dashed var(--accent-line); font-weight: var(--w-semibold); }
 
 /* Числовые модификаторы эталона. Итог тяжелее обычной суммы, рост и падение
    говорят цветом — в отчёте расхождений это единственное, ради чего его

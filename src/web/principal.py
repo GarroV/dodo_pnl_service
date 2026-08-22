@@ -21,7 +21,7 @@ from core.models import Membership, Unit
 # способом, из-за которого `core/roles.py` и появился.
 from core.roles import ALL_LEDGERS
 
-from .format import ledger_title
+from .format import CodedTitle, ledger_title
 from .i18n import role_title
 
 # Кладётся на запрос: страница спрашивает «кто вошёл» и в шапке, и в
@@ -149,11 +149,28 @@ def _from_membership(user) -> Principal:
         # Ролей может быть несколько, и названы они все: отказ по правам
         # ссылается на роль дословно («… не входит в права вашей роли «Х»»), и
         # одно название из двух указывало бы человеку не на то.
-        role_title=" + ".join(_unique(role_title(m.role.code, m.role.title) for m in mine)),
+        # Название несёт код роли — плашка в шапке красится по нему (раздел
+        # «Роли» эталона: у каждого набора прав свой цвет). Код ставится только
+        # когда роль одна: при двух ролях в одной плашке цвет одной из них врал
+        # бы про вторую, и плашка остаётся нейтральной.
+        role_title=_role_title_of(mine),
         tenant_title=mine[0].tenant.title,
         display_name=display_name,
         units_title=_units_title(unit_ids),
     )
+
+
+def _role_title_of(memberships) -> str:
+    """Название роли для шапки. Одна роль — с кодом, несколько — просто текст.
+
+    Ролей может быть несколько, и названы они все: отказ по правам ссылается на
+    роль дословно («… не входит в права вашей роли «Х»»), и одно название из
+    двух указывало бы человеку не на то.
+    """
+    titles = _unique(role_title(m.role.code, m.role.title) for m in memberships)
+    joined = " + ".join(titles)
+    codes = _unique(m.role.code for m in memberships)
+    return CodedTitle(joined, codes[0]) if len(codes) == 1 else joined
 
 
 def _unique(values) -> list:

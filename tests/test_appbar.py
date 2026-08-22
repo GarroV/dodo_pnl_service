@@ -137,13 +137,34 @@ def test_in_section_compares_roots_not_whole_addresses(path, section, same):
 
 @pytest.mark.parametrize("role", ["director", "accountant", "manager", "admin"])
 def test_the_header_shows_exactly_one_role(client, web_env, role):
-    """Плашка роли одна: решение владельца — у человека один уровень."""
+    """Плашка роли одна: решение владельца — у человека один уровень.
+
+    Считается по началу атрибута, а не по строке целиком: у плашки теперь есть
+    ещё и класс цвета роли (`role role--ops`), и точное совпадение проверяло бы
+    оформление вместо количества.
+    """
+    login_as(client, role)
+    page = body(client.get("/periods/"))
+    badges = len(re.findall(r'class="role(?: |")', page))
+
+    assert badges == 1, f"{role}: плашек роли {badges}, а должна быть одна"
+
+
+@pytest.mark.parametrize(
+    ("role", "colour"),
+    [("director", "role--ops"), ("accountant", "role--accountant"),
+     ("manager", "role--manager"), ("admin", "role--admin")],
+)
+def test_each_role_has_its_own_colour(client, web_env, role, colour):
+    """Раздел «Роли» эталона: набор прав узнаётся цветом, а не только словом.
+
+    Цвет берётся из кода роли, а не из её названия: названия переводятся, и на
+    английской странице все плашки стали бы одинаковыми.
+    """
     login_as(client, role)
     page = body(client.get("/periods/"))
 
-    assert page.count('class="role"') == 1, (
-        f"{role}: плашек роли {page.count('class=\"role\"')}, а должна быть одна"
-    )
+    assert colour in page, f"{role}: плашка без своего цвета"
 
 
 def test_the_header_says_whose_eyes_these_numbers_are(client, web_env):

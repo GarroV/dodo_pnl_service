@@ -505,10 +505,30 @@ def _country_block(who, path: str, on_date: date) -> dict:
                 # (`format.EMPTY`, тот же источник прочерка на весь продукт).
                 "value": rules.show(_country_value_or_dash(row, path)) or EMPTY,
                 "edited": bool(row.edited_at),
+                # Какая версия действует сегодня — вопрос, ради которого этот
+                # список и открывают. По датам его приходилось вычислять
+                # глазами, сверяя два столбца с сегодняшним числом.
+                "state": _version_state(row),
             }
             for row in rules_country.country_versions(country)
         ],
     }
+
+
+def _version_state(row) -> str:
+    """Прошлая версия, действующая или будущая — по датам её действия.
+
+    Три состояния, а не два: правило можно завести заранее, и «действует с
+    первого числа следующего месяца» — обычный случай при смене ставок. Версию,
+    которая ещё не наступила, нельзя показывать так же, как ту, по которой
+    считают сейчас.
+    """
+    today = date.today()
+    if row.valid_from > today:
+        return "future"
+    if row.valid_to and row.valid_to <= today:
+        return "past"
+    return "active"
 
 
 def _country_value_or_dash(row, path: str):
