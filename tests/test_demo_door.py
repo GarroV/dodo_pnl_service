@@ -54,6 +54,11 @@ out["login_status"] = page.status_code
 html = page.content.decode()
 out["login_offers_demo"] = 'href="/demo/"' in html
 out["login_says_demo"] = "demo" in html.lower()
+# Куда попадает тот, кто нажал «выйти», и остаётся ли у него путь назад.
+bye = c.post("/logout/")
+out["logout_goes_to"] = bye.headers.get("Location", "")
+after = c.get("/login/")
+out["login_offers_demo_after_logout"] = 'href="/demo/"' in after.content.decode()
 print(json.dumps(out))
 """
 
@@ -151,3 +156,34 @@ def test_the_door_on_the_stand_is_in_english(demo_db):
     seen = probe(demo_db, DEMO_MODE="1", DEMO_KEY="", UI_LANGUAGE="en")
     assert seen["login_offers_demo"]
     assert seen["login_status"] == 200
+
+
+def test_logging_out_of_the_demo_returns_to_its_door(demo_db):
+    """Выход из демо ведёт к его двери, а не на форму пароля (issue #116).
+
+    Выход чистит сессию целиком, и ключ, отданный когда-то ссылкой, исчезал
+    вместе с ней. Гость нажимал «выйти» и оказывался на форме входа со словами
+    «логин и пароль выдаёт администратор сети» — заперт снаружи продукта,
+    который только что смотрел: ссылка из письма у него уже закрыта.
+
+    Проверено на владельце 2026-08-22, ровно так: «где я вижу какие кнопки?».
+    """
+    seen = probe(demo_db, warm_up=WARM_UP % "opensesame",
+                 DEMO_MODE="1", DEMO_KEY="opensesame")
+    assert seen["logout_goes_to"] == "/demo/", seen["logout_goes_to"]
+    assert seen["login_offers_demo_after_logout"], (
+        "ключ не пережил выход — путь в демо снова потерян"
+    )
+
+
+def test_logging_out_hands_the_key_to_nobody(demo_db):
+    """Выход не раздаёт доступ тому, у кого ключа не было."""
+    seen = probe(demo_db, DEMO_MODE="1", DEMO_KEY="opensesame")
+    assert seen["logout_goes_to"] != "/demo/", seen["logout_goes_to"]
+    assert not seen["login_offers_demo_after_logout"]
+
+
+def test_in_the_product_logging_out_goes_to_the_login_form(demo_db):
+    """В продукте выход ведёт на форму входа: возвращать некуда, демо нет."""
+    seen = probe(demo_db, DEMO_MODE="0")
+    assert "/login/" in seen["logout_goes_to"], seen["logout_goes_to"]

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from django.conf import settings
 
-__all__ = ["URL", "enabled", "key", "key_ok", "reachable", "remember_key"]
+__all__ = ["URL", "enabled", "grant", "key", "key_ok", "reachable", "remember_key"]
 
 # Адрес титульной страницы демо. Строкой, а не `reverse("demo")`: маршруты демо
 # подключаются только при `DEMO_MODE=1` (см. `config/urls.py`), и в продукте
@@ -59,6 +59,24 @@ def remember_key(request) -> None:
     """Запомнить отданный ключ, чтобы не спрашивать его на каждой странице."""
     wanted = key()
     if wanted and key_ok(request):
+        request.session[SESSION_KEY] = wanted
+
+
+def grant(request) -> None:
+    """Положить ключ в сессию, не спрашивая его у посетителя.
+
+    Нужно ровно в одном месте — при выходе из демо (issue #116). Выход чистит
+    сессию, и ключ, отданный когда-то ссылкой, исчезал вместе с ней: гость
+    оказывался на форме пароля без пути назад в демо, которое только что
+    смотрел. Проверять `key_ok` здесь нельзя — сессия уже пуста, и проверка
+    всегда отвечала бы «нет».
+
+    Поэтому право на выдачу проверяет ВЫЗЫВАЮЩИЙ, до выхода: `reachable(...)`
+    говорит, был ли этот посетитель внутри. Новым знанием ключ для него не
+    становится — он у него уже был.
+    """
+    wanted = key()
+    if wanted:
         request.session[SESSION_KEY] = wanted
 
 
