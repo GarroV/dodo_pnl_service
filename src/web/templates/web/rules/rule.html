@@ -73,7 +73,7 @@
 
 {% if country_may_edit and not country_locked %}
 <form class="card" method="post">{% csrf_token %}
-  <input type="hidden" name="layer" value="country">
+  <input type="hidden" name="level" value="country">
   <p class="note">{% blocktranslate %}Новая версия правил страны действует на всех партнёров этой страны. Прежняя закрывается днём начала новой и остаётся в истории: уже посчитанные месяцы собираются своей версией и не двигаются.{% endblocktranslate %}</p>
   <p class="field">
     {% translate "Действует с" as country_from_label %}

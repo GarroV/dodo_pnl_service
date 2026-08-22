@@ -110,7 +110,7 @@ def country_rule(path: str, when: date):
 def post_country(client, path: str, *, value: str, valid_from: str):
     return client.post(
         f"/rules/{path}/",
-        {"value": value, "valid_from": valid_from, "layer": "country"},
+        {"value": value, "valid_from": valid_from, "level": "country"},
     )
 
 

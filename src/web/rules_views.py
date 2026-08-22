@@ -342,7 +342,7 @@ def rule(request, path: str):
             # правилом с такого-то числа, — и объяснения у обеих форм общие
             # (закрытый месяц, помесячное действие). Разными адресами их пришлось
             # бы дублировать.
-            if request.POST.get("layer") == "country":
+            if request.POST.get("level") == "country":
                 return _save_country(request, who, path, on_date, valid_from=valid_from)
             # Адресат разбирается ДО значения: список допустимых значений тот же
             # на всех уровнях, но отказ «нет такой группы» человеку понятнее,
