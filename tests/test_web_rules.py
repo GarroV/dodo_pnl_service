@@ -794,3 +794,50 @@ def test_the_registry_finds_a_rule_by_its_code(client):
     assert "По этому запросу правил нет" in empty, empty[:600]
     assert "load_presets" not in empty, "пустой поиск советует грузить пресет"
     client.post("/logout/")
+
+
+ALLOWANCE_LEDGER = "allowances.meal_and_vacation_bonus.ledger"
+
+
+def test_the_ledger_of_a_rule_is_chosen_from_what_the_role_sees(
+    client, sql, overrides_restored,
+):
+    """Регистр в правиле — выбор из видимых роли, а не свободная строка (D023).
+
+    Два исхода свободного ввода, и оба плохие. Опечатка («oficial») роняла бы
+    расчёт периода на середине: тип-перечисление в базе такого значения не
+    примет, и узнал бы об этом не тот, кто набрал. Осмысленный чужой регистр
+    («internal» у роли, которая его не видит) заводил бы строки расчёта,
+    которых сама эта роль потом не увидит — то есть роль выписывала бы себе
+    невидимую работу.
+
+    Право выдаётся управляющему временно — тем же приёмом, что в проверке среза
+    выше: `rules.manage` есть только у администратора, а он видит все три
+    регистра, и проверять отбор было бы не на ком.
+    """
+    sql.execute(
+        "update roles set permissions = permissions || '[\"rules.manage\"]'::jsonb "
+        "where code = 'manager' and tenant_id is not null"
+    )
+    try:
+        login_as(client, "manager")
+        html = body(client.get(f"/rules/{ALLOWANCE_LEDGER}/"))
+        assert "Официальный" in html, "видимый регистр не предложен вовсе"
+        assert "Внутренний" not in html, "роли назван регистр, которого она не видит"
+        for wrong in ("internal", "oficial"):
+            answer = post_rule(
+                client, ALLOWANCE_LEDGER, value=wrong, valid_from="2026-09-01",
+            )
+            assert answer.status_code == 400, f"{wrong}: ответ {answer.status_code}"
+            assert "нет в правилах страны" in body(answer)
+        # А видимый регистр принимается — иначе проверка запрещала бы всё, и
+        # запрет был бы неотличим от сломанного списка.
+        assert post_rule(
+            client, ALLOWANCE_LEDGER, value="supplementary", valid_from="2026-09-01",
+        ).status_code == 302
+        client.post("/logout/")
+    finally:
+        sql.execute(
+            "update roles set permissions = permissions - 'rules.manage' "
+            "where code = 'manager' and tenant_id is not null"
+        )

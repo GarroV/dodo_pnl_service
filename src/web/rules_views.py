@@ -293,7 +293,9 @@ def _save_country(request, who, path: str, on_date: date, *, valid_from: date):
         raise Http404("правило не найдено") from None
     wanted = rules.parse(
         request.POST.get("value", ""), current, path,
-        allowed=tuple(code for code, _title in rules.choices_for(version.body, path)),
+        allowed=tuple(
+            code for code, _title in rules.choices_for(version.body, path, who=who)
+        ),
     )
     with saving():
         change = rules_country.save_country_value(
@@ -352,7 +354,9 @@ def rule(request, path: str):
             current = rules.value_at(for_target, path)
             wanted = rules.parse(
                 request.POST.get("value", ""), current, path,
-                allowed=tuple(code for code, _title in rules.choices_for(preset, path)),
+                allowed=tuple(
+                    code for code, _title in rules.choices_for(preset, path, who=who)
+                ),
             )
             # Запись целиком внутри `saving()` — тем же приёмом, что на шести
             # формах справочников (T136, T142). Пересечение версий здесь
@@ -395,7 +399,7 @@ def rule(request, path: str):
         current = rules.value_at(preset, path)
 
     where = preset.origin_of(path)
-    options = rules.choices_for(preset, path)
+    options = rules.choices_for(preset, path, who=who)
     names = rules.titles_of_targets(who, on_date)
     return render(request, "web/rules/rule.html", {
         "heading": path,
@@ -484,7 +488,7 @@ def _country_block(who, path: str, on_date: date) -> dict:
         # положило бы в правила страны то, чего человек не выбирал.
         "country_options": [
             {"code": code, "title": title, "selected": code == value}
-            for code, title in rules.choices_for(version.body, path)
+            for code, title in rules.choices_for(version.body, path, who=who)
         ],
         "country_bool": [
             {"code": "true", "title": _("да"), "selected": value is True},

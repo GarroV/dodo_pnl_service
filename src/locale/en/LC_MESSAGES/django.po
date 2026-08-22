@@ -2461,37 +2461,32 @@ msgstr "group override"
 msgid "переопределение по человеку"
 msgstr "employee override"
 
-#, fuzzy
-#| msgid "все точки партнёра"
 msgid "всему партнёру"
-msgstr "all of the partner's units"
+msgstr "the whole partner"
 
-#, fuzzy
-#| msgid "Группа"
 msgid "группе"
-msgstr "Group"
+msgstr "a group"
 
-#, fuzzy
-#| msgid "переопределение по человеку"
 msgid "одному человеку"
-msgstr "employee override"
+msgstr "one person"
 
 #, python-format
 msgid "Уровень «%(level)s» не из тех, на которые кладутся правила."
-msgstr ""
+msgstr "Level \"%(level)s\" is not one of the levels rules can be set on."
 
 msgid "У уровня «всему партнёру» объекта нет."
-msgstr ""
+msgstr "The \"whole partner\" level has no object."
 
 msgid "Не нашлось того, кому адресована правка. Выберите из списка."
-msgstr ""
+msgstr "Couldn't find who the edit is addressed to. Pick from the list."
 
-#, fuzzy, python-format
-#| msgid "типа часов «%(kind)s» нет в правилах страны"
+#, python-format
 msgid ""
 "«%(label)s»: значения «%(value)s» нет в правилах страны. Допустимо: "
 "%(allowed)s."
-msgstr "hour type \"%(kind)s\" is not in the country rules"
+msgstr ""
+"\"%(label)s\": value \"%(value)s\" is not in the country rules. Allowed: "
+"%(allowed)s."
 
 #, python-format
 msgid "«%(label)s»: нужно «да» или «нет», а не «%(value)s»."
@@ -2525,58 +2520,55 @@ msgstr ""
 
 #, python-format
 msgid "%(count)s группе"
-msgstr ""
+msgstr "%(count)s group"
 
-#, fuzzy, python-format
-#| msgid "← К группам"
+#, python-format
 msgid "%(count)s группам"
-msgstr "← To the groups"
+msgstr "%(count)s groups"
 
-#, fuzzy, python-format
-#| msgid "%(unit_count)s чел."
+#, python-format
 msgid "%(count)s человеку"
-msgstr "%(unit_count)s people"
+msgstr "%(count)s person"
 
-#, fuzzy, python-format
-#| msgid "%(unit_count)s чел."
+#, python-format
 msgid "%(count)s людям"
-msgstr "%(unit_count)s people"
+msgstr "%(count)s people"
 
 msgid ""
 "Правила страны — общая база для всех партнёров этой страны, поэтому их ведёт "
 "не партнёр, а администратор платформы. Для себя любое из них можно "
 "переопределить формой ниже: правило страны от этого не меняется."
 msgstr ""
+"Country rules are the shared base for every partner in that country, so "
+"they're managed by the platform administrator, not the partner. You can "
+"override any of them for yourself using the form below — the country rule "
+"itself doesn't change."
 
 msgid ""
 "Название правила страны заведено на всех языках сразу, и меняется оно вместе "
 "с пресетом страны, а не с этого экрана."
 msgstr ""
+"The country rule's name is set for all languages at once, and it changes "
+"together with the country preset, not from this screen."
 
-#, fuzzy
-#| msgid ""
-#| "Правил страны в базе нет, поэтому и списка способов нет: загрузите пресет "
-#| "страны."
 msgid ""
 "Правил этой страны на указанную дату в базе нет — менять нечего. Сначала "
 "загрузите пресет страны: python manage.py load_presets"
 msgstr ""
-"There are no country rules in the database, so there's no list of measures "
-"either: load the country preset."
+"There are no rules for this country on this date in the database — "
+"there's nothing to change. First load the country preset: python manage.py "
+"load_presets"
 
 msgid "Правила расчёта"
 msgstr "Calculation rules"
 
-#, fuzzy
-#| msgid "Правил расчёта для этой страны на эту дату в базе нет."
 msgid "Правил этой страны на указанную дату в базе нет — менять нечего."
 msgstr ""
-"There are no calculation rules for this country on this date in the database."
+"There are no rules for this country on this date in the database — "
+"there's nothing to change."
 
-#, fuzzy
-#| msgid "Ничего не изменилось — новая версия не заведена."
 msgid "Правило страны и так такое — новая версия не заведена."
-msgstr "Nothing changed — no new version was created."
+msgstr "The country rule is already like that — no new version was created."
 
 msgid "да"
 msgstr "yes"
@@ -4226,7 +4218,7 @@ msgid "Правило"
 msgstr "Rule"
 
 msgid "Часть кода правила: night, sick, net_factor"
-msgstr ""
+msgstr "Part of the rule code: night, sick, net_factor"
 
 #, python-format
 msgid "Набор правил: %(code)s (%(country)s)"
@@ -4235,21 +4227,20 @@ msgstr "Rule set: %(code)s (%(country)s)"
 msgid "Значение"
 msgstr "Value"
 
-#, fuzzy
-#| msgid "Дополнительный"
 msgid "Задано отдельно"
-msgstr "Supplementary"
+msgstr "Set separately"
 
-#, fuzzy
-#| msgid "Новая версия правила"
 msgid "По этому запросу правил нет."
-msgstr "New version of the rule"
+msgstr "No rules match this search."
 
 msgid ""
 "Поиск идёт по коду правила — той самой строке, которой правило адресуется "
 "расчёту: hour_types.night.pay_percent. Очистите поле, чтобы увидеть весь "
 "набор."
 msgstr ""
+"The search matches the rule code — the exact string the rule is addressed "
+"to in the calculation: hour_types.night.pay_percent. Clear the field to "
+"see the whole set."
 
 msgid "Правил расчёта для этой страны на эту дату в базе нет."
 msgstr ""
@@ -4273,85 +4264,63 @@ msgstr "Currently in effect: %(value)s — %(origin)s"
 msgid "с %(day)s"
 msgstr "from %(day)s"
 
-#, fuzzy
-#| msgid "правило страны"
 msgid "Правило страны"
-msgstr "country rule"
+msgstr "Country rule"
 
 #, python-format
 msgid "В правилах %(country)s: %(value)s — набор %(preset)s"
-msgstr ""
+msgstr "In %(country)s rules: %(value)s — %(preset)s preset"
 
-#, fuzzy
-#| msgid "точка не найдена"
 msgid "Заведена"
-msgstr "unit not found"
+msgstr "Created"
 
-#, fuzzy
-#| msgid "Что это за продукт"
 msgid "в продукте"
-msgstr "What this product is"
+msgstr "in the product"
 
-#, fuzzy
-#| msgid "правила страны"
 msgid "из пресета страны"
-msgstr "country rules"
+msgstr "from the country preset"
 
-#, fuzzy
-#| msgid ""
-#| "Прежняя версия закрывается днём начала новой и остаётся в истории. Ничего "
-#| "не изменилось — версия не заводится."
 msgid ""
 "Новая версия правил страны действует на всех партнёров этой страны. Прежняя "
 "закрывается днём начала новой и остаётся в истории: уже посчитанные месяцы "
 "собираются своей версией и не двигаются."
 msgstr ""
-"The previous version closes on the day the new one starts and stays in the "
-"history. If nothing changed, no version is created."
+"A new version of the country rules applies to every partner in that "
+"country. The previous version closes on the day the new one starts and "
+"stays in the history: months already calculated are assembled from their "
+"own version and don't shift."
 
-#, fuzzy
-#| msgid "типа часов «%(kind)s» нет в правилах страны"
 msgid "Значение в правилах страны"
-msgstr "hour type \"%(kind)s\" is not in the country rules"
+msgstr "Value in the country rules"
 
-#, fuzzy
-#| msgid "Новая версия правила"
 msgid "Завести версию правил страны"
-msgstr "New version of the rule"
+msgstr "Add a country rules version"
 
 msgid ""
 "Название правила заведено на всех языках сразу и меняется вместе с пресетом "
 "страны, а не с этого экрана."
 msgstr ""
+"The rule's name is set for all languages at once and changes together with "
+"the country preset, not from this screen."
 
-#, fuzzy
-#| msgid "переопределение группы"
 msgid "Версии переопределений"
-msgstr "group override"
+msgstr "Override versions"
 
-#, fuzzy
-#| msgid "проверьте"
 msgid "Уровень"
-msgstr "check"
+msgstr "Level"
 
 msgid "Кому"
-msgstr ""
+msgstr "To whom"
 
-#, fuzzy
-#| msgid "Разница не перенесена."
 msgid "Это правило никто не переопределял."
-msgstr "Difference not carried over."
+msgstr "No one has overridden this rule."
 
-#, fuzzy
-#| msgid ""
-#| "Значение приходит из правил страны. Первая же версия ниже станет "
-#| "настройкой партнёра — с той даты, которую вы укажете."
 msgid ""
 "Значение приходит из правил страны. Первая же версия ниже станет "
 "переопределением — на том уровне и с той даты, которые вы укажете."
 msgstr ""
-"The value comes from the country rules. The first version below becomes the "
-"partner setting — from the date you specify."
+"The value comes from the country rules. The first version below becomes "
+"an override — at the level and from the date you specify."
 
 msgid "Новая версия правила"
 msgstr "New version of the rule"
