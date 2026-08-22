@@ -540,11 +540,18 @@ form.inline { display: inline; }
    в адресе, и его можно отправить коллеге. Выбранный — не ссылка вовсе:
    ссылка на текущую страницу обманывает и мышь, и клавиатуру. */
 nav.cuts, nav.exports { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0 0 var(--space-6); }
+/* Фильтр разреза — компонент `filter-btn` эталона: высота как у малой кнопки,
+   чтобы ряд «Все регистры · Официальный · …» стоял в одну линию с соседними
+   рядами кнопок, а не выпадал из них на пару пикселей. */
 nav.cuts .cut, nav.exports .cut {
-  font-size: var(--fs-meta); text-decoration: none; color: var(--ink-2);
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  height: var(--control-h-sm);
+  padding: 0 var(--space-5);
+  font-size: var(--fs-dense);
+  text-decoration: none; color: var(--ink-2);
   border: 1px solid var(--line-control); border-radius: var(--r-control);
-  padding: var(--space-2) var(--space-6);
   background: var(--surface);
+  white-space: nowrap;
 }
 nav.cuts a.cut:hover, nav.exports a.cut:hover { color: var(--accent); border-color: var(--accent); }
 nav.cuts .cut.current {
@@ -700,7 +707,20 @@ tbody tr:hover { background: var(--surface-2); }
 tfoot td { font-weight: var(--w-semibold); border-top: 2px solid var(--line-strong); border-bottom: none; }
 
 /* Ведомость шире экрана — прокручивается сама, страница по горизонтали не едет. */
-.scroll { overflow-x: auto; border: 1px solid var(--line-strong); border-radius: var(--r-block); }
+/* Контейнер широкой таблицы — `table-wrap` эталона. Высота ограничена не ради
+   вида: `overflow-x: auto` делает контейнер контекстом прокрутки и по вертикали
+   тоже, и липкая шапка внутри него привязывается к НЕМУ, а не к окну. Пока
+   высота была по содержимому, прокручивать было нечего — шапка уезжала вместе
+   со страницей, хотя правило `position: sticky` стояло. Проверено замером:
+   заголовок уходил на 580 пикселей выше окна.
+   Отсюда же работает и липкая строка итогов внизу. */
+.scroll {
+  overflow: auto;
+  max-height: 70vh;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-block);
+}
 
 table.sheet { font-size: var(--fs-dense); }
 table.sheet th, table.sheet td { padding: var(--space-3) var(--space-4); white-space: nowrap; }
@@ -1256,7 +1276,13 @@ table.sheet.person td .hint { display: block; margin-top: var(--space-1); }
    часть таблицы, а остальное молча пропадёт. */
 @media print {
   .appbar, nav.cuts, nav.exports, .actions, button, .btn { display: none; }
-  .scroll { overflow: visible; border: 0; }
+  /* И предел высоты тоже снимается: без него на лист уехала бы видимая часть
+     ведомости, а остальные строки пропали бы молча — ровно то, чего этот блок
+     и должен не допускать. */
+  .scroll { overflow: visible; max-height: none; border: 0; }
+  /* Липкость на бумаге бессмысленна и вредна: шапка и итог напечатались бы
+     поверх строк там, где остановилась прокрутка. */
+  table.sheet th, table.sheet td, table.sheet tfoot td, table.sheet tfoot th { position: static; }
   table.sheet th:last-child, table.sheet td:last-child { position: static; }
   body { background: var(--surface); }
 }
