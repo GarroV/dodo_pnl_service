@@ -254,16 +254,31 @@ p.back a:hover { color: var(--accent); }
 .alert { color: var(--warn-ink); background: var(--warn-soft); border: 1px solid var(--warn-line); }
 .alert .details { color: var(--ink); font-size: var(--fs-meta); margin-top: var(--space-3); }
 .ok { color: var(--ok); background: var(--ok-soft); border: 1px solid var(--ok-line); }
+/* Ещё два вида из эталона, которых в продукте не было: «к сведению» и «ошибка».
+   Без них любое сообщение приходилось красить как предупреждение — и обычная
+   подсказка выглядела тревожно, а настоящая ошибка ничем от неё не отличалась. */
+.note--info  { color: var(--accent);  background: var(--accent-soft); border: 1px solid var(--accent-line);
+               padding: var(--space-6) var(--space-7); border-radius: var(--r-block); margin: 0 0 var(--space-8); }
+.note--error { color: var(--err);     background: var(--err-soft);    border: 1px solid var(--err-line);
+               padding: var(--space-6) var(--space-7); border-radius: var(--r-block); margin: 0 0 var(--space-8); }
 
 /* Пустое состояние объясняет следующий шаг, а не сообщает о пустоте.
    Поэтому у него есть заголовок, абзац и действие — как у любого экрана. */
+/* Пустое состояние — раздел «Пустые состояния» эталона. Рамка сплошная, а не
+   пунктирная: пунктир в этой системе означает «отсюда уедет файл» (выгрузки),
+   и два разных смысла одним приёмом путали друг друга. Колонка с gap — чтобы
+   заголовок, объяснение и следующий шаг стояли лесенкой, а не слипались. */
 .empty {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: var(--space-4);
   color: var(--ink-2);
   background: var(--surface);
-  border: 1px dashed var(--line-control);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-block);
-  padding: var(--space-9);
+  padding: var(--space-8) var(--space-7);
 }
+/* Пустота, из которой есть выход: приглашение обведено акцентом. */
+.empty--actionable { border-color: var(--accent-line); }
 .empty h3 { margin: 0 0 var(--space-3); font-size: var(--fs-lead); color: var(--ink); }
 /* Действие пустого состояния — кнопка, а не полоса во всю ширину. Раньше стоял
    `display: block` без ширины, и кнопка растягивалась на всю страницу: на 1440
@@ -296,9 +311,16 @@ p.note.under { margin: var(--space-4) 0 var(--space-8); font-size: var(--fs-meta
 .ledger {
   font-size: var(--fs-micro); letter-spacing: 0;
   color: var(--ink-2);
-  border: 1px solid var(--line-control); border-radius: var(--r-mark);
+  border: 1px solid currentColor; border-radius: var(--r-mark);
   padding: var(--space-1) var(--space-3);
+  white-space: nowrap;
 }
+/* Раздел «Семантика регистров» эталона: у каждого регистра свой цвет, рамка
+   того же цвета (currentColor). Заливки нет намеренно — метка стоит в строке
+   с числами, и залитый прямоугольник перетягивал бы взгляд с суммы на себя. */
+.ledger.reg--official      { color: var(--reg-official); }
+.ledger.reg--supplementary { color: var(--reg-supp); }
+.ledger.reg--internal      { color: var(--reg-internal); }
 
 /* ── Числа ───────────────────────────────────────────────────── */
 
@@ -335,23 +357,54 @@ p.note.under { margin: var(--space-4) 0 var(--space-8); font-size: var(--fs-meta
 
 /* ── Кнопки ──────────────────────────────────────────────────── */
 
+/* Кнопки — раздел «Кнопки» эталона. До переноса база была «акцентный текст на
+   прозрачном фоне»: она не читалась как нажимаемое и сливалась со ссылками.
+   В эталоне база — поверхность с рамкой и обычным текстом, а акцентом окрашена
+   ровно одна кнопка на экране, главная. Высота у всех одна (--control-h),
+   иначе ряд кнопок гуляет по вертикали. */
 button, .btn {
-  font: var(--w-regular) var(--fs-body) / 1 var(--font-ui);
-  color: var(--accent);
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  flex: 0 0 auto;              /* не сжимается рядом с длинным пояснением */
+  white-space: nowrap;         /* подпись не рвётся на две строки */
+  height: var(--control-h);
+  padding: 0 var(--space-6);
   border: 1px solid var(--line-control);
   border-radius: var(--r-control);
-  padding: var(--space-2) var(--space-5);
-  cursor: pointer;
-}
-button:hover, .btn:hover { border-color: var(--accent); }
-button.primary, a.btn.primary {
-  color: var(--ink-inverse); background: var(--accent); border-color: var(--accent);
-  font-weight: var(--w-semibold);
+  background: var(--surface);
+  color: var(--ink);
+  font: var(--w-regular) var(--fs-body) / 1 var(--font-ui);
   text-decoration: none;
+  cursor: pointer;
+  transition: background var(--t-state) var(--ease), border-color var(--t-state) var(--ease);
 }
-button.primary:hover, a.btn.primary:hover { background: var(--accent-hover); }
-button.primary:active, a.btn.primary:active { background: var(--accent-press); }
+button:hover, .btn:hover { background: var(--surface-3); }
+button:active, .btn:active { background: var(--surface-3); transform: translateY(1px); }
+button:disabled, .btn:disabled { opacity: .45; cursor: not-allowed; }
+button:disabled:hover, .btn:disabled:hover { background: var(--surface); }
+
+button.primary, a.btn.primary, .btn--primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--ink-inverse);
+  font-weight: var(--w-semibold);
+}
+button.primary:hover, a.btn.primary:hover, .btn--primary:hover { background: var(--accent-hover); }
+button.primary:active, a.btn.primary:active, .btn--primary:active { background: var(--accent-press); }
+
+/* Второстепенное действие рядом с главным: без рамки, чтобы не спорить с ней. */
+button.ghost, .btn--ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+button.ghost:hover, .btn--ghost:hover { background: var(--surface-3); color: var(--ink); }
+
+/* Опасное действие окрашено, но НЕ залито: заливка притягивает случайный клик. */
+button.danger, .btn--danger { border-color: var(--err-line); color: var(--err); font-weight: var(--w-semibold); }
+button.danger:hover, .btn--danger:hover { background: var(--err-soft); }
+
+button.sm, .btn--sm { height: var(--control-h-sm); padding: 0 var(--space-5); font-size: var(--fs-dense); }
+/* Мобильные сценарии управляющего: палец, а не мышь. */
+.btn--tap { min-height: var(--tap-min); font-size: var(--fs-lead); }
 form.inline { display: inline; }
 
 /* ── Переключатель разреза и выгрузки ────────────────────────── */
@@ -426,7 +479,11 @@ form.card label { color: var(--ink-2); font-size: var(--fs-meta); }
 form.card input, form.card select {
   font: var(--w-regular) var(--fs-body) / 1 var(--font-ui);
   width: 100%;
-  padding: var(--space-3) var(--space-5); margin-top: var(--space-2);
+  /* Высота одна с кнопкой (--control-h): поле и кнопка стоят в форме рядом, и
+     разница в пару пикселей читается как перекос, хотя каждый элемент по
+     отдельности выглядит правильно. Раздел «Поля» эталона. */
+  height: var(--control-h);
+  padding: 0 var(--space-4); margin-top: var(--space-2);
   border: 1px solid var(--line-control); border-radius: var(--r-control);
   background: var(--surface); color: var(--ink);
 }
@@ -434,6 +491,32 @@ form.card input:hover, form.card select:hover { border-color: var(--line-control
 form.card input:focus-visible, form.card select:focus-visible {
   outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-soft);
 }
+form.card input:disabled, form.card select:disabled, .input:disabled {
+  background: var(--surface-2); border-color: var(--line); color: var(--ink-3);
+}
+
+/* Варианты поля из эталона. Ошибка и подозрение — РАЗНЫЕ состояния: первое
+   говорит «так нельзя», второе «проверь, но можно оставить». Одним цветом их
+   путали бы, и бухгалтер правил бы то, что править не нужно. */
+.input--error   { border-color: var(--err);       background: var(--err-soft);  color: var(--err); }
+.input--flagged { border-color: var(--warn-line); background: var(--warn-soft); color: var(--warn-ink); }
+/* Числовое поле: моноширинное, табличные цифры, по правому краю — тот же
+   первый принцип эталона, что и у чисел в таблицах (T179). */
+.input--num {
+  font-family: var(--font-num); font-size: var(--fs-lead);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+
+/* Подпись поля и пояснение под ним — раздел «Поля» эталона. */
+.field-label {
+  display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro);
+  text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold);
+  margin-bottom: var(--space-2);
+}
+.field-note        { font-size: var(--fs-meta); margin-top: var(--space-2); color: var(--ink-3); }
+.field-note--error { color: var(--err); }
+.field-note--warn  { color: var(--warn); }
+.field-note--ok    { color: var(--ok); }
 /* Поле — всегда «подпись сверху, ввод под ней». Половина полей раскладывалась
    иначе (подпись слева, объяснение обтеканием справа) просто потому, что
    `select` — строчный элемент: получалась не разница стилей, а сломанная
@@ -471,7 +554,9 @@ form.search.row .field > label { font-size: var(--fs-meta); color: var(--ink-2);
 form.search.row .field > .note { display: none; }
 form.search.row input, form.search.row select {
   font: var(--w-regular) var(--fs-dense) / 1 var(--font-ui);
-  padding: var(--space-3) var(--space-4);
+  /* Ряд фильтров стоит в одну линию с кнопкой «Показать» — высота общая. */
+  height: var(--control-h-sm);
+  padding: 0 var(--space-4);
   border: 1px solid var(--line-control); border-radius: var(--r-control);
   background: var(--surface); color: var(--ink);
 }
@@ -504,7 +589,21 @@ table.sheet th {
   white-space: normal; vertical-align: bottom;
   text-transform: none; letter-spacing: 0; font-size: var(--fs-micro);
   background: var(--surface-head);
+  /* Шапка держится при прокрутке — раздел «Сетка и плотность» эталона.
+     В ведомости 35 строк и полтора десятка колонок: без этого через экран
+     прокрутки человек видит числа, но уже не помнит, что в какой колонке,
+     и сверяется, пролистывая туда-сюда. */
+  position: sticky; top: 0; z-index: 3;
+  box-shadow: 0 1px 0 var(--line-strong);
 }
+/* Разделители колонок. Горизонтальные линии у нас были, вертикальных нет —
+   и глаз в плотном ряду чисел уезжает на соседнюю колонку. Линия тоньше
+   строчной (--line-2), чтобы сетка читалась, но не рябила. */
+table.sheet th:not(:last-child), table.sheet td:not(:last-child) {
+  border-right: 1px solid var(--line-2);
+}
+/* Правый край липкой колонки итога должен остаться поверх шапки. */
+table.sheet th:last-child { z-index: 4; }
 table.sheet .strong { font-weight: var(--w-semibold); }
 /* Колонка «Итого» прилипает к правому краю: главное число строки должно быть
    видно всегда, а компонентов у страны может стать сколько угодно. */

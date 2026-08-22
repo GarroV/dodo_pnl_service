@@ -203,4 +203,9 @@ def ledger(title):
     роли; сам компонент ничего не берёт из справочника регистров — иначе он
     однажды назовёт роли регистр, которого она не видит.
     """
-    return format_html('<span class="ledger">{}</span>', title)
+    # Цвет берётся из кода, который название несёт с собой (`LedgerTitle`).
+    # До этого все три регистра были одинаково серыми: разрез переключаешь, а
+    # глаз разницы не видит — метка сообщала «регистр есть», но не какой.
+    code = getattr(title, "code", "")
+    css = f"ledger reg--{code}" if code in ("official", "supplementary", "internal") else "ledger"
+    return format_html('<span class="{}">{}</span>', css, title)
