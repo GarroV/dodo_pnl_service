@@ -29,6 +29,77 @@
 
 <p class="sub">{% blocktranslate with value=value origin=origin %}Сейчас действует: {{ value }} — {{ origin }}{% endblocktranslate %}{% if since %} ({% blocktranslate with day=since %}с {{ day }}{% endblocktranslate %}){% endif %}</p>
 
+{% if country_layer %}
+{% comment %}
+Слой страны — до слоя партнёра, потому что он под ним и лежит: значение
+приходит из правил страны, а переопределение партнёра кладётся сверху.
+
+Показывается всем, у кого есть право вести правила, а форма правки — только
+администратору платформы. Смысл блока в том, чтобы правило **нашлось**: до T165
+ночные часы и ставки взносов жили в YAML, и человек, искавший их в продукте,
+видел слово «правила страны» без ответа на «где они и кто их меняет».
+{% endcomment %}
+<h2>{% translate "Правило страны" %}</h2>
+<p class="sub">{% blocktranslate with value=country_value country=country_code preset=country_preset %}В правилах {{ country }}: {{ value }} — набор {{ preset }}{% endblocktranslate %}{% if country_since %} ({% blocktranslate with day=country_since %}с {{ day }}{% endblocktranslate %}){% endif %}</p>
+
+{% if country_versions %}
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Действует с" %}</th>
+      <th>{% translate "По" %}</th>
+      <th>{% translate "Значение" %}</th>
+      <th>{% translate "Заведена" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for version in country_versions %}
+    <tr>
+      <td>{{ version.from }}</td>
+      <td>{{ version.to }}</td>
+      <td class="num">{{ version.value|default:"—" }}</td>
+      {% comment %}
+      Откуда версия: из пресета страны (файл, команда load_presets) или заведена
+      на этом экране. Различие не косметическое — версию, заведённую в продукте,
+      повторная загрузка пресета намеренно не перезаписывает, и человек должен
+      понимать, почему файл на неё не действует.
+      {% endcomment %}
+      <td>{% if version.edited %}{% translate "в продукте" %}{% else %}{% translate "из пресета страны" %}{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% endif %}
+
+{% if country_may_edit and not country_locked %}
+<form class="card" method="post">{% csrf_token %}
+  <input type="hidden" name="layer" value="country">
+  <p class="note">{% blocktranslate %}Новая версия правил страны действует на всех партнёров этой страны. Прежняя закрывается днём начала новой и остаётся в истории: уже посчитанные месяцы собираются своей версией и не двигаются.{% endblocktranslate %}</p>
+  <p class="field">
+    {% translate "Действует с" as country_from_label %}
+    {% include "web/components/field.html" with id="country_valid_from" name="valid_from" label=country_from_label value=default_from required=True type="date" help=from_help %}
+  </p>
+  <p class="field">
+    {% translate "Значение в правилах страны" as country_value_label %}
+    {% if country_options %}
+      {% include "web/components/select.html" with id="country_value" name="value" label=country_value_label options=country_options required=True %}
+    {% elif country_kind == "bool" %}
+      {% include "web/components/select.html" with id="country_value" name="value" label=country_value_label options=country_bool required=True %}
+    {% elif country_kind == "number" %}
+      {% include "web/components/field.html" with id="country_value" name="value" label=country_value_label value=country_value required=True inputmode="decimal" %}
+    {% else %}
+      {% include "web/components/field.html" with id="country_value" name="value" label=country_value_label value=country_value required=True %}
+    {% endif %}
+  </p>
+  <button type="submit" class="primary">{% translate "Завести версию правил страны" %}</button>
+</form>
+{% elif country_locked %}
+<p class="note">{% translate "Название правила заведено на всех языках сразу и меняется вместе с пресетом страны, а не с этого экрана." %}</p>
+{% else %}
+<p class="note">{{ country_note }}</p>
+{% endif %}
+{% endif %}
+
 <h2>{% translate "Версии переопределений" %}</h2>
 {% comment %}
 Все уровни в одной таблице, а не только слой партнёра. Пока история показывала
