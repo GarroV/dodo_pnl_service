@@ -282,3 +282,42 @@ def test_load_presets_keeps_what_was_changed_in_the_product(
     assert result.skipped == [PRESET_CODE], result
     assert result.loaded == [], result
     assert country_rule(NIGHT_PERCENT, JUNE) == 1.33, "файл вернулся поверх правки"
+
+
+# --- право выдаётся вне приложения ---------------------------------------------
+
+
+def test_the_right_is_granted_and_revoked_by_the_command(web_env, sql):
+    """`manage.py platform_admin` — единственная дорога к этому праву.
+
+    Подпроцессом, а не импортом: проверяется ровно то, что запустит человек
+    руками. И проверяется целиком путь «нет права → выдали → отобрали»: команда,
+    которая умеет выдать и не умеет отобрать, оставляет право навсегда.
+    """
+    from conftest import run_manage
+
+    listed = run_manage(web_env, "platform_admin", "--list")
+    assert listed.returncode == 0, listed.stderr
+    assert "нет ни у кого" in listed.stdout, listed.stdout
+
+    granted = run_manage(web_env, "platform_admin", "admin", "--note", "проверка")
+    assert granted.returncode == 0, granted.stderr
+    assert "Право выдано" in granted.stdout, granted.stdout
+    assert sql.execute("select count(*) from platform_admins").fetchone()[0] == 1
+
+    again = run_manage(web_env, "platform_admin", "admin")
+    assert "уже есть" in again.stdout, again.stdout
+
+    # Опечатка в логине не проходит молча: иначе человек ушёл бы с уверенностью,
+    # что право выдано. Отказ громкий — ненулевой код возврата, поэтому
+    # `run_manage` (он с `check=True`) на нём и падает; это и есть проверка.
+    import subprocess
+
+    with pytest.raises(subprocess.CalledProcessError) as refused:
+        run_manage(web_env, "platform_admin", "нет-такого")
+    assert "нет" in (refused.value.stderr or "") + (refused.value.output or "")
+
+    revoked = run_manage(web_env, "platform_admin", "admin", "--revoke")
+    assert revoked.returncode == 0, revoked.stderr
+    assert "Право отобрано" in revoked.stdout, revoked.stdout
+    assert sql.execute("select count(*) from platform_admins").fetchone()[0] == 0

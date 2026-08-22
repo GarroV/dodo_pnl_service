@@ -59,6 +59,7 @@ src/core/             схема данных
   role_delivery.py    форма ролей доезжает до поднятой базы, не затирая правку партнёра
   management/commands/seed_dev.py     тестовые данные из обезличенной фикстуры
   management/commands/load_presets.py первичная загрузка правил стран из YAML
+  management/commands/platform_admin.py право вести правила стран (вне ролей)
   management/commands/roles_sync.py   сверить форму ролей с базой и довезти её
 src/payroll/          зарплатный движок: правила в конфиге, не в коде
   engine.py           расчёт

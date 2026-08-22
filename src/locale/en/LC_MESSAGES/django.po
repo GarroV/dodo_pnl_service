@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-21 21:03+0000\n"
+"POT-Creation-Date: 2026-08-22 08:17+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2416,6 +2416,18 @@ msgstr "The person already holds this role."
 msgid "Роль «%(role)s» выдана."
 msgstr "The role “%(role)s” has been granted."
 
+msgid ""
+"Правила группы адресуются её кодом, поэтому ниже партнёра они не действуют: "
+"после перевода человека в другую группу такое переопределение молча "
+"перестало бы применяться. Схема расчёта, регистр и мера работы конкретного "
+"человека задаются в его условиях найма."
+msgstr ""
+
+msgid ""
+"Пороги отчёта расхождений читаются один раз на партнёра, поэтому версия для "
+"группы или человека в отчёт не попала бы вовсе."
+msgstr ""
+
 msgid "Константы страны"
 msgstr "Country constants"
 
@@ -2449,6 +2461,38 @@ msgstr "group override"
 msgid "переопределение по человеку"
 msgstr "employee override"
 
+#, fuzzy
+#| msgid "все точки партнёра"
+msgid "всему партнёру"
+msgstr "all of the partner's units"
+
+#, fuzzy
+#| msgid "Группа"
+msgid "группе"
+msgstr "Group"
+
+#, fuzzy
+#| msgid "переопределение по человеку"
+msgid "одному человеку"
+msgstr "employee override"
+
+#, python-format
+msgid "Уровень «%(level)s» не из тех, на которые кладутся правила."
+msgstr ""
+
+msgid "У уровня «всему партнёру» объекта нет."
+msgstr ""
+
+msgid "Не нашлось того, кому адресована правка. Выберите из списка."
+msgstr ""
+
+#, fuzzy, python-format
+#| msgid "типа часов «%(kind)s» нет в правилах страны"
+msgid ""
+"«%(label)s»: значения «%(value)s» нет в правилах страны. Допустимо: "
+"%(allowed)s."
+msgstr "hour type \"%(kind)s\" is not in the country rules"
+
 #, python-format
 msgid "«%(label)s»: нужно «да» или «нет», а не «%(value)s»."
 msgstr "\"%(label)s\": \"yes\" or \"no\" is needed, not \"%(value)s\"."
@@ -2479,8 +2523,60 @@ msgstr ""
 "stays calculated as before — if you needed the edit from the start of the "
 "month, create a version dated %(first)s instead."
 
+#, python-format
+msgid "%(count)s группе"
+msgstr ""
+
+#, fuzzy, python-format
+#| msgid "← К группам"
+msgid "%(count)s группам"
+msgstr "← To the groups"
+
+#, fuzzy, python-format
+#| msgid "%(unit_count)s чел."
+msgid "%(count)s человеку"
+msgstr "%(unit_count)s people"
+
+#, fuzzy, python-format
+#| msgid "%(unit_count)s чел."
+msgid "%(count)s людям"
+msgstr "%(unit_count)s people"
+
+msgid ""
+"Правила страны — общая база для всех партнёров этой страны, поэтому их ведёт "
+"не партнёр, а администратор платформы. Для себя любое из них можно "
+"переопределить формой ниже: правило страны от этого не меняется."
+msgstr ""
+
+msgid ""
+"Название правила страны заведено на всех языках сразу, и меняется оно вместе "
+"с пресетом страны, а не с этого экрана."
+msgstr ""
+
+#, fuzzy
+#| msgid ""
+#| "Правил страны в базе нет, поэтому и списка способов нет: загрузите пресет "
+#| "страны."
+msgid ""
+"Правил этой страны на указанную дату в базе нет — менять нечего. Сначала "
+"загрузите пресет страны: python manage.py load_presets"
+msgstr ""
+"There are no country rules in the database, so there's no list of measures "
+"either: load the country preset."
+
 msgid "Правила расчёта"
 msgstr "Calculation rules"
+
+#, fuzzy
+#| msgid "Правил расчёта для этой страны на эту дату в базе нет."
+msgid "Правил этой страны на указанную дату в базе нет — менять нечего."
+msgstr ""
+"There are no calculation rules for this country on this date in the database."
+
+#, fuzzy
+#| msgid "Ничего не изменилось — новая версия не заведена."
+msgid "Правило страны и так такое — новая версия не заведена."
+msgstr "Nothing changed — no new version was created."
 
 msgid "да"
 msgstr "yes"
@@ -4126,15 +4222,34 @@ msgstr ""
 msgid "Действующие на"
 msgstr "As of"
 
+msgid "Правило"
+msgstr "Rule"
+
+msgid "Часть кода правила: night, sick, net_factor"
+msgstr ""
+
 #, python-format
 msgid "Набор правил: %(code)s (%(country)s)"
 msgstr "Rule set: %(code)s (%(country)s)"
 
-msgid "Правило"
-msgstr "Rule"
-
 msgid "Значение"
 msgstr "Value"
+
+#, fuzzy
+#| msgid "Дополнительный"
+msgid "Задано отдельно"
+msgstr "Supplementary"
+
+#, fuzzy
+#| msgid "Новая версия правила"
+msgid "По этому запросу правил нет."
+msgstr "New version of the rule"
+
+msgid ""
+"Поиск идёт по коду правила — той самой строке, которой правило адресуется "
+"расчёту: hour_types.night.pay_percent. Очистите поле, чтобы увидеть весь "
+"набор."
+msgstr ""
 
 msgid "Правил расчёта для этой страны на эту дату в базе нет."
 msgstr ""
@@ -4158,21 +4273,93 @@ msgstr "Currently in effect: %(value)s — %(origin)s"
 msgid "с %(day)s"
 msgstr "from %(day)s"
 
-msgid "Версии настройки партнёра"
-msgstr "Partner setting versions"
+#, fuzzy
+#| msgid "правило страны"
+msgid "Правило страны"
+msgstr "country rule"
 
-msgid "Партнёр это правило не менял."
-msgstr "The partner has not changed this rule."
+#, python-format
+msgid "В правилах %(country)s: %(value)s — набор %(preset)s"
+msgstr ""
+
+#, fuzzy
+#| msgid "точка не найдена"
+msgid "Заведена"
+msgstr "unit not found"
+
+#, fuzzy
+#| msgid "Что это за продукт"
+msgid "в продукте"
+msgstr "What this product is"
+
+#, fuzzy
+#| msgid "правила страны"
+msgid "из пресета страны"
+msgstr "country rules"
+
+#, fuzzy
+#| msgid ""
+#| "Прежняя версия закрывается днём начала новой и остаётся в истории. Ничего "
+#| "не изменилось — версия не заводится."
+msgid ""
+"Новая версия правил страны действует на всех партнёров этой страны. Прежняя "
+"закрывается днём начала новой и остаётся в истории: уже посчитанные месяцы "
+"собираются своей версией и не двигаются."
+msgstr ""
+"The previous version closes on the day the new one starts and stays in the "
+"history. If nothing changed, no version is created."
+
+#, fuzzy
+#| msgid "типа часов «%(kind)s» нет в правилах страны"
+msgid "Значение в правилах страны"
+msgstr "hour type \"%(kind)s\" is not in the country rules"
+
+#, fuzzy
+#| msgid "Новая версия правила"
+msgid "Завести версию правил страны"
+msgstr "New version of the rule"
 
 msgid ""
-"Значение приходит из правил страны. Первая же версия ниже станет настройкой "
-"партнёра — с той даты, которую вы укажете."
+"Название правила заведено на всех языках сразу и меняется вместе с пресетом "
+"страны, а не с этого экрана."
+msgstr ""
+
+#, fuzzy
+#| msgid "переопределение группы"
+msgid "Версии переопределений"
+msgstr "group override"
+
+#, fuzzy
+#| msgid "проверьте"
+msgid "Уровень"
+msgstr "check"
+
+msgid "Кому"
+msgstr ""
+
+#, fuzzy
+#| msgid "Разница не перенесена."
+msgid "Это правило никто не переопределял."
+msgstr "Difference not carried over."
+
+#, fuzzy
+#| msgid ""
+#| "Значение приходит из правил страны. Первая же версия ниже станет "
+#| "настройкой партнёра — с той даты, которую вы укажете."
+msgid ""
+"Значение приходит из правил страны. Первая же версия ниже станет "
+"переопределением — на том уровне и с той даты, которые вы укажете."
 msgstr ""
 "The value comes from the country rules. The first version below becomes the "
 "partner setting — from the date you specify."
 
 msgid "Новая версия правила"
 msgstr "New version of the rule"
+
+msgid ""
+"Уровни складываются: значение группы сильнее значения партнёра, значение "
+"человека сильнее обоих."
+msgstr ""
 
 msgid "Через запятую."
 msgstr "Comma-separated."
