@@ -255,3 +255,25 @@
 вовсе — он мог понадобиться блоку `money`. Папку эталона не правил, только читал.
 Общие файлы состояния (`tasks.md`, `progress.md`, `questions.md`,
 `decisions.md`) не трогал.
+
+## Как поднять этот стенд заново
+
+База стенда за собой удалена (`dropdb dodo_pnl_polish_smoke`), сервер погашен с
+перепроверкой порта. Поднимается обратно так:
+
+```bash
+export DJANGO_SETTINGS_MODULE=config.settings PYTHONPATH=src
+export SECRET_KEY=polish-smoke-not-a-secret
+export DATABASE_URL="postgresql:///dodo_pnl_polish_smoke"
+export DJANGO_DEBUG=0 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+export DEV_LOGIN=1 SEED_USER_PASSWORD=dodo-dev PAYRUN_BACKGROUND=0
+createdb dodo_pnl_polish_smoke
+python manage.py migrate --noinput && python manage.py seed_dev
+python manage.py collectstatic --noinput   # без него при DEBUG=0 статики нет
+python manage.py runserver 127.0.0.1:8170 --noreload
+```
+
+`DJANGO_DEBUG=0` здесь обязателен: смотреть оформление с `DEBUG=1` бессмысленно —
+это другой путь отдачи статики, чем на площадке. `collectstatic` после каждой
+правки листа: иначе браузер показывает прежний файл, и правку легко счесть
+не сработавшей.
