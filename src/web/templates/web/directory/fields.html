@@ -30,7 +30,7 @@
 {% for field in fields %}
 <p class="field">
   {% if field.kind == "note" %}
-    <span class="label">{{ field.label }}</span>
+    <span class="field-label">{{ field.label }}</span>
     <span>{{ field.value }}</span>
     {% if field.help %}<span class="note">{{ field.help }}</span>{% endif %}
   {% elif field.kind == "select" %}

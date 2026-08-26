@@ -446,7 +446,9 @@ def test_the_report_of_each_role_matches_what_that_role_sees(client, june_and_pl
         login_as(client, user)
         html = body(client.get(variance_url(client)))
         rows = report_rows(html)
-        found = re.findall(r'<td class="num total">([^<]+)</td>', html)
+        # Класс итога — эталонный `num--total` (T168): у эталона это имя, а
+        # прежнее `total` было наше и жило без единого правила в стилях.
+        found = re.findall(r'<td class="num num--total">([^<]+)</td>', html)
         assert len(found) == 2, f"{user}: в отчёте не два итога, а {len(found)}"
         up, down = (Decimal(v.replace(" ", "").replace(",", ".")) for v in found)
 

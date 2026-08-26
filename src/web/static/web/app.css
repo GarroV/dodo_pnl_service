@@ -518,6 +518,18 @@ form.upload.card { max-width: 640px; }   /* специфичнее общего 
   margin-right: var(--space-3);
 }
 
+/* Крестик снятия роли живёт внутри плашки и потому не выглядит кнопкой: рамка
+   и фон у него были бы второй рамкой внутри первой. Мишень при этом остаётся
+   нажимаемой — размер задан явно, а не оставлен на усмотрение шрифта. */
+.chip .link {
+  height: 16px; width: 16px; padding: 0; margin-left: var(--space-3);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: none; border-radius: var(--r-mark);
+  color: var(--ink-3); font-size: var(--fs-body); line-height: 1;
+}
+.chip .link:hover { background: var(--err-soft); color: var(--err); }
+.chip .link:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 /* Замороженная строка ведомости. Читается как состояние, а не как ошибка:
    заморозка — обычный рабочий приём, спорную строку придерживают, чтобы
    закрыть остальные. */
