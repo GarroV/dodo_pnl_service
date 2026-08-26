@@ -514,6 +514,71 @@ def wipe_payruns(dsn: str) -> None:
         conn.execute(f"delete from payruns where tenant_id in {tenants}")
 
 
+# Что остаётся администратору сети, когда тест отбирает у него цикл месяца.
+# Именно этот набор был у роли до D052, и на нём стояли проверки разграничения:
+# справочники, правила и роли он ведёт, данные расчёта — нет.
+DIRECTORIES_ONLY = ["directory.manage", "rules.manage", "roles.manage"]
+
+
+@pytest.fixture
+def admin_without_month_rights(web_env):
+    """Роль без прав на цикл месяца — материал для проверок отказа.
+
+    Администратор сети может всё (D052), поэтому «роль, у которой права нет»
+    в продукте больше не берётся готовой: условие создаётся тестом, как его
+    создаёт партнёр экраном ролей. Регистры остаются полными — отказ обязан
+    приходить по праву, а не по видимости (T064).
+    """
+    with narrowed_permissions(web_env, "admin", DIRECTORIES_ONLY):
+        yield web_env
+
+
+@contextmanager
+def narrowed_permissions(dsn: str, code: str, permissions: list[str]):
+    """Оставить роли неполный набор ПРАВ на время теста — как это сделает партнёр.
+
+    Тот же приём и тот же довод, что у `narrowed_ledgers`. Проверять отказ по
+    праву на роли, у которой права нет «по жизни», получилось бы ровно до того
+    дня, когда роль его получит: администратор сети такое право получил (D052,
+    «у нас есть роль АДМИН, у которой есть вообще все»), и два десятка проверок
+    разграничения покраснели разом — при том что механизм цел.
+
+    Поэтому условие создаётся явно: тест сам сужает набор роли, ровно как это
+    делает партнёр через экран ролей. Регистры при этом не трогаются — отказ
+    обязан приходить по праву, а не по видимости, иначе проверка снова
+    доказывала бы не то (T064).
+
+    Правка идёт владельцем схемы (политики на него не действуют) и всегда
+    откатывается: права роли — общее состояние базы, оставленные сузёнными они
+    молча испортили бы соседние тесты.
+    """
+    import json
+
+    import psycopg
+
+    with psycopg.connect(dsn, autocommit=True) as conn:
+        row = conn.execute(
+            "select permissions from roles where code = %s and tenant_id is not null",
+            (code,),
+        ).fetchone()
+        assert row is not None, f"роли {code} нет в базе — сужать нечего"
+        before = row[0] if isinstance(row[0], list) else json.loads(row[0])
+        conn.execute(
+            "update roles set permissions = %s::jsonb"
+            " where code = %s and tenant_id is not null",
+            (json.dumps(list(permissions)), code),
+        )
+    try:
+        yield
+    finally:
+        with psycopg.connect(dsn, autocommit=True) as conn:
+            conn.execute(
+                "update roles set permissions = %s::jsonb"
+                " where code = %s and tenant_id is not null",
+                (json.dumps(before), code),
+            )
+
+
 @contextmanager
 def narrowed_ledgers(dsn: str, code: str, ledgers: list[str]):
     """Временно сузить набор регистров роли в базе — и вернуть его обратно.

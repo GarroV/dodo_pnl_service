@@ -512,7 +512,9 @@ def test_closing_one_unit_does_not_block_the_others_on_screen(
     assert Decimal(str((alien.hours or {}).get("regular", 0))) == Decimal("101.00")
 
 
-def test_role_without_the_right_gets_no_button_and_no_action(client, clean_closures):
+def test_role_without_the_right_gets_no_button_and_no_action(
+    client, clean_closures, admin_without_month_rights
+):
     """Интерфейс не предлагает того, что запретит (T064, T072).
 
     Роль — администратор сети: `unit.close` у него нет, а видит он все точки и

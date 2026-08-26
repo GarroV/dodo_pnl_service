@@ -630,7 +630,9 @@ def test_a_role_without_the_right_sees_no_button_but_an_explanation(client, clea
     assert "Заморозка строки ведомости" in page
 
 
-def test_freezing_without_the_right_is_refused_past_the_interface(client, clean_payruns):
+def test_freezing_without_the_right_is_refused_past_the_interface(
+    client, clean_payruns, admin_without_month_rights
+):
     """Отказ по праву — администратором сети, а не управляющим (изменено в T101).
 
     У маршрута теперь два условия, и первым отвечает условие роли: морозить

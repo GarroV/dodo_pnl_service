@@ -1,0 +1,638 @@
+/* ─────────────────────────────────────────────────────────────
+   Dodo P&L Service — компоненты. Направление «Реестр».
+   Требует tokens.css, подключённый раньше.
+
+       static/pnl/tokens.css
+       static/pnl/components.css
+
+       {% load static %}
+       <link rel="stylesheet" href="{% static 'pnl/tokens.css' %}">
+       <link rel="stylesheet" href="{% static 'pnl/components.css' %}">
+
+   Чистый CSS, без сборщика. Классы — БЭМ-подобные, без вложенных
+   селекторов глубже двух уровней, чтобы Django-шаблон читался.
+   Ни одного хекса: только var(--…) из tokens.css.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Сброс и каркас страницы ─────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font: var(--w-regular) var(--fs-body) / var(--lh-body) var(--font-ui);
+}
+
+body { min-width: var(--page-min); }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-press); text-decoration: underline; }
+
+:focus-visible { outline: var(--focus-outline); outline-offset: 1px; }
+
+.page { width: var(--page-min); max-width: 100%; margin: 0 auto; }
+.page__body { padding: var(--space-8) var(--gutter) 0; }
+
+/* Раздел страницы. Заголовок + номер, как в каталоге компонентов. */
+.section { margin-bottom: var(--space-10); }
+.section__head { display: flex; align-items: baseline; gap: var(--space-3); margin-bottom: var(--space-5); }
+.section__num { font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3); }
+.section__title { margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold); }
+.section__lead { font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: var(--space-5); }
+
+/* ── Числа. Инвариант 1: правый край, моно, табличные цифры ──── */
+
+.num {
+  font-family: var(--font-num);
+  font-size: var(--fs-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.num--lead { font-size: var(--fs-lead); }
+.num--hero { font-size: var(--fs-num-hero); font-weight: var(--w-bold); }
+.num--sm { font-size: var(--fs-num-sm); }
+.num--total { font-weight: var(--w-bold); }
+.num--muted { color: var(--ink-2); }        /* удержания, прошлый период */
+.num--zero { color: var(--ink-3); }         /* ноль — значение есть */
+.num--empty { color: var(--ink-empty); }    /* прочерк — значения нет */
+.num--up { color: var(--up); font-weight: var(--w-semibold); }
+.num--down { color: var(--down); font-weight: var(--w-semibold); }
+.num--flagged { color: var(--warn-ink); box-shadow: inset 0 -2px 0 var(--warn-mark); }
+
+/* ── Шапка приложения ────────────────────────────────────────── */
+
+.appbar {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-9);
+  padding: 0 var(--gutter);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-control);
+}
+.appbar__brand { display: flex; align-items: baseline; gap: var(--space-3); }
+.appbar__brand-name { font-weight: var(--w-bold); font-size: var(--fs-lead); letter-spacing: -.01em; }
+.appbar__brand-mark { font-weight: var(--w-medium); font-size: var(--fs-lead); color: var(--accent); }
+.appbar__spacer { flex: 1; }
+
+.appnav { display: flex; align-items: center; gap: var(--space-1); }
+/* Инвариант 3: текущий пункт — span, не ссылка. */
+.appnav__current {
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--r-control);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: var(--w-semibold);
+}
+.appnav__link { padding: var(--space-3) var(--space-5); border-radius: var(--r-control); color: var(--ink-2); }
+.appnav__link:hover { background: var(--surface-3); text-decoration: none; color: var(--ink); }
+
+.tenant { display: flex; align-items: center; gap: var(--space-5); padding-right: var(--space-6); border-right: 1px solid var(--line-2); }
+.tenant__name { font-size: var(--fs-dense); font-weight: var(--w-semibold); text-align: right; }
+.tenant__meta { font-size: var(--fs-meta); color: var(--ink-3); text-align: right; }
+
+/* Наборы прав. Показываются все выданные, а не один ярлык. */
+.roles { display: flex; align-items: center; gap: var(--space-2); }
+.role {
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--r-control);
+  font-size: var(--fs-meta);
+  font-weight: var(--w-semibold);
+  white-space: nowrap;
+}
+.role--admin { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.role--accountant { color: var(--reg-supp); background: var(--reg-supp-soft); border: 1px solid var(--reg-supp-line); }
+.role--ops { color: var(--reg-internal); background: var(--reg-internal-soft); border: 1px solid var(--reg-internal-line); }
+/* Временно выданный набор: пунктир и срок. */
+.role--temporary { color: var(--warn-ink); background: var(--warn-soft); border: 1px dashed var(--warn-line); }
+.role__until { font-family: var(--font-num); font-size: 9.5px; opacity: .75; margin-left: var(--space-2); }
+
+.avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--ink-inverse);
+  font-size: var(--fs-meta);
+  font-weight: var(--w-semibold);
+  display: grid; place-items: center;
+}
+
+/* ── Кнопки ──────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  flex: 0 0 auto;              /* не сжимается рядом с длинным пояснением */
+  white-space: nowrap;         /* подпись не рвётся на две строки */
+  height: var(--control-h);
+  padding: 0 var(--space-6);
+  border: 1px solid var(--line-control);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  color: var(--ink);
+  font: var(--w-regular) var(--fs-body) / 1 var(--font-ui);
+  cursor: pointer;
+  transition: background var(--t-state) var(--ease), border-color var(--t-state) var(--ease);
+}
+.btn:hover { background: var(--surface-3); }
+.btn:active { background: var(--surface-3); transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn--sm { height: var(--control-h-sm); padding: 0 var(--space-5); font-size: var(--fs-dense); }
+.btn--tap { min-height: var(--tap-min); font-size: var(--fs-lead); }  /* мобильные сценарии */
+
+.btn--primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--ink-inverse);
+  font-weight: var(--w-semibold);
+}
+.btn--primary:hover { background: var(--accent-hover); }
+.btn--primary:active { background: var(--accent-press); }
+
+.btn--ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+.btn--ghost:hover { background: var(--surface-3); color: var(--ink); }
+
+.btn--danger { border-color: var(--err-line); color: var(--err); font-weight: var(--w-semibold); }
+.btn--danger:hover { background: var(--err-soft); }
+
+/* Инвариант 2: выгрузка отличается ВИДОМ — пунктир, стрелка, расширение. */
+.btn--download {
+  height: var(--control-h-sm);
+  border-style: dashed;
+  border-color: var(--line-control-2);
+  background: var(--surface-download);
+  color: var(--ink-2);
+  font-size: var(--fs-dense);
+}
+.btn--download:hover { background: var(--surface-3); border-color: var(--ink-3); }
+.btn__ext { opacity: .55; }
+.btn__key { font-family: var(--font-num); font-size: var(--fs-num-sm); opacity: .6; }
+
+.btn__spinner { width: 12px; height: 12px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: pnl-spin 700ms linear infinite; }
+@keyframes pnl-spin { to { transform: rotate(360deg); } }
+
+/* Ряд действий: кнопки держат ширину, пояснение сжимается. */
+.actions { display: flex; align-items: center; gap: var(--space-4); }
+.actions__hint { flex: 1 1 auto; min-width: 0; font-size: var(--fs-meta); color: var(--ink-3); }
+/* Колонка действий в таблице: рассчитана на самую широкую пару кнопок,
+   иначе при переводе подписи выедут на колонку сумм. */
+.actions--cell { width: 196px; flex: 0 0 auto; justify-content: flex-end; gap: var(--space-3); }
+
+/* ── Переключатель среза ─────────────────────────────────────── */
+
+.seg { display: inline-flex; background: var(--seg-track); border-radius: var(--r-control); padding: var(--space-1); gap: var(--space-1); }
+.seg__item, .seg__current {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 24px;
+  padding: 0 var(--space-5);
+  border: 0;
+  border-radius: var(--r-control);
+  font: var(--w-regular) var(--fs-dense) / 1 var(--font-ui);
+  white-space: nowrap;
+}
+.seg__item { background: transparent; color: var(--ink-2); cursor: pointer; }
+.seg__item:hover { color: var(--ink); }
+/* Инвариант 3: выбранное значение — span[aria-current], не кнопка. */
+.seg__current { background: var(--surface); color: var(--ink); font-weight: var(--w-semibold); box-shadow: var(--sh-xs); }
+.seg__dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+.seg__count { font-family: var(--font-num); font-size: 9.5px; color: var(--ink-3); }
+
+.field-label {
+  display: block;
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: var(--w-semibold);
+  margin-bottom: var(--space-2);
+}
+
+/* ── Фильтр длинного списка (10–50 точек) ────────────────────── */
+
+.filter-btn {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  height: var(--control-h-sm); padding: 0 var(--space-4);
+  border: 1px solid var(--line-control); border-radius: var(--r-control);
+  background: var(--surface); font-size: var(--fs-dense); cursor: pointer;
+}
+.filter-btn--active { border-color: var(--accent); color: var(--accent); font-weight: var(--w-semibold); }
+
+.popover {
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-block);
+  box-shadow: var(--sh-pop);
+}
+.popover__search { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4) var(--space-4); border-bottom: 1px solid var(--line); }
+.popover__search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: var(--fs-dense); color: var(--ink); }
+.popover__group { padding: var(--space-3) var(--space-5) var(--space-1); font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-bold); }
+.popover__row { display: flex; align-items: center; gap: var(--space-4); height: 28px; padding: 0 var(--space-5); font-size: var(--fs-dense); cursor: pointer; }
+.popover__row:hover { background: var(--surface-2); }
+.popover__row--on { background: var(--accent-soft); }
+.popover__row--empty { color: var(--ink-3); }
+.popover__count { margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3); }
+.popover__foot { padding: var(--space-3) var(--space-4); border-top: 1px solid var(--line); background: var(--surface-2); font-size: 10px; color: var(--ink-3); }
+
+.checkbox {
+  width: 14px; height: 14px; flex: 0 0 auto;
+  display: grid; place-items: center; padding: 0;
+  border: 1px solid var(--line-control-2);
+  border-radius: var(--r-mark);
+  background: var(--surface);
+  cursor: pointer;
+}
+.checkbox--on { border-color: var(--accent); background: var(--accent); color: var(--ink-inverse); }
+
+/* ── Поля ────────────────────────────────────────────────────── */
+
+.input {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-control);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  font: var(--w-regular) var(--fs-body) / 1 var(--font-ui);
+  color: var(--ink);
+}
+.input:hover { border-color: var(--line-control-2); }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-soft); outline: none; }
+.input:disabled { background: var(--surface-2); border-color: var(--line); color: var(--ink-3); }
+
+/* Числовое поле выглядит как ячейка таблицы: моно, правый край. */
+.input--num {
+  font-family: var(--font-num);
+  font-size: var(--fs-lead);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.input--error { border-color: var(--err); background: var(--err-soft); color: var(--err); }
+/* Подсказка не мешает сохранить: значение принято, замечание показано. */
+.input--flagged { border-color: var(--warn-line); background: var(--warn-soft); color: var(--warn-ink); }
+
+.input-money { display: flex; align-items: center; height: var(--control-h); border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); overflow: hidden; }
+.input-money:focus-within { border-color: var(--accent); }
+.input-money input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; padding: 0 var(--space-4); text-align: right; font-family: var(--font-num); font-size: var(--fs-lead); font-variant-numeric: tabular-nums; background: transparent; color: var(--ink); }
+.input-money__currency { padding: 0 var(--space-4); height: 100%; display: grid; place-items: center; background: var(--surface-3); border-left: 1px solid var(--line-control); font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2); }
+
+.field-note { font-size: var(--fs-meta); margin-top: var(--space-2); color: var(--ink-3); }
+.field-note--error { color: var(--err); }
+.field-note--warn { color: var(--warn); }
+.field-note--ok { color: var(--ok); }
+
+/* ── Таблица данных ──────────────────────────────────────────── */
+
+/* Инвариант 7: прокручивается контейнер, страница по горизонтали не едет. */
+.table-wrap {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-block);
+  overflow: auto;
+  background: var(--surface);
+  max-height: 486px;
+}
+.table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+
+.table th, .table td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2); }
+.table thead th {
+  position: sticky; top: 0; z-index: 3;
+  background: var(--surface-head);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-micro);
+  font-weight: var(--w-semibold);
+  color: var(--ink-2);
+  text-align: right;
+  vertical-align: bottom;
+  border-bottom: 1px solid var(--line-strong);
+}
+.table thead th.is-text { text-align: left; }
+
+/* Верхний ярус — группа колонок. Второй ярус липнет под него. */
+.table__grouphead {
+  position: sticky; top: 0; z-index: 3;
+  height: 21px; line-height: 21px;
+  padding: 0 var(--space-4);
+  background: var(--surface-3);
+  font-size: var(--fs-micro);
+  font-weight: var(--w-bold);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink-2);
+  border-right: 1px solid var(--line-strong);
+}
+.table__subhead { top: 21px; }
+.table__group-end { border-right: 1px solid var(--line-strong); }
+.table__deductions { background: var(--surface-group); }
+
+/* Инвариант 8: имя слева и итог справа закреплены при прокрутке. */
+.table__name {
+  position: sticky; left: 0; z-index: 2;
+  background: var(--surface);
+  text-align: left;
+  padding: 1px var(--space-5);
+  height: var(--row);
+  font-size: var(--fs-dense);
+  font-weight: var(--w-regular);
+  line-height: 15px;
+  overflow: hidden;
+  border-right: 1px solid var(--line-strong);
+}
+.table__name-main { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.table__name-main span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--w-medium); }
+.table__name-sub { display: flex; align-items: center; gap: var(--space-3); padding-left: 9px; min-width: 0; }
+.table__name-sub span { font-size: var(--fs-micro); line-height: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.table__total-col {
+  position: sticky; right: 0; z-index: 2;
+  background: var(--surface);
+  text-align: right;
+  padding: 0 var(--space-5);
+  height: var(--row);
+  font-family: var(--font-num);
+  font-size: 13px;
+  font-weight: var(--w-semibold);
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid var(--line-strong);
+  border-right: 0;
+}
+
+.table tbody tr:hover { background: var(--surface-2); }
+.table td.is-num { text-align: right; padding: 0 var(--space-4); height: var(--row); font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.table td.is-deduction { background: var(--surface-deduction); color: var(--ink-2); }
+
+/* Инвариант 5: подкраска строки — только происхождение, не величина числа. */
+.table tr.is-carried { background: var(--origin-carried); }
+.table tr.is-carried .table__name,
+.table tr.is-carried .table__total-col { background: var(--origin-carried); }
+.table tr.is-carried:hover { background: var(--origin-carried-hover); }
+
+.row-mark { width: 3px; height: 15px; border-radius: 1px; flex: 0 0 auto; background: transparent; }
+.row-mark--origin { background: var(--origin-mark); }
+.row-mark--frozen { background: var(--line-control-2); }
+
+.table tfoot th, .table tfoot td {
+  position: sticky; bottom: 0; z-index: 4;
+  background: var(--surface-2);
+  border-top: 2px solid var(--line-strong);
+  border-bottom: 0;
+  height: 34px;
+  font-weight: var(--w-semibold);
+}
+.table tfoot .table__name { z-index: 6; }
+.table tfoot .table__total-col { z-index: 7; background: var(--surface-total); font-size: 13.5px; font-weight: var(--w-bold); }
+
+/* Инвариант 6: действие в таблице набрано мельче сумм. */
+.table .btn--sm { height: 24px; font-size: var(--fs-meta); }
+
+/* Ячейка сетки табеля: ввод на месте, сохранение на лету. */
+.cell-input {
+  width: 100%; height: 26px;
+  border: 1px solid transparent;
+  border-radius: var(--r-mark);
+  background: transparent;
+  text-align: right;
+  padding: 0 var(--space-3);
+  font-family: var(--font-num);
+  font-size: var(--fs-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  outline: none;
+}
+.cell-input:focus { background: var(--surface); box-shadow: 0 0 0 2px var(--accent); }
+.cell-input.is-flagged { border-bottom-color: var(--warn-mark); border-bottom-width: 2px; color: var(--warn-ink); }
+.cell--edited { background: var(--warn-soft); }
+
+/* ── Метки регистров ─────────────────────────────────────────── */
+
+/* Регистр — метка у строки, никогда не заливка строки. */
+.reg {
+  display: inline-block;
+  font-family: var(--font-num);
+  font-size: var(--fs-num-sm);
+  line-height: 14px;
+  padding: 0 var(--space-1);
+  border-radius: var(--r-mark);
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.reg--official { color: var(--reg-official); }
+.reg--supplementary { color: var(--reg-supp); }
+.reg--internal { color: var(--reg-internal); }
+.reg--mixed { color: var(--ink-2); border-color: var(--line-control-2); }
+
+/* ── Статусы и версии ────────────────────────────────────────── */
+
+.status {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  height: 22px; padding: 0 var(--space-4);
+  border-radius: var(--r-control);
+  font-size: var(--fs-meta);
+  font-weight: var(--w-semibold);
+  white-space: nowrap;
+}
+.status__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.status--draft { color: var(--st-draft); background: var(--surface-3); border: 1px solid var(--line-control); }
+.status--calculated { color: var(--st-calculated); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.status--approved { color: var(--st-approved); background: var(--ok-soft); border: 1px solid var(--ok-line); }
+.status--reopened { color: var(--st-reopened); background: var(--warn-soft); border: 1px solid var(--warn-line); }
+
+/* Единый приём для версий по датам. */
+.version { display: inline-flex; align-items: center; gap: var(--space-3); height: 21px; padding: 0 var(--space-3); border-radius: var(--r-control); font-size: var(--fs-meta); white-space: nowrap; }
+.version--active { color: var(--ok); background: var(--ok-soft); border: 1px solid var(--ok-line); font-weight: var(--w-semibold); }
+.version--past { color: var(--ink-2); background: var(--surface-3); border: 1px solid var(--line-control); }
+.version--future { color: var(--accent); background: var(--accent-soft); border: 1px dashed var(--accent-line); font-weight: var(--w-semibold); }
+
+/* ── Полоса шагов месяца ─────────────────────────────────────── */
+
+.steps { display: flex; align-items: center; width: fit-content; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); }
+.steps__item { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 14px; border-right: 1px solid var(--line-2); font-size: var(--fs-dense); color: var(--ink-2); }
+.steps__item:last-child { border-right: 0; }
+.steps__item--current { background: var(--surface-2); color: var(--ink); font-weight: var(--w-semibold); }
+.steps__ring { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent); }
+
+/* ── Плашки ──────────────────────────────────────────────────── */
+
+.note { display: flex; align-items: flex-start; gap: var(--space-5); padding: var(--space-5) var(--space-6); border-radius: var(--r-block); }
+.note__icon { flex: 0 0 auto; margin-top: 1px; }
+.note__title { font-size: var(--fs-dense); font-weight: var(--w-semibold); }
+.note__text { font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: var(--space-1); }
+.note--ok { background: var(--ok-soft); border: 1px solid var(--ok-line); }
+.note--ok .note__title { color: var(--ok); }
+.note--warn { background: var(--warn-soft); border: 1px solid var(--warn-line); }
+.note--warn .note__title, .note--warn .note__text { color: var(--warn-ink); }
+.note--error { background: var(--err-soft); border: 1px solid var(--err-line); }
+.note--error .note__title { color: var(--err); }
+.note--info { background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.note--info .note__title { color: var(--accent); }
+
+/* ── Прогресс долгой операции ────────────────────────────────── */
+
+.progress { border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden; }
+.progress__head { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-5); background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.progress__stage { font-size: var(--fs-dense); font-weight: var(--w-semibold); }
+.progress__counter { margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.progress__body { padding: var(--space-5); }
+.progress__track { height: 6px; background: var(--surface-3); border-radius: 999px; overflow: hidden; }
+.progress__bar { height: 100%; background: var(--accent); transition: width var(--t-panel) var(--ease); }
+.progress__bar--done { background: var(--ok); }
+.progress__foot { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-5); margin-top: var(--space-3); font-size: var(--fs-meta); color: var(--ink-2); }
+
+/* ── Инбокс: две разные сущности в одной очереди ─────────────── */
+
+.inbox__bar { display: flex; align-items: center; gap: var(--space-5); padding: var(--space-4) var(--space-6); background: var(--surface-3); border-bottom: 1px solid var(--line-strong); }
+.inbox__bar--selection { background: var(--accent-soft); border-bottom-color: var(--accent-line); }
+
+.inbox__row {
+  display: flex; align-items: center; gap: var(--space-5);
+  padding: 0 var(--space-6);
+  height: var(--row-loose);
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  background: var(--surface);
+}
+.inbox__row:hover { background: var(--surface-2); }
+.inbox__row--selected { background: var(--surface-selected); }
+/* Необработанное вложение — другая сущность, а не другой статус платежа. */
+.inbox__row--attachment { background: var(--warn-soft); border-left-color: var(--warn-mark); }
+.inbox__row--attachment:hover { background: var(--origin-carried-hover); }
+
+.inbox__kind {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  height: 19px; padding: 0 var(--space-3);
+  border-radius: var(--r-mark);
+  font-size: 10px; font-weight: var(--w-semibold);
+  letter-spacing: .04em; text-transform: uppercase;
+  flex: 0 0 auto;
+}
+.inbox__kind--payment { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.inbox__kind--attachment { color: var(--warn-ink); background: var(--surface); border: 1px dashed var(--warn-line); }
+.inbox__title { width: 192px; flex: 0 0 auto; font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inbox__state { flex: 0 0 auto; font-size: var(--fs-meta); padding: 1px var(--space-3); border-radius: var(--r-mark); color: var(--warn-ink); background: var(--warn-soft); border: 1px solid var(--warn-line); white-space: nowrap; }
+.inbox__guess { flex: 1 1 auto; min-width: 0; font-size: var(--fs-meta); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inbox__sum { width: 84px; flex: 0 0 auto; }
+
+/* ── Раскрытие «откуда взялось число» ────────────────────────── */
+
+/* Одно и то же и для зарплатной суммы, и для строки P&L. */
+.trace { padding: var(--space-5) var(--space-6) var(--space-6); background: var(--surface-2); border-bottom: 1px solid var(--line-strong); }
+.trace__head { display: flex; align-items: baseline; gap: var(--space-4); margin-bottom: var(--space-4); }
+.trace__kicker { font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); }
+.trace__note { font-size: var(--fs-meta); color: var(--ink-2); }
+.trace__table { border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden; background: var(--surface); }
+.trace__row { display: grid; grid-template-columns: 132px 236px 1fr 152px 130px; gap: var(--space-5); align-items: center; padding: var(--space-3) var(--space-5); border-bottom: 1px solid var(--line); }
+.trace__row:hover { background: var(--surface-2); }
+.trace__foot { display: grid; grid-template-columns: 132px 236px 1fr 152px 130px; gap: var(--space-5); align-items: center; padding: var(--space-3) var(--space-5); background: var(--surface-2); }
+/* Итог раскрытия ВСЕГДА выводится из показанных фактов, никогда не константа. */
+.trace__check { display: inline-flex; align-items: center; gap: var(--space-3); height: 19px; padding: 0 var(--space-3); border-radius: var(--r-mark); font-size: var(--fs-meta); font-weight: var(--w-semibold); white-space: nowrap; width: fit-content; }
+.trace__check--ok { color: var(--ok); background: var(--ok-soft); border: 1px solid var(--ok-line); }
+.trace__check--off { color: var(--err); background: var(--err-soft); border: 1px solid var(--err-line); }
+
+.chev { width: 17px; height: 17px; display: grid; place-items: center; flex: 0 0 auto; padding: 0; border: 1px solid var(--line-control); border-radius: var(--r-mark); background: var(--surface); color: var(--ink-2); cursor: pointer; transition: transform var(--t-state) var(--ease); }
+.chev--open { transform: rotate(90deg); border-color: var(--accent); background: var(--accent); color: var(--ink-inverse); }
+
+/* Сумма, которую можно раскрыть: пунктир под числом. */
+.expandable {
+  width: 100%; height: var(--row);
+  padding: 0 var(--space-5);
+  border: 0; border-bottom: 1px dotted var(--ink-3);
+  background: transparent;
+  text-align: right;
+  font-family: var(--font-num);
+  font-size: var(--fs-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  cursor: pointer;
+}
+.expandable:hover { border-bottom-color: var(--accent); }
+
+/* ── Диалог подтверждения ────────────────────────────────────── */
+
+.overlay { position: fixed; inset: 0; z-index: 80; background: var(--overlay); display: grid; place-items: center; }
+.dialog { width: 470px; background: var(--surface); border-radius: var(--r-block); box-shadow: var(--sh-modal); overflow: hidden; }
+.dialog__head { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-6) var(--space-7); background: var(--surface-3); border-bottom: 1px solid var(--line); }
+.dialog__head--danger { background: var(--err-soft); border-bottom-color: var(--err-line); color: var(--err); }
+.dialog__title { font-size: var(--fs-title); font-weight: var(--w-semibold); }
+.dialog__body { padding: var(--space-6) var(--space-7); }
+.dialog__facts { margin-top: var(--space-5); border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden; }
+.dialog__fact { display: flex; align-items: baseline; gap: var(--space-5); padding: var(--space-3) var(--space-5); background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: var(--fs-meta); color: var(--ink-2); }
+.dialog__fact .num { margin-left: auto; }
+.dialog__foot { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5) var(--space-7); background: var(--surface-2); border-top: 1px solid var(--line); }
+.dialog__esc { font-size: var(--fs-meta); color: var(--ink-3); }
+.dialog__spacer { flex: 1; }
+
+.textarea {
+  width: 100%; min-height: 58px;
+  padding: var(--space-4);
+  border: 1px solid var(--line-control);
+  border-radius: var(--r-control);
+  font: var(--w-regular) var(--fs-body) / var(--lh-body) var(--font-ui);
+  color: var(--ink);
+  resize: vertical;
+}
+.textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-soft); outline: none; }
+
+/* ── Пустые состояния и отказы ───────────────────────────────── */
+
+.empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); padding: var(--space-8) var(--space-7); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); }
+.empty__title { font-size: var(--fs-lead); font-weight: var(--w-semibold); }
+.empty__text { font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); }
+/* Отказ с действием: показывается только тому, кто вправе исправить сам. */
+.empty--actionable { border-color: var(--accent-line); }
+.empty__aside { font-size: 10px; line-height: 14px; color: var(--ink-3); border-top: 1px dashed var(--line-control); padding-top: var(--space-4); margin-top: var(--space-2); }
+
+/* ── Карточка сущности ───────────────────────────────────────── */
+
+.card { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; }
+.card__head { display: flex; align-items: center; gap: var(--space-6); padding: var(--space-6); border-bottom: 1px solid var(--line); }
+.card__title { font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold); }
+.card__meta { font-size: var(--fs-meta); color: var(--ink-2); margin-top: 1px; }
+.card__facts { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
+.card__fact { padding: var(--space-5) var(--space-6); border-right: 1px solid var(--line); }
+.card__fact:last-child { border-right: 0; }
+.card__fact-label { font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); }
+.card__fact-note { font-size: 10px; color: var(--ink-3); }
+.card__body { padding: var(--space-5) var(--space-6) var(--space-6); }
+
+/* ── Мобильные сценарии управляющего (375) ───────────────────── */
+
+@media (max-width: 767px) {
+  body { min-width: 0; }
+  .page { width: 100%; }
+  .page__body { padding: var(--space-6) var(--space-6) 0; }
+
+  /* Всё, что нажимает управляющий, — не меньше 44 px. */
+  .btn, .checkbox, .seg__item, .seg__current { min-height: var(--tap-min); }
+  .btn { width: 100%; font-size: var(--fs-lead); }
+  .actions { flex-direction: column; align-items: stretch; }
+  .actions--cell { width: auto; }
+
+  .input, .input-money { height: var(--tap-min); }
+  .input--num, .input-money input { font-size: 20px; }
+
+  /* Таблицы на телефоне не показываем: у управляющего свои экраны. */
+  .table-wrap { display: none; }
+
+  .appnav { display: none; }
+  .appbar { height: auto; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-4) var(--space-6); }
+  .tenant { border-right: 0; padding-right: 0; }
+}
+
+/* ── Печать: выгрузка ведомости на бумагу ────────────────────── */
+
+@media print {
+  .appbar, .appnav, .btn, .seg, .filter-btn { display: none; }
+  .table-wrap { max-height: none; overflow: visible; border: 0; }
+  .table thead th { position: static; }
+  .table__name, .table__total-col { position: static; }
+  body { background: #fff; min-width: 0; }
+}

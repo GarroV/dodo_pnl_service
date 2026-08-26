@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5; --up:#10704A;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA; --down:#A32B1E;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 11</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">P&amp;L: отчёт, раскрытие строки, консолидация</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">То, ради чего собирали данные. Любое число раскрывается до первичных фактов — тем же приёмом, что и след расчёта зарплаты: из каких документов и правил оно собралось.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isReport }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: flex-end; gap: 14px; margin-bottom: 10px; flex-wrap: wrap">
+          <div>
+            <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Разрез</div>
+            <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+              <sc-for list="{{ scopeOpts }}" as="s" hint-placeholder-count="4">
+                <sc-if value="{{ s.sel }}" hint-placeholder-val="{{ false }}">
+                  <span aria-current="true" style="{{ s.selStyle }}">{{ s.label }}</span>
+                </sc-if>
+                <sc-if value="{{ s.notSel }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ s.on }}" style="{{ s.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ s.label }}</button>
+                </sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Сравнить с</div>
+            <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+              <sc-for list="{{ cmpOpts }}" as="c" hint-placeholder-count="2">
+                <sc-if value="{{ c.sel }}" hint-placeholder-val="{{ false }}">
+                  <span aria-current="true" style="{{ c.selStyle }}">{{ c.label }}</span>
+                </sc-if>
+                <sc-if value="{{ c.notSel }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ c.on }}" style="{{ c.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ c.label }}</button>
+                </sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex: 1"></div>
+          <div style="display: flex; align-items: center; gap: 7px">
+            <span style="font-size: 10px; color: var(--ink-3)">Скачать файл</span>
+            <button style="flex: 0 0 auto; white-space: nowrap; height: 24px; padding: 0 8px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD; display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-meta); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)' }">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 12 5 5 5-5"></path><path d="M4 21h16"></path></svg>
+              P&amp;L июнь <span style="opacity:.55">xlsx</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="{{ warnBoxStyle }}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+          <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Отчёт неполный</span>
+          <span style="flex: 1 1 auto; min-width: 0; font-size: var(--fs-meta); color: var(--warn-ink); opacity: .9">521 120 RSD не попали в отчёт: 9 вложений не разобрано, 4 платежа выписки не сведены. Июнь ещё не закрыт.</span>
+          <button style="flex: 0 0 auto; white-space: nowrap; height: 24px; padding: 0 9px; border: 1px solid var(--warn-line); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--warn-ink)" style-hover="{ background: '#FFF3DC' }">К закрытию месяца</button>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <th style="width: 292px; text-align: left; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Статья</th>
+                <th style="width: 138px; text-align: right; padding: 7px 11px; background: #E4E8EE; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink); font-weight: var(--w-semibold)">Июнь</th>
+                <th style="width: 78px; text-align: right; padding: 7px 11px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Доля</th>
+                <th style="width: 130px; text-align: right; padding: 7px 11px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">{{ cmpHead }}</th>
+                <th style="width: 116px; text-align: right; padding: 7px 11px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Отклонение</th>
+                <th style="text-align: left; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Из чего собралось</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="16">
+                <sc-if value="{{ r.isRow }}" hint-placeholder-val="{{ true }}">
+                  <tr style="{{ r.trStyle }}" style-hover="{{ r.trHover }}">
+                    <th scope="row" style="{{ r.nameStyle }}">
+                      <div style="display: flex; align-items: center; gap: 7px; min-width: 0; {{ r.indent }}">
+                        <sc-if value="{{ r.canOpen }}" hint-placeholder-val="{{ false }}">
+                          <button onClick="{{ r.onOpen }}" style="{{ r.chevStyle }}">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg>
+                          </button>
+                        </sc-if>
+                        <span style="{{ r.labelStyle }}">{{ r.label }}</span>
+                        <sc-if value="{{ r.hasTag }}" hint-placeholder-val="{{ false }}">
+                          <span style="{{ r.tagStyle }}">{{ r.tag }}</span>
+                        </sc-if>
+                      </div>
+                    </th>
+                    <td style="{{ r.valStyle }}">
+                      <sc-if value="{{ r.canOpen }}" hint-placeholder-val="{{ false }}">
+                        <button onClick="{{ r.onOpen }}" style="{{ r.valBtnStyle }}" style-hover="{ borderBottomColor: 'var(--accent)' }">{{ r.val }}</button>
+                      </sc-if>
+                      <sc-if value="{{ r.plain }}" hint-placeholder-val="{{ true }}">
+                        <span>{{ r.val }}</span>
+                      </sc-if>
+                    </td>
+                    <td style="{{ r.shareStyle }}">{{ r.share }}</td>
+                    <td style="{{ r.prevStyle }}">{{ r.prev }}</td>
+                    <td style="{{ r.devStyle }}">{{ r.dev }}</td>
+                    <td style="{{ r.srcStyle }}">{{ r.src }}</td>
+                  </tr>
+                </sc-if>
+                <sc-if value="{{ r.isOpen }}" hint-placeholder-val="{{ false }}">
+                  <tr>
+                    <td colSpan="6" style="padding: 0; background: var(--surface-2); border-bottom: 1px solid var(--line-strong)">
+                      <div style="padding: 11px 13px 12px">
+                        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 8px">
+                          <span style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Из чего собралось {{ r.openHeadVal }}</span>
+                          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ r.openNote }}</span>
+                          <button onClick="{{ r.onOpen }}" style="margin-left: auto; height: 22px; padding: 0 8px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2)">Свернуть</button>
+                        </div>
+                        <div style="border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+                          <div style="display: grid; grid-template-columns: 132px 236px 1fr 152px 130px; gap: 10px; padding: 6px 11px; background: var(--surface-3); border-bottom: 1px solid var(--line); font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">
+                            <div>Дата и вид</div><div>Кто и что</div><div>Основание</div><div style="text-align: right">Сумма</div><div>Точка</div>
+                          </div>
+                          <sc-for list="{{ r.facts }}" as="f" hint-placeholder-count="4">
+                            <div style="display: grid; grid-template-columns: 132px 236px 1fr 152px 130px; gap: 10px; align-items: center; padding: 7px 11px; border-bottom: 1px solid var(--line)" style-hover="{ background: '#F6F8FA' }">
+                              <div>
+                                <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2)">{{ f.date }}</div>
+                                <div style="{{ f.kindStyle }}">{{ f.kind }}</div>
+                              </div>
+                              <div style="min-width: 0">
+                                <div style="font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ f.who }}</div>
+                                <div style="font-size: 10px; color: var(--ink-3); line-height: 12px">{{ f.what }}</div>
+                              </div>
+                              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); min-width: 0">{{ f.basis }}</div>
+                              <div style="{{ f.sumStyle }}">{{ f.sum }}</div>
+                              <div style="font-size: var(--fs-meta); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ f.point }}</div>
+                            </div>
+                          </sc-for>
+                          <div style="display: grid; grid-template-columns: 132px 236px 1fr 152px 130px; gap: 10px; align-items: center; padding: 7px 11px; background: var(--surface-2)">
+                            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Итого</div>
+                            <div style="font-size: var(--fs-meta); color: var(--ink-2)">{{ r.factCount }}</div>
+                            <div></div>
+                            <div style="{{ r.factTotalStyle }}">{{ r.factTotal }}</div>
+                            <div style="{{ r.factCheckStyle }}">{{ r.factCheck }}</div>
+                          </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px">
+                          <button style="flex: 0 0 auto; white-space: nowrap; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">{{ r.openAction }}</button>
+                          <span style="flex: 1 1 auto; min-width: 0; font-size: var(--fs-meta); color: var(--ink-3)">{{ r.openHint }}</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </sc-if>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; gap: 16px; margin-top: 9px; font-size: var(--fs-meta); color: var(--ink-3); flex-wrap: wrap">
+          <span>подчёркнутая пунктиром сумма раскрывается до первичных фактов</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px"><span style="font-family: var(--font-num); color: var(--up)">+</span>рост расхода к предыдущему периоду</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 3px; height: 12px; background: var(--warn-mark); border-radius: 1px"></span>отклонение выше порога 25 %</span>
+          <span>цвет у числа только в отклонении — в самом отчёте суммы одного цвета</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isNetwork }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Консолидация по сети</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Июнь 2026 · четыре партнёра, три страны · единая валюта EUR по курсу на последний день периода</span>
+        </div>
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <th style="width: 250px; text-align: left; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Партнёр</th>
+                <th style="width: 92px; text-align: left; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Точек</th>
+                <th style="width: 148px; text-align: right; padding: 7px 11px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Выручка, EUR</th>
+                <th style="width: 138px; text-align: right; padding: 7px 11px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">ФОТ, EUR</th>
+                <th style="width: 96px; text-align: right; padding: 7px 11px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Доля ФОТ</th>
+                <th style="width: 132px; text-align: right; padding: 7px 11px; background: #E4E8EE; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink); font-weight: var(--w-semibold)">Прибыль, EUR</th>
+                <th style="text-align: left; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Состояние периода</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ netRows }}" as="n" hint-placeholder-count="4">
+                <tr style-hover="{ background: '#F6F8FA' }">
+                  <th scope="row" style="{{ n.nameStyle }}">
+                    <div style="font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ n.name }}</div>
+                    <div style="font-size: 10px; color: var(--ink-3); line-height: 12px">{{ n.country }}</div>
+                  </th>
+                  <td style="{{ n.tdStyle }}"><span style="font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums">{{ n.stores }}</span></td>
+                  <td style="{{ n.numStyle }}">{{ n.revenue }}</td>
+                  <td style="{{ n.numStyle }}">{{ n.payroll }}</td>
+                  <td style="{{ n.shareStyle }}">{{ n.share }}</td>
+                  <td style="{{ n.profitStyle }}">{{ n.profit }}</td>
+                  <td style="{{ n.tdStyle }}"><span style="{{ n.stStyle }}"><span style="{{ n.stDot }}"></span>{{ n.state }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" style="text-align: left; padding: 0 11px; height: 34px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Сеть, июнь 2026</th>
+                <td style="text-align: left; padding: 0 11px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-2); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">{{ netTotal.stores }}</td>
+                <td style="{{ netTotal.numStyle }}">{{ netTotal.revenue }}</td>
+                <td style="{{ netTotal.numStyle }}">{{ netTotal.payroll }}</td>
+                <td style="{{ netTotal.shareStyle }}">{{ netTotal.share }}</td>
+                <td style="{{ netTotal.profitStyle }}">{{ netTotal.profit }}</td>
+                <td style="padding: 0 11px; background: var(--surface-2); border-top: 2px solid var(--line-strong); font-size: var(--fs-meta); color: var(--warn-ink)">{{ netTotal.note }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px">
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; background: var(--surface); border: 1px solid var(--warn-line); border-radius: var(--r-block)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px; flex: 0 0 auto"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)"><b style="color: var(--ink)">Консолидация показывает незакрытые периоды честно.</b> Два партнёра июнь ещё не закрыли, и сеть об этом написано прямо в подвале. Складывать закрытое с незакрытым и не говорить об этом — единственный способ получить цифру, которой никто не поверит.</div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px; flex: 0 0 auto"><path d="M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)"><b style="color: var(--ink)">Курс фиксируется на последний день периода</b> и хранится вместе с отчётом. Пересчёт задним числом не меняет уже сохранённую консолидацию — иначе июньская цифра менялась бы каждый день вслед за курсом.</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1264,&quot;height&quot;:900},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;report&quot;,&quot;network&quot;],&quot;default&quot;:&quot;report&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;P&amp;L&quot;}}">
+const REVENUE = 8420600;
+
+const LINES = [
+  ["group", "Выручка", 8420600, 8106400, "из Dodo IS · 3 точки", null, null],
+  ["item", "Выручка от продаж", 8420600, 8106400, "коннектор Dodo IS, синхронизация 30.06 23:50", "revenue", null],
+  ["group", "Себестоимость", -2884120, -2704900, "сырьё, упаковка, списания", null, null],
+  ["item", "Сырьё", -2412800, -2246300, "накладные поставщиков · 34 документа", "food", null],
+  ["item", "Упаковка", -318620, -302400, "накладные · 8 документов", null, null],
+  ["item", "Списания", -152700, -156200, "из Dodo IS · нормативные и фактические", null, null],
+  ["group", "Персонал", -2769453, -2712480, "ведомость июня", null, null],
+  ["item", "ФОТ и взносы", -2769453, -2712480, "ведомость периода · 35 сотрудников", "payroll", null],
+  ["group", "Помещение и операции", -874600, -812200, "аренда, коммунальные, обслуживание", null, null],
+  ["item", "Аренда", -486000, -486000, "нераспределённое · разнесено пропорционально выручке", "rent", null],
+  ["item", "Коммунальные", -164800, -158900, "выписка · 6 платежей", null, null],
+  ["item", "Ремонт", -95400, -42800, "выписка · 3 платежа", "repair", "spike"],
+  ["item", "Химия и расходники", -68200, -64300, "накладные · 5 документов", null, null],
+  ["item", "Топливо", 0, -34200, "нет ни одного документа за июнь", null, "zero"],
+  ["item", "Канцелярия", -60200, -26000, "накладные · 4 документа", null, null],
+  ["group", "Маркетинг", -178400, -164000, "реклама на сеть и локальная", null, null],
+  ["item", "Реклама", -178400, -164000, "нераспределённое · разнесено поровну", null, null],
+  ["total", "Прибыль до налогов", 1714027, 1712820, "выручка минус все статьи", null, null]
+];
+
+const FACTS = {
+  food: {
+    note: "34 документа за июнь · подтверждены бухгалтером",
+    action: "Открыть все 34 документа",
+    hint: "Строка собирается из подтверждённых накладных. Неразобранные вложения в неё не входят",
+    check: "сходится со статьёй",
+    items: [
+      ["18.06.2026", "Накладная", "Mlin Vojvodina d.o.o.", "мука, дрожжи, масло · 4 позиции", "otpremnica 2026-0847 · подтвердила Milica Jovanović 24.06", -179720, "Beograd Vračar"],
+      ["22.06.2026", "Накладная", "Mlekara Šabac", "сыр, сливки · 6 позиций", "faktura 4471 · подтвердила Milica Jovanović 25.06", -96450, "все 3 точки"],
+      ["11.06.2026", "Накладная", "Mlin Vojvodina d.o.o.", "мука T-500 · 1 позиция", "otpremnica 2026-0712 · подтвердила Milica Jovanović 14.06", -88400, "Novi Sad"],
+      ["07.06.2026", "Накладная", "Voće i zelen d.o.o.", "овощи, зелень · 12 позиций", "faktura 1188 · подтвердила Milica Jovanović 09.06", -64280, "Beograd Novi Beograd"]
+    ],
+    rest: ["и ещё 30 документов", -1983950]
+  },
+  payroll: {
+    note: "ведомость июня, утверждение ожидается · три регистра",
+    action: "Открыть ведомость",
+    hint: "Одно число P&L раскрывается в ту же ведомость, что видит бухгалтер — и дальше в след расчёта каждого человека",
+    check: "сходится с ведомостью",
+    items: [
+      ["01.07.2026", "Ведомость", "Кухня · 14 человек", "официальный + дополнительный регистр", "расчёт 01.07 09:14 · правила на 30.06.2026", -1148620, "все 3 точки"],
+      ["01.07.2026", "Ведомость", "Курьеры · 12 человек", "внутренний регистр", "расчёт 01.07 09:14 · правила на 30.06.2026", -623480, "все 3 точки"],
+      ["01.07.2026", "Ведомость", "Менеджеры смены · 6 человек", "официальный регистр", "расчёт 01.07 09:14 · правила на 30.06.2026", -508920, "все 3 точки"],
+      ["01.07.2026", "Ведомость", "Управляющие · 3 человека", "официальный + дополнительный регистр", "расчёт 01.07 09:14 · правила на 30.06.2026", -488433, "все 3 точки"]
+    ],
+    rest: null
+  },
+  rent: {
+    note: "расход юрлица целиком · разнесён правилом",
+    action: "Открыть правило разнесения",
+    hint: "Аренда платится за юрлицо, а в P&L точки попадает долей. Правило и его версия видны здесь же",
+    check: "сходится с платежом",
+    items: [
+      ["05.06.2026", "Платёж", "Beogradske nekretnine", "аренда июнь · юрлицо целиком", "выписка 05.06 · разнесение ALLOC_REVENUE v2 от 01.01.2026", -486000, "нераспределённое"],
+      ["", "Разнесено", "Beograd Vračar", "доля выручки 38,4 %", "пропорционально выручке точки за июнь", -186624, "Beograd Vračar"],
+      ["", "Разнесено", "Beograd Novi Beograd", "доля выручки 34,1 %", "пропорционально выручке точки за июнь", -165726, "Beograd Novi Beograd"],
+      ["", "Разнесено", "Novi Sad", "доля выручки 27,5 %", "пропорционально выручке точки за июнь", -133650, "Novi Sad"]
+    ],
+    rest: null
+  },
+  repair: {
+    note: "3 платежа · рост в 2,2 раза к маю",
+    action: "Открыть отчёт отклонений",
+    hint: "Отклонение выше порога 25 % — статья попала в список подозрительного при закрытии месяца",
+    check: "сходится со статьёй",
+    items: [
+      ["19.06.2026", "Платёж", "Delta Sport d.o.o.", "ремонт печи · статья присвоена вручную", "выписка 19.06 · статью присвоила Milica Jovanović 24.06", -47800, "Beograd Novi Beograd"],
+      ["12.06.2026", "Накладная", "Termo servis", "замена термостата", "faktura 882 · подтверждена 13.06", -31200, "Beograd Vračar"],
+      ["26.06.2026", "Чек", "Majstor Bau", "ремонт двери · наличные", "чек из кассы · внёс Đorđe Milošević 26.06", -16400, "Beograd Vračar"]
+    ],
+    rest: null
+  },
+  revenue: {
+    note: "приехало из Dodo IS · руками не правилось",
+    action: "Открыть коннектор",
+    hint: "Выручка не вводится руками нигде: если число неверное, исправлять надо в Dodo IS",
+    check: "сходится с IS",
+    items: [
+      ["30.06.2026", "Из Dodo IS", "Beograd Vračar", "выручка за июнь · 4 218 чеков", "синхронизация 30.06 23:50 · правок руками нет", 3233510, "Beograd Vračar"],
+      ["30.06.2026", "Из Dodo IS", "Beograd Novi Beograd", "выручка за июнь · 3 842 чека", "синхронизация 30.06 23:50 · правок руками нет", 2871425, "Beograd Novi Beograd"],
+      ["30.06.2026", "Из Dodo IS", "Novi Sad", "выручка за июнь · 3 106 чеков", "синхронизация 30.06 23:50 · правок руками нет", 2315665, "Novi Sad"]
+    ],
+    rest: null
+  }
+};
+
+const NET = [
+  ["Balkan Pizza d.o.o.", "Сербия · RSD", 3, 71904, 23645, 14636, "calculated", "Посчитан"],
+  ["Adriatic Foods d.o.o.", "Хорватия · EUR", 5, 128400, 41088, 26904, "approved", "Утверждён"],
+  ["Panonia Pizza Kft", "Венгрия · HUF", 4, 96200, 32708, 18278, "calculated", "Посчитан"],
+  ["Vardar Pizza DOOEL", "Северная Македония · MKD", 2, 42800, 14124, 8132, "approved", "Утверждён"]
+];
+
+const ST = {
+  calculated: ["var(--accent)", "var(--accent-soft)", "var(--accent-line)"],
+  approved: ["var(--ok)", "var(--ok-soft)", "var(--ok-line)"]
+};
+
+function fmt(n) {
+  const neg = n < 0, a = Math.abs(Math.round(n));
+  return (neg ? "\u2212" : "") + String(a).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+}
+
+function pct(n) { return (Math.round(n * 10) / 10).toString().replace(".", ",") + " %"; }
+
+// Итог раскрытия выводится из фактов, а не задаётся числом: у аллокации
+// складываются только строки разнесения, у остальных — сами документы плюс хвост.
+Object.keys(FACTS).forEach(function (key) {
+  const f = FACTS[key];
+  const alloc = f.items.filter(function (x) { return x[1] === "Разнесено"; });
+  f.allocSum = alloc.length ? alloc.reduce(function (a, x) { return a + x[5]; }, 0) : null;
+  f.sum = f.allocSum !== null
+    ? f.allocSum
+    : f.items.reduce(function (a, x) { return a + x[5]; }, 0) + (f.rest ? f.rest[1] : 0);
+});
+
+class Component extends DCLogic {
+  state = { tab: null, scope: "all", cmp: "may", open: "food" };
+
+  get tab() { return this.state.tab || this.props.view || "report"; }
+
+  renderVals() {
+    const self = this;
+    const tab = this.tab;
+
+    const chip = function (sel) {
+      const base = { display: "inline-flex", alignItems: "center", gap: "6px", height: "22px", padding: "0 9px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+      if (sel) return Object.assign(base, { background: "var(--surface)", color: "var(--ink)", fontWeight: 600, boxShadow: "var(--sh-xs)" });
+      return Object.assign(base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" });
+    };
+
+    const k = this.state.scope === "all" ? 1 : this.state.scope === "vracar" ? 0.384 : this.state.scope === "novibg" ? 0.341 : 0.275;
+    const isPlan = this.state.cmp === "plan";
+
+    // Числа считаются один раз сверху вниз: статьи округляются, группы собираются
+    // из округлённых статей, итог — из групп. Иначе столбик не сходится в разрезах.
+    const planK = isPlan ? 1.03 : 1;
+    const VAL = LINES.map(function (l) {
+      return l[0] === "item"
+        ? { cur: Math.round(l[2] * k), base: Math.round(l[3] * k * planK) }
+        : { cur: 0, base: 0 };
+    });
+    LINES.forEach(function (l, i) {
+      if (l[0] !== "group") return;
+      for (var j = i + 1; j < LINES.length && LINES[j][0] === "item"; j++) {
+        VAL[i].cur += VAL[j].cur;
+        VAL[i].base += VAL[j].base;
+      }
+    });
+    LINES.forEach(function (l, i) {
+      if (l[0] !== "total") return;
+      LINES.forEach(function (g, gi) {
+        if (g[0] !== "group") return;
+        VAL[i].cur += VAL[gi].cur;
+        VAL[i].base += VAL[gi].base;
+      });
+    });
+
+    const rows = [];
+    LINES.forEach(function (l, li) {
+      const kind = l[0];
+      const cur = VAL[li].cur;
+      const base = VAL[li].base;
+      const dev = cur - base;
+      const devPct = base === 0 ? 0 : Math.abs(dev / base) * 100;
+      const spike = l[6] === "spike" || (devPct > 25 && kind === "item" && base !== 0);
+      const zero = l[6] === "zero";
+      const factKey = l[5];
+      const open = factKey && self.state.open === factKey;
+      const f = factKey ? FACTS[factKey] : null;
+
+      const numBase = {
+        textAlign: "right", padding: "0 11px", height: "var(--row)", fontFamily: "var(--font-num)",
+        fontVariantNumeric: "tabular-nums", borderBottom: "1px solid var(--line)", whiteSpace: "nowrap"
+      };
+
+      rows.push({
+        isRow: true, isOpen: open,
+        label: l[1],
+        canOpen: !!factKey, plain: !factKey,
+        indent: kind === "item" ? "padding-left: 14px" : "",
+        chevStyle: {
+          width: "17px", height: "17px", display: "grid", placeItems: "center", flex: "0 0 auto",
+          border: "1px solid " + (open ? "var(--accent)" : "var(--line-control)"),
+          borderRadius: "var(--r-mark)", background: open ? "var(--accent)" : "var(--surface)",
+          color: open ? "#fff" : "var(--ink-2)", padding: 0,
+          transform: open ? "rotate(90deg)" : "none", transition: "transform var(--t-state) var(--ease)"
+        },
+        labelStyle: {
+          fontSize: kind === "group" || kind === "total" ? "var(--fs-dense)" : "var(--fs-dense)",
+          fontWeight: kind === "item" ? 400 : 600,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+        },
+        hasTag: spike || zero,
+        tag: zero ? "ноль" : "выше порога",
+        tagStyle: {
+          display: "inline-block", fontSize: "9.5px", lineHeight: "13px", padding: "0 4px",
+          borderRadius: "var(--r-mark)", flex: "0 0 auto", whiteSpace: "nowrap",
+          color: "var(--warn-ink)", background: "var(--warn-soft)", border: "1px solid var(--warn-line)"
+        },
+        nameStyle: {
+          textAlign: "left", padding: "0 11px", height: "var(--row)",
+          background: kind === "total" ? "var(--surface-2)" : (kind === "group" ? "var(--surface-2)" : "transparent"),
+          borderBottom: "1px solid " + (kind === "total" ? "var(--line-strong)" : "var(--line)"),
+          borderTop: kind === "total" ? "2px solid var(--line-strong)" : "0",
+          borderRight: "1px solid var(--line-strong)", fontWeight: 400
+        },
+        val: fmt(cur),
+        valStyle: Object.assign({}, numBase, {
+          padding: factKey ? "0" : "0 11px",
+          background: kind === "total" ? "#E8EDF3" : (kind === "group" ? "var(--surface-2)" : "transparent"),
+          borderTop: kind === "total" ? "2px solid var(--line-strong)" : "0",
+          borderRight: "1px solid var(--line-2)",
+          fontSize: kind === "total" ? "13.5px" : "var(--fs-num)",
+          fontWeight: kind === "item" ? 400 : (kind === "total" ? 700 : 600),
+          color: "var(--ink)"
+        }),
+        valBtnStyle: {
+          width: "100%", height: "var(--row)", padding: "0 11px", border: 0, background: "transparent",
+          textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)",
+          fontVariantNumeric: "tabular-nums", color: "var(--ink)",
+          borderBottom: "1px dotted " + (open ? "var(--accent)" : "var(--ink-3)"), cursor: "pointer"
+        },
+        onOpen: function () { if (factKey) self.setState({ open: open ? null : factKey }); },
+        share: kind === "total" ? "" : pct(Math.abs(cur) / Math.abs(REVENUE * k) * 100),
+        shareStyle: Object.assign({}, numBase, {
+          background: kind === "total" ? "var(--surface-2)" : (kind === "group" ? "var(--surface-2)" : "transparent"),
+          borderTop: kind === "total" ? "2px solid var(--line-strong)" : "0",
+          borderRight: "1px solid var(--line-strong)",
+          color: "var(--ink-3)", fontSize: "var(--fs-num-sm)"
+        }),
+        prev: fmt(base),
+        prevStyle: Object.assign({}, numBase, {
+          background: kind === "total" ? "var(--surface-2)" : (kind === "group" ? "var(--surface-2)" : "transparent"),
+          borderTop: kind === "total" ? "2px solid var(--line-strong)" : "0",
+          borderRight: "1px solid var(--line-2)",
+          color: "var(--ink-2)", fontWeight: kind === "item" ? 400 : 600
+        }),
+        dev: (dev > 0 ? "+" : "") + fmt(dev),
+        devStyle: Object.assign({}, numBase, {
+          background: spike ? "var(--warn-soft)" : (kind === "total" ? "var(--surface-2)" : (kind === "group" ? "var(--surface-2)" : "transparent")),
+          borderTop: kind === "total" ? "2px solid var(--line-strong)" : "0",
+          borderRight: "1px solid var(--line-strong)",
+          color: dev === 0 ? "var(--ink-3)" : (spike ? "var(--warn-ink)" : (dev > 0 ? "var(--up)" : "var(--down)")),
+          fontWeight: dev === 0 ? 400 : 600,
+          boxShadow: spike ? "inset 3px 0 0 var(--warn-mark)" : "none"
+        }),
+        src: l[4],
+        srcStyle: {
+          padding: "0 11px", height: "var(--row)", fontSize: "var(--fs-meta)", color: "var(--ink-3)",
+          background: kind === "total" ? "var(--surface-2)" : (kind === "group" ? "var(--surface-2)" : "transparent"),
+          borderBottom: "1px solid " + (kind === "total" ? "var(--line-strong)" : "var(--line)"),
+          borderTop: kind === "total" ? "2px solid var(--line-strong)" : "0",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+        },
+        trStyle: {},
+        trHover: { background: kind === "item" ? "#F6F8FA" : "transparent" },
+
+        openHeadVal: f ? fmt(f.sum) : "",
+        openNote: f ? (k === 1
+          ? f.note
+          : f.note + " · это юрлицо целиком; доля точки в строке выше — " + pct(Math.abs(cur / l[2]) * 100) + " от этой суммы") : "",
+        openAction: f ? f.action : "",
+        openHint: f ? f.hint : "",
+        factCount: f ? (f.allocSum !== null ? "разнесение по 3 точкам" : (f.rest ? f.items.length + " показано, " + f.rest[0] : f.items.length + " факта")) : "",
+        factTotal: f ? fmt(f.sum) : "",
+        factTotalStyle: {
+          textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 700,
+          fontVariantNumeric: "tabular-nums", color: "var(--ink)", whiteSpace: "nowrap"
+        },
+        factCheck: f ? (f.sum === l[2] ? "сходится со статьёй" : "не сходится: " + fmt(l[2] - f.sum)) : "",
+        factCheckStyle: {
+          display: "inline-flex", alignItems: "center", gap: "5px", height: "19px", padding: "0 7px",
+          borderRadius: "var(--r-mark)", fontSize: "var(--fs-meta)", fontWeight: 600, width: "fit-content", whiteSpace: "nowrap",
+          background: f && f.sum === l[2] ? "var(--ok-soft)" : "var(--err-soft)",
+          border: "1px solid " + (f && f.sum === l[2] ? "var(--ok-line)" : "var(--err-line)"),
+          color: f && f.sum === l[2] ? "var(--ok)" : "var(--err)"
+        },
+        facts: f ? f.items.map(function (x) {
+          const isAlloc = x[1] === "Разнесено";
+          return {
+            date: x[0] === "" ? "\u2014" : x[0], kind: x[1], who: x[2], what: x[3], basis: x[4],
+            sum: fmt(x[5]), point: x[6],
+            kindStyle: {
+              display: "inline-block", fontSize: "9.5px", lineHeight: "13px", padding: "0 4px", marginTop: "2px",
+              borderRadius: "var(--r-mark)", whiteSpace: "nowrap",
+              color: isAlloc ? "var(--reg-supp)" : (x[1] === "Чек" ? "var(--warn-ink)" : "var(--accent)"),
+              background: isAlloc ? "#F1ECF9" : (x[1] === "Чек" ? "var(--warn-soft)" : "var(--accent-soft)"),
+              border: "1px solid " + (isAlloc ? "#DCD0EE" : (x[1] === "Чек" ? "var(--warn-line)" : "var(--accent-line)"))
+            },
+            sumStyle: {
+              textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)",
+              fontWeight: isAlloc ? 400 : 600, fontVariantNumeric: "tabular-nums",
+              color: isAlloc ? "var(--ink-2)" : "var(--ink)", whiteSpace: "nowrap"
+            }
+          };
+        }) : []
+      });
+    });
+
+    const netTotalRev = NET.reduce(function (a, n) { return a + n[3]; }, 0);
+    const netTotalPay = NET.reduce(function (a, n) { return a + n[4]; }, 0);
+    const netTotalProfit = NET.reduce(function (a, n) { return a + n[5]; }, 0);
+    const netStores = NET.reduce(function (a, n) { return a + n[2]; }, 0);
+
+    const netNum = {
+      textAlign: "right", padding: "0 11px", height: "34px", background: "var(--surface-2)",
+      borderTop: "2px solid var(--line-strong)", borderRight: "1px solid var(--line-2)",
+      fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 700,
+      fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap"
+    };
+
+    return {
+      tabs: [
+        { k: "report", label: "Отчёт по точке" },
+        { k: "network", label: "Консолидация по сети" }
+      ].map(function (t) {
+        const sel = t.k === tab;
+        const base = { display: "inline-flex", alignItems: "center", height: "var(--control-h-sm)", padding: "0 11px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap" };
+        return {
+          label: t.label, sel: sel, notSel: !sel,
+          on: function () { self.setState({ tab: t.k }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent)", color: "#fff", fontWeight: 600, border: "1px solid var(--accent)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isReport: tab === "report", isNetwork: tab === "network",
+
+      scopeOpts: [
+        { k: "all", label: "Юрлицо · 3 точки" },
+        { k: "vracar", label: "Vračar" },
+        { k: "novibg", label: "Novi Beograd" },
+        { k: "novisad", label: "Novi Sad" }
+      ].map(function (s) {
+        const sel = s.k === self.state.scope;
+        return { label: s.label, sel: sel, notSel: !sel, on: function () { self.setState({ scope: s.k }); }, selStyle: chip(true), btnStyle: chip(false) };
+      }),
+
+      cmpOpts: [
+        { k: "may", label: "Май 2026" },
+        { k: "plan", label: "План июня" }
+      ].map(function (c) {
+        const sel = c.k === self.state.cmp;
+        return { label: c.label, sel: sel, notSel: !sel, on: function () { self.setState({ cmp: c.k }); }, selStyle: chip(true), btnStyle: chip(false) };
+      }),
+      cmpHead: isPlan ? "План" : "Май",
+
+      warnBoxStyle: {
+        display: "flex", alignItems: "center", gap: "11px", padding: "8px 12px", marginBottom: "10px",
+        background: "var(--warn-soft)", border: "1px solid var(--warn-line)", borderRadius: "var(--r-block)"
+      },
+
+      rows: rows,
+
+      netRows: NET.map(function (n) {
+        const s = ST[n[6]];
+        return {
+          name: n[0], country: n[1], stores: String(n[2]),
+          revenue: fmt(n[3]), payroll: fmt(n[4]), share: pct(n[4] / n[3] * 100), profit: fmt(n[5]), state: n[7],
+          nameStyle: {
+            textAlign: "left", padding: "1px 11px", height: "var(--row-loose)", borderBottom: "1px solid var(--line)",
+            borderRight: "1px solid var(--line-strong)", fontWeight: 400, lineHeight: "15px"
+          },
+          tdStyle: { padding: "0 11px", height: "var(--row-loose)", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" },
+          numStyle: {
+            textAlign: "right", padding: "0 11px", height: "var(--row-loose)", borderBottom: "1px solid var(--line)",
+            borderRight: "1px solid var(--line-2)", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)",
+            fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap"
+          },
+          shareStyle: {
+            textAlign: "right", padding: "0 11px", height: "var(--row-loose)", borderBottom: "1px solid var(--line)",
+            borderRight: "1px solid var(--line-strong)", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)",
+            fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", color: "var(--ink-2)"
+          },
+          profitStyle: {
+            textAlign: "right", padding: "0 11px", height: "var(--row-loose)", borderBottom: "1px solid var(--line)",
+            borderRight: "1px solid var(--line-strong)", background: "#F4F7FB",
+            fontFamily: "var(--font-num)", fontSize: "13px", fontWeight: 600,
+            fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap"
+          },
+          stStyle: {
+            display: "inline-flex", alignItems: "center", gap: "5px", height: "21px", padding: "0 8px",
+            borderRadius: "var(--r-control)", background: s[1], border: "1px solid " + s[2],
+            fontSize: "var(--fs-meta)", fontWeight: 600, color: s[0], whiteSpace: "nowrap"
+          },
+          stDot: { width: "5px", height: "5px", borderRadius: "50%", background: s[0] }
+        };
+      }),
+
+      netTotal: {
+        stores: String(netStores),
+        revenue: fmt(netTotalRev), payroll: fmt(netTotalPay),
+        share: pct(netTotalPay / netTotalRev * 100), profit: fmt(netTotalProfit),
+        numStyle: netNum,
+        shareStyle: Object.assign({}, netNum, { borderRight: "1px solid var(--line-strong)", color: "var(--ink-2)" }),
+        profitStyle: Object.assign({}, netNum, { background: "#E8EDF3", borderRight: "1px solid var(--line-strong)", fontSize: "13.5px" }),
+        note: "2 из 4 партнёров июнь ещё не закрыли"
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

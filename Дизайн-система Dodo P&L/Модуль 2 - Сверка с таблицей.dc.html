@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 3</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Сверка с таблицей бухгалтера</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Экран, который превращает недоверие в доверие. Бухгалтер грузит свой Excel за май, система считает тот же месяц своими правилами и показывает построчно: где сошлось, где нет, на сколько и почему.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isUpload }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0; display: grid; grid-template-columns: 1fr 372px; gap: 10px; align-items: start">
+        <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 24px 22px">
+          <div style="max-width: 560px">
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Загрузите свою таблицу за май 2026</h2>
+            <div style="font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); margin-top: 6px">Тот файл, по которому вы платили в мае. Готовить ничего не нужно: колонки подбираются сами, лишние игнорируются. Мы посчитаем май своими правилами и положим два расчёта рядом.</div>
+            <div style="border: 1px dashed var(--line-control-2); border-radius: var(--r-block); background: var(--surface-2); padding: 22px; margin-top: 15px; text-align: center">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 9px"><path d="M12 21V9"></path><path d="m7 12 5-5 5 5"></path><path d="M4 3h16"></path></svg>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Перетащите xlsx или csv</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 3px">до 20 МБ · один лист или несколько</div>
+              <button onClick="{{ goCompare }}" style="height: var(--control-h); padding: 0 14px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-body); font-weight: var(--w-semibold); margin-top: 12px" style-hover="{ background: 'var(--accent-press)' }">Выбрать файл</button>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 9px; margin-top: 13px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: var(--r-block)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px; flex: 0 0 auto"><path d="M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink)">Ваш файл ничего не меняет в системе. Это сверка: мы не импортируем ваши суммы, а сравниваем с ними свои. Ни одна цифра расчёта от загрузки не изменится.</div>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 8px">Что будет дальше</div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <sc-for list="{{ uploadSteps }}" as="s" hint-placeholder-count="4">
+                <div style="display: grid; grid-template-columns: 20px 1fr; gap: 9px; align-items: start">
+                  <span style="display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--line-control); font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold); color: var(--ink-2)">{{ s.n }}</span>
+                  <div style="font-size: var(--fs-dense); line-height: var(--lh-dense)">{{ s.t }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 7px">Прошлые сверки</div>
+            <div style="display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface)">
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-medium)">Апрель 2026</span>
+                <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-meta); color: var(--ok); font-weight: var(--w-semibold)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                  сошлось
+                </span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface)">
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-medium)">Март 2026</span>
+                <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--warn-ink)">2 расхождения, объяснены</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCompare }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; margin-bottom: 10px">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-bottom: 1px solid var(--line)">
+            <div>
+              <div style="font-size: var(--fs-title); font-weight: var(--w-semibold); line-height: var(--lh-title)">Май 2026 · построчно, до копейки</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 1px">obracun_maj_2026.xlsx · 35 строк · сверено 01.06.2026, 10:22</div>
+            </div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 7px">
+              <span style="font-size: 10px; color: var(--ink-3)">Скачать файл</span>
+              <button style="height: 24px; padding: 0 8px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD; display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-meta); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)' }">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 12 5 5 5-5"></path><path d="M4 21h16"></path></svg>
+                Протокол сверки <span style="opacity:.55">xlsx</span>
+              </button>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr)">
+            <sc-for list="{{ summary }}" as="s" hint-placeholder-count="4">
+              <button onClick="{{ s.on }}" style="{{ s.cellStyle }}" style-hover="{{ s.cellHover }}">
+                <div style="display: flex; align-items: baseline; gap: 7px">
+                  <span style="{{ s.numStyle }}">{{ s.n }}</span>
+                  <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ s.unit }}</span>
+                </div>
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-top: 3px; text-align: left">{{ s.label }}</div>
+                <div style="font-size: 10px; line-height: 13px; color: var(--ink-3); margin-top: 3px; text-align: left">{{ s.note }}</div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-end; gap: 12px; margin-bottom: 8px; flex-wrap: wrap">
+          <div>
+            <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Показать</div>
+            <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+              <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+                <sc-if value="{{ f.sel }}" hint-placeholder-val="{{ false }}">
+                  <span aria-current="true" style="{{ f.selStyle }}">{{ f.label }}<span style="{{ f.cntStyle }}">{{ f.cnt }}</span></span>
+                </sc-if>
+                <sc-if value="{{ f.notSel }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ f.on }}" style="{{ f.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ f.label }}<span style="{{ f.cntStyle }}">{{ f.cnt }}</span></button>
+                </sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex: 1"></div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-3)">Клик по причине — что именно разошлось. «Ваша сумма» взята из файла как есть, ничего не пересчитывалось</div>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <th style="width: 32px; padding: 6px 4px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)"></th>
+                <th style="width: 232px; text-align: left; padding: 6px 9px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Сотрудник</th>
+                <th style="width: 126px; text-align: right; padding: 6px 9px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Ваша сумма</th>
+                <th style="width: 126px; text-align: right; padding: 6px 9px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Наш расчёт</th>
+                <th style="width: 108px; text-align: right; padding: 6px 9px; background: #E4E8EE; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink)">Разница</th>
+                <th style="text-align: left; padding: 6px 9px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Причина</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="g" hint-placeholder-count="12">
+                <sc-if value="{{ g.isHead }}" hint-placeholder-val="{{ false }}">
+                  <tr>
+                    <td colSpan="6" style="{{ g.headStyle }}">
+                      <div style="display: flex; align-items: center; gap: 9px">
+                        <span style="{{ g.dotStyle }}"></span>
+                        <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ g.title }}</span>
+                        <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ g.count }}</span>
+                        <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ g.note }}</span>
+                        <span style="{{ g.sumStyle }}">{{ g.sum }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </sc-if>
+                <sc-if value="{{ g.isRow }}" hint-placeholder-val="{{ true }}">
+                  <tr style-hover="{ background: '#F6F8FA' }">
+                    <td style="{{ g.iconCell }}"><span style="{{ g.iconStyle }}">{{ g.icon }}</span></td>
+                    <th scope="row" style="{{ g.nameStyle }}">
+                      <div style="display: flex; align-items: center; gap: 6px; min-width: 0">
+                        <span style="font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ g.name }}</span>
+                        <span style="{{ g.regStyle }}">{{ g.reg }}</span>
+                      </div>
+                      <div style="font-size: 10px; color: var(--ink-3); line-height: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ g.sub }}</div>
+                    </th>
+                    <td style="{{ g.mineStyle }}">{{ g.mine }}</td>
+                    <td style="{{ g.oursStyle }}">{{ g.ours }}</td>
+                    <td style="{{ g.deltaStyle }}">{{ g.delta }}</td>
+                    <td style="{{ g.reasonCell }}">
+                      <sc-if value="{{ g.hasReason }}" hint-placeholder-val="{{ true }}">
+                        <button onClick="{{ g.onOpen }}" style="{{ g.reasonBtn }}" style-hover="{ color: 'var(--accent)' }">
+                          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ g.reason }}</span>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="m9 6 6 6-6 6"></path></svg>
+                        </button>
+                      </sc-if>
+                      <sc-if value="{{ g.noReason }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ g.reason }}</span>
+                      </sc-if>
+                    </td>
+                  </tr>
+                </sc-if>
+                <sc-if value="{{ g.isOpen }}" hint-placeholder-val="{{ false }}">
+                  <tr>
+                    <td colSpan="6" style="padding: 0; background: var(--surface-2); border-bottom: 1px solid var(--line-strong)">
+                      <div style="padding: 11px 13px 12px">
+                        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 8px">
+                          <span style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Откуда разница</span>
+                          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ g.detailHead }}</span>
+                          <button onClick="{{ g.onOpen }}" style="margin-left: auto; height: 22px; padding: 0 8px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2)">Свернуть</button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+                          <div style="border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+                            <div style="padding: 7px 10px; background: var(--surface-3); border-bottom: 1px solid var(--line); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">В вашем файле</div>
+                            <sc-for list="{{ g.detailMine }}" as="m" hint-placeholder-count="3">
+                              <div style="display: flex; align-items: baseline; gap: 10px; padding: 6px 10px; border-bottom: 1px solid var(--line)">
+                                <span style="font-size: var(--fs-dense)">{{ m.k }}</span>
+                                <span style="{{ m.vStyle }}">{{ m.v }}</span>
+                              </div>
+                            </sc-for>
+                          </div>
+                          <div style="border: 1px solid var(--accent-line); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+                            <div style="padding: 7px 10px; background: var(--accent-soft); border-bottom: 1px solid var(--accent-line); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--accent); font-weight: var(--w-semibold)">В нашем расчёте</div>
+                            <sc-for list="{{ g.detailOurs }}" as="o" hint-placeholder-count="3">
+                              <div style="display: flex; align-items: baseline; gap: 10px; padding: 6px 10px; border-bottom: 1px solid var(--line)">
+                                <span style="font-size: var(--fs-dense)">{{ o.k }}</span>
+                                <span style="{{ o.vStyle }}">{{ o.v }}</span>
+                              </div>
+                            </sc-for>
+                          </div>
+                        </div>
+                        <div style="{{ g.verdictStyle }}">
+                          <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 2px">{{ g.verdictTitle }}</div>
+                          <div style="font-size: var(--fs-meta); line-height: var(--lh-meta)">{{ g.verdict }}</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px">
+                          <button style="{{ g.primaryStyle }}">{{ g.primary }}</button>
+                          <button style="flex: 0 0 auto; white-space: nowrap; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Открыть след расчёта</button>
+                          <span style="flex: 1 1 auto; min-width: 0; font-size: var(--fs-meta); color: var(--ink-3)">{{ g.hint }}</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </sc-if>
+              </sc-for>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style="background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-2)"></td>
+                <th scope="row" style="text-align: left; padding: 0 9px; height: 34px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Итого за май</th>
+                <td style="text-align: right; padding: 0 9px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-2); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">{{ totalMine }}</td>
+                <td style="text-align: right; padding: 0 9px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">{{ totalOurs }}</td>
+                <td style="{{ totalDeltaStyle }}">{{ totalDelta }}</td>
+                <td style="padding: 0 9px; background: var(--surface-2); border-top: 2px solid var(--line-strong); font-size: var(--fs-meta); color: var(--ink-2)">{{ totalNote }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+          <span style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Округление система признаёт своим расхождением и не требует объяснять его вам: <b style="color: var(--ink)">27 строк</b> отличаются меньше чем на динар. Из пяти оставшихся четыре дают денежную разницу, а пятая — не деньги, а дырка в данных: у Nikola Ilić нет часов, поэтому в нашем итоге его суммы нет вообще. Она и даёт основную часть разрыва в подвале.</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0; display: grid; grid-template-columns: 1fr 372px; gap: 10px; align-items: start">
+        <div style="background: var(--surface); border: 1px solid var(--ok-line); border-radius: var(--r-block); overflow: hidden">
+          <div style="display: flex; align-items: center; gap: 11px; padding: 13px; background: var(--ok-soft); border-bottom: 1px solid var(--ok-line)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="m5 13 4 4L19 7"></path></svg>
+            <div>
+              <div style="font-size: var(--fs-title); font-weight: var(--w-semibold); color: var(--ok); line-height: var(--lh-title)">Май сошёлся</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 1px">Пять расхождений разобраны: три признаны нашей стороной, одно — ошибкой в файле, одно — разной трактовкой правила</div>
+            </div>
+            <button style="margin-left: auto; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--ok-line); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense); color: var(--ok); font-weight: var(--w-semibold); flex: 0 0 auto" style-hover="{ background: '#DCEDE4' }">Сверить июнь</button>
+          </div>
+          <div style="padding: 12px 13px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 8px">Что изменилось после сверки</div>
+            <div style="display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+              <sc-for list="{{ outcomes }}" as="o" hint-placeholder-count="5">
+                <div style="display: grid; grid-template-columns: 16px 1fr 196px; gap: 10px; align-items: baseline; padding: 9px 11px; background: var(--surface)">
+                  <span style="{{ o.markStyle }}"></span>
+                  <div>
+                    <div style="font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ o.what }}</div>
+                    <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 1px">{{ o.detail }}</div>
+                  </div>
+                  <span style="{{ o.tagStyle }}">{{ o.tag }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 7px">Протокол сверки</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Остаётся в системе: файл, дата, кто сверял, каждое расхождение и решение по нему. Через полгода на вопрос «почему в мае было так» отвечает протокол, а не память.</div>
+            <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD; display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-dense); color: var(--ink-2); margin-top: 10px" style-hover="{ background: 'var(--surface-3)' }">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 12 5 5 5-5"></path><path d="M4 21h16"></path></svg>
+              Скачать протокол <span style="opacity:.55">xlsx</span>
+            </button>
+          </div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 7px">Почему это решающий экран</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Бухгалтер не поверит чужому расчёту, пока не увидит свои числа рядом со своими — до копейки и с объяснением каждой разницы. Пока он ведёт Excel параллельно, продукт проиграл, даже если всё работает.</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1264,&quot;height&quot;:900},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;upload&quot;,&quot;compare&quot;,&quot;done&quot;],&quot;default&quot;:&quot;compare&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Сверка&quot;}}">
+const ROUND = [
+  ["Petar Petrović", "ОФ·ДОП", "Повар · Vračar", 71204.31, 71204.00],
+  ["Milica Jovanović", "ОФ·ДОП", "Повар · Vračar", 78412.68, 78413.00],
+  ["Teodora Savić", "ОФ·ДОП", "Пиццамейкер · Vračar", 69880.45, 69880.00],
+  ["Vuk Marković", "ВН", "Курьер · Vračar", 50218.72, 50219.00],
+  ["Katarina Nikolić", "ОФ", "Менеджер смены · Vračar", 92640.19, 92640.00]
+];
+
+const DIFFS = [
+  {
+    name: "Miloš Stojanović", reg: "ОФ·ДОП", sub: "Повар · Кухня · Beograd Vračar",
+    mine: 74180, ours: 76921, reason: "переработка: у вас 126 %, в правиле 126 % от ставки с коэффициентом",
+    head: "Переработка 24 ч · ставка 435,00 · коэффициент ×1,15",
+    detailMine: [["Ставка", "435,00"], ["Коэффициент", "не применён"], ["Переработка 24 ч", "13 154,40"]],
+    detailOurs: [["Ставка", "435,00"], ["Коэффициент", "×1,15"], ["Переработка 24 ч", "15 127,56"]],
+    verdictTitle: "Наш расчёт применяет коэффициент к переработке, ваш — нет",
+    verdict: "Правило OVERTIME_RS v2 от 01.01.2025 считает переработку от ставки с коэффициентом группы. В вашем файле коэффициент применён только к базовым часам. Это разная трактовка правила, а не ошибка ввода: решите, какая верна, и правило зафиксирует решение версией с датой.",
+    primary: "Открыть правило OVERTIME_RS", tone: "warn",
+    hint: "Если верна ваша трактовка — правку внесут версией с 01.06, май останется как был"
+  },
+  {
+    name: "Ana Marić", reg: "ОФ·ДОП", sub: "Пиццамейкер · Кухня · Novi Beograd",
+    mine: 74320, ours: 76420, reason: "надбавка за результат: план точки 104 %, у вас 100 %",
+    head: "Надбавка за результат · план Novi Beograd за май — 104 %",
+    detailMine: [["План точки", "100 %"], ["Надбавка", "2 400,00"], ["Регистр", "официальный"]],
+    detailOurs: [["План точки", "104 %"], ["Надбавка", "4 500,00"], ["Регистр", "дополнительный"]],
+    verdictTitle: "План точки за май закрылся на 104 %, а не на 100 %",
+    verdict: "Выручка Novi Beograd за май приехала из Dodo IS 01.06 в 02:10 — после того, как вы посчитали. По правилу BONUS_STORE v7 от 01.04.2026 надбавка считается от факта, а не от плана, и попадает в дополнительный регистр.",
+    primary: "Принять наш расчёт", tone: "ok",
+    hint: "Разница уйдёт в майскую ведомость, если май ещё не утверждён"
+  },
+  {
+    name: "Vojin Kostić", reg: "ВН", sub: "Курьер · Курьеры · Beograd Vračar",
+    mine: 52840, ours: 48212, reason: "уволен 12.06 — в вашем файле оплачен весь месяц",
+    head: "Условия найма закрыты 12.06.2026 · в файле 22 рабочих дня",
+    detailMine: [["Отработано дней", "22"], ["Топли оброк", "6 600,00"], ["Дата увольнения", "не указана"]],
+    detailOurs: [["Отработано дней", "9"], ["Топли оброк", "2 700,00"], ["Дата увольнения", "12.06.2026"]],
+    verdictTitle: "Ошибка в вашем файле: человек уволен 12 июня",
+    verdict: "В карточке есть приказ об увольнении от 12.06.2026, версия условий найма закрыта той же датой. Оплата за 22 дня означала бы выплату за 13 дней после увольнения.",
+    primary: "Признать ошибкой файла", tone: "err",
+    hint: "Ничего пересчитывать не нужно — наш расчёт уже верен"
+  },
+  {
+    name: "Marija Obradović", reg: "ОФ·ДОП", sub: "Пиццамейкер · Кухня · Novi Sad",
+    mine: 64180, ours: 68402, reason: "доплата до минимума: у вас не начислена",
+    head: "Доплата до минимума · порог 56 000 на 01.05.2026",
+    detailMine: [["Начислено до доплаты", "51 778,00"], ["Доплата до минимума", "не начислена"], ["Итого", "64 180,00"]],
+    detailOurs: [["Начислено до доплаты", "51 778,00"], ["Доплата до минимума", "4 222,00"], ["Итого", "68 402,00"]],
+    verdictTitle: "Начисление ниже минимума — правило доплачивает разницу",
+    verdict: "MIN_TOPUP_RS v3 от 01.01.2026: если начисленное за месяц ниже 56 000, разница доплачивается автоматически. У неё вышло 51 778 из-за 40 часов отпуска, поэтому доплата 4 222.",
+    primary: "Принять наш расчёт", tone: "ok",
+    hint: "Правило страновое, переопределений партнёра на него нет"
+  },
+  {
+    name: "Nikola Ilić", reg: "ОФ·ДОП", sub: "Повар · Кухня · Novi Beograd",
+    mine: 68900, ours: 0, reason: "в нашем расчёте его нет: часов за май не приехало",
+    head: "Часы за май не приехали из Dodo IS · условия найма действуют",
+    detailMine: [["Отработано часов", "168"], ["Итого", "68 900,00"], ["Точка", "Novi Beograd"]],
+    detailOurs: [["Отработано часов", "0"], ["Итого", "не рассчитано"], ["Причина", "нет часов за период"]],
+    verdictTitle: "Данных нет ни у нас, ни в IS — а человек работал",
+    verdict: "Условия найма на май действуют, но часов не приехало и руками их не вносили. Это не ошибка расчёта, а дырка в данных: пока часов нет, суммы не будет. Внесите часы в табеле — расчёт подхватит их при пересчёте.",
+    primary: "Внести часы в табеле", tone: "err",
+    hint: "Строка закрытия месяца тоже поймает это как «сотрудник без часов»"
+  }
+];
+
+const EXACT = [
+  ["Stefan Nikolić", "ОФ·ДОП", "Повар · Novi Beograd", 82640.00],
+  ["Filip Ristić", "ВН", "Курьер · Novi Beograd", 54180.00],
+  ["Emilija Vasić", "ОФ·ДОП", "Управляющий · Novi Sad", 148900.00]
+];
+
+const HIDDEN22 = { mine: 1586412.37, ours: 1586407.86 };
+
+const REG_COLOR = { "ОФ": "var(--reg-official)", "ДОП": "var(--reg-supp)", "ВН": "var(--reg-internal)", "ОФ·ДОП": "var(--ink-2)" };
+
+function sumBy(arr, fn) { return arr.reduce(function (a, x) { return a + fn(x); }, 0); }
+
+const MONEY_DIFFS = DIFFS.filter(function (d) { return d.ours > 0; });
+const DIFF_MONEY = sumBy(MONEY_DIFFS, function (d) { return d.ours - d.mine; });
+const UNCALC = DIFFS.filter(function (d) { return d.ours === 0; });
+const UNCALC_MINE = sumBy(UNCALC, function (d) { return d.mine; });
+const ROUND_SHOWN = sumBy(ROUND, function (r) { return r[4] - r[3]; });
+const ROUND_ALL = ROUND_SHOWN + (HIDDEN22.ours - HIDDEN22.mine);
+
+const TOTAL_MINE = sumBy(DIFFS, function (d) { return d.mine; })
+  + sumBy(ROUND, function (r) { return r[3]; })
+  + sumBy(EXACT, function (e) { return e[3]; })
+  + HIDDEN22.mine;
+
+const TOTAL_OURS = sumBy(DIFFS, function (d) { return d.ours; })
+  + sumBy(ROUND, function (r) { return r[4]; })
+  + sumBy(EXACT, function (e) { return e[3]; })
+  + HIDDEN22.ours;
+
+const UPLOAD_STEPS = [
+  ["1", "Читаем файл и сопоставляем людей по имени и точке. Не найденных покажем списком — импорт от этого не сломается."],
+  ["2", "Считаем тот же май своими правилами, версии правил берём на 31.05.2026."],
+  ["3", "Кладём два расчёта рядом построчно. Расхождения меньше динара собираем в отдельную группу «округление»."],
+  ["4", "Каждое расхождение выше динара раскрывается до входов и правила. Решение по нему остаётся в протоколе."]
+];
+
+const OUTCOMES = [
+  ["Правило BONUS_STORE уточнено", "Надбавка считается от факта выручки, а не от плана. Версия с 01.06.2026, май не тронут.", "новая версия правила", "accent"],
+  ["Часы Nikola Ilić внесены", "168 ч за май внесены руками с причиной «из IS не приехало». Расхождение с IS осталось в списке.", "исправлены данные", "warn"],
+  ["Vojin Kostić — ошибка в файле", "Оплата за 22 дня при увольнении 12.06. Наш расчёт верен, пересчёт не нужен.", "ошибка на вашей стороне", "err"],
+  ["Доплата до минимума принята", "Marija Obradović: 4 222 доплаты по MIN_TOPUP_RS. Бухгалтер согласился, правило страновое.", "принято как есть", "ok"],
+  ["Трактовка переработки открыта", "Применять ли коэффициент к переработке — вопрос к юристу партнёра. До решения расчёт идёт по действующему правилу.", "открытый вопрос", "warn"]
+];
+
+function fmt(n, dec) {
+  const neg = n < 0, a = Math.abs(n);
+  let s = dec ? a.toFixed(2) : String(Math.round(a));
+  const p = s.split(".");
+  const i = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+  return (neg ? "\u2212" : "") + i + (p[1] ? "," + p[1] : "");
+}
+
+class Component extends DCLogic {
+  state = { tab: null, filter: "diff", open: 0 };
+
+  get tab() { return this.state.tab || this.props.view || "compare"; }
+
+  renderVals() {
+    const self = this;
+    const tab = this.tab;
+    const filter = this.state.filter;
+
+    const chip = function (sel) {
+      const base = { display: "inline-flex", alignItems: "center", gap: "6px", height: "22px", padding: "0 9px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+      if (sel) return Object.assign(base, { background: "var(--surface)", color: "var(--ink)", fontWeight: 600, boxShadow: "var(--sh-xs)" });
+      return Object.assign(base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" });
+    };
+
+    const numCell = function (color, weight, bg, borderRight) {
+      return {
+        textAlign: "right", padding: "0 9px", height: "var(--row)", fontFamily: "var(--font-num)",
+        fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", color: color, fontWeight: weight,
+        background: bg || "transparent", borderBottom: "1px solid var(--line)",
+        borderRight: "1px solid " + (borderRight || "var(--line-2)"), whiteSpace: "nowrap"
+      };
+    };
+
+    const nameCell = {
+      textAlign: "left", padding: "1px 9px", height: "var(--row)", borderBottom: "1px solid var(--line)",
+      borderRight: "1px solid var(--line-strong)", fontSize: "var(--fs-dense)", fontWeight: 400,
+      lineHeight: "15px", overflow: "hidden"
+    };
+
+    const regStyle = function (reg) {
+      return {
+        display: "inline-block", fontFamily: "var(--font-num)", fontSize: "9.5px", lineHeight: "13px",
+        padding: "0 3px", borderRadius: "var(--r-mark)", flex: "0 0 auto",
+        color: REG_COLOR[reg] || "var(--ink-2)",
+        border: "1px solid " + (reg === "ОФ·ДОП" ? "var(--line-control-2)" : (REG_COLOR[reg] || "var(--ink-2)"))
+      };
+    };
+
+    const rows = [];
+
+    const showDiff = filter === "all" || filter === "diff";
+    const showRound = filter === "all" || filter === "round";
+    const showExact = filter === "all" || filter === "exact";
+
+    if (showDiff) {
+      rows.push({
+        isHead: true, isRow: false, isOpen: false,
+        title: "Расхождения выше динара", count: String(DIFFS.length),
+        note: "по деньгам " + (DIFF_MONEY > 0 ? "+" : "") + fmt(DIFF_MONEY) + " · плюс одна строка без расчёта",
+        sum: fmt(DIFF_MONEY - UNCALC_MINE),
+        headStyle: {
+          padding: "7px 11px", background: "var(--warn-soft)", borderTop: "1px solid var(--warn-line)",
+          borderBottom: "1px solid var(--warn-line)"
+        },
+        dotStyle: { width: "8px", height: "8px", borderRadius: "50%", background: "var(--warn-mark)", flex: "0 0 auto" },
+        sumStyle: { marginLeft: "auto", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: "var(--warn-ink)" },
+        detailMine: [], detailOurs: []
+      });
+
+      DIFFS.forEach(function (d, i) {
+        const delta = d.ours - d.mine;
+        const open = self.state.open === i;
+        const tone = d.tone;
+        const c = tone === "err" ? ["var(--err)", "var(--err-soft)", "var(--err-line)"]
+          : tone === "warn" ? ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"]
+            : ["var(--ok)", "var(--ok-soft)", "var(--ok-line)"];
+        rows.push({
+          isHead: false, isRow: true, isOpen: open,
+          name: d.name, reg: d.reg, sub: d.sub, regStyle: regStyle(d.reg),
+          icon: tone === "err" ? "!" : "≠",
+          iconStyle: {
+            display: "inline-grid", placeItems: "center", width: "16px", height: "16px", borderRadius: "50%",
+            background: c[1], border: "1px solid " + c[2], color: c[0],
+            fontFamily: "var(--font-num)", fontSize: "9.5px", fontWeight: 700
+          },
+          iconCell: { textAlign: "center", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)", height: "var(--row)" },
+          nameStyle: nameCell,
+          mine: fmt(d.mine), ours: d.ours === 0 ? "не рассчитано" : fmt(d.ours),
+          mineStyle: numCell("var(--ink-2)", 400),
+          oursStyle: d.ours === 0
+            ? { textAlign: "right", padding: "0 9px", height: "var(--row)", fontSize: "var(--fs-meta)", color: "var(--err)", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-strong)", whiteSpace: "nowrap" }
+            : numCell("var(--ink)", 600, null, "var(--line-strong)"),
+          delta: (delta > 0 ? "+" : "") + fmt(delta),
+          deltaStyle: numCell(delta > 0 ? "var(--warn-ink)" : "var(--err)", 700, "#F4F7FB", "var(--line-strong)"),
+          hasReason: true, noReason: false, reason: d.reason,
+          reasonBtn: {
+            display: "flex", alignItems: "center", gap: "6px", width: "100%", border: 0, background: "transparent",
+            padding: 0, textAlign: "left", fontSize: "var(--fs-meta)", lineHeight: "var(--lh-meta)", color: "var(--ink-2)"
+          },
+          reasonCell: { padding: "0 9px", height: "var(--row)", borderBottom: "1px solid var(--line)", overflow: "hidden" },
+          onOpen: function () { self.setState({ open: open ? -1 : i }); },
+          detailHead: d.head,
+          detailMine: d.detailMine.map(function (m) {
+            return { k: m[0], v: m[1], vStyle: { marginLeft: "auto", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", color: "var(--ink-2)" } };
+          }),
+          detailOurs: d.detailOurs.map(function (o) {
+            return { k: o[0], v: o[1], vStyle: { marginLeft: "auto", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "var(--ink)" } };
+          }),
+          verdictTitle: d.verdictTitle, verdict: d.verdict,
+          verdictStyle: {
+            marginTop: "10px", padding: "10px 12px", borderRadius: "var(--r-block)",
+            background: c[1], border: "1px solid " + c[2], color: c[0]
+          },
+          primary: d.primary,
+          primaryStyle: {
+            flex: "0 0 auto", whiteSpace: "nowrap",
+            height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)",
+            border: "1px solid var(--accent)", background: "var(--accent)", color: "#fff",
+            fontSize: "var(--fs-dense)", fontWeight: 600
+          },
+          hint: d.hint
+        });
+      });
+    }
+
+    if (showExact) {
+      rows.push({
+        isHead: true, isRow: false, isOpen: false,
+        title: "Сошлось до копейки", count: String(EXACT.length), note: "полное совпадение сумм, разбирать нечего",
+        sum: "0,00",
+        headStyle: { padding: "7px 11px", background: "var(--ok-soft)", borderTop: "1px solid var(--ok-line)", borderBottom: "1px solid var(--ok-line)" },
+        dotStyle: { width: "8px", height: "8px", borderRadius: "50%", background: "var(--ok)", flex: "0 0 auto" },
+        sumStyle: { marginLeft: "auto", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: "var(--ok)" },
+        detailMine: [], detailOurs: []
+      });
+      EXACT.forEach(function (e) {
+        rows.push({
+          isHead: false, isRow: true, isOpen: false,
+          name: e[0], reg: e[1], sub: e[2], regStyle: regStyle(e[1]),
+          icon: "=",
+          iconStyle: {
+            display: "inline-grid", placeItems: "center", width: "16px", height: "16px", borderRadius: "50%",
+            background: "var(--ok-soft)", border: "1px solid var(--ok-line)", color: "var(--ok)",
+            fontFamily: "var(--font-num)", fontSize: "9.5px", fontWeight: 700
+          },
+          iconCell: { textAlign: "center", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)", height: "var(--row)" },
+          nameStyle: nameCell,
+          mine: fmt(e[3], true), ours: fmt(e[3], true),
+          mineStyle: numCell("var(--ink-2)", 400),
+          oursStyle: numCell("var(--ink)", 600, null, "var(--line-strong)"),
+          delta: "0,00",
+          deltaStyle: numCell("var(--ok)", 600, "var(--ok-soft)", "var(--line-strong)"),
+          hasReason: false, noReason: true, reason: "совпало до копейки",
+          reasonBtn: {}, reasonCell: { padding: "0 9px", height: "var(--row)", borderBottom: "1px solid var(--line)" },
+          onOpen: function () { }, detailHead: "", detailMine: [], detailOurs: [],
+          verdictTitle: "", verdict: "", verdictStyle: {}, primary: "", primaryStyle: {}, hint: ""
+        });
+      });
+    }
+
+    if (showRound) {
+      rows.push({
+        isHead: true, isRow: false, isOpen: false,
+        title: "Расхождение меньше динара — округление", count: "27", note: "система признаёт своим, объяснять не нужно",
+        sum: fmt(ROUND_ALL, true),
+        headStyle: {
+          padding: "7px 11px", background: "var(--surface-2)", borderTop: "1px solid var(--line-strong)",
+          borderBottom: "1px solid var(--line)"
+        },
+        dotStyle: { width: "8px", height: "8px", borderRadius: "50%", background: "var(--line-control-2)", flex: "0 0 auto" },
+        sumStyle: { marginLeft: "auto", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: "var(--ink-3)" },
+        detailMine: [], detailOurs: []
+      });
+      ROUND.forEach(function (r) {
+        const delta = r[4] - r[3];
+        rows.push({
+          isHead: false, isRow: true, isOpen: false,
+          name: r[0], reg: r[1], sub: r[2], regStyle: regStyle(r[1]),
+          icon: "=",
+          iconStyle: {
+            display: "inline-grid", placeItems: "center", width: "16px", height: "16px", borderRadius: "50%",
+            background: "var(--surface-3)", border: "1px solid var(--line-control)", color: "var(--ink-3)",
+            fontFamily: "var(--font-num)", fontSize: "9.5px", fontWeight: 700
+          },
+          iconCell: { textAlign: "center", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)", height: "var(--row)" },
+          nameStyle: nameCell,
+          mine: fmt(r[3], true), ours: fmt(r[4], true),
+          mineStyle: numCell("var(--ink-3)", 400),
+          oursStyle: numCell("var(--ink-2)", 400, null, "var(--line-strong)"),
+          delta: (delta > 0 ? "+" : "") + fmt(delta, true),
+          deltaStyle: numCell("var(--ink-3)", 400, "var(--surface-2)", "var(--line-strong)"),
+          hasReason: false, noReason: true, reason: "округление до копейки",
+          reasonBtn: {}, reasonCell: { padding: "0 9px", height: "var(--row)", borderBottom: "1px solid var(--line)" },
+          onOpen: function () { }, detailHead: "", detailMine: [], detailOurs: [],
+          verdictTitle: "", verdict: "", verdictStyle: {}, primary: "", primaryStyle: {}, hint: ""
+        });
+      });
+      rows.push({
+        isHead: true, isRow: false, isOpen: false,
+        title: "и ещё 22 строки той же группы", count: "", note: "различаются на копейки, вошли в итог",
+        sum: fmt(HIDDEN22.ours - HIDDEN22.mine, true),
+        headStyle: { padding: "7px 11px", background: "var(--surface-2)", borderBottom: "1px solid var(--line)" },
+        dotStyle: { display: "none" },
+        sumStyle: { marginLeft: "auto", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", color: "var(--ink-3)" },
+        detailMine: [], detailOurs: []
+      });
+    }
+
+    const totalDelta = TOTAL_OURS - TOTAL_MINE;
+
+    return {
+      tabs: [
+        { k: "upload", label: "Загрузка" },
+        { k: "compare", label: "Сравнение" },
+        { k: "done", label: "Итог сверки" }
+      ].map(function (t) {
+        const sel = t.k === tab;
+        const base = { display: "inline-flex", alignItems: "center", height: "var(--control-h-sm)", padding: "0 11px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap" };
+        return {
+          label: t.label, sel: sel, notSel: !sel,
+          on: function () { self.setState({ tab: t.k }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent)", color: "#fff", fontWeight: 600, border: "1px solid var(--accent)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isUpload: tab === "upload", isCompare: tab === "compare", isDone: tab === "done",
+      goCompare: function () { self.setState({ tab: "compare" }); },
+
+      uploadSteps: UPLOAD_STEPS.map(function (s) { return { n: s[0], t: s[1] }; }),
+
+      summary: [
+        { n: "35", unit: "строк", label: "В вашем файле", note: "все сопоставлены с людьми в базе", k: "all", tone: "plain" },
+        { n: "3", unit: "строки", label: "Сошлось до копейки", note: "полное совпадение сумм", k: "exact", tone: "ok" },
+        { n: "27", unit: "строк", label: "Меньше динара", note: "округление, объяснять не нужно", k: "round", tone: "plain" },
+        { n: "5", unit: "строк", label: "Требуют разбора", note: "по деньгам от 2 100 до 4 628 RSD плюс одна строка без расчёта", k: "diff", tone: "warn" }
+      ].map(function (s) {
+        const c = s.tone === "warn" ? "var(--warn-ink)" : s.tone === "ok" ? "var(--ok)" : "var(--ink)";
+        const active = filter === s.k;
+        return {
+          n: s.n, unit: s.unit, label: s.label, note: s.note,
+          on: function () { self.setState({ filter: s.k, open: s.k === "diff" ? 0 : -1 }); },
+          numStyle: { fontFamily: "var(--font-num)", fontSize: "24px", fontWeight: 700, fontVariantNumeric: "tabular-nums", color: c },
+          cellStyle: {
+            display: "block", width: "100%", padding: "11px 13px 12px", border: 0,
+            borderRight: "1px solid var(--line)", borderTop: active ? "2px solid var(--accent)" : "2px solid transparent",
+            background: active ? "var(--accent-soft)" : "var(--surface)", textAlign: "left",
+            transition: "background var(--t-state) var(--ease)"
+          },
+          cellHover: { background: active ? "var(--accent-soft)" : "var(--surface-2)" }
+        };
+      }),
+
+      filters: [
+        { k: "diff", label: "Требуют разбора", cnt: "5" },
+        { k: "round", label: "Округление", cnt: "27" },
+        { k: "exact", label: "Сошлось", cnt: "3" },
+        { k: "all", label: "Все строки", cnt: "35" }
+      ].map(function (f) {
+        const sel = f.k === filter;
+        return {
+          label: f.label, cnt: f.cnt, sel: sel, notSel: !sel,
+          on: function () { self.setState({ filter: f.k, open: f.k === "round" ? -1 : 0 }); },
+          selStyle: chip(true), btnStyle: chip(false),
+          cntStyle: { fontFamily: "var(--font-num)", fontSize: "9.5px", color: "var(--ink-3)" }
+        };
+      }),
+
+      rows: rows,
+
+      totalMine: fmt(TOTAL_MINE, true),
+      totalOurs: fmt(TOTAL_OURS, true),
+      totalDelta: fmt(totalDelta, true),
+      totalDeltaStyle: {
+        textAlign: "right", padding: "0 9px", background: "#E8EDF3", borderTop: "2px solid var(--line-strong)",
+        borderRight: "1px solid var(--line-strong)", fontFamily: "var(--font-num)", fontSize: "13px",
+        fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "var(--warn-ink)", whiteSpace: "nowrap"
+      },
+      totalNote: "из них " + fmt(-UNCALC_MINE) + " — Nikola Ilić, у которого нет часов; по остальным " + (DIFF_MONEY > 0 ? "+" : "") + fmt(DIFF_MONEY) + " и " + fmt(ROUND_ALL, true) + " округления",
+
+      outcomes: OUTCOMES.map(function (o) {
+        const tone = o[3];
+        const c = tone === "err" ? ["var(--err)", "var(--err-soft)", "var(--err-line)"]
+          : tone === "warn" ? ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"]
+            : tone === "accent" ? ["var(--accent)", "var(--accent-soft)", "var(--accent-line)"]
+              : ["var(--ok)", "var(--ok-soft)", "var(--ok-line)"];
+        return {
+          what: o[0], detail: o[1], tag: o[2],
+          markStyle: { display: "inline-block", width: "8px", height: "8px", borderRadius: "50%", background: c[0], marginTop: "5px" },
+          tagStyle: {
+            display: "inline-flex", alignItems: "center", height: "20px", padding: "0 8px", borderRadius: "var(--r-control)",
+            background: c[1], border: "1px solid " + c[2], color: c[0], fontSize: "var(--fs-meta)", fontWeight: 600,
+            width: "fit-content", whiteSpace: "nowrap"
+          }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

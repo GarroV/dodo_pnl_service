@@ -462,7 +462,9 @@ def test_grid_offers_the_upload_to_those_who_may_edit(client, web_env):
     assert 'name="table"' in html, "на табеле нет формы загрузки"
 
 
-def test_grid_does_not_offer_the_upload_without_the_right(client, web_env):
+def test_grid_does_not_offer_the_upload_without_the_right(
+    client, web_env, admin_without_month_rights
+):
     """Кнопка, которая заведомо даст 403, — обещание, которого экран не держит."""
     from conftest import body, login_as
 
@@ -508,7 +510,7 @@ def test_upload_without_a_file_is_refused(client, web_env):
     assert "Файл не выбран" in body(response)
 
 
-def test_upload_is_refused_without_the_right(client, web_env):
+def test_upload_is_refused_without_the_right(client, web_env, admin_without_month_rights):
     """Проверка на сервере остаётся, даже когда формы на экране нет."""
     from conftest import body, login_as
 

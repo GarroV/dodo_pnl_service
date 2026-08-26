@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 70px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 15px 22px 14px">
+      <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Dodo P&amp;L Service</div>
+      <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Онбординг: как войти в систему и довести первый месяц до конца</h1>
+      <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px; max-width: 860px">Онбординг здесь — не тур по кнопкам, а проход по настоящему месяцу. Ниже: путь партнёра от пустой базы до посчитанной ведомости, карта модулей, разбор рабочего экрана по органам управления и первый вход для каждой роли.</div>
+    </header>
+
+    <div style="padding: 20px 22px 0">
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">01</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Путь партнёра: семь шагов до первой ведомости</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Полоса живая: выберите шаг — справа появится, что делать, зачем и где это лежит в интерфейсе. Порядок не декоративный: каждый следующий шаг физически невозможен без предыдущего.</div>
+
+        <div style="display: flex; align-items: stretch; border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <sc-for list="{{ steps }}" as="s" hint-placeholder-count="7">
+            <button onClick="{{ s.on }}" style="{{ s.tabStyle }}" style-hover="{{ s.tabHover }}">
+              <div style="display: flex; align-items: center; gap: 6px">
+                <span style="{{ s.numStyle }}">{{ s.num }}</span>
+                <sc-if value="{{ s.done }}" hint-placeholder-val="{{ false }}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                </sc-if>
+              </div>
+              <div style="{{ s.titleStyle }}">{{ s.title }}</div>
+              <div style="font-size: var(--fs-micro); color: var(--ink-3); margin-top: 2px">{{ s.who }}</div>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 328px; gap: 10px; margin-top: 10px; align-items: start">
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 14px 15px">
+            <div style="display: flex; align-items: baseline; gap: 9px">
+              <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--accent)">Шаг {{ cur.num }}</span>
+              <div style="font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">{{ cur.title }}</div>
+              <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--ink-3)">{{ cur.time }}</span>
+            </div>
+            <div style="font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink); margin-top: 8px">{{ cur.what }}</div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px">
+              <div style="background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: var(--r-block); padding: 10px 11px">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--accent); font-weight: var(--w-semibold); margin-bottom: 3px">Зачем это нужно</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink)">{{ cur.why }}</div>
+              </div>
+              <div style="background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-block); padding: 10px 11px">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 3px">Если пропустить</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ cur.skip }}</div>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Органы управления на этом шаге</div>
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <sc-for list="{{ cur.controls }}" as="c" hint-placeholder-count="3">
+                  <div style="display: grid; grid-template-columns: 210px 1fr; gap: 10px; align-items: baseline">
+                    <div style="display: flex; align-items: center; gap: 6px">
+                      <span style="{{ c.kindStyle }}">{{ c.kind }}</span>
+                      <span style="font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ c.name }}</span>
+                    </div>
+                    <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ c.note }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Где это в продукте</div>
+              <div style="display: flex; flex-direction: column; gap: 5px">
+                <sc-for list="{{ cur.where }}" as="w" hint-placeholder-count="2">
+                  <div style="display: flex; align-items: center; gap: 7px; font-size: var(--fs-dense)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="m9 6 6 6-6 6"></path></svg>
+                    <span>{{ w.path }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Готово, когда</div>
+              <div style="display: flex; align-items: flex-start; gap: 8px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 2px; flex: 0 0 auto"><path d="m5 13 4 4L19 7"></path></svg>
+                <div style="font-size: var(--fs-dense); line-height: var(--lh-dense)">{{ cur.done }}</div>
+              </div>
+            </div>
+            <div style="{{ cur.riskStyle }}">
+              <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 3px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; font-weight: var(--w-semibold)">Здесь чаще всего спотыкаются</div>
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta)">{{ cur.risk }}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">02</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Карта модулей: что где лежит и почему в таком порядке</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Навигация повторяет ход месяца слева направо: сначала вносят часы, потом считают зарплату, потом собирают расходы, в конце получают P&amp;L. Справочники — последними: туда заходят редко, но правки там дорогие.</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px">
+          <sc-for list="{{ modules }}" as="m" hint-placeholder-count="6">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <sc-for list="{{ m.paths }}" as="p" hint-placeholder-count="2"><path d="{{ p.d }}"></path></sc-for>
+                </svg>
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ m.name }}</div>
+                <span style="{{ m.freqStyle }}">{{ m.freq }}</span>
+              </div>
+              <div style="padding: 10px 12px">
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ m.why }}</div>
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px">
+                  <sc-for list="{{ m.items }}" as="i" hint-placeholder-count="4">
+                    <div style="display: flex; align-items: baseline; gap: 7px; font-size: var(--fs-dense)">
+                      <span style="width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); flex: 0 0 auto; margin-top: 6px"></span>
+                      <span>{{ i.t }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">03</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Анатомия рабочего экрана: где какие органы управления и зачем</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Это ведомость периода — самый нагруженный экран продукта. Одиннадцать выносок объясняют каждый орган управления: что делает и почему стоит именно здесь. Все остальные экраны собраны из этих же частей.</div>
+
+        <div style="display: grid; grid-template-columns: 1fr 372px; gap: 10px; align-items: start">
+          <div style="position: relative; border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <header style="height: 46px; display: flex; align-items: center; gap: 16px; padding: 0 14px; background: var(--surface); border-bottom: 1px solid var(--line-control)">
+              <div style="display: flex; align-items: baseline; gap: 6px"><span style="font-weight: var(--w-bold); font-size: var(--fs-body)">Dodo</span><span style="font-size: var(--fs-body); color: var(--accent)">P&amp;L</span></div>
+              <nav style="display: flex; gap: 2px; align-items: center; position: relative">
+                <span style="position: absolute; left: -7px; top: 1px; z-index: 5"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">2</span></span>
+                <span aria-current="page" style="padding: 5px 9px; border-radius: var(--r-control); background: var(--accent-soft); color: var(--accent); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Зарплата</span>
+                <span style="padding: 5px 9px; font-size: var(--fs-dense); color: var(--ink-2)">Табель</span>
+                <span style="padding: 5px 9px; font-size: var(--fs-dense); color: var(--ink-2)">Наличные</span>
+                <span style="padding: 5px 9px; font-size: var(--fs-dense); color: var(--ink-2)">Поставщики</span>
+                <span style="padding: 5px 9px; font-size: var(--fs-dense); color: var(--ink-2)">P&amp;L</span>
+                <span style="padding: 5px 9px; font-size: var(--fs-dense); color: var(--ink-2)">Справочники</span>
+              </nav>
+              <div style="flex: 1"></div>
+              <div style="display: flex; align-items: center; gap: 8px; position: relative">
+                <span style="position: absolute; left: -22px; top: 1px; z-index: 5"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">1</span></span>
+                <div style="text-align: right; line-height: 1.2">
+                  <div style="font-size: var(--fs-meta); font-weight: var(--w-semibold)">Balkan Pizza d.o.o.</div>
+                  <div style="font-size: 10px; color: var(--ink-3)">Сербия · RSD</div>
+                </div>
+                <span style="font-size: 10px; font-weight: var(--w-semibold); color: var(--reg-official); background: var(--accent-soft); border: 1px solid var(--accent-line); padding: 1px 5px; border-radius: var(--r-control)">Бухгалтер</span>
+                <span style="font-size: 10px; font-weight: var(--w-semibold); color: var(--reg-supp); background: #F1ECF9; border: 1px solid #DCD0EE; padding: 1px 5px; border-radius: var(--r-control)">Администратор</span>
+              </div>
+            </header>
+
+            <div style="padding: 11px 14px 0">
+              <div style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; position: relative">
+                <div style="font-size: var(--fs-title); font-weight: var(--w-semibold); letter-spacing: -.015em">Ведомость · Июнь 2026</div>
+                <span style="position: relative; display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 8px; border-radius: var(--r-control); background: var(--accent-soft); border: 1px solid var(--accent-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--accent)">
+                  <span style="position: absolute; right: -9px; top: -10px; z-index: 5"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">3</span></span>
+                  <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--accent)"></span>Посчитан
+                </span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-3)">Расчёт 01.07.2026, 09:14 · норма 176 ч</span>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 7px; position: relative">
+                  <span style="position: absolute; right: 40px; top: -11px; z-index: 5"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">11</span></span>
+                  <span style="display: inline-flex; align-items: center; height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--line-control); border-radius: var(--r-control); font-size: var(--fs-dense)">Пересчитать</span>
+                  <span style="display: inline-flex; align-items: center; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-dense); font-weight: var(--w-semibold)">Утвердить период</span>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; margin-top: 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); width: fit-content; position: relative">
+                <span style="position: absolute; left: -8px; top: -11px; z-index: 5"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">4</span></span>
+                <span style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-right: 1px solid var(--line-2); font-size: var(--fs-dense); color: var(--ink-2)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>Часы закрыты</span>
+                <span style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-right: 1px solid var(--line-2); font-size: var(--fs-dense); color: var(--ink-2)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>Расчёт готов</span>
+                <span style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; background: var(--surface-2); font-size: var(--fs-dense); font-weight: var(--w-semibold)"><span style="width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--accent)"></span>Утверждение</span>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 9px; padding: 7px 11px; background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: var(--r-block); position: relative">
+                <span style="position: absolute; left: -8px; top: -10px; z-index: 5"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--warn); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">5</span></span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Прежде чем утвердить — 3 замечания</span>
+                <span style="font-size: var(--fs-meta); color: var(--warn-ink); opacity: .85">часы после увольнения · переработка выше порога · одна строка заморожена</span>
+              </div>
+
+              <div style="display: flex; align-items: flex-end; gap: 12px; margin-top: 11px; flex-wrap: wrap">
+                <div style="position: relative">
+                  <span style="position: absolute; left: -8px; top: -10px; z-index: 5"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">6</span></span>
+                  <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Срез по регистру</div>
+                  <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+                    <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense); font-weight: var(--w-semibold); box-shadow: var(--sh-xs)">Все</span>
+                    <span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; font-size: var(--fs-dense); color: var(--ink-2)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--reg-official)"></span>Официальный</span>
+                    <span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; font-size: var(--fs-dense); color: var(--ink-2)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--reg-supp)"></span>Дополнительный</span>
+                    <span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; font-size: var(--fs-dense); color: var(--ink-2)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--reg-internal)"></span>Внутренний</span>
+                  </div>
+                </div>
+                <div style="position: relative">
+                  <span style="position: absolute; left: -8px; top: -10px; z-index: 5"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">7</span></span>
+                  <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Точка</div>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); font-size: var(--fs-dense)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11z"></path><path d="M12 12.4a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8z"></path></svg>
+                    Все точки · 14
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                  </span>
+                </div>
+                <div style="margin-left: auto; position: relative">
+                  <span style="position: absolute; right: 62px; top: -10px; z-index: 5"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">8</span></span>
+                  <div style="font-size: 10px; color: var(--ink-3); margin-bottom: 4px; text-align: right">Скачать файл</div>
+                  <div style="display: flex; gap: 5px">
+                    <span style="display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD; font-size: var(--fs-meta); color: var(--ink-2)">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 12 5 5 5-5"></path><path d="M4 21h16"></path></svg>
+                      К выплате <span style="opacity:.55">xlsx</span>
+                    </span>
+                    <span style="display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD; font-size: var(--fs-meta); color: var(--ink-2)">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 12 5 5 5-5"></path><path d="M4 21h16"></path></svg>
+                      Для P&amp;L <span style="opacity:.55">csv</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin: 10px 14px 14px; border: 1px solid var(--line-strong); border-radius: var(--r-block); position: relative">
+              <span style="position: absolute; left: -8px; top: -9px; z-index: 6"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">9</span></span>
+              <span style="position: absolute; right: -9px; top: 52px; z-index: 6"><span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--accent); color: #fff; font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">10</span></span>
+              <table style="width: 100%; table-layout: fixed">
+                <thead>
+                  <tr>
+                    <th rowSpan="2" style="width: 176px; text-align: left; padding: 5px 8px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: 10px; font-weight: var(--w-semibold); color: var(--ink-2); vertical-align: bottom">Сотрудник</th>
+                    <th rowSpan="2" style="width: 48px; text-align: center; padding: 5px 4px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: 10px; font-weight: var(--w-semibold); color: var(--ink-2); vertical-align: bottom">Рег</th>
+                    <th colSpan="2" style="background: var(--surface-3); color: var(--ink-2); font-size: 9.5px; font-weight: var(--w-bold); letter-spacing: .07em; text-transform: uppercase; text-align: left; padding: 0 8px; height: 19px; line-height: 19px; border-bottom: 1px solid var(--line-2); border-right: 1px solid var(--line-strong)">Начисления по часам</th>
+                    <th colSpan="1" style="background: #EDEFF2; color: var(--ink-2); font-size: 9.5px; font-weight: var(--w-bold); letter-spacing: .07em; text-transform: uppercase; text-align: left; padding: 0 8px; height: 19px; line-height: 19px; border-bottom: 1px solid var(--line-2); border-right: 1px solid var(--line-strong)">Удержания</th>
+                    <th rowSpan="2" style="width: 104px; text-align: right; padding: 5px 8px; background: #E4E8EE; border-bottom: 1px solid var(--line-strong); border-left: 1px solid var(--line-strong); font-size: 10px; font-weight: var(--w-semibold); vertical-align: bottom">Итого к выплате</th>
+                  </tr>
+                  <tr>
+                    <th style="text-align: right; padding: 4px 8px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: 10px; font-weight: var(--w-semibold); color: var(--ink-2)">База</th>
+                    <th style="text-align: right; padding: 4px 8px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: 10px; font-weight: var(--w-semibold); color: var(--ink-2)">Переработка</th>
+                    <th style="text-align: right; padding: 4px 8px; background: #EDEFF2; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: 10px; font-weight: var(--w-semibold); color: var(--ink-2)">Взносы</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ demoRows }}" as="r" hint-placeholder-count="4">
+                    <tr style="{{ r.trStyle }}">
+                      <th scope="row" style="{{ r.nameStyle }}">
+                        <div style="display: flex; align-items: center; gap: 6px"><span style="{{ r.markStyle }}"></span><span style="font-weight: var(--w-medium)">{{ r.name }}</span></div>
+                        <div style="font-size: 10px; color: var(--ink-3); line-height: 11px; padding-left: 9px">{{ r.sub }}</div>
+                      </th>
+                      <td style="text-align: center; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)"><span style="{{ r.regStyle }}">{{ r.reg }}</span></td>
+                      <td style="{{ r.numStyle }}">{{ r.base }}</td>
+                      <td style="{{ r.numStyle2 }}">{{ r.ot }}</td>
+                      <td style="{{ r.dedStyle }}">{{ r.ded }}</td>
+                      <td style="{{ r.netStyle }}">{{ r.net }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <th scope="row" style="text-align: left; padding: 0 9px; height: 30px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Итого по периоду</th>
+                    <td style="background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong)"></td>
+                    <td style="text-align: right; padding: 0 8px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-2); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">2 695 575</td>
+                    <td style="text-align: right; padding: 0 8px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">175 138</td>
+                    <td style="text-align: right; padding: 0 8px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums; color: var(--ink-2)">-678 464</td>
+                    <td style="text-align: right; padding: 0 9px; background: #E8EDF3; border-top: 2px solid var(--line-strong); border-left: 1px solid var(--line-strong); font-family: var(--font-num); font-size: 13px; font-weight: var(--w-bold); font-variant-numeric: tabular-nums">2 769 453</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <div style="padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Одиннадцать выносок</div>
+            <sc-for list="{{ callouts }}" as="c" hint-placeholder-count="11">
+              <div style="display: grid; grid-template-columns: 20px 1fr; gap: 9px; padding: 9px 12px; border-bottom: 1px solid var(--line)">
+                <span style="{{ c.badgeStyle }}">{{ c.n }}</span>
+                <div>
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ c.name }}</div>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 1px">{{ c.why }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">04</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Первый вход по роли</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Роль — набор прав, и у каждого набора свой первый экран. Управляющему никогда не показывают ведомость: он заходит на две минуты с телефона. Выберите роль.</div>
+        <div style="display: flex; gap: 6px; margin-bottom: 10px">
+          <sc-for list="{{ roleTabs }}" as="r" hint-placeholder-count="4">
+            <sc-if value="{{ r.sel }}" hint-placeholder-val="{{ false }}">
+              <span aria-current="true" style="{{ r.selStyle }}">{{ r.label }}</span>
+            </sc-if>
+            <sc-if value="{{ r.notSel }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ r.on }}" style="{{ r.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ r.label }}</button>
+            </sc-if>
+          </sc-for>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 300px; gap: 10px; align-items: start">
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 13px 15px">
+            <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 2px">
+              <div style="font-size: var(--fs-title); font-weight: var(--w-semibold)">{{ role.label }}</div>
+              <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ role.cond }}</span>
+            </div>
+            <div style="font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); margin-bottom: 11px">{{ role.first }}</div>
+            <div style="display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+              <sc-for list="{{ role.track }}" as="t" hint-placeholder-count="4">
+                <div style="display: grid; grid-template-columns: 24px 200px 1fr; gap: 10px; align-items: baseline; padding: 9px 11px; background: var(--surface)">
+                  <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ t.n }}</span>
+                  <span style="font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ t.what }}</span>
+                  <span style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ t.why }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 7px">Чего этой роли не видно</div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <sc-for list="{{ role.hidden }}" as="h" hint-placeholder-count="3">
+                <div style="display: flex; align-items: flex-start; gap: 7px; font-size: var(--fs-dense); line-height: var(--lh-dense)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 2px; flex: 0 0 auto"><path d="M6 11h12v9H6z"></path><path d="M9 11V8a3 3 0 0 1 6 0v3"></path></svg>
+                  <span>{{ h.t }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-3); border-top: 1px solid var(--line); margin-top: 10px; padding-top: 9px">Скрытое не объясняет себя: строка, которой человеку не видно, отвечает так же, как несуществующая. Исключение — нехватка права у того, кто вправе выдать его себе сам: там отказ ведёт к выдаче.</div>
+          </div>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 8px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">05</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Как устроен сам онбординг</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line-strong); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+          <sc-for list="{{ principles }}" as="p" hint-placeholder-count="6">
+            <div style="background: var(--surface); padding: 11px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">{{ p.t }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ p.d }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1264,&quot;height&quot;:1000},&quot;step&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;min&quot;:0,&quot;max&quot;:6,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Онбординг&quot;},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;acct&quot;,&quot;mgr&quot;,&quot;dir&quot;,&quot;admin&quot;],&quot;default&quot;:&quot;acct&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Онбординг&quot;}}">
+const STEPS = [
+  {
+    num: "1", title: "Тенант и страна", who: "администратор сети", time: "10 минут", done: true,
+    what: "Создаём партнёра как отдельный тенант и выбираем страну. Вместе со страной приезжает готовый набор: производственный календарь с нормой часов и праздниками, набор правил расчёта, валюта учёта и формат чисел и дат.",
+    why: "Страновая специфика живёт в настройках, а не в коде: вторая страна подключается тем же экраном, без правок продукта.",
+    skip: "Без страны нечему считать норму часов и нечем считать взносы — расчёт не запустится вообще.",
+    doneWhen: "В шапке видно «Balkan Pizza d.o.o. · Сербия · RSD», а в справочниках лежит календарь 2026 года.",
+    risk: "Страну потом не переключить безболезненно: она определяет правила, а правила уже привязаны к утверждённым месяцам.",
+    riskTone: "err",
+    where: [{ path: "Администрирование → Тенанты и страны" }, { path: "Справочники → Производственный календарь" }],
+    controls: [
+      { kind: "выбор", name: "Страна", note: "один список; после первого утверждённого месяца поле становится только для чтения" },
+      { kind: "плашка", name: "Что приедет со страной", note: "перечисляет календарь, правила и валюту до нажатия — сюрпризов нет" }
+    ]
+  },
+  {
+    num: "2", title: "Юрлица и точки", who: "администратор", time: "15 минут", done: true,
+    what: "Заводим юрлицо и три точки: Beograd Vračar, Beograd Novi Beograd, Novi Sad. Точка — это то, на что вешаются часы, наличные расходы и строки P&L.",
+    why: "Все дальнейшие числа живут на точке. Расход без точки — это «нераспределённое», отдельный экран и отдельное правило разнесения.",
+    skip: "Часы некуда вносить, а расходы придётся потом разносить руками задним числом.",
+    doneWhen: "Фильтр «Точка» показывает «Все точки · 3», и у каждой точки есть юрлицо.",
+    risk: "Точки любят размножаться: одна и та же пиццерия заводится дважды под разными названиями. Список показывает город и счётчик людей — это помогает заметить дубль.",
+    riskTone: "warn",
+    where: [{ path: "Справочники → Точки" }, { path: "Справочники → Юрлица" }],
+    controls: [
+      { kind: "таблица", name: "Список точек", note: "город, юрлицо, дата открытия, счётчик сотрудников" },
+      { kind: "кнопка", name: "Добавить точку", note: "главное действие экрана, одно на странице" }
+    ]
+  },
+  {
+    num: "3", title: "Люди и условия найма", who: "бухгалтер партнёра", time: "1–2 часа", done: true,
+    what: "Загружаем свою таблицу с сотрудниками: 35 человек, группы (кухня, курьеры, менеджеры смены, управляющие), точка, ставка, схема расчёта. Отчёт импорта говорит, сколько совпало, создано, обновлено, не найдено и пропущено.",
+    why: "Расчёт берёт условия найма по версии на дату. Поэтому у ставки есть «действует с», а не просто значение: майский расчёт обязан остаться майским даже после апрельской правки.",
+    skip: "Расчёт остановится на первом человеке без действующих условий и не сохранит ничего.",
+    doneWhen: "35 карточек, у каждой есть версия условий, действующая на 01.06.2026.",
+    risk: "Ставку правят «поверх», а не новой версией. Экран этого не даёт: правка всегда создаёт версию с датой.",
+    riskTone: "warn",
+    where: [{ path: "Люди → Сотрудники → Загрузить таблицу" }, { path: "Люди → Карточка → Условия найма" }],
+    controls: [
+      { kind: "загрузка", name: "Импорт xlsx", note: "пунктирная зона и отчёт: совпало / создано / обновлено / не найдено / пропущено" },
+      { kind: "поле", name: "Действует с", note: "моноширинная дата; без неё версию не сохранить" },
+      { kind: "выбор", name: "Схема расчёта", note: "часовая или окладная, персонально человеку или на всю группу" }
+    ]
+  },
+  {
+    num: "4", title: "Правила расчёта", who: "бухгалтер + администратор", time: "30 минут", done: false,
+    what: "Принимаем набор правил Сербии и накладываем переопределения партнёра: топли оброк 300 в день, надбавка за результат от плана точки, порог переработки 24 часа. Переопределение можно поставить на страну, партнёра, группу или отдельного человека.",
+    why: "Правило — это не число в коде, а версия с датой и уровнем. Экран «след расчёта» потом показывает, какое правило и какой версии дало каждую сумму.",
+    skip: "Числа сойдутся один раз и разойдутся в следующем месяце — и объяснить это будет нечем.",
+    doneWhen: "На дату 30.06.2026 действующий набор собран полностью: у каждого правила видно значение, уровень и дату начала.",
+    risk: "Переопределение на человека ставят там, где нужно на группу. Уровень виден в строке правила — но проверять надо на этом шаге, а не в июле.",
+    riskTone: "warn",
+    where: [{ path: "Справочники → Правила расчёта" }, { path: "Справочники → Правила → История версий" }],
+    controls: [
+      { kind: "таблица", name: "Действующий набор на дату", note: "значение, уровень, откуда взялось, с какого числа" },
+      { kind: "переключатель", name: "Уровень переопределения", note: "страна · партнёр · группа · сотрудник" },
+      { kind: "плашка", name: "Отказ по утверждённому месяцу", note: "называет месяц по имени и предлагает перенос разницы" }
+    ]
+  },
+  {
+    num: "5", title: "Роли и доступы", who: "администратор партнёра", time: "20 минут", done: false,
+    what: "Партнёр выдаёт наборы прав: бухгалтеру — расчёт и закрытие месяца, управляющим — их точки, региональному — несколько точек со срезами по регистрам. Право выдавать доступ остаётся у партнёра: бухгалтер ведёт месяц, но не распоряжается доступом и не переписывает правила.",
+    why: "Право складывается из трёх независимых осей: объём точек, глубина (операционка или деньги) и распоряжение (правила и доступ). Управляющий любого масштаба остаётся в операционке — сумм расчёта не видит, сколько бы точек за ним ни было.",
+    skip: "Либо управляющий видит зарплаты всей точки, либо не может внести часы. Оба варианта плохие.",
+    doneWhen: "На экране ролей у каждого человека видно, какие наборы выданы, какие регистры, точки и действия из этого следуют.",
+    risk: "Администрирование отдают бухгалтеру насовсем «чтобы не мешал». Правильно — выдать набор на срок и с причиной: он истечёт сам, а причина останется в истории.",
+    riskTone: "warn",
+    where: [{ path: "Администрирование → Роли и права" }, { path: "Администрирование → История правок" }],
+    controls: [
+      { kind: "таблица", name: "Пользователи и их наборы", note: "несколько наборов в одной строке, каждый своим цветом" },
+      { kind: "диалог", name: "Выдать набор", note: "показывает, что именно откроется: регистры, точки, действия" },
+      { kind: "поле", name: "Срок и причина", note: "временный набор истекает сам: «до 31.07.2026»" }
+    ]
+  },
+  {
+    num: "6", title: "Переезд: параллельный месяц", who: "бухгалтер", time: "полдня", done: false,
+    what: "Загружаем свою таблицу за прошлый месяц. Система считает тот же месяц по своим правилам и показывает построчное сравнение: где сошлось, где нет, на сколько и почему. Расхождения меньше динара собраны в отдельную группу «округление».",
+    why: "Это решающий экран продукта. Бухгалтер не поверит чужому расчёту, пока не увидит свои числа рядом со своими — до копейки и с объяснением каждой разницы.",
+    skip: "Дальше бухгалтер будет вести Excel параллельно системе — и продукт проиграл, хотя всё работает.",
+    doneWhen: "Расхождений выше динара нет либо каждое объяснено входами и правилом.",
+    risk: "Расхождения списывают на «система считает иначе». Каждая строка обязана раскрываться до правил и входов — иначе доверия не будет.",
+    riskTone: "err",
+    where: [{ path: "Зарплата → Период → Сверка с таблицей" }, { path: "Зарплата → Период → След расчёта" }],
+    controls: [
+      { kind: "загрузка", name: "Таблица бухгалтера", note: "xlsx как есть, без подготовки колонок" },
+      { kind: "таблица", name: "Построчное сравнение", note: "ваше · наше · разница; группа «меньше динара — округление» отдельно" },
+      { kind: "раскрытие", name: "Почему разница", note: "тот же приём, что и след расчёта: правила, входы, версии" }
+    ]
+  },
+  {
+    num: "7", title: "Первый настоящий месяц", who: "бухгалтер + управляющие", time: "по ходу месяца", done: false,
+    what: "Часы приезжают из Dodo IS по API вместе с выручкой, сырьём и списаниями. Управляющий проверяет свою точку и вносит руками только то, чего в IS нет или что разошлось с фактом. Дальше бухгалтер закрывает часы по точкам, запускает расчёт, разбирает замечания, утверждает период и выгружает файлы: к выплате и для P&L.",
+    why: "Онбординг заканчивается не обучением, а первой утверждённой ведомостью. Дальше система работает сама, а месяц повторяется по той же полосе из трёх шагов.",
+    skip: "Ничего: это и есть цель.",
+    doneWhen: "Период в состоянии «утверждён», в истории видно кто и когда, файлы выгружены.",
+    risk: "Расхождение между тем, что приехало из Dodo IS, и тем, что было на точке, замечают только при закрытии. Экран расхождений показывает это по ходу месяца — туда и надо смотреть, а не в последний день.",
+    riskTone: "warn",
+    where: [{ path: "Коннектор Dodo IS → Состояние синхронизации" }, { path: "Табель → Сетка часов → Закрыть по точке" }, { path: "Зарплата → Ведомость → Утвердить период" }],
+    controls: [
+      { kind: "полоса", name: "Три шага месяца", note: "часы → расчёт → утверждение; видно, где вы сейчас" },
+      { kind: "таблица", name: "Расхождения с Dodo IS", note: "что приехало по API и что внесли руками — построчно" },
+      { kind: "прогресс", name: "Фоновый расчёт", note: "стадия, счётчик, можно уйти со страницы" },
+      { kind: "диалог", name: "Утверждение", note: "денежное действие: суммы и последствия в тексте" }
+    ]
+  }
+];
+
+const MODULES = [
+  {
+    name: "Табель", freq: "каждый день", why: "Здесь начинается месяц. Часы приезжают из Dodo IS по API; руками правят то, чего в IS нет или что разошлось с фактом. Сетка «сотрудник × тип часа», сохранение на лету, закрытие по каждой точке независимо.",
+    paths: ["M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z", "M8 4v4", "M16 4v4", "M4 11h16"],
+    items: [{ t: "Сетка часов по месяцу и по точке" }, { t: "Расхождения с тем, что приехало из Dodo IS" }, { t: "Подсказки о подозрительных числах" }, { t: "Импорт таблицы партнёра с отчётом" }, { t: "Мобильные правки для управляющего" }]
+  },
+  {
+    name: "Зарплата", freq: "раз в месяц", why: "Ядро продукта. Периоды со статусами, ведомость на 15 компонентов, фоновый расчёт, утверждение и откат с причиной, заморозка спорной строки, правки задним числом.",
+    paths: ["M4 7h16v10H4z", "M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"],
+    items: [{ t: "Ведомость периода — самый нагруженный экран" }, { t: "След расчёта: из каких правил собралась сумма" }, { t: "Отчёт расхождений с прошлым месяцем" }, { t: "Сверка с таблицей бухгалтера" }]
+  },
+  {
+    name: "Наличные", freq: "каждый день", why: "Расход из кассы вносится за две минуты с телефона, стоя на точке. Список с фильтрами и итогами — для бухгалтера, нераспределённое — для расходов юрлица целиком.",
+    paths: ["M4 7h16v10H4z", "M8 11h2", "M14 13h2"],
+    items: [{ t: "Внесение расхода: дата, сумма, статья, точка" }, { t: "Список с фильтрами по точке и статье" }, { t: "Нераспределённое и правило разнесения" }]
+  },
+  {
+    name: "Поставщики и документы", freq: "несколько раз в неделю", why: "Инбокс классификации: очередь того, что система не смогла отнести сама. Человек разбирает пачкой, система запоминает решение и в следующий раз предлагает его сама.",
+    paths: ["M7 3h7l4 4v14H7z", "M14 3v4h4"],
+    items: [{ t: "Инбокс: платёж без статьи и необработанное вложение" }, { t: "Экран подтверждения разбора накладной" }, { t: "Контрагенты и правило разнесения по точкам" }, { t: "Импорт банковской выписки" }]
+  },
+  {
+    name: "P&L и сверки", freq: "раз в месяц", why: "Отчёт по точке и по юрлицу, консолидация по сети в евро, раскрытие любой строки до первичных фактов. Плюс список «прежде чем закрыть»: чего не хватает и что не сходится.",
+    paths: ["M4 20h16", "M7 20V9", "M12 20V5", "M17 20v-7"],
+    items: [{ t: "Отчёт по статьям с долями и сравнением" }, { t: "Раскрытие строки до первичных фактов" }, { t: "Закрытие месяца и полнота данных" }, { t: "Кадровая аналитика: численность и доля ФОТ" }]
+  },
+  {
+    name: "Справочники и права", freq: "редко, но дорого", why: "Люди, группы, точки, статьи, календарь, правила расчёта, роли. Заходят раз в месяц, но каждая правка меняет расчёт — поэтому здесь версии по датам и история изменений.",
+    paths: ["M15 4a5 5 0 1 1-4.6 7L4 17.4V20h3l1-1v-2h2v-2h2l1.2-1.2A5 5 0 0 0 15 4z"],
+    items: [{ t: "Жизненный цикл сотрудника и версии условий" }, { t: "Правила расчёта и уровни переопределения" }, { t: "Наборы прав: кому что видно и кто что может" }, { t: "История правок: кто, что и когда менял" }]
+  }
+];
+
+const CALLOUTS = [
+  ["1", "Тенант и наборы прав", "Чьи это данные и что вам разрешено. Наборы показаны все сразу — «бухгалтер + администратор», если второй выдан временно, — а не одна метка. Стоит в правом верхнем углу: читается один раз при входе и потом только проверяется.", "accent"],
+  ["2", "Навигация по модулям", "Порядок повторяет ход месяца: табель → зарплата → наличные → поставщики → P&L → справочники. Текущий модуль — не ссылка: ссылка на текущую страницу обманывает и мышь, и клавиатуру.", "accent"],
+  ["3", "Статус периода", "От него зависит, что вообще можно делать на экране. «Посчитан» — можно утвердить, «утверждён» — только откатить с причиной. Поэтому статус стоит рядом с заголовком, а не в подвале.", "accent"],
+  ["4", "Три шага месяца", "Часы → расчёт → утверждение. Человек заходит на этот экран девятый раз за день и должен за секунду понять, где он сейчас и что осталось.", "accent"],
+  ["5", "Прежде чем утвердить", "Система сама называет, что мешает закрыть месяц: часы после увольнения, переработка выше порога, замороженная строка. Замечания живут над таблицей, а не в отдельном отчёте, который никто не откроет.", "warn"],
+  ["6", "Срез по регистру", "Три среза: официальный, дополнительный, внутренний. Итоги обязаны сходиться с тем, что человеку видно. Регистр у строки — метка, а не заливка: заливка мешает читать числа.", "accent"],
+  ["7", "Фильтр точек", "Точек в стране бывает пятьдесят, поэтому не кнопка на каждую, а поповер с поиском, городами и счётчиками. Пустые точки честно пишут «нет данных за июнь» — фильтр сразу показывает, где данных нет.", "accent"],
+  ["8", "Выгрузка файлов", "Пунктирная граница, стрелка вниз и расширение файла. Скачивание обязано отличаться видом от переключения вида — иначе человек нажимает одинаковое и получает разное.", "accent"],
+  ["9", "Двухъярусная шапка", "Пятнадцать компонентов выплаты сгруппированы: начисления, надбавки, удержания, итог. Имя закреплено слева, «Итого» — справа; таблица прокручивается внутри себя, страница по горизонтали не едет никогда.", "accent"],
+  ["10", "Сумма, которая раскрывается", "Пунктир под числом означает: можно раскрыть до правил, входов и версий. Это главное обещание продукта бухгалтеру, и приём один и тот же — от зарплатной суммы до строки P&L.", "accent"],
+  ["11", "Денежные действия", "«Утвердить период» — главное действие экрана, одно на страницу, и только через подтверждение с суммами в тексте. Рядом «Пересчитать» — обычное. Опасное, например откат, требует причины и остаётся в истории.", "accent"]
+];
+
+const DEMO = [
+  ["Petar Petrović", "Повар · Кухня · Beograd Vračar", "ОФ·ДОП", "41 280", "1 006", "8 127", "-17 773", "72 451", null],
+  ["Ana Marić", "Перенос разницы за май · Novi Beograd", "ОФ·ДОП", "80 960", "3 016", "2 520", "-24 279", "76 420", "carried"],
+  ["Miloš Stojanović", "Заморожен как спорный · Vračar", "ОФ·ДОП", "76 560", "4 072", "2 741", "-22 452", "72 218", "frozen"],
+  ["Vuk Marković", "Курьер · Курьеры · Beograd Vračar", "ВН", "63 360", "0", "–", "-13 862", "51 943", null]
+];
+
+const ROLES = {
+  acct: {
+    label: "Бухгалтер партнёра",
+    cond: "за компьютером, помногу часов, привык к Excel",
+    first: "Первый экран — список периодов, а не дашборд. Ему нужно понять, в каком состоянии месяцы и что от него ждут прямо сейчас.",
+    track: [
+      ["1", "Список периодов", "Видит статусы всех месяцев сразу: черновик, посчитан, утверждён, переоткрыт"],
+      ["2", "Сверка с его таблицей", "Первое, что он делает по-настоящему: убеждается, что расчёт совпадает с его Excel"],
+      ["3", "След расчёта одной суммы", "Учится раскрывать число до правил — дальше он делает это сам, без поддержки"],
+      ["4", "Закрытие месяца", "Замечания, утверждение, выгрузки. После первого раза цикл повторяется без обучения"]
+    ],
+    hidden: [{ t: "Выдача доступов — это набор администратора партнёра" }, { t: "Точки, юрлица и статьи расходов — только партнёр" }, { t: "Суммы регистров, которые ему не открыты" }]
+  },
+  mgr: {
+    label: "Управляющий точки",
+    cond: "с телефона, стоя на точке, заходит на 2 минуты",
+    first: "Первый экран — три больших действия и ничего больше. Никаких периодов, ведомостей и итогов: он вносит одно и уходит.",
+    track: [
+      ["1", "Проверить часы своей точки", "Часы приезжают из Dodo IS сами: управляющий подтверждает их и правит руками то, чего в IS нет или что разошлось"],
+      ["2", "Внести расход из кассы", "Дата, сумма, статья, комментарий — четыре поля и «Готово»"],
+      ["3", "Сфотографировать накладную", "Фото уходит в инбокс бухгалтера как необработанное вложение — в P&L оно попадёт только после подтверждения"]
+    ],
+    hidden: [{ t: "Ведомость и любые суммы расчёта" }, { t: "Сотрудники других точек" }, { t: "Правила расчёта и роли" }]
+  },
+  dir: {
+    label: "Оперативный директор",
+    cond: "компьютер и телефон, урывками, между точками",
+    first: "Первый экран — состояние сети: какие месяцы закрыты, где что не сходится, где отклонения. Не витрина, а список того, что требует решения.",
+    track: [
+      ["1", "Состояние месяцев по сети", "Один список: где часы не закрыты, где расчёт не запущен, где период висит непосаженным"],
+      ["2", "Отклонения и спорное", "Что выбилось за порог и какие строки заморожены как спорные — его зона решений"]
+    ],
+    hidden: [{ t: "Правила расчёта — только на чтение" }, { t: "Выдача ролей, если право не выдано" }, { t: "Регистры, которые ему не открыты" }]
+  },
+  admin: {
+    label: "Администратор партнёра",
+    cond: "партнёр или оперативный директор — тот, кто отвечает деньгами",
+    first: "Первый экран — справочники и роли. Заходит редко, но каждая правка меняет расчёт, поэтому экран сразу показывает даты действия и историю.",
+    track: [
+      ["1", "Справочники и правила", "Действующий набор на дату, уровни переопределения, версии"],
+      ["2", "Роли и права", "Единственный набор, который выдаёт доступ: кому что открыто и что из этого следует"],
+      ["3", "История правок", "Кто, что и когда менял — единственный способ разобраться в спорной сумме через полгода"]
+    ],
+    hidden: [{ t: "Данные других партнёров — тенанты изолированы" }, { t: "Страновой набор правил Dodo Brands" }, { t: "Действия остаются в истории поимённо, и правка не применится к утверждённому месяцу" }]
+  }
+};
+
+const PRINCIPLES = [
+  ["Онбординг — это первый месяц, а не тур", "Всплывающих подсказок с «далее» нет. Обучение встроено в путь: пустые состояния объясняют следующий шаг, а не факт пустоты."],
+  ["Пустое состояние и есть учитель", "«Июнь ещё не начат» рассказывает, что произойдёт при открытии периода, и предлагает два пути: сетка или загрузка таблицы."],
+  ["Ничего не спрятано за наведением", "Регистр, версия правила, статус периода, чья точка, какие роли — всё написано на экране. Подсказка при наведении не считается объяснением."],
+  ["Прогресс сохраняется", "Со страницы можно уйти и вернуться: шаги онбординга и долгие операции продолжаются на сервере, а не в открытой вкладке."],
+  ["Демо — на английском и с данными", "Гость без регистрации видит заполненный продукт: 35 сотрудников, три точки, четыре месяца. На пустом продукте демонстрировать нечего."],
+  ["Первый месяц ведут вдвоём", "Партнёр и внедренец проходят шаги 1–6 вместе. Шаг 7 партнёр делает сам — это и есть проверка, что онбординг сработал."]
+];
+
+class Component extends DCLogic {
+  state = { step: null, role: null };
+
+  get stepIdx() { return this.state.step === null ? Math.min(6, Math.max(0, this.props.step || 0)) : this.state.step; }
+  get roleKey() { return this.state.role || this.props.role || "acct"; }
+
+  renderVals() {
+    const self = this;
+    const stepIdx = this.stepIdx;
+    const roleKey = this.roleKey;
+    const cur = STEPS[stepIdx];
+    const role = ROLES[roleKey] || ROLES.acct;
+
+    const kindStyle = function (k) {
+      const map = {
+        "кнопка": "var(--accent)", "таблица": "var(--ink-2)", "поле": "var(--ink-2)", "выбор": "var(--ink-2)",
+        "плашка": "var(--warn)", "диалог": "var(--err)", "загрузка": "var(--accent)", "переключатель": "var(--accent)",
+        "раскрытие": "var(--accent)", "полоса": "var(--ink-2)", "прогресс": "var(--ink-2)"
+      };
+      return {
+        display: "inline-block", fontFamily: "var(--font-num)", fontSize: "9.5px", lineHeight: "14px",
+        padding: "0 4px", borderRadius: "var(--r-mark)", color: map[k] || "var(--ink-2)",
+        border: "1px solid currentColor", opacity: .85, whiteSpace: "nowrap"
+      };
+    };
+
+    return {
+      steps: STEPS.map(function (s, i) {
+        const sel = i === stepIdx;
+        return {
+          num: s.num, title: s.title, who: s.who, done: s.done,
+          on: function () { self.setState({ step: i }); },
+          tabStyle: {
+            flex: 1, textAlign: "left", padding: "9px 11px", border: 0,
+            borderRight: i < STEPS.length - 1 ? "1px solid var(--line)" : "0",
+            borderBottom: sel ? "2px solid var(--accent)" : "2px solid transparent",
+            background: sel ? "var(--accent-soft)" : "var(--surface)",
+            transition: "background var(--t-state) var(--ease)"
+          },
+          tabHover: { background: sel ? "var(--accent-soft)" : "var(--surface-2)" },
+          numStyle: {
+            display: "inline-grid", placeItems: "center", width: "17px", height: "17px", borderRadius: "50%",
+            background: sel ? "var(--accent)" : (s.done ? "var(--ok-soft)" : "var(--surface-3)"),
+            color: sel ? "#fff" : (s.done ? "var(--ok)" : "var(--ink-3)"),
+            border: sel ? "0" : "1px solid " + (s.done ? "var(--ok-line)" : "var(--line-control)"),
+            fontFamily: "var(--font-num)", fontSize: "9.5px", fontWeight: 700
+          },
+          titleStyle: {
+            fontSize: "var(--fs-dense)", fontWeight: sel ? 600 : 500,
+            color: sel ? "var(--accent)" : "var(--ink)", marginTop: "5px", lineHeight: "16px"
+          }
+        };
+      }),
+
+      cur: {
+        num: cur.num, title: cur.title, time: cur.time, what: cur.what, why: cur.why, skip: cur.skip,
+        done: cur.doneWhen, risk: cur.risk,
+        where: cur.where, controls: cur.controls.map(function (c) { return { kind: c.kind, name: c.name, note: c.note, kindStyle: kindStyle(c.kind) }; }),
+        riskStyle: {
+          background: cur.riskTone === "err" ? "var(--err-soft)" : "var(--warn-soft)",
+          border: "1px solid " + (cur.riskTone === "err" ? "var(--err-line)" : "var(--warn-line)"),
+          borderRadius: "var(--r-block)", padding: "10px 12px",
+          color: cur.riskTone === "err" ? "var(--err)" : "var(--warn-ink)"
+        }
+      },
+
+      modules: MODULES.map(function (m) {
+        return {
+          name: m.name, why: m.why,
+          paths: m.paths.map(function (d) { return { d: d }; }),
+          items: m.items,
+          freq: m.freq,
+          freqStyle: {
+            marginLeft: "auto", fontFamily: "var(--font-num)", fontSize: "9.5px", color: "var(--ink-3)",
+            border: "1px solid var(--line-control)", borderRadius: "var(--r-mark)", padding: "0 4px", lineHeight: "14px", whiteSpace: "nowrap"
+          }
+        };
+      }),
+
+      callouts: CALLOUTS.map(function (c) {
+        return {
+          n: c[0], name: c[1], why: c[2],
+          badgeStyle: {
+            display: "inline-grid", placeItems: "center", width: "18px", height: "18px", borderRadius: "50%",
+            background: c[3] === "warn" ? "var(--warn)" : "var(--accent)", color: "#fff",
+            fontFamily: "var(--font-num)", fontSize: "9.5px", fontWeight: 700, marginTop: "1px"
+          }
+        };
+      }),
+
+      demoRows: DEMO.map(function (r) {
+        const carried = r[8] === "carried", frozen = r[8] === "frozen";
+        const num = { textAlign: "right", padding: "0 8px", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)", background: carried ? "var(--warn-soft)" : "transparent" };
+        return {
+          name: r[0], sub: r[1], reg: r[2], base: r[3], night: r[4], ot: r[5], ded: r[6], net: r[7],
+          trStyle: { background: carried ? "var(--warn-soft)" : "transparent" },
+          nameStyle: {
+            textAlign: "left", padding: "1px 9px", height: "var(--row)", borderBottom: "1px solid var(--line)",
+            borderRight: "1px solid var(--line-strong)", fontSize: "var(--fs-dense)", fontWeight: 400, lineHeight: "14px", overflow: "hidden"
+          },
+          markStyle: { width: "3px", height: "14px", borderRadius: "1px", flex: "0 0 auto", background: carried ? "var(--warn-mark)" : (frozen ? "var(--line-control-2)" : "transparent") },
+          regStyle: {
+            display: "inline-block", fontFamily: "var(--font-num)", fontSize: "9.5px", lineHeight: "13px", padding: "0 3px",
+            borderRadius: "var(--r-mark)", color: r[2] === "ВН" ? "var(--reg-internal)" : "var(--ink-2)",
+            border: "1px solid " + (r[2] === "ВН" ? "var(--reg-internal)" : "var(--line-control-2)")
+          },
+          numStyle: num,
+          numStyle2: Object.assign({}, num, { borderRight: "1px solid var(--line-strong)", color: frozen ? "var(--warn-ink)" : "var(--ink)", boxShadow: frozen ? "inset 0 -2px 0 var(--warn-mark)" : "none" }),
+          dedStyle: Object.assign({}, num, { color: "var(--ink-2)", background: carried ? "var(--warn-soft)" : "#FAFAFB", borderRight: "1px solid var(--line-strong)" }),
+          netStyle: {
+            textAlign: "right", padding: "0 9px", fontFamily: "var(--font-num)", fontSize: "13px", fontWeight: 600,
+            fontVariantNumeric: "tabular-nums", borderBottom: "1px solid var(--line)", borderLeft: "1px solid var(--line-strong)",
+            background: carried ? "var(--warn-soft)" : "transparent", whiteSpace: "nowrap",
+            borderBottomStyle: "solid", textDecoration: "underline dotted var(--ink-3)", textUnderlineOffset: "3px"
+          }
+        };
+      }),
+
+      roleTabs: Object.keys(ROLES).map(function (k) {
+        const sel = k === roleKey;
+        const base = {
+          display: "inline-flex", alignItems: "center", height: "var(--control-h-sm)", padding: "0 11px",
+          borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap"
+        };
+        return {
+          label: ROLES[k].label, sel: sel, notSel: !sel,
+          on: function () { self.setState({ role: k }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent)", color: "#fff", fontWeight: 600, border: "1px solid var(--accent)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+
+      role: {
+        label: role.label, cond: role.cond, first: role.first,
+        track: role.track.map(function (t) { return { n: t[0], what: t[1], why: t[2] }; }),
+        hidden: role.hidden
+      },
+
+      principles: PRINCIPLES.map(function (p) { return { t: p[0], d: p[1] }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

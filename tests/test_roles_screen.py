@@ -170,7 +170,9 @@ def test_the_accountant_becomes_an_administrator_too(client, web_env):
     assert client.get("/roles/").status_code == 403, "роль не снялась"
 
 
-def test_the_refusal_shows_the_way_out_to_the_one_who_leads_roles(client, web_env):
+def test_the_refusal_shows_the_way_out_to_the_one_who_leads_roles(
+    client, web_env, admin_without_month_rights
+):
     """T172: администратору отказ говорит, что делать, а не «попросите кого-то».
 
     Именно на этой формулировке владелец и встал: он вошёл администратором,

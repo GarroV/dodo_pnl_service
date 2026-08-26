@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --api:#2E6B6B; --api-soft:#E7F1F1; --api-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, select, textarea { font:inherit; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 6</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Наличные расходы: реестр, касса точки, ввод с телефона</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Наличный расход — два независимых факта, а не один статус. Деньги ушли из кассы в тот момент, когда управляющий их отдал. В P&amp;L расход попадает позже, когда бухгалтер подтвердит документ. Разрыв между этими двумя цифрами показан всегда.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isRegister }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 14px 13px; margin-bottom: 10px">
+          <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Наличные расходы <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Июнь 2026</h2>
+            <span style="display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 8px; border-radius: var(--r-control); background: var(--surface-3); border: 1px solid var(--line-control); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--ink-2)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--ink-2)"></span>Открыт</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-3)">вносится руками, в том числе с телефона · из Dodo IS не приходит</span>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+              <button onClick="{{ toggleAdd }}" style="{{ addBtnStyle }}">{{ addBtnLabel }}</button>
+              <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD; color: var(--ink-2); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)', borderColor: 'var(--ink-3)' }">Выгрузить <span style="opacity: .55">.xlsx</span></button>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: flex-end; gap: 14px; margin-top: 12px; flex-wrap: wrap">
+            <div>
+              <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Точка</div>
+              <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+                <sc-for list="{{ pointOpts }}" as="p" hint-placeholder-count="4">
+                  <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}">
+                    <span aria-current="true" style="{{ p.selStyle }}">{{ p.label }}<span style="{{ p.badgeStyle }}">{{ p.badge }}</span></span>
+                  </sc-if>
+                  <sc-if value="{{ p.notSel }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ p.on }}" style="{{ p.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ p.label }}<span style="{{ p.badgeStyle }}">{{ p.badge }}</span></button>
+                  </sc-if>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Показать</div>
+              <div style="display: flex; gap: 6px">
+                <sc-for list="{{ filterOpts }}" as="f" hint-placeholder-count="3">
+                  <button onClick="{{ f.on }}" style="{{ f.style }}">{{ f.label }}<span style="{{ f.countStyle }}">{{ f.count }}</span></button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px">
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 11px 14px 12px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Ушло из кассы</div>
+            <div style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; margin-top: 5px">−{{ cashTotal }}</div>
+            <div style="font-size: 10px; color: var(--ink-3); margin-top: 3px">{{ cashCount }} · факт кассы, не зависит от документов</div>
+          </div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 11px 14px 12px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Принято в P&amp;L</div>
+            <div style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; margin-top: 5px; color: var(--ok)">−{{ pnlTotal }}</div>
+            <div style="font-size: 10px; color: var(--ink-3); margin-top: 3px">{{ pnlRule }}</div>
+          </div>
+          <div style="{{ gapCardStyle }}">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Разрыв</div>
+            <div style="{{ gapNumStyle }}">{{ gapTotal }}</div>
+            <div style="font-size: 10px; color: var(--ink-3); margin-top: 3px">{{ gapNote }}</div>
+          </div>
+        </div>
+
+        <sc-if value="{{ adding }}" hint-placeholder-val="{{ false }}">
+          <div style="background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: var(--r-block); padding: 12px 14px 13px; margin-bottom: 10px">
+            <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px">
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--accent)">Новый расход наличными</span>
+              <span style="font-size: var(--fs-meta); color: var(--ink-2)">строка попадёт в кассу сразу после сохранения</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 96px 1fr 1.4fr 140px auto; gap: 8px; align-items: end">
+              <div>
+                <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Дата</div>
+                <input value="30.06.2026" style="width: 100%; height: var(--control-h); padding: 0 8px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-family: var(--font-num); font-size: var(--fs-dense)">
+              </div>
+              <div>
+                <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Статья</div>
+                <select style="width: 100%; height: var(--control-h); padding: 0 6px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)">
+                  <option>Хозрасходы</option>
+                  <option>Ремонт и обслуживание</option>
+                  <option>Такси и доставка</option>
+                  <option>Канцелярия</option>
+                  <option>Вода и напитки</option>
+                  <option>Прочее</option>
+                </select>
+              </div>
+              <div>
+                <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Кому и за что</div>
+                <input placeholder="Maxi — моющие средства" style="width: 100%; height: var(--control-h); padding: 0 8px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)">
+              </div>
+              <div>
+                <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Сумма</div>
+                <div style="display: flex; align-items: center; height: var(--control-h); border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); overflow: hidden">
+                  <input placeholder="0,00" style="flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; padding: 0 8px; text-align: right; font-family: var(--font-num); font-size: var(--fs-lead); font-variant-numeric: tabular-nums; background: transparent">
+                  <span style="padding: 0 8px; height: 100%; display: grid; place-items: center; background: var(--surface-3); border-left: 1px solid var(--line-control); font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2)">RSD</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 6px">
+                <button style="height: var(--control-h); padding: 0 12px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense); color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px" style-hover="{ borderColor: 'var(--accent)', color: 'var(--accent)' }">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"></path><circle cx="12" cy="13" r="3.2"></circle></svg>
+                  Чек
+                </button>
+                <button style="height: var(--control-h); padding: 0 14px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-body); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">Записать</button>
+              </div>
+            </div>
+            <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 9px">Без чека расход всё равно сохранится — деньги уже потрачены. Он попадёт в кассу и повиснет в разрыве до подтверждения документа.</div>
+          </div>
+        </sc-if>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: auto; background: var(--surface); max-height: 470px">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <th scope="col" style="position: sticky; top: 0; z-index: 3; background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 78px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Дата</th>
+                <th scope="col" style="position: sticky; top: 0; z-index: 3; background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 118px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Точка</th>
+                <th scope="col" style="position: sticky; top: 0; z-index: 3; background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 150px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Статья</th>
+                <th scope="col" style="position: sticky; top: 0; z-index: 3; background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Кому и за что</th>
+                <th scope="col" style="position: sticky; top: 0; z-index: 3; background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: right; width: 116px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Сумма, RSD</th>
+                <th scope="col" style="position: sticky; top: 0; z-index: 3; background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 128px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Внёс</th>
+                <th scope="col" style="position: sticky; top: 0; z-index: 3; background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 126px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Документ</th>
+                <th scope="col" style="position: sticky; top: 0; z-index: 3; background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 104px; border-bottom: 1px solid var(--line-strong)">В P&amp;L</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="14">
+                <tr style="{{ r.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <td style="{{ r.dateStyle }}">{{ r.date }}</td>
+                  <td style="{{ r.textStyle }}">{{ r.point }}</td>
+                  <td style="{{ r.textStyle }}">{{ r.article }}</td>
+                  <td style="{{ r.textStyle }}">{{ r.what }}</td>
+                  <td style="{{ r.sumStyle }}">{{ r.sum }}</td>
+                  <td style="{{ r.whoStyle }}">{{ r.who }}</td>
+                  <td style="{{ r.cellStyle }}"><span style="{{ r.docStyle }}">{{ r.docLabel }}</span></td>
+                  <td style="{{ r.lastCellStyle }}"><span style="{{ r.pnlStyle }}">{{ r.pnlLabel }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" colspan="4" style="position: sticky; bottom: 0; z-index: 4; text-align: left; padding: 0 9px; height: 32px; background: var(--surface-2); border-top: 2px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ footLabel }}</th>
+                <td style="position: sticky; bottom: 0; z-index: 4; background: #E8EDF3; border-top: 2px solid var(--line-strong); text-align: right; padding: 0 8px; height: 32px; font-family: var(--font-num); font-size: 13px; font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ footSum }}</td>
+                <td colspan="3" style="position: sticky; bottom: 0; z-index: 4; background: var(--surface-2); border-top: 2px solid var(--line-strong); padding: 0 9px; font-size: var(--fs-meta); color: var(--ink-2)">{{ footNote }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--warn-soft); border: 1px solid var(--warn-line); margin-top: 10px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+          <div>
+            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Нерешённый вопрос, который стоит закрыть до разработки</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink); margin-top: 3px">Сейчас расход без подтверждённого документа не попадает в P&amp;L. Тогда P&amp;L занижен на {{ gapPlain }}, и партнёр видит прибыль больше реальной. Обратный вариант — принимать расход сразу, а документ требовать до закрытия месяца: P&amp;L честный, но в него попадают суммы, которых бухгалтер ещё не видел. Переключатель <b>«Расход в P&amp;L без документа»</b> в панели настроек показывает оба поведения на этих же данных.</div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCash }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Касса точки <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Beograd Vračar</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">июнь 2026 · расчётный остаток против фактического пересчёта</span>
+        </div>
+
+        <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; margin-bottom: 10px">
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--line)">
+            <sc-for list="{{ boxFacts }}" as="b" hint-placeholder-count="5">
+              <div style="{{ b.style }}">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">{{ b.label }}</div>
+                <div style="{{ b.numStyle }}">{{ b.value }}</div>
+                <div style="font-size: 10px; color: var(--ink-3); margin-top: 2px">{{ b.note }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--surface-2)">
+            <div style="padding: 11px 14px 12px; border-right: 1px solid var(--line)">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Расчётный остаток на 30.06</div>
+              <div style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; margin-top: 5px">{{ calcEnd }}</div>
+              <div style="font-size: 10px; color: var(--ink-3); margin-top: 2px">выведен из фактов выше, не константа</div>
+            </div>
+            <div style="padding: 11px 14px 12px; border-right: 1px solid var(--line)">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Пересчитано в кассе</div>
+              <div style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; margin-top: 5px">{{ countedEnd }}</div>
+              <div style="font-size: 10px; color: var(--ink-3); margin-top: 2px">30.06, 23:40 · Petar Petrović</div>
+            </div>
+            <div style="padding: 11px 14px 12px; background: var(--err-soft)">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--err); font-weight: var(--w-semibold)">Расхождение</div>
+              <div style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; margin-top: 5px; color: var(--err)">{{ deltaEnd }}</div>
+              <div style="font-size: 10px; color: var(--err); margin-top: 2px">то же расхождение с 27.06 · не объяснено</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+            <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Последние 8 дней</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-2)">пересчёт делают не каждый день — в дни без пересчёта расхождение посчитать не из чего</span>
+          </div>
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 84px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Дата</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: right; width: 148px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Наличная выручка</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: right; width: 132px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Расходы</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: right; width: 132px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Инкассация</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: right; width: auto; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Расчётный остаток</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: right; width: 132px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Пересчёт</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 8px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: right; width: 116px; border-bottom: 1px solid var(--line-strong)">Δ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ days }}" as="d" hint-placeholder-count="8">
+                <tr style="{{ d.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <td style="{{ d.dateStyle }}">{{ d.date }}</td>
+                  <td style="{{ d.numStyle }}">{{ d.revenue }}</td>
+                  <td style="{{ d.expStyle }}">{{ d.expense }}</td>
+                  <td style="{{ d.numStyle }}">{{ d.collection }}</td>
+                  <td style="{{ d.calcStyle }}">{{ d.calc }}</td>
+                  <td style="{{ d.countedStyle }}">{{ d.counted }}</td>
+                  <td style="{{ d.deltaStyle }}">{{ d.delta }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--surface); border: 1px solid var(--line-strong); margin-top: 10px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+          <div style="flex: 1">
+            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Расхождение не исправляется правкой расчёта</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">Подогнать расчётный остаток под пересчёт нельзя: тогда пропадёт сам факт недостачи. Разницу закрывают отдельной записью с причиной — недостача, найденный неучтённый расход или ошибка пересчёта. Запись видна в истории кассы и в P&amp;L отдельной строкой.</div>
+          </div>
+          <div style="display: flex; gap: 6px; flex: 0 0 auto">
+            <button style="height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">История кассы</button>
+            <button style="height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-dense); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">{{ explainLabel }}</button>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Управляющий, 375 px</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Отдал деньги мастеру, стоя у печи. Вносит на месте, иначе не внесёт никогда. Сумм расчёта не видит — только свою кассу.</span>
+        </div>
+
+        <div style="display: flex; gap: 14px; align-items: flex-start">
+
+          <div style="width: 375px; flex: 0 0 auto">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">1 · Касса точки</div>
+            <div style="border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; background: var(--surface); box-shadow: var(--sh-xs)">
+              <div style="padding: 12px 15px 13px; border-bottom: 1px solid var(--line)">
+                <div style="display: flex; align-items: baseline; gap: 8px">
+                  <span style="font-size: var(--fs-lead); font-weight: var(--w-semibold)">Vračar</span>
+                  <span style="font-size: var(--fs-meta); color: var(--ink-3); margin-left: auto">30 июня</span>
+                </div>
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-top: 12px">Наличных в кассе сейчас</div>
+                <div style="font-family: var(--font-num); font-size: 30px; font-weight: var(--w-bold); font-variant-numeric: tabular-nums; margin-top: 2px">{{ mobileCash }}</div>
+                <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 4px">{{ mobileLimitLine }}</div>
+                <div style="height: 5px; border-radius: 999px; background: var(--surface-3); margin-top: 8px; overflow: hidden">
+                  <div style="{{ mobileLimitBar }}"></div>
+                </div>
+              </div>
+              <div style="padding: 11px 15px 4px">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Сегодня внесено</div>
+              </div>
+              <sc-for list="{{ mobileToday }}" as="m" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 15px; border-bottom: 1px solid var(--line); min-height: 52px">
+                  <div style="flex: 1; min-width: 0">
+                    <div style="font-size: var(--fs-body); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ m.what }}</div>
+                    <div style="font-size: var(--fs-meta); color: var(--ink-3); margin-top: 1px">{{ m.meta }}</div>
+                  </div>
+                  <div style="text-align: right; flex: 0 0 auto">
+                    <div style="font-family: var(--font-num); font-size: var(--fs-lead); font-variant-numeric: tabular-nums">−{{ m.sum }}</div>
+                    <span style="{{ m.docStyle }}">{{ m.docLabel }}</span>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="padding: 13px 15px 15px">
+                <button style="width: 100%; min-height: var(--tap-min); border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-lead); font-weight: var(--w-semibold); display: inline-flex; align-items: center; justify-content: center; gap: 8px" style-hover="{ background: '#24589F' }">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                  Внести расход
+                </button>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 9px">Инкассацию и выручку вы не вносите — они приходят из Dodo IS.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width: 375px; flex: 0 0 auto">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">2 · Ввод</div>
+            <div style="border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; background: var(--surface); box-shadow: var(--sh-xs)">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 11px 15px; border-bottom: 1px solid var(--line)">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+                <span style="font-size: var(--fs-lead); font-weight: var(--w-semibold)">Расход наличными</span>
+              </div>
+              <div style="padding: 14px 15px 15px">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 5px">Сколько отдали</div>
+                <div style="display: flex; align-items: center; height: 56px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--surface); overflow: hidden; box-shadow: 0 0 0 3px rgba(31,78,156,.14)">
+                  <input value="{{ enteredSum }}" style="flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; padding: 0 12px; text-align: right; font-family: var(--font-num); font-size: 26px; font-variant-numeric: tabular-nums; background: transparent; color: var(--ink)">
+                  <span style="padding: 0 12px; height: 100%; display: grid; place-items: center; background: var(--surface-3); border-left: 1px solid var(--line-control); font-family: var(--font-num); font-size: var(--fs-dense); color: var(--ink-2)">RSD</span>
+                </div>
+
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 15px 0 6px">Статья</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                  <sc-for list="{{ mobileArticles }}" as="a" hint-placeholder-count="6">
+                    <button onClick="{{ a.on }}" style="{{ a.style }}">{{ a.label }}</button>
+                  </sc-for>
+                </div>
+
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 15px 0 5px">Кому и за что</div>
+                <input value="{{ enteredWhat }}" style="width: 100%; min-height: var(--tap-min); padding: 0 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-lead)">
+
+                <div style="display: flex; align-items: center; gap: 11px; margin-top: 15px; padding: 11px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD">
+                  <div style="width: 46px; height: 46px; border-radius: var(--r-control); background: var(--surface-3); border: 1px solid var(--line-control); display: grid; place-items: center; flex: 0 0 auto">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"></path><circle cx="12" cy="13" r="3.2"></circle></svg>
+                  </div>
+                  <div style="flex: 1; min-width: 0">
+                    <div style="font-size: var(--fs-body); font-weight: var(--w-medium)">Снять чек</div>
+                    <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 1px">Фото уйдёт бухгалтеру во вложения. Расход запишется и без него.</div>
+                  </div>
+                </div>
+
+                <button style="width: 100%; min-height: var(--tap-min); margin-top: 14px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-lead); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">Записать расход</button>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 9px; text-align: center">После записи касса уменьшится сразу</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width: 375px; flex: 0 0 auto">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">3 · Записано</div>
+            <div style="border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; background: var(--surface); box-shadow: var(--sh-xs)">
+              <div style="padding: 24px 15px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; border-bottom: 1px solid var(--line)">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--ok-soft); border: 1px solid var(--ok-line); display: grid; place-items: center">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                </div>
+                <div style="font-size: var(--fs-title); font-weight: var(--w-semibold); text-align: center">Расход записан</div>
+                <div style="font-family: var(--font-num); font-size: 24px; font-weight: var(--w-bold); font-variant-numeric: tabular-nums">−{{ enteredSum }} <span style="font-size: var(--fs-dense); font-weight: var(--w-regular); color: var(--ink-2)">RSD</span></div>
+                <div style="font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); text-align: center">Ремонт и обслуживание · {{ enteredWhat }}</div>
+              </div>
+              <div style="padding: 13px 15px">
+                <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: var(--r-control); background: var(--ok-soft); border: 1px solid var(--ok-line)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="m5 13 4 4L19 7"></path></svg>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ok)">Касса Vračar уменьшена. Сейчас {{ mobileCashAfter }}</div>
+                </div>
+                <div style="display: flex; align-items: flex-start; gap: 9px; padding: 10px 12px; border-radius: var(--r-control); background: var(--warn-soft); border: 1px solid var(--warn-line); margin-top: 8px">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink)">Чек ушёл бухгалтеру. Пока он не подтверждён, расход не попадёт в отчёт партнёра.</div>
+                </div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 11px">Вам не показывают, как этот расход повлияет на прибыль точки — это не ваш доступ. Видите только кассу.</div>
+                <button style="width: 100%; min-height: var(--tap-min); margin-top: 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-lead)" style-hover="{ background: 'var(--surface-3)' }">Внести ещё один</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;requirePaperForPnl&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Правила учёта&quot;},&quot;dailyCashLimit&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:30000,&quot;min&quot;:5000,&quot;max&quot;:100000,&quot;step&quot;:5000,&quot;unit&quot;:&quot;RSD&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Правила учёта&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal' | 'compact'&quot;,&quot;section&quot;:&quot;Вид&quot;}}">
+const POINTS = { vracar: "Beograd Vračar", novibg: "Novi Beograd", novisad: "Novi Sad" };
+const POINT_ORDER = ["vracar", "novibg", "novisad"];
+
+/* дата, точка, статья, кому и за что, сумма, кто внёс, документ: ok | wait | none */
+const ROWS = [
+  ["02.06", "vracar",  "Хозрасходы",            "Maxi — моющие средства",           4280,  "Petar Petrović",   "ok"],
+  ["03.06", "novibg",  "Такси и доставка",      "CarGo — доставка теста",           1850,  "Milica Jovanović", "ok"],
+  ["05.06", "vracar",  "Ремонт и обслуживание", "Мастер — печь, замена ТЭНа",       38500, "Petar Petrović",   "wait"],
+  ["07.06", "novisad", "Канцелярия",            "Office Shop — чековая лента",      2940,  "Miloš Stojanović", "ok"],
+  ["09.06", "vracar",  "Вода и напитки",        "Knjaz Miloš — вода, 20 упаковок",  6720,  "Petar Petrović",   "none"],
+  ["11.06", "novibg",  "Хозрасходы",            "Рынок — расходники без чека",      3150,  "Milica Jovanović", "none"],
+  ["12.06", "novisad", "Прочее",                "Вывоз картона",                    5000,  "Miloš Stojanović", "ok"],
+  ["17.06", "novibg",  "Такси и доставка",      "CarGo — перевозка между точками",  2400,  "Milica Jovanović", "ok"],
+  ["19.06", "novisad", "Хозрасходы",            "Maxi — перчатки, салфетки",        4610,  "Miloš Stojanović", "ok"],
+  ["22.06", "vracar",  "Прочее",                "Мойка витрин",                     7500,  "Petar Petrović",   "wait"],
+  ["24.06", "novibg",  "Вода и напитки",        "Coca-Cola — закуп на точке",       9300,  "Milica Jovanović", "ok"],
+  ["26.06", "vracar",  "Канцелярия",            "Печать меню",                      3200,  "Petar Petrović",   "none"],
+  ["29.06", "novisad", "Ремонт и обслуживание", "Замена лампы в вывеске",           8900,  "Miloš Stojanović", "ok"],
+  ["30.06", "vracar",  "Хозрасходы",            "Maxi — салфетки, перчатки",        2100,  "Petar Petrović",   "ok"],
+  ["30.06", "vracar",  "Прочее",                "Курьер — форма из химчистки",      3200,  "Petar Petrović",   "none"],
+  ["30.06", "vracar",  "Ремонт и обслуживание", "Сантехник — течь под мойкой",      12000, "Petar Petrović",   "wait"]
+];
+
+/* Строка, которую управляющий вносит с телефона на вкладке 3.
+   Экран 1 показывает кассу ДО неё, экран 3 — ПОСЛЕ. */
+const ENTERED = { date: "30.06", what: "Сантехник — течь под мойкой" };
+
+/* день, наличная выручка, инкассация, пересчёт (null — не считали).
+   Расход не задаётся здесь: он берётся из реестра по дате и точке. */
+const DAY_START = 71400;
+const DAYS = [
+  ["23.06", 52300, 40000,  83700],
+  ["24.06", 48900, 0,      null],
+  ["25.06", 61200, 120000, 73800],
+  ["26.06", 44500, 0,      null],
+  ["27.06", 78400, 150000, 41200],
+  ["28.06", 69100, 0,      null],
+  ["29.06", 57300, 100000, null],
+  ["30.06", 55400, 40000,  65700]
+];
+
+const MONTH_REVENUE = 1246800;
+const MONTH_COLLECTION = 1160000;
+
+const MOBILE_ARTICLES = ["Хозрасходы", "Ремонт и обслуживание", "Такси и доставка", "Канцелярия", "Вода и напитки", "Прочее"];
+
+const DOC = {
+  ok:   ["Чек принят",  "var(--ok)",       "var(--ok-soft)",   "var(--ok-line)",   "solid"],
+  wait: ["Фото, ждёт",  "var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)", "dashed"],
+  none: ["Документа нет", "var(--ink-2)",  "var(--surface-3)", "var(--line-control)", "dashed"]
+};
+
+function fmt(n) {
+  return Math.abs(n).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function signed(n) {
+  return (n < 0 ? "\u2212" : "") + fmt(n);
+}
+
+class Component extends DCLogic {
+  state = { tab: "register", point: "all", filter: "all", adding: false, article: "Ремонт и обслуживание" };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const docFree = this.props.requirePaperForPnl === false;   /* расход в P&L без документа */
+    const limit = this.props.dailyCashLimit ?? 30000;
+    const tight = this.props.density === "compact";
+    const rowH = tight ? "26px" : "30px";
+
+    const accepted = function (doc) { return docFree ? true : doc === "ok"; };
+
+    const tabDefs = [["register", "Реестр"], ["cash", "Касса точки"], ["mobile", "С телефона"]];
+    const tabBase = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+
+    const inPoint = function (r) { return st.point === "all" || r[1] === st.point; };
+    const scoped = ROWS.filter(inPoint);
+    const matchFilter = function (r) {
+      if (st.filter === "nodoc") return r[6] !== "ok";
+      if (st.filter === "gap") return !accepted(r[6]);
+      return true;
+    };
+    const visible = scoped.filter(matchFilter);
+
+    const sum = function (list) { return list.reduce(function (s, r) { return s + r[4]; }, 0); };
+    const cashTotal = sum(scoped);
+    const pnlTotal = sum(scoped.filter(function (r) { return accepted(r[6]); }));
+    const gap = cashTotal - pnlTotal;
+
+    /* ── касса точки: цепочка остатков ── */
+    const vracarRows = ROWS.filter(function (r) { return r[1] === "vracar"; });
+    const expenseOn = function (day) {
+      return sum(vracarRows.filter(function (r) { return r[0] === day; }));
+    };
+    let bal = DAY_START;
+    const dayRows = DAYS.map(function (d) {
+      const exp = expenseOn(d[0]);
+      bal = bal + d[1] - exp - d[2];
+      const delta = d[3] === null ? null : d[3] - bal;
+      return { date: d[0], revenue: d[1], expense: exp, collection: d[2], counted: d[3], calc: bal, delta: delta };
+    });
+    const calcEnd = bal;
+    const lastCounted = dayRows[dayRows.length - 1].counted;
+    const vracarExpenses = sum(vracarRows);
+    const opening = calcEnd - MONTH_REVENUE + vracarExpenses + MONTH_COLLECTION;
+
+    const numCell = { textAlign: "right", padding: "0 8px", height: rowH, fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" };
+    const textCell = { textAlign: "left", padding: "0 8px", height: rowH, fontSize: "var(--fs-dense)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" };
+
+    const chip = function (label, color, bg, line, style) {
+      return { display: "inline-flex", alignItems: "center", height: "19px", padding: "0 7px", borderRadius: "var(--r-mark)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)", whiteSpace: "nowrap", color: color, background: bg, border: "1px " + style + " " + line };
+    };
+
+    /* ── касса управляющего на телефоне ── */
+    /* Экран 1 — состояние ДО ввода: сегодняшние расходы точки без той строки,
+       которую он как раз вносит. Всё берётся из реестра. */
+    const TIMES = { "Maxi — салфетки, перчатки": "09:40", "Курьер — форма из химчистки": "11:05" };
+    const isEntered = function (r) { return r[0] === ENTERED.date && r[3] === ENTERED.what; };
+    const enteredRow = vracarRows.filter(isEntered)[0];
+    const enteredAmount = enteredRow ? enteredRow[4] : 0;
+    const todayRows = vracarRows.filter(function (r) { return r[0] === ENTERED.date && !isEntered(r); });
+    const spentToday = sum(todayRows);
+    const limitPct = Math.min(100, Math.round((spentToday / limit) * 100));
+    const overLimit = spentToday > limit;
+
+    return {
+      tabs: tabDefs.map(function (t) {
+        const sel = st.tab === t[0];
+        return {
+          label: t[1], sel: sel, notSel: !sel,
+          on: function () { self.setState({ tab: t[0] }); },
+          selStyle: Object.assign({}, tabBase, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, tabBase, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isRegister: st.tab === "register",
+      isCash: st.tab === "cash",
+      isMobile: st.tab === "mobile",
+
+      /* ── реестр ── */
+      pointOpts: [["all", "Все"]].concat(POINT_ORDER.map(function (k) { return [k, POINTS[k]]; })).map(function (p) {
+        const sel = st.point === p[0];
+        const n = p[0] === "all" ? ROWS.length : ROWS.filter(function (r) { return r[1] === p[0]; }).length;
+        const base = { display: "inline-flex", alignItems: "center", gap: "5px", height: "24px", padding: "0 10px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+        return {
+          label: p[1], badge: String(n), sel: sel, notSel: !sel,
+          on: function () { self.setState({ point: p[0] }); },
+          selStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink)", fontWeight: "var(--w-semibold)", boxShadow: "var(--sh-xs)" }),
+          btnStyle: Object.assign({}, base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" }),
+          badgeStyle: { fontFamily: "var(--font-num)", fontSize: "9.5px", color: "var(--ink-3)" }
+        };
+      }),
+
+      filterOpts: [
+        ["all", "Все", scoped.length],
+        ["nodoc", "Без принятого чека", scoped.filter(function (r) { return r[6] !== "ok"; }).length],
+        ["gap", "В разрыве", scoped.filter(function (r) { return !accepted(r[6]); }).length]
+      ].map(function (f) {
+        const sel = st.filter === f[0];
+        return {
+          label: f[1], count: String(f[2]),
+          on: function () { self.setState({ filter: f[0] }); },
+          style: {
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            height: "var(--control-h-sm)", padding: "0 10px", borderRadius: "var(--r-control)",
+            fontSize: "var(--fs-dense)", whiteSpace: "nowrap",
+            border: "1px solid " + (sel ? "var(--accent)" : "var(--line-control)"),
+            background: sel ? "var(--accent-soft)" : "var(--surface)",
+            color: sel ? "var(--accent)" : "var(--ink-2)",
+            fontWeight: sel ? "var(--w-semibold)" : "var(--w-regular)"
+          },
+          countStyle: { fontFamily: "var(--font-num)", fontSize: "9.5px", opacity: .7 }
+        };
+      }),
+
+      adding: st.adding,
+      toggleAdd: function () { self.setState({ adding: !st.adding }); },
+      addBtnLabel: st.adding ? "Свернуть ввод" : "Внести расход",
+      addBtnStyle: st.adding
+        ? { height: "var(--control-h-sm)", padding: "0 11px", border: "1px solid var(--line-control)", borderRadius: "var(--r-control)", background: "var(--surface)", fontSize: "var(--fs-dense)", color: "var(--ink-2)" }
+        : { height: "var(--control-h-sm)", padding: "0 11px", border: "1px solid var(--accent)", borderRadius: "var(--r-control)", background: "var(--accent)", color: "var(--ink-inverse)", fontSize: "var(--fs-dense)", fontWeight: "var(--w-semibold)" },
+
+      cashTotal: fmt(cashTotal),
+      cashCount: scoped.length + " расходов",
+      pnlTotal: fmt(pnlTotal),
+      pnlRule: docFree ? "документ не требуется — принимается сразу" : "только с подтверждённым документом",
+      gapTotal: gap === 0 ? fmt(0) : "\u2212" + fmt(gap),
+      gapPlain: fmt(gap),
+      gapNote: gap === 0
+        ? "все расходы приняты в отчёт"
+        : scoped.filter(function (r) { return !accepted(r[6]); }).length + " расходов ждут документ",
+      gapCardStyle: {
+        background: gap === 0 ? "var(--surface)" : "var(--warn-soft)",
+        border: "1px solid " + (gap === 0 ? "var(--line-strong)" : "var(--warn-line)"),
+        borderRadius: "var(--r-block)", padding: "11px 14px 12px"
+      },
+      gapNumStyle: {
+        fontFamily: "var(--font-num)", fontSize: "var(--fs-num-hero)", fontWeight: "var(--w-bold)",
+        fontVariantNumeric: "tabular-nums", marginTop: "5px",
+        color: gap === 0 ? "var(--ink-3)" : "var(--warn-ink)"
+      },
+
+      rows: visible.map(function (r) {
+        const d = DOC[r[6]];
+        const isGap = !accepted(r[6]);
+        const bg = isGap ? "var(--warn-soft)" : "var(--surface)";
+        return {
+          date: r[0], point: POINTS[r[1]], article: r[2], what: r[3], sum: fmt(r[4]), who: r[5],
+          docLabel: d[0], pnlLabel: accepted(r[6]) ? "Принят" : "Не принят",
+          rowStyle: { background: bg },
+          dateStyle: Object.assign({}, numCell, { textAlign: "left", color: "var(--ink-2)" }),
+          textStyle: textCell,
+          sumStyle: Object.assign({}, numCell, { fontWeight: "var(--w-medium)" }),
+          whoStyle: Object.assign({}, textCell, { color: "var(--ink-2)", fontSize: "var(--fs-meta)" }),
+          cellStyle: { padding: "0 8px", height: rowH, borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" },
+          lastCellStyle: { padding: "0 8px", height: rowH, borderBottom: "1px solid var(--line)" },
+          docStyle: chip(d[0], d[1], r[6] === "none" ? "var(--surface)" : d[2], d[3], d[4]),
+          pnlStyle: accepted(r[6])
+            ? chip("", "var(--ok)", "var(--ok-soft)", "var(--ok-line)", "solid")
+            : chip("", "var(--warn-ink)", "var(--surface)", "var(--warn-line)", "dashed")
+        };
+      }),
+      footLabel: visible.length === scoped.length
+        ? "Итого по " + (st.point === "all" ? "трём точкам" : POINTS[st.point])
+        : "Итого по показанным строкам",
+      footSum: fmt(sum(visible)),
+      footNote: visible.length + " из " + scoped.length + " строк · сумма выведена из показанных строк",
+
+      /* ── касса точки ── */
+      boxFacts: [
+        ["Остаток на 01.06", fmt(opening), "перенесён с мая", "var(--ink)"],
+        ["Наличная выручка", "+" + fmt(MONTH_REVENUE), "из Dodo IS", "var(--ink)"],
+        ["Расходы наличными", "\u2212" + fmt(vracarExpenses), "из реестра, " + ROWS.filter(function (r) { return r[1] === "vracar"; }).length + " строк", "var(--ink)"],
+        ["Инкассация", "\u2212" + fmt(MONTH_COLLECTION), "7 выемок", "var(--ink)"],
+        ["Оборот за месяц", fmt(MONTH_REVENUE - vracarExpenses - MONTH_COLLECTION), "приход минус расход", "var(--ink-2)"]
+      ].map(function (b, i) {
+        return {
+          label: b[0], value: b[1], note: b[2],
+          style: { padding: "11px 14px 12px", borderRight: i < 4 ? "1px solid var(--line)" : "0" },
+          numStyle: { fontFamily: "var(--font-num)", fontSize: "var(--fs-lead)", fontWeight: "var(--w-semibold)", fontVariantNumeric: "tabular-nums", marginTop: "4px", color: b[3] }
+        };
+      }),
+      calcEnd: fmt(calcEnd),
+      countedEnd: fmt(lastCounted),
+      deltaEnd: signed(lastCounted - calcEnd),
+
+      explainLabel: "Объяснить " + signed(lastCounted - calcEnd),
+
+      days: dayRows.map(function (row) {
+        const bad = row.delta !== null && row.delta !== 0;
+        const base = { textAlign: "right", padding: "0 8px", height: rowH, fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" };
+        return {
+          date: row.date,
+          revenue: "+" + fmt(row.revenue),
+          expense: row.expense === 0 ? "\u2014" : "\u2212" + fmt(row.expense),
+          collection: row.collection === 0 ? "\u2014" : "\u2212" + fmt(row.collection),
+          calc: fmt(row.calc),
+          counted: row.counted === null ? "\u2014" : fmt(row.counted),
+          delta: row.delta === null ? "\u2014" : (row.delta === 0 ? fmt(0) : signed(row.delta)),
+          rowStyle: { background: bad ? "var(--err-soft)" : "var(--surface)" },
+          dateStyle: Object.assign({}, base, { textAlign: "left", color: "var(--ink-2)" }),
+          numStyle: Object.assign({}, base, { color: "var(--ink-2)" }),
+          expStyle: Object.assign({}, base, { color: row.expense === 0 ? "var(--ink-empty)" : "var(--ink)" }),
+          calcStyle: Object.assign({}, base, { fontWeight: "var(--w-semibold)" }),
+          countedStyle: Object.assign({}, base, { color: row.counted === null ? "var(--ink-empty)" : "var(--ink)" }),
+          deltaStyle: Object.assign({}, base, {
+            borderRight: 0,
+            fontWeight: bad ? "var(--w-bold)" : "var(--w-regular)",
+            color: row.delta === null ? "var(--ink-empty)" : (bad ? "var(--err)" : "var(--ink-3)")
+          })
+        };
+      }),
+
+      /* ── телефон ── */
+      enteredSum: fmt(enteredAmount),
+      enteredWhat: ENTERED.what,
+      mobileCash: fmt(calcEnd + enteredAmount),
+      mobileCashAfter: fmt(calcEnd),
+      mobileLimitLine: overLimit
+        ? "Сегодня потрачено " + fmt(spentToday) + " — дневной лимит " + fmt(limit) + " превышен, бухгалтер это увидит"
+        : "Сегодня потрачено " + fmt(spentToday) + " из лимита " + fmt(limit),
+      mobileLimitBar: { height: "100%", width: limitPct + "%", background: overLimit ? "var(--err)" : "var(--accent)" },
+      mobileToday: todayRows.map(function (t) {
+        const d = DOC[t[6]];
+        return {
+          what: t[3], meta: t[2] + " · " + (TIMES[t[3]] || "—"), sum: fmt(t[4]), docLabel: d[0],
+          docStyle: Object.assign({}, chip(d[0], d[1], t[6] === "none" ? "var(--surface)" : d[2], d[3], d[4]), { marginTop: "3px", height: "17px", fontSize: "10.5px" })
+        };
+      }),
+      mobileArticles: MOBILE_ARTICLES.map(function (a) {
+        const sel = st.article === a;
+        return {
+          label: a,
+          on: function () { self.setState({ article: a }); },
+          style: {
+            minHeight: "var(--tap-min)", padding: "0 13px", borderRadius: "var(--r-control)",
+            fontSize: "var(--fs-body)", whiteSpace: "nowrap",
+            border: "1px solid " + (sel ? "var(--accent)" : "var(--line-control)"),
+            background: sel ? "var(--accent)" : "var(--surface)",
+            color: sel ? "var(--ink-inverse)" : "var(--ink)",
+            fontWeight: sel ? "var(--w-semibold)" : "var(--w-regular)"
+          }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 70px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 15px 22px 14px">
+      <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Dodo P&amp;L Service · модель доступа</div>
+      <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Роли и права: кто ведёт месяц и кто распоряжается доступом</h1>
+      <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px; max-width: 940px">Роли выстроены от младшей к старшей: каждая следующая видит всё, что видит предыдущая, и чуть больше. Наверху администратор — ему открыто всё. У человека одна роль; нужно больше прав на время — ему выдают роль выше с датой окончания.</div>
+    </header>
+
+    <div style="padding: 20px 22px 0">
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">01</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Старшая роль видит всё, что видит младшая</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Роли растут по трём направлениям сразу: сколько точек видно, как глубоко видны деньги и что можно менять. Поэтому роли можно сравнивать между собой — это ряд, а не россыпь.</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px">
+          <sc-for list="{{ axes }}" as="a" hint-placeholder-count="3">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--accent); font-weight: var(--w-semibold); margin-bottom: 5px">{{ a.axis }}</div>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 7px">{{ a.name }}</div>
+              <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px">
+                <sc-for list="{{ a.values }}" as="v" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: baseline; gap: 7px; font-size: var(--fs-dense)">
+                    <span style="width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); flex: 0 0 auto; margin-top: 6px"></span>
+                    <span>{{ v.t }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 7px">{{ a.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">02</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Пять ролей</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">У человека одна роль. Администратор старше всех и видит всё; чтобы человек временно получил больше прав, ему выдают роль выше с датой окончания.</div>
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px">
+          <sc-for list="{{ sets }}" as="s" hint-placeholder-count="5">
+            <div style="{{ s.cardStyle }}">
+              <span style="{{ s.tagStyle }}">{{ s.code }}</span>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-top: 6px">{{ s.name }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 4px; min-height: 48px">{{ s.who }}</div>
+              <div style="display: flex; flex-direction: column; gap: 3px; border-top: 1px solid var(--line); padding-top: 7px">
+                <div style="display: flex; align-items: baseline; gap: 6px; font-size: var(--fs-micro)"><span style="color: var(--ink-3); width: 46px; flex: 0 0 auto">Объём</span><span>{{ s.scope }}</span></div>
+                <div style="display: flex; align-items: baseline; gap: 6px; font-size: var(--fs-micro)"><span style="color: var(--ink-3); width: 46px; flex: 0 0 auto">Деньги</span><span style="{{ s.moneyStyle }}">{{ s.money }}</span></div>
+                <div style="display: flex; align-items: baseline; gap: 6px; font-size: var(--fs-micro)"><span style="color: var(--ink-3); width: 46px; flex: 0 0 auto">Доступ</span><span style="{{ s.grantStyle }}">{{ s.grants }}</span></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">03</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Матрица прав</h2>
+        </div>
+        <div style="display: flex; gap: 16px; font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px; flex-wrap: wrap">
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 9px; height: 9px; border-radius: 50%; background: var(--accent)"></span>есть у этой роли</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span style="font-family: var(--font-num); color: var(--ink-empty)">–</span>у этой роли нет</span>
+          <span style="color: var(--ink-3)">Демо — полный доступ: гость должен увидеть продукт целиком, данные всё равно фальшивые.</span>
+        </div>
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <th style="width: 356px; text-align: left; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Право</th>
+                <sc-for list="{{ cols }}" as="c" hint-placeholder-count="5">
+                  <th style="{{ c.thStyle }}">
+                    <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ c.code }}</div>
+                    <div style="font-size: 10px; line-height: 12px; color: var(--ink-3); margin-top: 2px; font-weight: var(--w-regular)">{{ c.short }}</div>
+                  </th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="22">
+                <sc-if value="{{ r.isGroup }}" hint-placeholder-val="{{ false }}">
+                  <tr>
+                    <td colSpan="6" style="padding: 6px 11px; background: var(--surface-2); border-bottom: 1px solid var(--line); border-top: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-bold)">{{ r.label }}</td>
+                  </tr>
+                </sc-if>
+                <sc-if value="{{ r.isRow }}" hint-placeholder-val="{{ true }}">
+                  <tr style-hover="{ background: '#F6F8FA' }">
+                    <th scope="row" style="text-align: left; padding: 5px 11px; height: var(--row); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-regular)">
+                      {{ r.label }}
+                      <sc-if value="{{ r.hasHint }}" hint-placeholder-val="{{ false }}">
+                        <span style="display: block; font-size: 10px; line-height: 12px; color: var(--ink-3); margin-top: 1px">{{ r.hint }}</span>
+                      </sc-if>
+                    </th>
+                    <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5">
+                      <td style="{{ c.tdStyle }}"><span style="{{ c.markStyle }}">{{ c.text }}</span></td>
+                    </sc-for>
+                  </tr>
+                </sc-if>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">04</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Пять правил, которые держат модель</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px">
+          <sc-for list="{{ laws }}" as="l" hint-placeholder-count="5">
+            <div style="{{ l.style }}">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">{{ l.t }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta)">{{ l.d }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 8px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">05</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Экран «Роли и права»</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Живой: выберите человека. У Milica одна роль, как и у всех, но выдана она до 31.07 — поэтому пунктир и дата рядом с названием.</div>
+        <div style="display: grid; grid-template-columns: 1fr 360px; gap: 10px; align-items: start">
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Пользователи партнёра</span>
+              <span style="font-size: var(--fs-meta); color: var(--ink-2)">6 человек · доступ выдаёт только администратор партнёра</span>
+              <button style="margin-left: auto; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-dense); font-weight: var(--w-semibold)" style-hover="{ background: 'var(--accent-press)' }">Пригласить человека</button>
+            </div>
+            <sc-for list="{{ people }}" as="p" hint-placeholder-count="6">
+              <button onClick="{{ p.on }}" style="{{ p.rowStyle }}" style-hover="{{ p.rowHover }}">
+                <span style="{{ p.avaStyle }}">{{ p.ini }}</span>
+                <span style="width: 168px; flex: 0 0 auto; text-align: left">
+                  <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ p.name }}</span>
+                  <span style="display: block; font-size: 10px; color: var(--ink-3)">{{ p.job }}</span>
+                </span>
+                <span style="display: flex; gap: 4px; flex-wrap: wrap; width: 246px; flex: 0 0 auto">
+                  <sc-for list="{{ p.roles }}" as="r" hint-placeholder-count="2">
+                    <span style="{{ r.style }}">{{ r.name }}</span>
+                  </sc-for>
+                </span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-2); flex: 1; min-width: 0; text-align: left">{{ p.scope }}</span>
+                <span style="display: flex; gap: 3px; flex: 0 0 auto; width: 84px">
+                  <sc-for list="{{ p.regs }}" as="g" hint-placeholder-count="3">
+                    <span style="{{ g.style }}">{{ g.code }}</span>
+                  </sc-for>
+                </span>
+                <span style="font-family: var(--font-num); font-size: 10px; color: var(--ink-3); width: 76px; text-align: right; flex: 0 0 auto">{{ p.since }}</span>
+              </button>
+            </sc-for>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface-2); border-top: 1px solid var(--line)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M4 12a8 8 0 1 0 2.4-5.7"></path><path d="M4 4v4h4"></path><path d="M12 8.5V12l3 1.5"></path></svg>
+              <span style="font-size: var(--fs-meta); color: var(--ink-2)">12.06.2026 — Nikola Ilić выдал Milica Jovanović роль администратора до 31.07.2026. Причина: отпуск партнёра, нужно закрыть июнь.</span>
+              <a href="#" style="margin-left: auto; font-size: var(--fs-meta); white-space: nowrap">Вся история</a>
+            </div>
+          </div>
+
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <div style="padding: 11px 13px; border-bottom: 1px solid var(--line)">
+              <div style="font-size: var(--fs-title); font-weight: var(--w-semibold); line-height: var(--lh-title)">{{ sel.name }}</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 1px">{{ sel.job }} · {{ sel.scope }}</div>
+              <div style="display: flex; gap: 4px; margin-top: 7px; flex-wrap: wrap">
+                <sc-for list="{{ sel.roles }}" as="r" hint-placeholder-count="2">
+                  <span style="{{ r.style }}">{{ r.name }}</span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="padding: 11px 13px; border-bottom: 1px solid var(--line)">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Что даёт</div>
+              <div style="display: flex; flex-direction: column; gap: 5px">
+                <sc-for list="{{ sel.can }}" as="c" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: flex-start; gap: 7px; font-size: var(--fs-dense); line-height: var(--lh-dense)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 2px; flex: 0 0 auto"><path d="m5 13 4 4L19 7"></path></svg>
+                    <span>{{ c.t }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="padding: 11px 13px; border-bottom: 1px solid var(--line)">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Чего не даёт</div>
+              <div style="display: flex; flex-direction: column; gap: 5px">
+                <sc-for list="{{ sel.cant }}" as="c" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: flex-start; gap: 7px; font-size: var(--fs-dense); line-height: var(--lh-dense); color: var(--ink-2)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 2px; flex: 0 0 auto"><path d="M6 11h12v9H6z"></path><path d="M9 11V8a3 3 0 0 1 6 0v3"></path></svg>
+                    <span>{{ c.t }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="{{ sel.noteStyle }}">{{ sel.note }}</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const AXES = [
+  ["Направление 1", "Объём данных", ["своя точка", "несколько точек — регион", "все точки партнёра", "сеть в консолидации — только Dodo Brands"],
+    "Управляющий видит свою точку, региональный — свои пять, бухгалтер и администратор — все. Старшая роль никогда не видит меньше младшей."],
+  ["Направление 2", "Глубина: операционка или деньги", ["часы, расходы, накладные", "ставки своих людей на чтение", "срезы по регистрам учёта", "суммы расчёта и ведомость"],
+    "Главная граница — между управляющим региона и бухгалтером. Суммы расчёта по людям видны только бухгалтеру и администратору."],
+  ["Направление 3", "Распоряжение: правила и доступ", ["ставки и условия найма", "правила расчёта, точки, юрлица", "выдавать и снимать доступ"],
+    "Ставки ведёт бухгалтер — без этого он не посчитает месяц. Сами правила, структура бизнеса и доступы — только администратор."]
+];
+
+const SETS = [
+  ["АДМ", "Администратор партнёра", "Партнёр или оперативный директор. Видит всё, что видят остальные, плюс правила и доступы.", "все точки", "видит всё", "выдаёт доступ", "own"],
+  ["БУХ", "Бухгалтер партнёра", "Ведёт месяц: часы, расчёт, документы, закрытие. Свой или внешний.", "все точки", "считает и утверждает", "не выдаёт", "money"],
+  ["РЕГ", "Управляющий региона", "Отвечает за несколько точек. Всё то же, что у управляющего, плюс срезы по регистрам.", "5 точек", "регистры да, ведомости нет", "не выдаёт", "ops"],
+  ["УПР", "Управляющий точки", "Самая младшая роль: своя точка, чаще с телефона — часы, расходы, накладные.", "1 точка", "сумм расчёта нет", "не выдаёт", "ops"],
+  ["ДЕМО", "Гость демо", "Смотрит продукт без регистрации: английский язык, наполненные данные, полный доступ.", "демо-партнёр", "видит всё", "всё доступно", "demo"]
+];
+
+const COLS = [["АДМ", "партнёр"], ["БУХ", "бухгалтер"], ["РЕГ", "регион"], ["УПР", "точка"], ["ДЕМО", "гость"]];
+
+const ROWS = [
+  ["g", "Табель и операционка", "", []],
+  ["r", "Смотреть часы своей зоны", "", ["f", "f", "f", "f", "f"]],
+  ["r", "Править часы", "то, чего нет в Dodo IS или что разошлось", ["f", "f", "f", "f", "f"]],
+  ["r", "Закрывать часы по точке", "управляющий подтверждает, закрывает бухгалтер", ["f", "f", "f", "n", "f"]],
+  ["r", "Вносить наличные расходы", "", ["f", "f", "f", "f", "f"]],
+  ["r", "Присылать накладные и чеки", "фото уходит в инбокс бухгалтера", ["f", "f", "f", "f", "f"]],
+  ["r", "Разбирать инбокс и документы", "", ["f", "f", "n", "n", "f"]],
+  ["g", "Зарплата и деньги", "", []],
+  ["r", "Видеть ставки своих людей", "на чтение, без сумм расчёта", ["f", "f", "f", "f", "f"]],
+  ["r", "Видеть ведомость и суммы расчёта", "", ["f", "f", "n", "n", "f"]],
+  ["r", "Запускать расчёт периода", "", ["f", "f", "n", "n", "f"]],
+  ["r", "Утверждать период", "", ["f", "f", "n", "n", "f"]],
+  ["r", "Откатывать утверждение", "требует причины, остаётся в истории", ["f", "n", "n", "n", "f"]],
+  ["g", "Срезы по регистрам учёта", "", []],
+  ["r", "Официальный", "", ["f", "f", "f", "n", "f"]],
+  ["r", "Дополнительный", "", ["f", "f", "f", "n", "f"]],
+  ["r", "Внутренний", "", ["f", "f", "n", "n", "f"]],
+  ["g", "Правила и справочники", "", []],
+  ["r", "Менять правила расчёта", "формулы начислений — только администратор", ["f", "n", "n", "n", "f"]],
+  ["r", "Менять ставки и условия найма", "новая версия с датой, старое не переписывается", ["f", "f", "n", "n", "f"]],
+  ["r", "Заводить и увольнять людей", "без этого бухгалтер не закроет месяц", ["f", "f", "n", "n", "f"]],
+  ["r", "Точки, юрлица, статьи расходов", "", ["f", "n", "n", "n", "f"]],
+  ["g", "Доступ и история", "", []],
+  ["r", "Выдавать и снимать доступ", "менять роль другому человеку", ["f", "n", "n", "n", "f"]],
+  ["r", "Видеть историю правок", "кто, что и когда менял — в пределах своей зоны", ["f", "f", "f", "n", "f"]]
+];
+
+const LAWS = [
+  ["Администратор видит всё", "Нет ни одного экрана и ни одной суммы, которая была бы закрыта от администратора и открыта кому-то ещё. В таблице выше его столбец заполнен целиком.", "ok"],
+  ["Больше точек — не значит больше денег", "Управляющий региона видит пять точек вместо одной, но ни одной суммы расчёта. Зарплаты начинаются с бухгалтера.", "plain"],
+  ["Одна роль на человека", "Вторую роль рядом не выдают. Если человеку нужно больше прав, ему меняют роль на более старшую. В шапке всегда одна роль.", "plain"],
+  ["Роль можно выдать на время", "Например, бухгалтеру на время отпуска партнёра — роль администратора до 31.07.2026. В этот день роль сама вернётся к прежней. Кто выдал, зачем и до какого числа — видно в истории.", "warn"],
+  ["Нет доступа — нет и данных на экране", "Если у роли нет доступа, информация просто не показывается: её нет ни в списках, ни в поиске, ни в счётчиках. Не «доступ запрещён», а как будто такой записи не существует.", "plain"]
+];
+
+const PEOPLE = [
+  ["NI", "Nikola Ilić", "Партнёр", [["АДМ", "Администратор партнёра", "own"]], "все 14 точек · 1 юрлицо", ["ОФ", "ДОП", "ВН"], "с 14.02.2024",
+    ["Менять роль любому человеку партнёра", "Менять правила расчёта, ставки, точки и юрлица", "Видеть ведомость во всех трёх регистрах", "Утверждать и откатывать период"],
+    ["Считать чужого партнёра — тенанты изолированы", "Менять страновой набор правил Dodo Brands"],
+    "Единственная роль, которая может менять роли другим. Уходя в отпуск, партнёр выдаёт её бухгалтеру на время — с датой и причиной."],
+  ["MJ", "Milica Jovanović", "Бухгалтер партнёра", [["АДМ", "Администратор партнёра · до 31.07.2026", "temp"]], "все 14 точек", ["ОФ", "ДОП", "ВН"], "с 20.03.2024",
+    ["Вести месяц: часы, расчёт, документы, закрытие", "Утверждать период и выгружать файлы", "Пока действует роль администратора — менять правила и выдавать доступ"],
+    ["После 31.07.2026 снова станет бухгалтером", "Откат утверждения — только пока роль действует"],
+    "Партнёр в отпуске до конца июля, и ему нужен кто-то с его правами. Милице выдали роль администратора до 31.07 — вместо роли бухгалтера, а не в дополнение к ней. В шапке у неё одна роль, пунктиром и с датой."],
+  ["SN", "Stefan Nikolić", "Оперативный директор", [["АДМ", "Администратор партнёра", "own"]], "все 14 точек", ["ОФ", "ДОП"], "с 05.09.2025",
+    ["Видеть картину по всем точкам и решать спорное", "Менять роли управляющим", "Видеть ведомость в официальном и дополнительном регистре"],
+    ["Внутренний регистр — этому человеку не открыт", "Расчёт запускает бухгалтер, не он"],
+    "Роль та же, что у партнёра, но регистры настраиваются отдельно: третий ему просто не открывали."],
+  ["AĐ", "Aleksandra Đurić", "Региональный управляющий", [["РЕГ", "Управляющий региона", "ops"]], "5 точек · Beograd", ["ОФ", "ДОП"], "с 11.01.2026",
+    ["Проверять и править часы всех своих пяти точек", "Вносить расходы и присылать накладные по региону", "Смотреть срезы по регистрам — официальный и дополнительный", "Видеть ставки своих людей на чтение"],
+    ["Ведомость и суммы расчёта по людям", "Правила, справочники, роли других людей"],
+    "Точек в пять раз больше, чем у управляющего точки, и срезы по регистрам открыты — но ведомости как не было, так и нет."],
+  ["ĐM", "Đorđe Milošević", "Управляющий точки", [["УПР", "Управляющий точки", "ops"]], "Beograd Vračar", ["ОФ"], "с 14.02.2024",
+    ["Проверять часы своих людей, чаще с телефона", "Вносить расход из кассы за две минуты", "Фотографировать накладные и чеки"],
+    ["Ведомость и суммы расчёта", "Сотрудники других точек", "Закрытие часов — это делает бухгалтер"],
+    "Самый частый пользователь продукта и самая узкая роль. Экраны этой роли проектируются под 375 px и два свободных пальца."],
+  ["G", "Guest", "Гость демо", [["ДЕМО", "Гость демо", "demo"]], "демо-партнёр · английский", ["ОФ", "ДОП", "ВН"], "по ссылке",
+    ["Полный доступ ко всем экранам и всем трём регистрам", "Считать, утверждать, откатывать, менять правила и роли", "Трогать любую кнопку без страха что-то сломать"],
+    ["Данные настоящих партнёров — тенанты изолированы", "Правки живут только в его сессии и сбрасываются"],
+    "Демо — полный доступ на фальшивых данных: гость должен увидеть продукт целиком, включая утверждение и смену ролей. Сессия живёт до закрытия вкладки."]
+];
+
+const TAG = {
+  own: ["var(--accent)", "var(--accent-soft)", "var(--accent-line)"],
+  money: ["var(--reg-supp)", "#F1ECF9", "#DCD0EE"],
+  temp: ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"],
+  ops: ["var(--reg-internal)", "#E7F1F1", "#C6DDDD"],
+  demo: ["var(--ink-2)", "var(--surface-3)", "var(--line-control)"]
+};
+
+class Component extends DCLogic {
+  state = { sel: 1 };
+
+  renderVals() {
+    const self = this;
+    const p = PEOPLE[this.state.sel] || PEOPLE[0];
+
+    const tag = function (kind, extra) {
+      const c = TAG[kind] || TAG.demo;
+      return Object.assign({
+        display: "inline-flex", alignItems: "center", height: "18px", padding: "0 6px", borderRadius: "var(--r-control)",
+        background: c[1], border: "1px solid " + c[2], color: c[0], fontSize: "var(--fs-meta)", fontWeight: 600, whiteSpace: "nowrap"
+      }, extra || {});
+    };
+    const regTag = function (code) {
+      const col = code === "ОФ" ? "var(--reg-official)" : code === "ДОП" ? "var(--reg-supp)" : "var(--reg-internal)";
+      return { display: "inline-block", fontFamily: "var(--font-num)", fontSize: "9.5px", lineHeight: "14px", padding: "0 3px", borderRadius: "var(--r-mark)", color: col, border: "1px solid " + col };
+    };
+
+    return {
+      axes: AXES.map(function (a) {
+        return { axis: a[0], name: a[1], values: a[2].map(function (t) { return { t: t }; }), note: a[3] };
+      }),
+
+      sets: SETS.map(function (s) {
+        return {
+          code: s[0], name: s[1], who: s[2], scope: s[3], money: s[4], grants: s[5],
+          cardStyle: {
+            background: "var(--surface)", border: "1px solid " + (s[6] === "own" ? "var(--accent-line)" : "var(--line-strong)"),
+            borderRadius: "var(--r-block)", padding: "12px 12px 11px"
+          },
+          tagStyle: tag(s[6]),
+          moneyStyle: { color: s[6] === "ops" ? "var(--ink-3)" : "var(--ink)" },
+          grantStyle: { color: s[6] === "own" ? "var(--accent)" : "var(--ink-3)", fontWeight: s[6] === "own" ? 600 : 400 }
+        };
+      }),
+
+      cols: COLS.map(function (c) {
+        return {
+          code: c[0], short: c[1],
+          thStyle: {
+            textAlign: "center", padding: "6px 6px", background: "var(--surface-head)",
+            borderBottom: "1px solid var(--line-strong)", borderRight: "1px solid var(--line-2)", color: "var(--ink)"
+          }
+        };
+      }),
+
+      rows: ROWS.map(function (r) {
+        const isGroup = r[0] === "g";
+        return {
+          isGroup: isGroup, isRow: !isGroup, label: r[1], hint: r[2], hasHint: !!r[2],
+          cells: r[3].map(function (m) {
+            const td = { textAlign: "center", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)", height: "var(--row)" };
+            if (m === "f") return { tdStyle: td, text: "", markStyle: { display: "inline-block", width: "9px", height: "9px", borderRadius: "50%", background: "var(--accent)" } };
+            if (m === "o") return { tdStyle: td, text: "", markStyle: { display: "inline-block", width: "9px", height: "9px", borderRadius: "50%", border: "1.5px solid var(--accent)", boxSizing: "border-box" } };
+            return { tdStyle: td, text: "\u2013", markStyle: { fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", color: "var(--ink-empty)" } };
+          })
+        };
+      }),
+
+      laws: LAWS.map(function (l) {
+        const tone = l[2];
+        return {
+          t: l[0], d: l[1],
+          style: {
+            background: tone === "ok" ? "var(--ok-soft)" : tone === "warn" ? "var(--warn-soft)" : "var(--surface)",
+            border: "1px solid " + (tone === "ok" ? "var(--ok-line)" : tone === "warn" ? "var(--warn-line)" : "var(--line-strong)"),
+            borderRadius: "var(--r-block)", padding: "11px 13px",
+            color: tone === "ok" ? "var(--ok)" : tone === "warn" ? "var(--warn-ink)" : "var(--ink)"
+          }
+        };
+      }),
+
+      people: PEOPLE.map(function (pp, i) {
+        const sel = i === self.state.sel;
+        return {
+          ini: pp[0], name: pp[1], job: pp[2], scope: pp[4], since: pp[6],
+          on: function () { self.setState({ sel: i }); },
+          rowStyle: {
+            display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "0 12px", height: "44px",
+            border: 0, borderBottom: "1px solid var(--line)", borderLeft: "3px solid " + (sel ? "var(--accent)" : "transparent"),
+            background: sel ? "var(--accent-soft)" : "var(--surface)", textAlign: "left",
+            transition: "background var(--t-state) var(--ease)"
+          },
+          rowHover: { background: sel ? "var(--accent-soft)" : "#F6F8FA" },
+          avaStyle: {
+            display: "grid", placeItems: "center", width: "26px", height: "26px", borderRadius: "50%", flex: "0 0 auto",
+            background: "var(--surface-3)", border: "1px solid var(--line-control)", fontSize: "var(--fs-meta)",
+            fontWeight: 600, color: "var(--ink-2)"
+          },
+          roles: pp[3].map(function (r) { return { name: r[1], style: tag(r[2], { fontSize: "10px", height: "17px" }) }; }),
+          regs: pp[5].map(function (c) { return { code: c, style: regTag(c) }; })
+        };
+      }),
+
+      sel: {
+        name: p[1], job: p[2], scope: p[4],
+        roles: p[3].map(function (r) { return { name: r[1], style: tag(r[2]) }; }),
+        can: p[7].map(function (t) { return { t: t }; }),
+        cant: p[8].map(function (t) { return { t: t }; }),
+        note: p[9],
+        noteStyle: {
+          padding: "10px 13px", background: "var(--surface-2)", borderTop: "1px solid var(--line)",
+          fontSize: "var(--fs-micro)", lineHeight: "var(--lh-micro)", color: "var(--ink-2)"
+        }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

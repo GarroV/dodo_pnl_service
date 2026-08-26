@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5; --up:#10704A;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA; --down:#A32B1E;
+    --reg-official:#1F4E9C; --reg-official-soft:#E8EEF8; --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1;
+    --st-draft:#5C6672; --st-calculated:#1F4E9C; --st-approved:#10704A; --st-reopened:#B26B00;
+    --origin-carried:#FFF9EC; --origin-mark:#E0A03A;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,'Cascadia Mono',monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num-hero:22px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --gutter:18px; --space-2:4px; --space-4:8px; --space-6:12px; --space-7:16px; --space-9:24px;
+    --row-dense:26px; --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px; --r-screen:6px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --sh-modal:0 30px 80px -20px rgba(10,13,17,.6);
+    --t-state:90ms; --t-pop:140ms; --t-panel:220ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, textarea { font:inherit; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  @keyframes spin { to { transform:rotate(360deg) } }
+</style>
+</helmet>
+
+<div ref="{{ rootRef }}" style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; display: flex; align-items: flex-start">
+
+    <aside style="position: sticky; top: 0; width: 210px; flex: 0 0 210px; height: 100vh; overflow: auto; background: #14181E; padding: 16px 0 24px">
+      <div style="padding: 0 16px 12px">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: #6B7684; font-weight: var(--w-semibold)">Этап 2</div>
+        <div style="font-size: var(--fs-lead); color: #E7EBF0; margin-top: 4px; font-weight: var(--w-semibold)">Дизайн-система</div>
+        <div style="font-size: var(--fs-meta); color: #8B96A3; margin-top: 2px">Направление «Реестр»</div>
+      </div>
+      <nav style="display: flex; flex-direction: column">
+        <sc-for list="{{ toc }}" as="t" hint-placeholder-count="20">
+          <sc-if value="{{ t.isGroup }}" hint-placeholder-val="{{ false }}">
+            <div style="padding: 13px 16px 4px; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: #59636F; font-weight: var(--w-semibold)">{{ t.label }}</div>
+          </sc-if>
+          <sc-if value="{{ t.isLink }}" hint-placeholder-val="{{ true }}">
+            <a href="{{ t.href }}" style="display: flex; align-items: baseline; gap: 8px; padding: 4px 16px; font-size: var(--fs-dense); color: #A9B4C0" style-hover="{ color: '#FFFFFF', background: '#1B2129', textDecoration: 'none' }">
+              <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: #59636F">{{ t.num }}</span>
+              <span>{{ t.label }}</span>
+            </a>
+          </sc-if>
+        </sc-for>
+      </nav>
+    </aside>
+
+    <main style="flex: 1; min-width: 0; padding: 0 0 70px">
+
+      <header style="position: sticky; top: 0; z-index: 30; background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 13px 22px 12px; display: flex; align-items: flex-end; gap: 14px">
+        <div style="flex: 1">
+          <h1 style="margin: 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Dodo P&amp;L Service — дизайн-система</h1>
+          <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 3px">Живой каталог: всё ниже — рабочая разметка на токенах. Цвета, размеры и отступы берутся только из <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); background: var(--surface-3); padding: 1px 4px; border-radius: var(--r-mark)">var(--…)</span>; файл <a href="tokens.css">tokens.css</a> лежит рядом и переносится в Django как есть.</div>
+        </div>
+        <div style="display: flex; gap: 6px">
+          <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: var(--r-control); background: var(--accent-soft); border: 1px solid var(--accent-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--accent)">1280 → 768</span>
+          <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: var(--r-control); background: var(--surface-3); border: 1px solid var(--line-control); font-size: var(--fs-meta); color: var(--ink-2)">ru · en · sr (latinica)</span>
+        </div>
+      </header>
+
+      <div style="padding: 20px 22px 0">
+
+        <section id="s01" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">01</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Правила, вшитые в систему</h2>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--line-strong); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <div style="background: var(--surface); padding: 11px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">Деньги читаются столбиком</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Правый край, моноширинное, табличные цифры. Ноль — цифра <span style="font-family: var(--font-num); color: var(--ink-3)">0</span>, отсутствие значения — прочерк <span style="font-family: var(--font-num); color: var(--ink-empty)">–</span>.</div>
+            </div>
+            <div style="background: var(--surface); padding: 11px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">Скачивание не похоже на переключение</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Выгрузка — пунктир, стрелка вниз, расширение файла. Переключатель вида — залитый сегмент без иконки.</div>
+            </div>
+            <div style="background: var(--surface); padding: 11px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">Выбранный сегмент — не кнопка</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Текущее значение переключателя — <span style="font-family: var(--font-num); font-size: var(--fs-num-sm)">span[aria-current]</span>: ссылка на текущую страницу обманывает и мышь, и клавиатуру.</div>
+            </div>
+            <div style="background: var(--surface); padding: 11px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">Подкраска строки — про происхождение</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Тёплый фон и метка слева говорят «строка откуда-то пришла». Величину числа не красим никогда.</div>
+            </div>
+            <div style="background: var(--surface); padding: 11px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">Денежное — через подтверждение</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Утверждение, откат, заморозка, перенос разницы, удаление. Откат требует причины, и она видна в истории рядом с именем.</div>
+            </div>
+            <div style="background: var(--surface); padding: 11px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">Страница по горизонтали не едет</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Широкая таблица прокручивается внутри контейнера; имя и «Итого» закреплены по краям.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="s02" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">02</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Цвет</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Холодные нейтрали и один акцент. Тёплый цвет зарезервирован под внимание — это единственное родство с брендом.</div>
+          <div style="display: flex; flex-direction: column; gap: 13px">
+            <sc-for list="{{ colorGroups }}" as="g" hint-placeholder-count="7">
+              <div>
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">{{ g.name }}</div>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px">
+                  <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="5">
+                    <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+                      <div style="{{ c.chipStyle }}"></div>
+                      <div style="padding: 6px 8px 7px">
+                        <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink)">{{ c.name }}</div>
+                        <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3); margin-top: 1px">{{ c.hex }}</div>
+                        <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-2); margin-top: 3px; min-height: 28px">{{ c.note }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section id="s03" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">03</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Семантика: регистры, статусы, динамика</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Три вещи, где цвет означает смысл. Регистр — всегда метка у строки, никогда заливка строки: заливка мешает читать числа.</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 9px">Регистры учёта</div>
+              <div style="display: flex; flex-direction: column; gap: 7px">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 14px; padding: 0 3px; border-radius: var(--r-mark); color: var(--reg-official); border: 1px solid var(--reg-official)">ОФ</span>
+                  <span style="font-size: var(--fs-dense)">Официальный</span>
+                  <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">official</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 14px; padding: 0 3px; border-radius: var(--r-mark); color: var(--reg-supp); border: 1px solid var(--reg-supp)">ДОП</span>
+                  <span style="font-size: var(--fs-dense)">Дополнительный</span>
+                  <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">supplementary</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 14px; padding: 0 3px; border-radius: var(--r-mark); color: var(--reg-internal); border: 1px solid var(--reg-internal)">ВН</span>
+                  <span style="font-size: var(--fs-dense)">Внутренний</span>
+                  <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">internal</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 14px; padding: 0 3px; border-radius: var(--r-mark); color: var(--ink-2); border: 1px solid var(--line-control-2)">ОФ·ДОП</span>
+                  <span style="font-size: var(--fs-dense); color: var(--ink-2)">сумма из двух</span>
+                </div>
+              </div>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 9px">Состояния периода</div>
+              <div style="display: flex; flex-direction: column; gap: 7px">
+                <span style="display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 22px; padding: 0 8px; border-radius: var(--r-control); background: var(--surface-3); border: 1px solid var(--line-control); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--st-draft)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--st-draft)"></span>Черновик</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 22px; padding: 0 8px; border-radius: var(--r-control); background: var(--accent-soft); border: 1px solid var(--accent-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--st-calculated)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--st-calculated)"></span>Посчитан</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 22px; padding: 0 8px; border-radius: var(--r-control); background: var(--ok-soft); border: 1px solid var(--ok-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--st-approved)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--st-approved)"></span>Утверждён</span>
+                <span style="display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 22px; padding: 0 8px; border-radius: var(--r-control); background: var(--warn-soft); border: 1px solid var(--warn-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--st-reopened)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--st-reopened)"></span>Переоткрыт</span>
+              </div>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 9px">Динамика и внимание</div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: var(--fs-dense)"><span style="font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--up); font-weight: var(--w-semibold)">+12,4 %</span><span style="color: var(--ink-2)">рост к маю</span></div>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: var(--fs-dense)"><span style="font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--down); font-weight: var(--w-semibold)">-8,1 %</span><span style="color: var(--ink-2)">падение к маю</span></div>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: var(--fs-dense)"><span style="font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--warn-ink); box-shadow: inset 0 -2px 0 var(--warn-mark)">17 741</span><span style="color: var(--ink-2)">число с замечанием</span></div>
+                <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 7px">Цвет у числа появляется только там, где знак и есть смысл — в динамике. В ведомости все суммы цвета <span style="font-family: var(--font-num)">--ink</span>.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="s04" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">04</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Типографика</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Golos Text — интерфейс: живая кириллица и латиница с сербскими диакритиками (č, ć, ž, š, đ). IBM Plex Mono — все деньги, даты и коды правил. Семь ступеней на весь продукт.</div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <sc-for list="{{ typeRows }}" as="t" hint-placeholder-count="9">
+              <div style="display: grid; grid-template-columns: 130px 74px 150px 1fr; align-items: baseline; gap: 12px; padding: 9px 13px; border-bottom: 1px solid var(--line)">
+                <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--accent)">{{ t.token }}</div>
+                <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ t.size }}</div>
+                <div style="font-size: var(--fs-micro); color: var(--ink-2)">{{ t.use }}</div>
+                <div style="{{ t.sampleStyle }}">{{ t.sample }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section id="s05" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">05</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Три языка</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Русский длиннее английского на 30–50 %, сербский — посередине. Ширины считаем по русскому; заголовки колонок переносятся по словам; капслок оставлен только надстрочным меткам из одного-двух слов.</div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 62px; gap: 12px; padding: 7px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">
+              <div>Русский</div><div>English</div><div>Srpski</div><div style="text-align: right">ru / en</div>
+            </div>
+            <sc-for list="{{ langRows }}" as="l" hint-placeholder-count="6">
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 62px; gap: 12px; padding: 8px 13px; border-bottom: 1px solid var(--line); font-size: var(--fs-dense); align-items: baseline">
+                <div>{{ l.ru }}</div>
+                <div style="color: var(--ink-2)">{{ l.en }}</div>
+                <div style="color: var(--ink-2)">{{ l.sr }}</div>
+                <div style="{{ l.ratioStyle }}">{{ l.ratio }}</div>
+              </div>
+            </sc-for>
+            <div style="padding: 9px 13px; font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-2); background: var(--surface-2)">Сербский — латиница: Odobri period, Obračun zarade, Nedeljni fond časova. Имена сотрудников тоже латиницей: Petar Petrović, Milica Jovanović.</div>
+          </div>
+        </section>
+
+        <section id="s06" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">06</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Сетка, плотность, радиусы, движение</h2>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 9px">Три плотности строки и палец</div>
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <div style="height: 26px; flex: 1; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-mark); display: flex; align-items: center; padding: 0 8px; font-size: var(--fs-dense)">Petar Petrović<span style="margin-left: auto; font-family: var(--font-num); font-variant-numeric: tabular-nums">72 451</span></div>
+                  <div style="width: 176px; font-size: var(--fs-micro); color: var(--ink-2)"><span style="font-family: var(--font-num); color: var(--accent)">--row-dense</span> 26 — плотные списки</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <div style="height: 30px; flex: 1; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-mark); display: flex; align-items: center; padding: 0 8px; font-size: var(--fs-dense)">Petar Petrović<span style="margin-left: auto; font-family: var(--font-num); font-variant-numeric: tabular-nums">72 451</span></div>
+                  <div style="width: 176px; font-size: var(--fs-micro); color: var(--ink-2)"><span style="font-family: var(--font-num); color: var(--accent)">--row</span> 30 — ведомость, табель</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <div style="height: 34px; flex: 1; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-mark); display: flex; align-items: center; padding: 0 8px; font-size: var(--fs-dense)">Petar Petrović<span style="margin-left: auto; font-family: var(--font-num); font-variant-numeric: tabular-nums">72 451</span></div>
+                  <div style="width: 176px; font-size: var(--fs-micro); color: var(--ink-2)"><span style="font-family: var(--font-num); color: var(--accent)">--row-loose</span> 34 — инбокс, документы</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 2px">
+                  <div style="height: 44px; flex: 1; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: var(--r-mark); display: flex; align-items: center; padding: 0 10px; font-size: var(--fs-body)">Внести расход</div>
+                  <div style="width: 176px; font-size: var(--fs-micro); color: var(--ink-2)"><span style="font-family: var(--font-num); color: var(--accent)">--tap-min</span> 44 — всё, что нажимает управляющий с телефона</div>
+                </div>
+              </div>
+              <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-2); margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px">Внутри таблицы работают отступы 2–8 px. Значения 24–32 px — только между разделами страницы.</div>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 9px">Радиусы, тени, длительности</div>
+              <div style="display: flex; gap: 9px; margin-bottom: 11px">
+                <div style="text-align: center"><div style="width: 40px; height: 30px; background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 2px"></div><div style="font-family: var(--font-num); font-size: 9px; color: var(--ink-3); margin-top: 4px">2 метка</div></div>
+                <div style="text-align: center"><div style="width: 40px; height: 30px; background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 3px"></div><div style="font-family: var(--font-num); font-size: 9px; color: var(--ink-3); margin-top: 4px">3 контрол</div></div>
+                <div style="text-align: center"><div style="width: 40px; height: 30px; background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 4px"></div><div style="font-family: var(--font-num); font-size: 9px; color: var(--ink-3); margin-top: 4px">4 блок</div></div>
+                <div style="text-align: center"><div style="width: 40px; height: 30px; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; box-shadow: var(--sh-xs)"></div><div style="font-family: var(--font-num); font-size: 9px; color: var(--ink-3); margin-top: 4px">sh-xs</div></div>
+                <div style="text-align: center"><div style="width: 40px; height: 30px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 4px; box-shadow: var(--sh-pop)"></div><div style="font-family: var(--font-num); font-size: 9px; color: var(--ink-3); margin-top: 4px">sh-pop</div></div>
+                <div style="text-align: center"><div style="width: 40px; height: 30px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 4px; box-shadow: var(--sh-modal)"></div><div style="font-family: var(--font-num); font-size: 9px; color: var(--ink-3); margin-top: 4px">sh-modal</div></div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 5px; font-size: var(--fs-dense); border-top: 1px solid var(--line); padding-top: 9px">
+                <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--accent)">--t-state 90ms</span><span style="color: var(--ink-2); font-size: var(--fs-micro)">цвет кнопки, фон строки</span></div>
+                <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--accent)">--t-pop 140ms</span><span style="color: var(--ink-2); font-size: var(--fs-micro)">поповер фильтра</span></div>
+                <div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--accent)">--t-panel 220ms</span><span style="color: var(--ink-2); font-size: var(--fs-micro)">раскрытие, диалог</span></div>
+              </div>
+              <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-2); margin-top: 9px">Ноль радиуса нигде — он превращает плотную таблицу в газету; больше шести — тоже нигде. Числа не анимируются: бухгалтер сверяет столбик, а не смотрит кино.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="s07" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">07</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Иконки</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Свой набор inline SVG: сетка 24, обводка 1,8, скруглённые концы, без заливок. Ничего не тянется с чужого домена. В интерфейсе — 13 px в тулбарах, 15 в плашках, 11 внутри строк.</div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr)">
+              <sc-for list="{{ icons }}" as="i" hint-placeholder-count="24">
+                <div style="display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line)">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <sc-for list="{{ i.paths }}" as="p" hint-placeholder-count="2"><path d="{{ p.d }}"></path></sc-for>
+                  </svg>
+                  <span style="font-size: var(--fs-micro); color: var(--ink-2)">{{ i.name }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </section>
+
+        <section id="s08" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">08</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Шапка, тенант, несколько ролей</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Роль — набор прав, а не ярлык: шапка показывает все выданные наборы рядом. Здесь у бухгалтера второй набор выдан временно, до 31.07.2026 — поэтому он помечен пунктиром и сроком, а не выглядит как часть профессии. Полная модель — в файле <a href="Роли и права.dc.html">«Роли и права»</a>.</div>
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <header style="height: 50px; display: flex; align-items: center; gap: 20px; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--line-control)">
+              <div style="display: flex; align-items: baseline; gap: 7px">
+                <span style="font-weight: var(--w-bold); font-size: var(--fs-lead); letter-spacing: -.01em">Dodo</span>
+                <span style="font-weight: var(--w-medium); font-size: var(--fs-lead); color: var(--accent)">P&amp;L</span>
+              </div>
+              <nav style="display: flex; gap: 2px; align-items: center">
+                <span aria-current="page" style="padding: 6px 10px; border-radius: var(--r-control); background: var(--accent-soft); color: var(--accent); font-size: var(--fs-body); font-weight: var(--w-semibold)">Зарплата</span>
+                <a href="#s08" style="padding: 6px 10px; border-radius: var(--r-control); font-size: var(--fs-body); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', textDecoration: 'none' }">Табель</a>
+                <a href="#s08" style="padding: 6px 10px; border-radius: var(--r-control); font-size: var(--fs-body); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', textDecoration: 'none' }">Наличные</a>
+                <a href="#s08" style="padding: 6px 10px; border-radius: var(--r-control); font-size: var(--fs-body); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', textDecoration: 'none' }">Поставщики</a>
+                <a href="#s08" style="padding: 6px 10px; border-radius: var(--r-control); font-size: var(--fs-body); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', textDecoration: 'none' }">P&amp;L</a>
+                <a href="#s08" style="padding: 6px 10px; border-radius: var(--r-control); font-size: var(--fs-body); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', textDecoration: 'none' }">Справочники</a>
+              </nav>
+              <div style="flex: 1"></div>
+              <div style="display: flex; align-items: center; gap: 10px; padding-right: 12px; border-right: 1px solid var(--line-2)">
+                <div style="text-align: right; line-height: 1.25">
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Balkan Pizza d.o.o.</div>
+                  <div style="font-size: var(--fs-meta); color: var(--ink-3)">Сербия · RSD</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px">
+                <div style="display: flex; gap: 4px">
+                  <span style="font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--reg-official); background: var(--reg-official-soft); border: 1px solid var(--accent-line); padding: 2px 7px; border-radius: var(--r-control)">Бухгалтер</span>
+                  <span style="display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--warn-ink); background: var(--warn-soft); border: 1px dashed var(--warn-line); padding: 2px 7px; border-radius: var(--r-control)">Администратор<span style="font-family: var(--font-num); font-size: 9.5px; opacity: .75">до 31.07</span></span>
+                </div>
+                <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--ink-inverse); font-size: var(--fs-meta); font-weight: var(--w-semibold); display: grid; place-items: center">MJ</div>
+              </div>
+            </header>
+            <div style="background: var(--surface); padding: 13px 16px 14px">
+              <div style="font-size: var(--fs-meta); color: var(--ink-3); margin-bottom: 4px">Зарплата <span style="opacity:.55">/</span> Периоды</div>
+              <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+                <h3 style="margin: 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Ведомость <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Июнь 2026</h3>
+                <span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: var(--r-control); background: var(--accent-soft); border: 1px solid var(--accent-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--st-calculated)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--st-calculated)"></span>Посчитан</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-3)">Расчёт 01.07.2026, 09:14 · норма июня 176 ч</span>
+              </div>
+              <div style="display: flex; align-items: center; margin-top: 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); overflow: hidden; width: fit-content">
+                <div style="display: flex; align-items: center; gap: 7px; padding: 7px 14px 7px 11px; border-right: 1px solid var(--line-2)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                  <span style="font-size: var(--fs-dense); color: var(--ink-2)">Часы закрыты</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 7px 14px; border-right: 1px solid var(--line-2)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                  <span style="font-size: var(--fs-dense); color: var(--ink-2)">Расчёт готов</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 7px 14px; background: var(--surface-2)">
+                  <span style="width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent); display: inline-block"></span>
+                  <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Утверждение</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="s09" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">09</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Кнопки</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Пять уровней. Первый столбец живой — наводите и нажимайте; остальные показывают состояния принудительно.</div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <div style="display: grid; grid-template-columns: 124px repeat(6, 1fr); gap: 9px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">
+              <div>Уровень</div><div>Обычное</div><div>Наведение</div><div>Нажатое</div><div>Фокус</div><div>Отключено</div><div>Загрузка</div>
+            </div>
+            <sc-for list="{{ btnRows }}" as="b" hint-placeholder-count="5">
+              <div style="display: grid; grid-template-columns: 124px repeat(6, 1fr); gap: 9px; padding: 10px 13px; border-bottom: 1px solid var(--line); align-items: center">
+                <div>
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ b.title }}</div>
+                  <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-3); margin-top: 1px">{{ b.note }}</div>
+                </div>
+                <sc-for list="{{ b.cells }}" as="c" hint-placeholder-count="6">
+                  <button style="{{ c.style }}" style-hover="{{ c.hover }}" style-active="{{ c.active }}" disabled="{{ c.dis }}">
+                    <sc-if value="{{ c.icon }}" hint-placeholder-val="{{ false }}">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 12 5 5 5-5"></path><path d="M4 21h16"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ c.spin }}" hint-placeholder-val="{{ false }}">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" style="animation: spin 700ms linear infinite"><path d="M12 4a8 8 0 0 1 8 8"></path></svg>
+                    </sc-if>
+                    <span>{{ c.label }}</span>
+                    <sc-if value="{{ c.ext }}" hint-placeholder-val="{{ false }}"><span style="opacity:.55">xlsx</span></sc-if>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-for>
+            <div style="padding: 10px 13px; font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-2); background: var(--surface-2)">Высота 32 px — обычная, 27 px — в тулбаре и внутри таблицы. Заглавные буквы в подписях запрещены: русское и сербское слово в капслоке вырастает вдвое и рвёт кнопку.</div>
+          </div>
+        </section>
+
+        <section id="s10" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">10</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Переключатели, фильтры, поиск</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Переключатель — когда значений три-четыре и они должны быть видны без клика. Фильтр-поповер — когда значений десятки: точек в стране бывает пятьдесят, кнопкой на каждую это не решается.</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">Срез по регистру</div>
+              <div style="font-size: var(--fs-micro); color: var(--ink-3); margin-bottom: 9px">Выбранный элемент — span[aria-current], не кнопка и не ссылка. Живой: нажмите</div>
+              <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px; width: fit-content">
+                <sc-for list="{{ sliceOpts }}" as="s" hint-placeholder-count="4">
+                  <sc-if value="{{ s.sel }}" hint-placeholder-val="{{ false }}">
+                    <span aria-current="true" style="{{ s.selStyle }}"><span style="{{ s.dotStyle }}"></span>{{ s.label }}</span>
+                  </sc-if>
+                  <sc-if value="{{ s.notSel }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ s.on }}" style="{{ s.btnStyle }}" style-hover="{ color: 'var(--ink)' }"><span style="{{ s.dotStyle }}"></span>{{ s.label }}</button>
+                  </sc-if>
+                </sc-for>
+              </div>
+              <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-2); margin-top: 10px; border-top: 1px solid var(--line); padding-top: 9px">Итоги на экране обязаны сходиться с выбранным срезом: если человеку не видно регистр, его суммы не входят и в итог.</div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 11px">
+                <div style="display: flex; align-items: center; gap: 6px; height: var(--control-h-sm); padding: 0 9px; background: var(--surface); border: 1px solid var(--line-control); border-radius: var(--r-control); min-width: 210px">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="m20 20-3.6-3.6"></path></svg>
+                  <input placeholder="Поиск по сотруднику" style="border: 0; outline: 0; font-size: var(--fs-dense); width: 100%; background: transparent; color: var(--ink)">
+                </div>
+                <span style="font-size: var(--fs-micro); color: var(--ink-3)">поиск живёт рядом с таблицей, не в шапке</span>
+              </div>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">Фильтр длинного списка</div>
+              <div style="font-size: var(--fs-micro); color: var(--ink-3); margin-bottom: 9px">Кнопка показывает значение, поповер — поиск, города, счётчики и пустые точки</div>
+              <div style="display: flex; gap: 8px; margin-bottom: 10px">
+                <span style="display: inline-flex; align-items: center; gap: 7px; height: var(--control-h-sm); padding: 0 9px; border-radius: var(--r-control); border: 1px solid var(--line-control); background: var(--surface); font-size: var(--fs-dense)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11z"></path><path d="M12 12.4a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8z"></path></svg>
+                  Все точки · 14
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 7px; height: var(--control-h-sm); padding: 0 9px; border-radius: var(--r-control); border: 1px solid var(--accent); background: var(--surface); color: var(--accent); font-size: var(--fs-dense); font-weight: var(--w-semibold)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11z"></path><path d="M12 12.4a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8z"></path></svg>
+                  3 из 14
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+                </span>
+              </div>
+              <div style="width: 318px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); box-shadow: var(--sh-pop)">
+                <div style="display: flex; align-items: center; gap: 7px; padding: 8px 9px; border-bottom: 1px solid var(--line)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="m20 20-3.6-3.6"></path></svg>
+                  <span style="font-size: var(--fs-dense); color: var(--ink-3)">Найти точку или город</span>
+                </div>
+                <div style="padding: 6px 0">
+                  <div style="padding: 6px 10px 3px; font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-bold)">Beograd</div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px; height: 28px; background: var(--accent-soft); font-size: var(--fs-dense)">
+                    <span style="width: 14px; height: 14px; border-radius: var(--r-mark); border: 1px solid var(--accent); background: var(--accent); display: grid; place-items: center"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg></span>
+                    Vračar<span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">12 чел.</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px; height: 28px; font-size: var(--fs-dense)">
+                    <span style="width: 14px; height: 14px; border-radius: var(--r-mark); border: 1px solid var(--line-control-2); background: var(--surface)"></span>
+                    Novi Beograd<span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">12 чел.</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px; height: 28px; font-size: var(--fs-dense); color: var(--ink-3)">
+                    <span style="width: 14px; height: 14px; border-radius: var(--r-mark); border: 1px solid var(--line-control-2); background: var(--surface)"></span>
+                    Dorćol<span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-empty)">нет данных за июнь</span>
+                  </div>
+                </div>
+                <div style="padding: 7px 9px; border-top: 1px solid var(--line); background: var(--surface-2); font-size: 10px; color: var(--ink-3)">↑↓ — по списку, Enter — отметить, Esc — закрыть</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="s11" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">11</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Поля и формы</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Числовое поле — моноширинное и по правому краю, как в таблице: человек вводит и сразу сверяет глазом. Подпись всегда сверху — в трёх языках слева она не влезает.</div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 14px 13px">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 12px">
+              <div>
+                <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Обычное</label>
+                <input value="Petar Petrović" style="width: 100%; height: var(--control-h); padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body); color: var(--ink)" style-hover="{ borderColor: 'var(--line-control-2)' }" style-focus="{ borderColor: 'var(--accent)', boxShadow: '0 0 0 3px rgba(31,78,156,.14)', outline: 'none' }">
+                <div style="font-size: var(--fs-meta); color: var(--ink-3); margin-top: 4px">Как в документах, латиницей</div>
+              </div>
+              <div>
+                <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Деньги</label>
+                <div style="display: flex; align-items: center; height: var(--control-h); border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); overflow: hidden">
+                  <input value="168 000,00" style="flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; padding: 0 9px; text-align: right; font-family: var(--font-num); font-size: var(--fs-lead); font-variant-numeric: tabular-nums; color: var(--ink); background: transparent">
+                  <span style="padding: 0 9px; height: 100%; display: grid; place-items: center; background: var(--surface-3); border-left: 1px solid var(--line-control); font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2)">RSD</span>
+                </div>
+                <div style="font-size: var(--fs-meta); color: var(--ink-3); margin-top: 4px">sr — 168.000,00 · ru — 168 000,00</div>
+              </div>
+              <div>
+                <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Выбор из списка</label>
+                <div style="display: flex; align-items: center; gap: 8px; height: var(--control-h); padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)">
+                  Часовая схема
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto"><path d="m6 9 6 6 6-6"></path></svg>
+                </div>
+                <div style="font-size: var(--fs-meta); color: var(--ink-3); margin-top: 4px">Схема расчёта — только выбором</div>
+              </div>
+              <div>
+                <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Действует с</label>
+                <div style="display: flex; align-items: center; gap: 8px; height: var(--control-h); padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-family: var(--font-num); font-size: var(--fs-body)">
+                  01.07.2026
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto"><path d="M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"></path><path d="M8 4v4"></path><path d="M16 4v4"></path><path d="M4 11h16"></path></svg>
+                </div>
+                <div style="font-size: var(--fs-meta); color: var(--ink-3); margin-top: 4px">Дата — всегда моноширинная</div>
+              </div>
+              <div>
+                <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--accent); font-weight: var(--w-semibold); margin-bottom: 4px">Фокус</label>
+                <input value="72 451" style="width: 100%; height: var(--control-h); padding: 0 9px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--surface); text-align: right; font-family: var(--font-num); font-size: var(--fs-lead); box-shadow: 0 0 0 3px rgba(31,78,156,.14); color: var(--ink)">
+                <div style="font-size: var(--fs-meta); color: var(--accent); margin-top: 4px">Кольцо видно и без мыши</div>
+              </div>
+              <div>
+                <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--err); font-weight: var(--w-semibold); margin-bottom: 4px">Ошибка</label>
+                <input value="-14" style="width: 100%; height: var(--control-h); padding: 0 9px; border: 1px solid var(--err); border-radius: var(--r-control); background: var(--err-soft); text-align: right; font-family: var(--font-num); font-size: var(--fs-lead); color: var(--err)">
+                <div style="display: flex; align-items: center; gap: 5px; font-size: var(--fs-meta); color: var(--err); margin-top: 4px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                  Часов не может быть меньше нуля
+                </div>
+              </div>
+              <div>
+                <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Отключено</label>
+                <input value="176,00" disabled="{{ true }}" style="width: 100%; height: var(--control-h); padding: 0 9px; border: 1px solid var(--line); border-radius: var(--r-control); background: var(--surface-2); text-align: right; font-family: var(--font-num); font-size: var(--fs-lead); color: var(--ink-3)">
+                <div style="font-size: var(--fs-meta); color: var(--ink-3); margin-top: 4px">Норма — из календаря страны</div>
+              </div>
+              <div>
+                <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--warn); font-weight: var(--w-semibold); margin-bottom: 4px">Сохранено с замечанием</label>
+                <input value="212" style="width: 100%; height: var(--control-h); padding: 0 9px; border: 1px solid var(--warn-line); border-radius: var(--r-control); background: var(--warn-soft); text-align: right; font-family: var(--font-num); font-size: var(--fs-lead); color: var(--warn-ink)">
+                <div style="display: flex; align-items: center; gap: 5px; font-size: var(--fs-meta); color: var(--warn); margin-top: 4px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                  Больше нормы на 36 ч — сохранено
+                </div>
+              </div>
+            </div>
+            <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-2); margin-top: 13px; border-top: 1px solid var(--line); padding-top: 10px">Подсказка о подозрительном числе не мешает сохранить: система предупреждает, но не запрещает. Запрет остаётся только там, где правка сломала бы утверждённый период.</div>
+          </div>
+        </section>
+
+        <section id="s12" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">12</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Плашки и версии по датам</h2>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start">
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--ok-soft); border: 1px solid var(--ok-line); border-radius: var(--r-block)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px; flex: 0 0 auto"><path d="m5 13 4 4L19 7"></path></svg>
+                <div>
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--ok)">Период утверждён</div>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 2px">Июнь 2026 закрыт 01.07.2026, 11:48 · Milica Jovanović. Ведомость и строки для P&amp;L доступны к выгрузке.</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: var(--r-block)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px; flex: 0 0 auto"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                <div style="flex: 1">
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Прежде чем утвердить — 3 замечания</div>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink); margin-top: 2px">Часы после увольнения, переработка выше порога, одна строка заморожена как спорная.</div>
+                </div>
+                <button style="height: 24px; padding: 0 9px; border: 1px solid var(--warn-line); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--warn-ink); white-space: nowrap" style-hover="{ background: '#FFF3DC' }">Показать</button>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--err-soft); border: 1px solid var(--err-line); border-radius: var(--r-block)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px; flex: 0 0 auto"><path d="M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+                <div>
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--err)">Расчёт не завершён</div>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 2px">У четырёх сотрудников нет действующих условий найма на 30.06.2026. Ничего не сохранено, период остался черновиком.</div>
+                </div>
+              </div>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 3px">Версионирование по датам</div>
+              <div style="font-size: var(--fs-micro); color: var(--ink-3); margin-bottom: 10px">Один приём для ставок, коэффициентов, правил и условий найма</div>
+              <div style="display: flex; flex-direction: column; gap: 7px">
+                <div style="display: flex; align-items: center; gap: 9px">
+                  <span style="display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 7px; border-radius: var(--r-control); background: var(--ok-soft); border: 1px solid var(--ok-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--ok)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--ok)"></span>Действует</span>
+                  <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2)">с 01.04.2026</span>
+                  <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; font-weight: var(--w-semibold)">430,00</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 9px">
+                  <span style="display: inline-flex; align-items: center; height: 21px; padding: 0 7px; border-radius: var(--r-control); background: var(--surface-3); border: 1px solid var(--line-control); font-size: var(--fs-meta); color: var(--ink-2)">Действовало</span>
+                  <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">01.01 – 31.03.2026</span>
+                  <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2)">398,00</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 9px">
+                  <span style="display: inline-flex; align-items: center; height: 21px; padding: 0 7px; border-radius: var(--r-control); background: var(--accent-soft); border: 1px dashed var(--accent-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--accent)">Вступит в силу</span>
+                  <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--accent)">01.09.2026</span>
+                  <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--accent)">465,00</span>
+                </div>
+              </div>
+              <div style="margin-top: 11px; padding: 10px 11px; background: var(--err-soft); border: 1px solid var(--err-line); border-radius: var(--r-block)">
+                <div style="display: flex; align-items: center; gap: 7px; font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--err)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v9H6z"></path><path d="M9 11V8a3 3 0 0 1 6 0v3"></path></svg>
+                  Правку нельзя применить с 01.05.2026
+                </div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">Она задела бы <b>июнь 2026</b> — период утверждён 01.07.2026. Поставьте дату с 01.07.2026 или перенесите разницу в текущий месяц.</div>
+                <div style="display: flex; gap: 7px; margin-top: 8px">
+                  <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-dense); font-weight: var(--w-semibold)" style-hover="{ background: 'var(--accent-press)' }">Перенести разницу</button>
+                  <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Изменить дату</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="s13" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">13</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Таблица данных и раскрытие числа</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Главный компонент продукта. Двухъярусная шапка группирует колонки, «Итого» прилипает к правому краю, итоги — к низу, сортировка помечена явной стрелкой. Клик по итогу раскрывает расчёт внутри строки — это тот же приём, что и раскрытие строки P&amp;L.</div>
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <table style="width: 100%; table-layout: fixed">
+              <thead>
+                <tr>
+                  <th rowSpan="2" style="width: 208px; text-align: left; padding: 6px 8px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); vertical-align: bottom">Сотрудник</th>
+                  <th rowSpan="2" style="width: 52px; text-align: center; padding: 6px 8px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); vertical-align: bottom">Рег</th>
+                  <th colSpan="3" style="background: var(--surface-3); color: var(--ink-2); font-size: 10.5px; font-weight: var(--w-bold); letter-spacing: .07em; text-transform: uppercase; text-align: left; padding: 0 8px; height: 21px; line-height: 21px; border-bottom: 1px solid var(--line-2); border-right: 1px solid var(--line-strong)">Начисления по часам</th>
+                  <th colSpan="2" style="background: #EDEFF2; color: var(--ink-2); font-size: 10.5px; font-weight: var(--w-bold); letter-spacing: .07em; text-transform: uppercase; text-align: left; padding: 0 8px; height: 21px; line-height: 21px; border-bottom: 1px solid var(--line-2); border-right: 1px solid var(--line-strong)">Удержания</th>
+                  <th rowSpan="2" style="width: 124px; text-align: right; padding: 6px 8px; background: #E4E8EE; border-bottom: 1px solid var(--line-strong); border-left: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink); vertical-align: bottom">
+                    <button style="display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 0; font: inherit; color: inherit">Итого к выплате
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="m6 13 6 6 6-6"></path></svg>
+                    </button>
+                  </th>
+                </tr>
+                <tr>
+                  <th style="width: 98px; text-align: right; padding: 5px 8px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">
+                    <button style="display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 0; font: inherit; color: inherit" style-hover="{ color: 'var(--accent)' }">База
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--ink-empty)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v12"></path><path d="m4 10 4-4 4 4"></path><path d="M16 18V6"></path><path d="m12 14 4 4 4-4"></path></svg>
+                    </button>
+                  </th>
+                  <th style="width: 92px; text-align: right; padding: 5px 8px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Ночные</th>
+                  <th style="text-align: right; padding: 5px 8px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Переработка</th>
+                  <th style="width: 100px; text-align: right; padding: 5px 8px; background: #EDEFF2; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Взносы</th>
+                  <th style="width: 92px; text-align: right; padding: 5px 8px; background: #EDEFF2; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Налог</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style-hover="{ background: '#F6F8FA' }">
+                  <th scope="row" style="text-align: left; padding: 1px 10px; height: var(--row); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-regular); line-height: 15px; overflow: hidden">
+                    <div style="display: flex; align-items: center; gap: 6px"><span style="width: 3px; height: 15px; border-radius: 1px; background: transparent"></span><span style="font-weight: var(--w-medium)">Petar Petrović</span></div>
+                    <div style="font-size: var(--fs-micro); color: var(--ink-3); line-height: 12px; padding-left: 9px">Повар · Кухня · Beograd Vračar</div>
+                  </th>
+                  <td style="text-align: center; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)"><span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 14px; padding: 0 3px; border-radius: var(--r-mark); color: var(--ink-2); border: 1px solid var(--line-control-2)">ОФ·ДОП</span></td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">41 280</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">1 006</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)">8 127</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2); background: #FAFAFB; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">-17 773</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2); background: #FAFAFB; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)">-6 089</td>
+                  <td style="text-align: right; padding: 0; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line-strong)">
+                    <button onClick="{{ toggleExpand }}" style="width: 100%; height: var(--row); padding: 0 10px; border: 0; background: transparent; text-align: right; font-family: var(--font-num); font-size: 13px; font-weight: var(--w-semibold); font-variant-numeric: tabular-nums; color: var(--ink); border-bottom: 1px dotted var(--ink-3)" style-hover="{ borderBottomColor: 'var(--accent)' }">72 451</button>
+                  </td>
+                </tr>
+                <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}">
+                  <tr>
+                    <td colSpan="8" style="padding: 0; background: var(--surface-2); border-bottom: 1px solid var(--line-strong)">
+                      <div style="padding: 10px 12px 11px">
+                        <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px">
+                          <span style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Откуда взялось 72 451</span>
+                          <span style="font-size: var(--fs-meta); color: var(--ink-3)">правила на 30.06.2026 · сходится с сохранённым расчётом</span>
+                          <button onClick="{{ toggleExpand }}" style="margin-left: auto; height: 22px; padding: 0 8px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2)">Свернуть</button>
+                        </div>
+                        <sc-for list="{{ traceSteps }}" as="s" hint-placeholder-count="7">
+                          <div style="display: grid; grid-template-columns: 186px 1fr 104px 196px 40px; gap: 10px; align-items: baseline; padding: 4px 0; border-top: 1px solid var(--line)">
+                            <div style="font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ s.name }}</div>
+                            <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2)">{{ s.input }}</div>
+                            <div style="{{ s.amtStyle }}">{{ s.amount }}</div>
+                            <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ s.rule }}</div>
+                            <div style="text-align: center"><span style="{{ s.regStyle }}">{{ s.reg }}</span></div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </td>
+                  </tr>
+                </sc-if>
+                <tr style="background: var(--origin-carried)" style-hover="{ background: '#FFF4DE' }">
+                  <th scope="row" style="text-align: left; padding: 1px 10px; height: var(--row); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-regular); line-height: 15px; overflow: hidden">
+                    <div style="display: flex; align-items: center; gap: 6px"><span style="width: 3px; height: 15px; border-radius: 1px; background: var(--origin-mark)"></span><span style="font-weight: var(--w-medium)">Ana Marić</span></div>
+                    <div style="font-size: var(--fs-micro); color: var(--ink-3); line-height: 12px; padding-left: 9px">Перенос разницы за май · Beograd Novi Beograd</div>
+                  </th>
+                  <td style="text-align: center; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)"><span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 14px; padding: 0 3px; border-radius: var(--r-mark); color: var(--ink-2); border: 1px solid var(--line-control-2)">ОФ·ДОП</span></td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">80 960</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">3 016</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)">2 520</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2); background: #FAFAFB; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">-24 279</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2); background: #FAFAFB; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)">-9 349</td>
+                  <td style="text-align: right; padding: 0 10px; font-family: var(--font-num); font-size: 13px; font-weight: var(--w-semibold); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line-strong)">76 420</td>
+                </tr>
+                <tr style-hover="{ background: '#F6F8FA' }">
+                  <th scope="row" style="text-align: left; padding: 1px 10px; height: var(--row); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-regular); line-height: 15px; overflow: hidden">
+                    <div style="display: flex; align-items: center; gap: 6px">
+                      <span style="width: 3px; height: 15px; border-radius: 1px; background: var(--line-control-2)"></span>
+                      <span style="font-weight: var(--w-medium)">Miloš Stojanović</span>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--warn-ink)" stroke-width="2.2" stroke-linecap="round"><path d="M6 11h12v9H6z"></path><path d="M9 11V8a3 3 0 0 1 6 0v3"></path></svg>
+                    </div>
+                    <div style="font-size: var(--fs-micro); color: var(--ink-3); line-height: 12px; padding-left: 9px">Заморожен как спорный · пересчёт обходит</div>
+                  </th>
+                  <td style="text-align: center; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)"><span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 14px; padding: 0 3px; border-radius: var(--r-mark); color: var(--ink-2); border: 1px solid var(--line-control-2)">ОФ·ДОП</span></td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">76 560</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">4 072</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--warn-ink); box-shadow: inset 0 -2px 0 var(--warn-mark); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)">2 741</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2); background: #FAFAFB; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">-22 452</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2); background: #FAFAFB; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)">-8 344</td>
+                  <td style="text-align: right; padding: 0 10px; font-family: var(--font-num); font-size: 13px; font-weight: var(--w-semibold); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line-strong)">72 218</td>
+                </tr>
+                <tr style-hover="{ background: '#F6F8FA' }">
+                  <th scope="row" style="text-align: left; padding: 1px 10px; height: var(--row); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-regular); line-height: 15px; overflow: hidden">
+                    <div style="display: flex; align-items: center; gap: 6px"><span style="width: 3px; height: 15px; border-radius: 1px; background: transparent"></span><span style="font-weight: var(--w-medium)">Vuk Marković</span></div>
+                    <div style="font-size: var(--fs-micro); color: var(--ink-3); line-height: 12px; padding-left: 9px">Курьер · Курьеры · Beograd Vračar</div>
+                  </th>
+                  <td style="text-align: center; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)"><span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 14px; padding: 0 3px; border-radius: var(--r-mark); color: var(--reg-internal); border: 1px solid var(--reg-internal)">ВН</span></td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">63 360</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-3); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">0</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-empty); border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)">–</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2); background: #FAFAFB; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-2)">-13 862</td>
+                  <td style="text-align: right; padding: 0 8px; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2); background: #FAFAFB; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line-strong)">-4 155</td>
+                  <td style="text-align: right; padding: 0 10px; font-family: var(--font-num); font-size: 13px; font-weight: var(--w-semibold); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line-strong)">51 943</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th scope="row" style="text-align: left; padding: 0 10px; height: 34px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Итого по периоду</th>
+                  <td style="background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong)"></td>
+                  <td style="text-align: right; padding: 0 8px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-2); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">2 695 575</td>
+                  <td style="text-align: right; padding: 0 8px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-2); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">66 811</td>
+                  <td style="text-align: right; padding: 0 8px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">175 138</td>
+                  <td style="text-align: right; padding: 0 8px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-2); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums; color: var(--ink-2)">-678 464</td>
+                  <td style="text-align: right; padding: 0 8px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-family: var(--font-num); font-size: var(--fs-num); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums; color: var(--ink-2)">-241 457</td>
+                  <td style="text-align: right; padding: 0 10px; background: #E8EDF3; border-top: 2px solid var(--line-strong); border-left: 1px solid var(--line-strong); font-family: var(--font-num); font-size: 13.5px; font-weight: var(--w-bold); font-variant-numeric: tabular-nums">2 769 453</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div style="display: flex; gap: 16px; margin-top: 9px; font-size: var(--fs-meta); color: var(--ink-3); flex-wrap: wrap">
+            <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 3px; height: 12px; background: var(--origin-mark); border-radius: 1px"></span>происхождение строки</span>
+            <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 3px; height: 12px; background: var(--line-control-2); border-radius: 1px"></span>заморожена</span>
+            <span style="display: inline-flex; align-items: center; gap: 5px"><span style="font-family: var(--font-num); color: var(--ink-3)">0</span>ноль — значение есть</span>
+            <span style="display: inline-flex; align-items: center; gap: 5px"><span style="font-family: var(--font-num); color: var(--ink-empty)">–</span>значения нет</span>
+            <span>подчёркнутая пунктиром сумма раскрывается</span>
+          </div>
+        </section>
+
+        <section id="s14" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">14</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Долгая операция</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Расчёт, импорт и разбор документов идут фоном. Полоса, стадия, счётчик и прямое обещание: со страницы можно уйти. Нажмите «Пересчитать июнь».</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 13px">
+              <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 10px">
+                <button onClick="{{ runCalc }}" style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-body); font-weight: var(--w-semibold)" style-hover="{ background: 'var(--accent-press)' }">Пересчитать июнь</button>
+                <span style="font-size: var(--fs-meta); color: var(--ink-3)">со страницы можно уйти — расчёт продолжится</span>
+              </div>
+              <div style="border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+                <div style="display: flex; align-items: center; gap: 9px; padding: 9px 11px; background: var(--surface-2); border-bottom: 1px solid var(--line)">
+                  <span style="{{ calcDotStyle }}"></span>
+                  <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ calcStage }}</span>
+                  <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2)">{{ calcCounter }}</span>
+                </div>
+                <div style="padding: 11px">
+                  <div style="height: 6px; background: var(--surface-3); border-radius: 999px; overflow: hidden">
+                    <div style="{{ calcBarStyle }}"></div>
+                  </div>
+                  <div style="display: flex; align-items: baseline; justify-content: space-between; margin-top: 7px; gap: 10px">
+                    <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ calcNote }}</span>
+                    <span style="font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink)">{{ calcPct }}</span>
+                  </div>
+                </div>
+              </div>
+              <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-2); margin-top: 10px">Пока идёт расчёт, таблица показывает прошлые числа и помечена как устаревшая, но остаётся читаемой. Пустого экрана вместо данных не бывает.</div>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 9px">Три исхода</div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <div style="display: flex; align-items: center; gap: 9px; padding: 9px 11px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-block)">
+                  <span style="width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--accent); border-top-color: transparent; animation: spin 700ms linear infinite; flex: 0 0 auto"></span>
+                  <span style="font-size: var(--fs-dense)">Идёт · 22 из 35 сотрудников</span>
+                  <button style="margin-left: auto; height: 22px; padding: 0 8px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2)">Отменить</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 9px; padding: 9px 11px; background: var(--ok-soft); border: 1px solid var(--ok-line); border-radius: var(--r-block)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="m5 13 4 4L19 7"></path></svg>
+                  <span style="font-size: var(--fs-dense); color: var(--ok); font-weight: var(--w-semibold)">Готово · 35 сотрудников за 8 с</span>
+                  <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2)">09:14</span>
+                </div>
+                <div style="display: flex; align-items: flex-start; gap: 9px; padding: 9px 11px; background: var(--err-soft); border: 1px solid var(--err-line); border-radius: var(--r-block)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px; flex: 0 0 auto"><path d="M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+                  <div>
+                    <div style="font-size: var(--fs-dense); color: var(--err); font-weight: var(--w-semibold)">Остановлено на 14 из 35</div>
+                    <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 2px">У Sofija Mitrović нет ставки на 30.06.2026. Ничего не сохранено.</div>
+                  </div>
+                  <button style="margin-left: auto; height: 22px; padding: 0 8px; border: 1px solid var(--err-line); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--err); white-space: nowrap; flex: 0 0 auto">Открыть карточку</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="s15" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">15</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Инбокс: два вида строк</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Платёж без статьи и необработанное вложение — разные сущности, и путать их нельзя. У платежа есть сумма и дата; у вложения нет ни одного распознанного поля — только файл, кто и когда прислал.</div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+              <span style="width: 14px; height: 14px; border-radius: var(--r-mark); border: 1px solid var(--line-control-2); background: var(--surface)"></span>
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Разобрать 40 штук</span>
+              <span style="font-size: var(--fs-meta); color: var(--ink-2)">выбрано 0 · система запомнит решение и предложит его в следующий раз</span>
+              <div style="margin-left: auto; display: flex; gap: 7px">
+                <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense); color: var(--ink-3); opacity: .55" disabled="{{ true }}">Присвоить статью</button>
+                <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense); color: var(--ink-3); opacity: .55" disabled="{{ true }}">Разнести по точкам</button>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 11px; padding: 0 12px; height: var(--row-loose); border-bottom: 1px solid var(--line)" style-hover="{ background: '#F6F8FA' }">
+              <span style="width: 14px; height: 14px; border-radius: var(--r-mark); border: 1px solid var(--line-control-2); background: var(--surface); flex: 0 0 auto"></span>
+              <span style="display: inline-flex; align-items: center; height: 19px; padding: 0 6px; border-radius: var(--r-mark); background: var(--accent-soft); border: 1px solid var(--accent-line); font-size: 10px; font-weight: var(--w-semibold); color: var(--accent); letter-spacing: .04em; text-transform: uppercase; flex: 0 0 auto">Платёж</span>
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-medium); width: 186px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Mlin Vojvodina d.o.o.</span>
+              <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2); width: 78px">18.06.2026</span>
+              <span style="font-size: var(--fs-meta); color: var(--warn-ink); background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: var(--r-mark); padding: 1px 6px; white-space: nowrap">статья не определена</span>
+              <span style="font-size: var(--fs-meta); color: var(--ink-3); white-space: nowrap">похоже на «Сырьё» — 4 похожих платежа</span>
+              <span style="margin-left: auto; font-family: var(--font-num); font-size: 13px; font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">184 320</span>
+              <button style="height: 24px; padding: 0 9px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--accent); font-weight: var(--w-semibold); flex: 0 0 auto" style-hover="{ background: 'var(--accent-soft)' }">Сырьё</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 11px; padding: 0 12px; height: var(--row-loose); border-bottom: 1px solid var(--line); border-left: 3px solid var(--warn-mark); background: var(--warn-soft)" style-hover="{ background: '#FFF4DE' }">
+              <span style="width: 14px; height: 14px; border-radius: var(--r-mark); border: 1px solid var(--warn-line); background: var(--surface); flex: 0 0 auto"></span>
+              <span style="display: inline-flex; align-items: center; gap: 5px; height: 19px; padding: 0 6px; border-radius: var(--r-mark); background: var(--surface); border: 1px dashed var(--warn-line); font-size: 10px; font-weight: var(--w-semibold); color: var(--warn-ink); letter-spacing: .04em; text-transform: uppercase; flex: 0 0 auto">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7l-6 6a3 3 0 0 0 4 4l6-6a5 5 0 0 0-7-7l-7 7a7 7 0 0 0 10 10"></path></svg>
+                Вложение
+              </span>
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-medium); color: var(--warn-ink)">IMG_2947.jpg · 2,4 МБ</span>
+              <span style="font-size: var(--fs-meta); color: var(--warn-ink); opacity: .8; white-space: nowrap">ни одного распознанного поля</span>
+              <span style="font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap">прислал Đorđe Milošević · Vračar · сегодня 14:12</span>
+              <span style="margin-left: auto; font-family: var(--font-num); font-size: 13px; color: var(--ink-empty)">–</span>
+              <button style="height: 24px; padding: 0 9px; border: 1px solid var(--warn-line); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--warn-ink); font-weight: var(--w-semibold); flex: 0 0 auto; white-space: nowrap" style-hover="{ background: '#FFF3DC' }">Открыть и разобрать</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 11px; padding: 0 12px; height: var(--row-loose)" style-hover="{ background: '#F6F8FA' }">
+              <span style="width: 14px; height: 14px; border-radius: var(--r-mark); border: 1px solid var(--line-control-2); background: var(--surface); flex: 0 0 auto"></span>
+              <span style="display: inline-flex; align-items: center; height: 19px; padding: 0 6px; border-radius: var(--r-mark); background: var(--accent-soft); border: 1px solid var(--accent-line); font-size: 10px; font-weight: var(--w-semibold); color: var(--accent); letter-spacing: .04em; text-transform: uppercase; flex: 0 0 auto">Платёж</span>
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-medium); width: 186px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Čistoća Novi Sad</span>
+              <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2); width: 78px">21.06.2026</span>
+              <span style="font-size: var(--fs-meta); color: var(--warn-ink); background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: var(--r-mark); padding: 1px 6px; white-space: nowrap">статья не определена</span>
+              <span style="font-size: var(--fs-meta); color: var(--ink-3); white-space: nowrap">новый контрагент</span>
+              <span style="margin-left: auto; font-family: var(--font-num); font-size: 13px; font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">21 600</span>
+              <button style="height: 24px; padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2); flex: 0 0 auto" style-hover="{ borderColor: 'var(--accent)', color: 'var(--accent)' }">Выбрать статью</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="s16" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">16</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Пустые состояния и отказы</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Пустой экран объясняет следующий шаг, а не факт пустоты. Отказ по невидимой записи выглядит как её отсутствие — иначе он выдал бы, что запись существует. Отказ по праву, которое человек может выдать себе сам, ведёт к действию.</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 18px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"></path><path d="M8 4v4"></path><path d="M16 4v4"></path><path d="M4 11h16"></path></svg>
+              <div style="font-size: var(--fs-lead); font-weight: var(--w-semibold)">Июнь ещё не начат</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Часы за июнь никто не вносил. Откройте период — сетка табеля создастся на 35 сотрудников по трём точкам, норма 176 ч подтянется из календаря Сербии.</div>
+              <button style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-body); font-weight: var(--w-semibold); margin-top: 2px" style-hover="{ background: 'var(--accent-press)' }">Открыть июнь 2026</button>
+              <button style="height: 22px; padding: 0; border: 0; background: transparent; font-size: var(--fs-meta); color: var(--accent); text-decoration: underline; text-underline-offset: 2px">Загрузить свою таблицу за июнь</button>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 18px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="m20 20-3.6-3.6"></path></svg>
+              <div style="font-size: var(--fs-lead); font-weight: var(--w-semibold)">Такой ведомости нет</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Проверьте ссылку или выберите период в списке.</div>
+              <button style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body); margin-top: 2px" style-hover="{ background: 'var(--surface-3)' }">К списку периодов</button>
+              <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); border-top: 1px dashed var(--line-control); padding-top: 8px; margin-top: 4px">Глухой отказ. Один и тот же текст и код показываются и когда записи нет вовсе, и когда она есть, но смотрящему не видна.</div>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--accent-line); border-radius: var(--r-block); padding: 18px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4a5 5 0 1 1-4.6 7L4 17.4V20h3l1-1v-2h2v-2h2l1.2-1.2A5 5 0 0 0 15 4z"></path></svg>
+              <div style="font-size: var(--fs-lead); font-weight: var(--w-semibold)">Не хватает права «Утверждать период»</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">У вас есть право управлять ролями — значит, вы можете выдать это право себе сами. Действие попадёт в историю: кто, когда и что изменил.</div>
+              <div style="display: flex; gap: 7px; margin-top: 2px">
+                <button style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-body); font-weight: var(--w-semibold)" style-hover="{ background: 'var(--accent-press)' }">Выдать себе право</button>
+                <button style="height: var(--control-h); padding: 0 12px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)" style-hover="{ background: 'var(--surface-3)' }">Экран ролей</button>
+              </div>
+              <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); border-top: 1px dashed var(--accent-line); padding-top: 8px; margin-top: 4px">Отказ с действием. Виден только тому, у кого есть право управлять ролями, — иначе это глухой отказ слева.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="s17" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">17</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Диалоги подтверждения</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Денежное и разрушительное — только явным подтверждением, с последствиями в тексте и фактами в списке. Откат требует причины: кнопка неактивна, пока причина не написана. Оба диалога живые.</div>
+          <div style="display: flex; gap: 9px">
+            <button onClick="{{ openApprove }}" style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-body); font-weight: var(--w-semibold)" style-hover="{ background: 'var(--accent-press)' }">Утвердить период</button>
+            <button onClick="{{ openRollback }}" style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--err-line); border-radius: var(--r-control); background: var(--surface); color: var(--err); font-size: var(--fs-body); font-weight: var(--w-semibold)" style-hover="{ background: 'var(--err-soft)' }">Откатить утверждение</button>
+          </div>
+        </section>
+
+        <section id="s18" style="margin-bottom: 32px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">18</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Карточка сущности и мобильный вид</h2>
+          </div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Слева то, что не меняется, ниже — условия найма версиями по датам. Мобильный вид управляющего показывает своих людей на чтение и не показывает ни одной суммы расчёта.</div>
+          <div style="display: grid; grid-template-columns: 1fr 336px; gap: 10px; align-items: start">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 13px; border-bottom: 1px solid var(--line)">
+                <div style="width: 38px; height: 38px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--line-control); display: grid; place-items: center; font-size: var(--fs-body); font-weight: var(--w-semibold); color: var(--ink-2)">PP</div>
+                <div style="flex: 1">
+                  <div style="font-size: var(--fs-title); font-weight: var(--w-semibold); line-height: var(--lh-title)">Petar Petrović</div>
+                  <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 1px">Повар · Кухня · Beograd Vračar · принят 14.02.2024</div>
+                </div>
+                <span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: var(--r-control); background: var(--ok-soft); border: 1px solid var(--ok-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--ok)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--ok)"></span>Работает</span>
+                <div style="display: flex; gap: 4px">
+                  <span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 16px; padding: 0 4px; border-radius: var(--r-mark); color: var(--reg-official); border: 1px solid var(--reg-official)">ОФ</span>
+                  <span style="display: inline-block; font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 16px; padding: 0 4px; border-radius: var(--r-mark); color: var(--reg-supp); border: 1px solid var(--reg-supp)">ДОП</span>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line)">
+                <div style="padding: 10px 13px; border-right: 1px solid var(--line)">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Ставка</div>
+                  <div style="font-family: var(--font-num); font-size: var(--fs-lead); font-variant-numeric: tabular-nums; margin-top: 3px">430,00</div>
+                  <div style="font-size: 10px; color: var(--ink-3)">RSD / час · с 01.04.2026</div>
+                </div>
+                <div style="padding: 10px 13px; border-right: 1px solid var(--line)">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Коэффициент</div>
+                  <div style="font-family: var(--font-num); font-size: var(--fs-lead); font-variant-numeric: tabular-nums; margin-top: 3px">×1,00</div>
+                  <div style="font-size: 10px; color: var(--ink-3)">от группы «Кухня»</div>
+                </div>
+                <div style="padding: 10px 13px; border-right: 1px solid var(--line)">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Схема</div>
+                  <div style="font-size: var(--fs-lead); margin-top: 3px">Часовая</div>
+                  <div style="font-size: 10px; color: var(--ink-3)">персонально, не от группы</div>
+                </div>
+                <div style="padding: 10px 13px">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Июнь 2026</div>
+                  <div style="font-family: var(--font-num); font-size: var(--fs-lead); font-variant-numeric: tabular-nums; margin-top: 3px">72 451</div>
+                  <div style="font-size: 10px; color: var(--ink-3)">к выплате · 96 ч + отпуск</div>
+                </div>
+              </div>
+              <div style="padding: 11px 13px 13px">
+                <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px">
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Условия найма</div>
+                  <span style="font-size: var(--fs-meta); color: var(--ink-3)">версии по датам, старое не переписывается</span>
+                  <button style="margin-left: auto; height: 24px; padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2); display: inline-flex; align-items: center; gap: 5px" style-hover="{ borderColor: 'var(--accent)', color: 'var(--accent)' }">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                    Новая версия
+                  </button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+                  <div style="display: grid; grid-template-columns: 146px 1fr 92px 1fr; gap: 10px; align-items: center; padding: 8px 10px; background: var(--surface)">
+                    <span style="display: inline-flex; align-items: center; gap: 5px; width: fit-content; height: 20px; padding: 0 7px; border-radius: var(--r-control); background: var(--ok-soft); border: 1px solid var(--ok-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--ok)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--ok)"></span>с 01.04.2026</span>
+                    <span style="font-size: var(--fs-dense)">Повар · Кухня · часовая</span>
+                    <span style="font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; text-align: right; font-weight: var(--w-semibold)">430,00</span>
+                    <span style="font-size: var(--fs-meta); color: var(--ink-3)">Milica Jovanović · 28.03.2026</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 146px 1fr 92px 1fr; gap: 10px; align-items: center; padding: 8px 10px; background: var(--surface)">
+                    <span style="display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: var(--r-control); background: var(--surface-3); border: 1px solid var(--line-control); font-size: var(--fs-meta); color: var(--ink-2)">01.01 – 31.03.2026</span>
+                    <span style="font-size: var(--fs-dense); color: var(--ink-2)">Повар · Кухня · часовая</span>
+                    <span style="font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-2)">398,00</span>
+                    <span style="font-size: var(--fs-meta); color: var(--ink-3)">Milica Jovanović · 29.12.2025</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 146px 1fr 92px 1fr; gap: 10px; align-items: center; padding: 8px 10px; background: var(--surface)">
+                    <span style="display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: var(--r-control); background: var(--surface-3); border: 1px solid var(--line-control); font-size: var(--fs-meta); color: var(--ink-2)">14.02.2024 – 31.12.2025</span>
+                    <span style="font-size: var(--fs-dense); color: var(--ink-2)">Помощник повара · Кухня · часовая</span>
+                    <span style="font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-2)">340,00</span>
+                    <span style="font-size: var(--fs-meta); color: var(--ink-3)">импорт при переезде · 14.02.2024</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="background: #14181E; border-radius: 16px; padding: 9px">
+              <div style="background: var(--surface); border-radius: 10px; overflow: hidden">
+                <div style="height: 24px; background: var(--surface-3); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 11px; font-family: var(--font-num); font-size: 9.5px; color: var(--ink-3)"><span>9:41</span><span>375 pt</span></div>
+                <div style="padding: 11px">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Мои сотрудники · Vračar</div>
+                  <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 0 11px; min-height: var(--tap-min); border-bottom: 1px solid var(--line)">
+                      <div style="width: 30px; height: 30px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-size: var(--fs-meta); color: var(--ink-2); font-weight: var(--w-semibold)">PP</div>
+                      <div style="flex: 1; min-width: 0">
+                        <div style="font-size: var(--fs-body); font-weight: var(--w-medium)">Petar Petrović</div>
+                        <div style="font-size: var(--fs-meta); color: var(--ink-3)">Повар · часовая</div>
+                      </div>
+                      <div style="text-align: right">
+                        <div style="font-family: var(--font-num); font-size: var(--fs-body); font-variant-numeric: tabular-nums">430,00</div>
+                        <div style="font-size: 10px; color: var(--ink-3)">RSD / час</div>
+                      </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 0 11px; min-height: var(--tap-min); border-bottom: 1px solid var(--line)">
+                      <div style="width: 30px; height: 30px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-size: var(--fs-meta); color: var(--ink-2); font-weight: var(--w-semibold)">MJ</div>
+                      <div style="flex: 1; min-width: 0">
+                        <div style="font-size: var(--fs-body); font-weight: var(--w-medium)">Milica Jovanović</div>
+                        <div style="font-size: var(--fs-meta); color: var(--ink-3)">Повар · часовая</div>
+                      </div>
+                      <div style="text-align: right">
+                        <div style="font-family: var(--font-num); font-size: var(--fs-body); font-variant-numeric: tabular-nums">410,00</div>
+                        <div style="font-size: 10px; color: var(--ink-3)">RSD / час</div>
+                      </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 9px 11px; background: var(--surface-2)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"></path><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path></svg>
+                      <span style="font-size: var(--fs-meta); color: var(--ink-2)">только чтение · сумм расчёта здесь нет</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 8px; margin-top: 10px">
+                    <button style="flex: 1; min-height: var(--tap-min); border: 1px solid var(--accent); border-radius: var(--r-block); background: var(--accent); color: #fff; font-size: var(--fs-body); font-weight: var(--w-semibold)">Внести часы</button>
+                    <button style="flex: 1; min-height: var(--tap-min); border: 1px solid var(--line-control); border-radius: var(--r-block); background: var(--surface); font-size: var(--fs-body)">Скинуть накладную</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="s19" style="margin-bottom: 18px">
+          <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px">
+            <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">19</span>
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Как добавить экран и остаться в системе</h2>
+          </div>
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <sc-for list="{{ rules }}" as="r" hint-placeholder-count="7">
+              <div style="display: grid; grid-template-columns: 24px 1fr; gap: 11px; padding: 11px 13px; border-bottom: 1px solid var(--line)">
+                <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3); padding-top: 2px">{{ r.n }}</div>
+                <div>
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ r.title }}</div>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 2px">{{ r.text }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <sc-if value="{{ dialogOpen }}" hint-placeholder-val="{{ false }}">
+    <div ref="{{ dialogRef }}" tabIndex="-1" onKeyDown="{{ onDialogKey }}" onClick="{{ closeDialog }}" style="position: fixed; inset: 0; z-index: 80; background: rgba(10,13,17,.5); display: grid; place-items: center; outline: none">
+      <div onClick="{{ stopProp }}" style="width: 468px; background: var(--surface); border-radius: var(--r-block); box-shadow: var(--sh-modal); overflow: hidden">
+        <div style="{{ dialogHeadStyle }}">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><sc-for list="{{ dialogIcon }}" as="p" hint-placeholder-count="2"><path d="{{ p.d }}"></path></sc-for></svg>
+          <div style="font-size: var(--fs-title); font-weight: var(--w-semibold)">{{ dialogTitle }}</div>
+        </div>
+        <div style="padding: 13px 15px">
+          <div style="font-size: var(--fs-body); line-height: var(--lh-body)">{{ dialogText }}</div>
+          <div style="margin-top: 11px; border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+            <sc-for list="{{ dialogFacts }}" as="f" hint-placeholder-count="3">
+              <div style="display: flex; align-items: baseline; gap: 10px; padding: 7px 11px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ f.k }}</span>
+                <span style="{{ f.vStyle }}">{{ f.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ needsReason }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 12px">
+              <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Причина отката · обязательно</label>
+              <textarea value="{{ reason }}" onInput="{{ onReason }}" placeholder="Например: ошибка в часах Sofija Mitrović за 18.06" style="width: 100%; height: 58px; padding: 8px 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); font-size: var(--fs-body); line-height: var(--lh-body); resize: vertical; color: var(--ink)" style-focus="{ borderColor: 'var(--accent)', outline: 'none', boxShadow: '0 0 0 3px rgba(31,78,156,.14)' }"></textarea>
+              <div style="{{ reasonHintStyle }}">{{ reasonHint }}</div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display: flex; align-items: center; gap: 9px; padding: 11px 15px; background: var(--surface-2); border-top: 1px solid var(--line)">
+          <span style="font-size: var(--fs-meta); color: var(--ink-3)">Esc — отмена</span>
+          <div style="flex: 1"></div>
+          <button onClick="{{ closeDialog }}" style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)" style-hover="{ background: 'var(--surface-3)' }">Отмена</button>
+          <button style="{{ dialogOkStyle }}" disabled="{{ okDisabled }}">{{ dialogOk }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1264,&quot;height&quot;:1000},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;options&quot;:[&quot;#1F4E9C&quot;,&quot;#1B5E5A&quot;,&quot;#3A4A63&quot;,&quot;#7A3B2E&quot;],&quot;default&quot;:&quot;#1F4E9C&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Тема&quot;},&quot;rowHeight&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;min&quot;:24,&quot;max&quot;:40,&quot;step&quot;:2,&quot;default&quot;:30,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Тема&quot;}}">
+const COLOR_GROUPS = [
+  ["Поверхности", [["--canvas", "#EDEFF2", "фон приложения"], ["--surface", "#FFFFFF", "таблицы, карточки, поповеры"], ["--surface-2", "#F7F9FB", "итоги, только чтение"], ["--surface-3", "#F2F4F7", "шапка таблицы, тулбар"], ["--surface-head", "#EDEFF2", "закреплённые ячейки шапки"]]],
+  ["Текст", [["--ink", "#1B2028", "числа и основной текст"], ["--ink-2", "#5C6672", "подписи, второстепенное"], ["--ink-3", "#98A1AC", "надстрочные, метаданные"], ["--ink-empty", "#B8C0C9", "только прочерк «нет значения»"], ["--ink-inverse", "#FFFFFF", "текст на тёмном"]]],
+  ["Линии", [["--line", "#E9ECEF", "строки таблицы"], ["--line-2", "#E4E8EC", "колонки внутри группы"], ["--line-strong", "#CFD5DC", "блоки, границы групп колонок"], ["--line-control", "#D7DBE0", "поля и кнопки"], ["--line-control-2", "#B9C1CA", "наведение, пунктир выгрузки"]]],
+  ["Акцент", [["--accent", "#1F4E9C", "главное действие, фокус, ссылки"], ["--accent-press", "#16386F", "нажатие"], ["--accent-soft", "#E8EEF8", "фон активного значения"], ["--accent-line", "#C9D9F0", "граница мягкого фона"]]],
+  ["Внимание — единственный тёплый цвет", [["--warn", "#B26B00", "текст предупреждения"], ["--warn-ink", "#7A4A00", "текст на мягком фоне"], ["--warn-mark", "#E0A03A", "метка у числа и у строки"], ["--warn-soft", "#FFF9EC", "фон плашки, происхождение строки"], ["--warn-line", "#EBD9B4", "граница плашки"]]],
+  ["Успех, рост, ошибка, падение", [["--ok", "#10704A", "утверждено, успех, рост"], ["--ok-soft", "#E7F2EC", "фон плашки успеха"], ["--ok-line", "#C9E2D5", "граница плашки успеха"], ["--err", "#A32B1E", "отказ, ошибка, падение"], ["--err-soft", "#FBEDEB", "фон плашки ошибки"]]],
+  ["Регистры учёта", [["--reg-official", "#1F4E9C", "официальный"], ["--reg-official-soft", "#E8EEF8", "его мягкий фон"], ["--reg-supp", "#6B4FA8", "дополнительный"], ["--reg-supp-soft", "#F1ECF9", "его мягкий фон"], ["--reg-internal", "#2E6B6B", "внутренний"]]]
+];
+
+const TYPE_ROWS = [
+  ["--fs-display", "20 / 26", "заголовок экрана", "Ведомость · Июнь 2026", 20, 26, 600, false],
+  ["--fs-title", "16 / 22", "заголовок блока", "Условия найма", 16, 22, 600, false],
+  ["--fs-lead", "14 / 20", "ввод, крупные поля", "168 000,00", 14, 20, 400, false],
+  ["--fs-body", "13 / 18", "база интерфейса", "Перенести разницу в текущий месяц", 13, 18, 400, false],
+  ["--fs-dense", "12,5 / 17", "таблицы и тулбары", "Надбавка за результат", 12.5, 17, 400, false],
+  ["--fs-meta", "11,5 / 16", "подписи под полем", "Действует с 01.04.2026", 11.5, 16, 400, false],
+  ["--fs-micro", "10,5 / 14", "надстрочные метки", "СРЕЗ ПО РЕГИСТРУ", 10.5, 14, 600, false],
+  ["--fs-num", "12,5", "деньги в таблице", "1 234 567,89", 12.5, 17, 400, true],
+  ["--fs-num-hero", "22", "сумма в раскрытии", "2 769 453", 22, 26, 700, true]
+];
+
+const LANG_ROWS = [
+  ["Утвердить период", "Approve period", "Odobri period"],
+  ["Дополнительный", "Supplementary", "Dopunski"],
+  ["Надбавка за результат", "Performance bonus", "Dodatak za rezultat"],
+  ["Доплата до минимума", "Minimum top-up", "Dopuna do minimuma"],
+  ["Необработанное вложение", "Unprocessed attachment", "Neobrađen prilog"],
+  ["Перенести разницу", "Carry the difference", "Prenesi razliku"]
+];
+
+const ICONS = [
+  ["check · готово", ["m5 13 4 4L19 7"]],
+  ["x · закрыть", ["M6 6l12 12", "M18 6 6 18"]],
+  ["chevron · раскрыть", ["m6 9 6 6 6-6"]],
+  ["chevron · дальше", ["m9 6 6 6-6 6"]],
+  ["download · выгрузка", ["M12 3v12", "m7 12 5 5 5-5", "M4 21h16"]],
+  ["upload · загрузка", ["M12 21V9", "m7 12 5-5 5 5", "M4 3h16"]],
+  ["search · поиск", ["M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z", "m20 20-3.6-3.6"]],
+  ["filter · фильтр", ["M3 6h18", "M6 12h12", "M10 18h4"]],
+  ["calendar · период", ["M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z", "M8 4v4", "M16 4v4", "M4 11h16"]],
+  ["clock · версия", ["M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z", "M12 8.5V12l2.5 2"]],
+  ["history · история", ["M4 12a8 8 0 1 0 2.4-5.7", "M4 4v4h4", "M12 8.5V12l3 1.5"]],
+  ["lock · заморожено", ["M6 11h12v9H6z", "M9 11V8a3 3 0 0 1 6 0v3"]],
+  ["warning · внимание", ["M12 4 3 20h18L12 4z", "M12 10v4", "M12 17h.01"]],
+  ["info · ошибка", ["M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z", "M12 8v5", "M12 16h.01"]],
+  ["plus · добавить", ["M12 5v14", "M5 12h14"]],
+  ["minus · свернуть", ["M5 12h14"]],
+  ["pencil · правка", ["M4 20h4l11-11-4-4L4 16v4z"]],
+  ["trash · удалить", ["M4 7h16", "M9 7V5h6v2", "M6 7l1 13h10l1-13"]],
+  ["refresh · пересчёт", ["M20 12a8 8 0 1 1-3-6.2", "M20 4v5h-5"]],
+  ["pin · точка", ["M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11z", "M12 12.4a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8z"]],
+  ["file · документ", ["M7 3h7l4 4v14H7z", "M14 3v4h4"]],
+  ["clip · вложение", ["M15 7l-6 6a3 3 0 0 0 4 4l6-6a5 5 0 0 0-7-7l-7 7a7 7 0 0 0 10 10"]],
+  ["users · группа", ["M8 11a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z", "M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6", "M16 5.2a3.2 3.2 0 0 1 0 6.2", "M17 14.2c2.4.7 4 2.9 4 5.8"]],
+  ["key · права", ["M15 4a5 5 0 1 1-4.6 7L4 17.4V20h3l1-1v-2h2v-2h2l1.2-1.2A5 5 0 0 0 15 4z"]],
+  ["sort · сортировка", ["M8 6v12", "m4 10 4-4 4 4", "M16 18V6", "m12 14 4 4 4-4"]],
+  ["sigma · итог", ["M17 5H7l6 7-6 7h10"]],
+  ["store · юрлицо", ["M4 9l2-4h12l2 4", "M5 9h14v11H5z", "M10 20v-6h4v6"]],
+  ["eye · только чтение", ["M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z", "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"]]
+];
+
+const RULES = [
+  ["01", "Начните с плотности, а не с композиции", "Сколько строк и колонок человек видит одновременно — первый вопрос. Из ответа следует высота ряда (26 / 30 / 34) и размер шрифта, а не наоборот."],
+  ["02", "Числа — моноширинные, по правому краю, табличные", "Любая сумма, дата, ставка, процент, код правила. Ноль пишется цифрой, отсутствие — прочерком var(--ink-empty). Исключений нет."],
+  ["03", "Цвет берётся из семантики, а не из вкуса", "Регистр, статус периода, версия, рост и падение, внимание. Если новому элементу нужен цвет, которого нет в семантике, — скорее всего элемент лишний."],
+  ["04", "Каждое состояние нарисовано до сдачи", "Заполнено, пусто, идёт расчёт, ошибка, нет прав. Пустое состояние объясняет следующий шаг, отказ не выдаёт существование скрытой записи."],
+  ["05", "Что нельзя — объяснено", "Кнопка не отключается молча: рядом причина или ссылка на исправление. Отказ по праву, которое человек может выдать себе сам, ведёт к выдаче."],
+  ["06", "Всё, что меняет расчёт, версионируется по датам", "Правка не переписывает значение, а создаёт версию «с какого числа». Если правка задела бы утверждённый месяц — отказ называет этот месяц по имени."],
+  ["07", "Клавиатура важнее мыши", "Ввод в сетке, переходы по строкам, подтверждение, Esc. Видимый фокус обязателен: бухгалтер не любит трогать мышь, и он прав."]
+];
+
+const TRACE = [
+  ["База", "96 ч × 430,00 × 1,00", 41280, "BASE_HOURLY v4 · 01.01.2026", "ОФ"],
+  ["Ночные", "9 ч × 430,00 × 26%", 1006, "NIGHT_RS v3 · 01.01.2026", "ОФ"],
+  ["Переработка", "15 ч × 430,00 × 126%", 8127, "OVERTIME_RS v2 · 01.01.2025", "ОФ"],
+  ["Надбавка за результат", "план точки 104%", 4500, "BONUS_STORE v7 · 01.04.2026", "ДОП"],
+  ["Топли оброк", "12 дн × 300", 3600, "MEAL_DAY v2 · 01.01.2026", "ОФ"],
+  ["Взносы", "19,9% × 89 312", -17773, "CONTRIB_RS v7 · 01.04.2026", "ОФ"],
+  ["Налог", "10% × (89 312 − 28 423)", -6089, "TAX_RS v5 · 01.01.2026", "ОФ"]
+];
+
+const REG_COLOR = { "ОФ": "var(--reg-official)", "ДОП": "var(--reg-supp)", "ВН": "var(--reg-internal)" };
+
+const STAGES = [
+  [0, "Готов к расчёту", "Нажмите «Пересчитать июнь»", "0 из 35"],
+  [1, "Читаю часы", "3 точки · 35 сотрудников · июнь 2026", "6 из 35"],
+  [30, "Применяю правила", "набор правил Сербии на 30.06.2026, версии зафиксированы", "14 из 35"],
+  [58, "Считаю удержания", "взносы 19,9 % и налог 10 % от базы за вычетом 28 423", "24 из 35"],
+  [82, "Сохраняю результат", "прошлый расчёт остаётся в истории", "32 из 35"],
+  [100, "Готово", "35 сотрудников за 8 с · ведомость обновлена", "35 из 35"]
+];
+
+const ICON_CHECK = ["m5 13 4 4L19 7"];
+const ICON_UNDO = ["M4 12a8 8 0 1 0 2.4-5.7", "M4 4v4h4"];
+
+function fmt(n) {
+  const neg = n < 0, a = Math.abs(Math.round(n));
+  return (neg ? "-" : "") + String(a).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+}
+
+class Component extends DCLogic {
+  state = { slice: "all", expanded: true, prog: 0, dialog: null, reason: "" };
+  rootRef = React.createRef();
+  dialogRef = React.createRef();
+
+  applyTheme() {
+    const el = this.rootRef.current;
+    if (!el) return;
+    const A = {
+      "#1F4E9C": ["#16386F", "#E8EEF8", "#C9D9F0"],
+      "#1B5E5A": ["#134641", "#E6F1F0", "#C3DCD9"],
+      "#3A4A63": ["#2A374A", "#EBEEF3", "#CFD6E1"],
+      "#7A3B2E": ["#5C2C22", "#F6ECE9", "#E4CDC6"]
+    };
+    const a = this.props.accent;
+    if (a && A[a]) {
+      el.style.setProperty("--accent", a);
+      el.style.setProperty("--accent-press", A[a][0]);
+      el.style.setProperty("--accent-soft", A[a][1]);
+      el.style.setProperty("--accent-line", A[a][2]);
+      el.style.setProperty("--st-calculated", a);
+      el.style.setProperty("--reg-official", a);
+      el.style.setProperty("--reg-official-soft", A[a][1]);
+    }
+    const h = this.props.rowHeight;
+    if (h) el.style.setProperty("--row", h + "px");
+  }
+
+  componentDidMount() { document.addEventListener("keydown", this.onEsc); this.applyTheme(); }
+  componentDidUpdate() { this.applyTheme(); }
+  componentWillUnmount() { document.removeEventListener("keydown", this.onEsc); clearInterval(this.timer); }
+  onEsc = (e) => { if (e.key === "Escape" && this.state.dialog) this.setState({ dialog: null }); };
+
+  renderVals() {
+    const self = this;
+    const p = this.state.prog;
+    let stage = STAGES[0];
+    STAGES.forEach(function (s) { if (p >= s[0]) stage = s; });
+    const dlg = this.state.dialog;
+    const needsReason = dlg === "rollback";
+    const reasonOk = this.state.reason.trim().length > 0;
+
+    const chip = function (sel) {
+      const base = { display: "inline-flex", alignItems: "center", gap: "5px", height: "24px", padding: "0 10px", fontFamily: "var(--font-ui)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", borderRadius: "var(--r-control)", border: 0 };
+      if (sel) return Object.assign(base, { background: "var(--surface)", color: "var(--ink)", fontWeight: "var(--w-semibold)", boxShadow: "var(--sh-xs)" });
+      return Object.assign(base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" });
+    };
+
+    const VAR = {
+      primary: { bg: "var(--accent)", fg: "#fff", bd: "var(--accent)", press: "var(--accent-press)", weight: 600 },
+      secondary: { bg: "var(--surface)", fg: "var(--ink)", bd: "var(--line-control)", press: "var(--surface-3)", weight: 400 },
+      ghost: { bg: "transparent", fg: "var(--ink-2)", bd: "transparent", press: "var(--surface-3)", weight: 400 },
+      danger: { bg: "var(--surface)", fg: "var(--err)", bd: "var(--err-line)", press: "var(--err-soft)", weight: 600 },
+      download: { bg: "#FBFCFD", fg: "var(--ink-2)", bd: "var(--line-control-2)", press: "var(--surface-3)", weight: 400 }
+    };
+    const btnStyle = function (v, st) {
+      const c = VAR[v];
+      const s = {
+        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", width: "100%",
+        padding: "0 10px", borderRadius: "var(--r-control)", whiteSpace: "nowrap",
+        background: c.bg, color: c.fg, fontWeight: c.weight,
+        border: (v === "download" ? "1px dashed " : "1px solid ") + c.bd,
+        height: v === "download" ? "27px" : "var(--control-h)",
+        fontSize: v === "download" ? "var(--fs-dense)" : "var(--fs-body)",
+        transition: "background var(--t-state) var(--ease)"
+      };
+      if (st === "hover") { s.background = v === "primary" ? "#24589F" : c.press; if (v === "download") s.borderColor = "var(--ink-3)"; }
+      if (st === "active") { s.background = v === "primary" ? "var(--accent-press)" : c.press; s.transform = "translateY(1px)"; }
+      if (st === "focus") { s.boxShadow = "0 0 0 3px rgba(31,78,156,.28)"; s.borderColor = "var(--accent)"; }
+      if (st === "disabled") { s.opacity = .45; s.cursor = "not-allowed"; }
+      if (st === "loading") { s.opacity = .8; s.cursor = "progress"; }
+      return s;
+    };
+    const BTN_META = [
+      ["primary", "Главное", "одно на экран", "Утвердить период"],
+      ["secondary", "Обычное", "рядом с главным", "Пересчитать"],
+      ["ghost", "Третье", "внутри таблицы", "След расчёта"],
+      ["danger", "Опасное", "откат, удаление", "Откатить"],
+      ["download", "Выгрузка", "пунктир и стрелка", "К выплате"]
+    ];
+    const STATES = ["base", "hover", "active", "focus", "disabled", "loading"];
+
+    return {
+      rootRef: this.rootRef,
+
+      toc: [
+        { isGroup: true, isLink: false, label: "Основа" },
+        { isGroup: false, isLink: true, num: "01", label: "Правила", href: "#s01" },
+        { isGroup: false, isLink: true, num: "02", label: "Цвет", href: "#s02" },
+        { isGroup: false, isLink: true, num: "03", label: "Семантика", href: "#s03" },
+        { isGroup: false, isLink: true, num: "04", label: "Типографика", href: "#s04" },
+        { isGroup: false, isLink: true, num: "05", label: "Три языка", href: "#s05" },
+        { isGroup: false, isLink: true, num: "06", label: "Сетка и плотность", href: "#s06" },
+        { isGroup: false, isLink: true, num: "07", label: "Иконки", href: "#s07" },
+        { isGroup: true, isLink: false, label: "Компоненты" },
+        { isGroup: false, isLink: true, num: "08", label: "Шапка и роли", href: "#s08" },
+        { isGroup: false, isLink: true, num: "09", label: "Кнопки", href: "#s09" },
+        { isGroup: false, isLink: true, num: "10", label: "Переключатели", href: "#s10" },
+        { isGroup: false, isLink: true, num: "11", label: "Поля и формы", href: "#s11" },
+        { isGroup: false, isLink: true, num: "12", label: "Плашки и версии", href: "#s12" },
+        { isGroup: false, isLink: true, num: "13", label: "Таблица данных", href: "#s13" },
+        { isGroup: false, isLink: true, num: "14", label: "Долгая операция", href: "#s14" },
+        { isGroup: false, isLink: true, num: "15", label: "Инбокс", href: "#s15" },
+        { isGroup: false, isLink: true, num: "16", label: "Пусто и отказы", href: "#s16" },
+        { isGroup: false, isLink: true, num: "17", label: "Диалоги", href: "#s17" },
+        { isGroup: false, isLink: true, num: "18", label: "Карточка", href: "#s18" },
+        { isGroup: true, isLink: false, label: "Передача" },
+        { isGroup: false, isLink: true, num: "19", label: "Как добавить экран", href: "#s19" }
+      ],
+
+      colorGroups: COLOR_GROUPS.map(function (g) {
+        return { name: g[0], items: g[1].map(function (c) { return { name: c[0], hex: c[1], note: c[2], chipStyle: { height: "42px", background: c[1], borderBottom: "1px solid var(--line-strong)" } }; }) };
+      }),
+
+      typeRows: TYPE_ROWS.map(function (t) {
+        return {
+          token: t[0], size: t[1], use: t[2], sample: t[3],
+          sampleStyle: {
+            fontSize: t[4] + "px", lineHeight: t[5] + "px", fontWeight: t[6],
+            fontFamily: t[7] ? "var(--font-num)" : "var(--font-ui)",
+            fontVariantNumeric: t[7] ? "tabular-nums" : "normal",
+            letterSpacing: t[0] === "--fs-micro" ? "var(--tracking-micro)" : (t[4] >= 20 ? "-.015em" : "0"),
+            color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+          }
+        };
+      }),
+
+      langRows: LANG_ROWS.map(function (l) {
+        const r = Math.round((l[0].length / l[1].length - 1) * 100);
+        return {
+          ru: l[0], en: l[1], sr: l[2], ratio: (r > 0 ? "+" : "") + r + " %",
+          ratioStyle: { textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", color: r > 25 ? "var(--warn)" : "var(--ink-3)" }
+        };
+      }),
+
+      icons: ICONS.map(function (i) { return { name: i[0], paths: i[1].map(function (d) { return { d: d }; }) }; }),
+      rules: RULES.map(function (r) { return { n: r[0], title: r[1], text: r[2] }; }),
+
+      btnRows: BTN_META.map(function (m) {
+        return {
+          title: m[1], note: m[2],
+          cells: STATES.map(function (st) {
+            return {
+              label: m[3], style: btnStyle(m[0], st),
+              hover: st === "base" ? btnStyle(m[0], "hover") : {},
+              active: st === "base" ? btnStyle(m[0], "active") : {},
+              dis: st === "disabled" ? true : null,
+              icon: m[0] === "download", ext: m[0] === "download", spin: st === "loading"
+            };
+          })
+        };
+      }),
+
+      sliceOpts: [
+        { k: "all", label: "Все", dot: null },
+        { k: "official", label: "Официальный", dot: "var(--reg-official)" },
+        { k: "supplementary", label: "Дополнительный", dot: "var(--reg-supp)" },
+        { k: "internal", label: "Внутренний", dot: "var(--reg-internal)" }
+      ].map(function (o) {
+        const sel = o.k === self.state.slice;
+        return {
+          label: o.label, sel: sel, notSel: !sel,
+          on: function () { self.setState({ slice: o.k }); },
+          selStyle: chip(true), btnStyle: chip(false),
+          dotStyle: o.dot ? { width: "6px", height: "6px", borderRadius: "50%", background: o.dot, flex: "0 0 auto" } : { display: "none" }
+        };
+      }),
+
+      expanded: this.state.expanded,
+      toggleExpand: function () { self.setState({ expanded: !self.state.expanded }); },
+      traceSteps: TRACE.map(function (t) {
+        return {
+          name: t[0], input: t[1], amount: fmt(t[2]), rule: t[3], reg: t[4],
+          amtStyle: { textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: t[2] < 0 ? "var(--ink-2)" : "var(--ink)" },
+          regStyle: { display: "inline-block", fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", lineHeight: "14px", padding: "0 3px", borderRadius: "var(--r-mark)", color: REG_COLOR[t[4]], border: "1px solid currentColor" }
+        };
+      }),
+
+      runCalc: function () {
+        clearInterval(self.timer);
+        self.setState({ prog: 1 });
+        self.timer = setInterval(function () {
+          const n = self.state.prog + 7;
+          if (n >= 100) { clearInterval(self.timer); self.setState({ prog: 100 }); }
+          else self.setState({ prog: n });
+        }, 240);
+      },
+      calcStage: stage[1],
+      calcNote: stage[2],
+      calcCounter: stage[3],
+      calcPct: p + " %",
+      calcBarStyle: { height: "100%", width: Math.max(2, p) + "%", background: p >= 100 ? "var(--ok)" : "var(--accent)", transition: "width var(--t-panel) var(--ease)" },
+      calcDotStyle: p >= 100
+        ? { width: "11px", height: "11px", borderRadius: "50%", background: "var(--ok)", flex: "0 0 auto" }
+        : (p > 0
+          ? { width: "11px", height: "11px", borderRadius: "50%", border: "2px solid var(--accent)", borderTopColor: "transparent", animation: "spin 700ms linear infinite", flex: "0 0 auto" }
+          : { width: "11px", height: "11px", borderRadius: "50%", border: "2px solid var(--line-control-2)", flex: "0 0 auto" }),
+
+      dialogOpen: dlg !== null,
+      dialogRef: function (el) { if (el && document.activeElement !== el) el.focus(); },
+      onDialogKey: function (ev) { if (ev.key === "Escape") { ev.stopPropagation(); self.setState({ dialog: null }); } },
+      stopProp: function (ev) { ev.stopPropagation(); },
+      openApprove: function () { self.setState({ dialog: "approve", reason: "" }); },
+      openRollback: function () { self.setState({ dialog: "rollback", reason: "" }); },
+      closeDialog: function () { self.setState({ dialog: null }); },
+      needsReason: needsReason,
+      reason: this.state.reason,
+      onReason: function (ev) { self.setState({ reason: ev.target.value }); },
+      reasonHint: reasonOk ? "Причина попадёт в историю рядом с вашим именем" : "Без причины откат недоступен",
+      reasonHintStyle: { fontSize: "var(--fs-meta)", marginTop: "4px", color: reasonOk ? "var(--ink-3)" : "var(--warn)" },
+      dialogIcon: (needsReason ? ICON_UNDO : ICON_CHECK).map(function (d) { return { d: d }; }),
+      dialogTitle: needsReason ? "Откатить утверждение июня?" : "Утвердить июнь 2026?",
+      dialogText: needsReason
+        ? "Период вернётся в состояние «переоткрыт». Выгруженная ведомость останется в истории, но перестанет быть действующей версией расчёта."
+        : "После утверждения суммы фиксируются. Правки задним числом будут возможны только переносом разницы в следующий период.",
+      dialogFacts: (needsReason
+        ? [["Период", "Июнь 2026 · утверждён 01.07.2026"], ["Затронет", "35 сотрудников, 3 точки"], ["К выплате", fmt(2769453) + " RSD"]]
+        : [["Период", "Июнь 2026 · 35 сотрудников"], ["Замечания", "3 · одна строка заморожена"], ["К выплате", fmt(2769453) + " RSD"]]
+      ).map(function (f) {
+        const isMoney = f[1].indexOf("RSD") >= 0;
+        return {
+          k: f[0], v: f[1],
+          vStyle: {
+            marginLeft: "auto", fontSize: isMoney ? "var(--fs-body)" : "var(--fs-dense)",
+            fontFamily: isMoney ? "var(--font-num)" : "var(--font-ui)",
+            fontWeight: isMoney ? 700 : 500, fontVariantNumeric: "tabular-nums", color: "var(--ink)"
+          }
+        };
+      }),
+      dialogHeadStyle: {
+        display: "flex", alignItems: "center", gap: "9px", padding: "13px 15px",
+        borderBottom: "1px solid " + (needsReason ? "var(--err-line)" : "var(--line)"),
+        background: needsReason ? "var(--err-soft)" : "var(--surface-3)",
+        color: needsReason ? "var(--err)" : "var(--ink)"
+      },
+      dialogOk: needsReason ? "Откатить" : "Утвердить период",
+      okDisabled: needsReason && !reasonOk ? true : null,
+      dialogOkStyle: {
+        height: "var(--control-h)", padding: "0 14px", borderRadius: "var(--r-control)",
+        border: "1px solid " + (needsReason ? "var(--err)" : "var(--accent)"),
+        background: needsReason ? "var(--err)" : "var(--accent)", color: "#fff",
+        fontSize: "var(--fs-body)", fontWeight: 600,
+        opacity: needsReason && !reasonOk ? .45 : 1,
+        cursor: needsReason && !reasonOk ? "not-allowed" : "pointer"
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

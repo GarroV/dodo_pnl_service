@@ -235,7 +235,9 @@ def test_the_insured_base_refuses_what_it_cannot_store(client, period_restored, 
     client.post("/logout/")
 
 
-def test_the_insured_base_needs_the_right_to_edit_the_timesheet(client, period_restored):
+def test_the_insured_base_needs_the_right_to_edit_the_timesheet(
+    client, period_restored, admin_without_month_rights
+):
     """Право то же, что у часов: это тот же табель, и второго права ему не заводят."""
     # Строка берётся у того, кому сетка отдаётся полями: у роли на чтение полей
     # нет вовсе, и взять ключ строки с её страницы не из чего — это и есть
@@ -255,7 +257,7 @@ def test_the_insured_base_needs_the_right_to_edit_the_timesheet(client, period_r
     client.post("/logout/")
 
 
-def test_the_grid_offers_the_field_only_to_the_one_who_may_edit(client):
+def test_the_grid_offers_the_field_only_to_the_one_who_may_edit(client, admin_without_month_rights):
     """Роль на чтение видит число, а не поле ввода — как и у часов (T072)."""
     login_as(client, "admin")
     html = body(client.get(grid_url(client)))

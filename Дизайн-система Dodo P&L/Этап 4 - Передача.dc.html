@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  code { font-family:var(--font-num); font-size:var(--fs-num-sm); background:var(--surface-3); padding:1px 4px; border-radius:var(--r-mark); }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 70px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 15px 22px 14px">
+      <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 4 · передача</div>
+      <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Что сделано, как этим пользоваться и что осталось решить</h1>
+      <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px; max-width: 940px">Дизайн-система, восемь артефактов и два CSS-файла, готовых к переносу в Django. Ниже: принципы, карта файлов, инструкция «как добавить экран» и список вопросов, которые дизайн вскрыл, но решить не смог.</div>
+    </header>
+
+    <div style="padding: 20px 22px 0">
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">01</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Восемь принципов</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Не декларации, а правила, которые уже вшиты в компоненты. Каждое можно проверить на любом экране.</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line-strong); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+          <sc-for list="{{ principles }}" as="p" hint-placeholder-count="8">
+            <div style="background: var(--surface); padding: 12px 14px">
+              <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px">
+                <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ p.n }}</span>
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ p.t }}</span>
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ p.d }}</div>
+              <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-3); margin-top: 5px; border-top: 1px solid var(--line); padding-top: 5px">{{ p.where }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">02</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Что где лежит</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Два CSS-файла переносятся как есть. Остальное — прототипы: смотреть, снимать разметку, спорить.</div>
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <th style="width: 300px; text-align: left; padding: 7px 12px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Файл</th>
+                <th style="width: 128px; text-align: left; padding: 7px 12px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Роль</th>
+                <th style="text-align: left; padding: 7px 12px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Что внутри</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ files }}" as="f" hint-placeholder-count="11">
+                <tr style-hover="{ background: '#F6F8FA' }">
+                  <th scope="row" style="{{ f.nameStyle }}">
+                    <a href="{{ f.href }}" style="{{ f.linkStyle }}">{{ f.name }}</a>
+                  </th>
+                  <td style="{{ f.tdStyle }}"><span style="{{ f.tagStyle }}">{{ f.tag }}</span></td>
+                  <td style="{{ f.tdStyle }}"><span style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ f.what }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">03</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Как перенести в Django</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 380px; gap: 10px; align-items: start">
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 13px 14px">
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+                <div style="display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start">
+                  <span style="display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--line-control); font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold); color: var(--ink-2); margin-top: 1px">{{ s.n }}</span>
+                  <div>
+                    <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ s.t }}</div>
+                    <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 2px">{{ s.d }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+              <div style="padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">base.html</div>
+              <pre style="margin: 0; padding: 11px 12px; font-family: var(--font-num); font-size: 11px; line-height: 17px; color: var(--ink-2); overflow-x: auto">{% load static %}
+&lt;link rel="stylesheet"
+  href="{% static 'pnl/tokens.css' %}"&gt;
+&lt;link rel="stylesheet"
+  href="{% static 'pnl/components.css' %}"&gt;
+&lt;script src="{% static 'pnl/htmx.min.js' %}"
+  defer&gt;&lt;/script&gt;</pre>
+            </div>
+            <div style="background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: var(--r-block); padding: 11px 12px">
+              <div style="display: flex; align-items: center; gap: 7px; font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink); margin-bottom: 4px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                Шрифты надо положить рядом
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink)">В прототипах Golos Text и IBM Plex Mono подключены ссылкой на Google Fonts — так было быстрее смотреть. В проде это запрещено: качаем <code>.woff2</code>, кладём в <code>static/pnl/fonts/</code> и заменяем <code>&lt;link&gt;</code> на <code>@font-face</code> в начале <code>tokens.css</code>. Нужны latin-ext и cyrillic: сербская латиница требует č, ć, ž, š, đ.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">04</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Как добавить экран и остаться в системе</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Семь вопросов по порядку. Если на каждый есть ответ из готовых частей — экран будет своим. Если хоть на один пришлось изобретать — сначала обсудите, потом рисуйте.</div>
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <sc-for list="{{ recipe }}" as="r" hint-placeholder-count="7">
+            <div style="display: grid; grid-template-columns: 24px 268px 1fr; gap: 12px; align-items: baseline; padding: 11px 13px; border-bottom: 1px solid var(--line)">
+              <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ r.n }}</span>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ r.q }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ r.a }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 30px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">05</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Открытые вопросы</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Дизайн их вскрыл, но решить не может: это решения бизнеса, юриста или разработки. Каждый уже стоит в прототипах в виде допущения — если допущение неверно, экран придётся править.</div>
+        <div style="display: flex; align-items: flex-end; gap: 12px; margin-bottom: 8px; flex-wrap: wrap">
+          <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+              <sc-if value="{{ f.sel }}" hint-placeholder-val="{{ false }}">
+                <span aria-current="true" style="{{ f.selStyle }}">{{ f.label }}<span style="{{ f.cntStyle }}">{{ f.cnt }}</span></span>
+              </sc-if>
+              <sc-if value="{{ f.notSel }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ f.on }}" style="{{ f.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ f.label }}<span style="{{ f.cntStyle }}">{{ f.cnt }}</span></button>
+              </sc-if>
+            </sc-for>
+          </div>
+          <div style="flex: 1"></div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-3)">Кликните вопрос — раскроется допущение, которое сейчас стоит в прототипе</div>
+        </div>
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <sc-for list="{{ questions }}" as="q" hint-placeholder-count="12">
+            <div style="{{ q.rowStyle }}" style-hover="{{ q.rowHover }}">
+              <button onClick="{{ q.on }}" style="display: flex; align-items: center; gap: 11px; width: 100%; padding: 0 12px; height: var(--row-loose); border: 0; background: transparent; text-align: left">
+                <span style="{{ q.numStyle }}">{{ q.n }}</span>
+                <span style="{{ q.whoStyle }}">{{ q.who }}</span>
+                <span style="flex: 1 1 auto; min-width: 0; font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ q.q }}</span>
+                <span style="{{ q.whereStyle }}">{{ q.where }}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{ q.chevStyle }}"><path d="m9 6 6 6-6 6"></path></svg>
+              </button>
+              <sc-if value="{{ q.open }}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 0 12px 12px 47px; background: var(--surface-2); border-top: 1px solid var(--line)">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 10px">
+                    <div style="padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-block)">
+                      <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 3px">Что сейчас в прототипе</div>
+                      <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink)">{{ q.now }}</div>
+                    </div>
+                    <div style="padding: 10px 12px; background: var(--surface); border: 1px solid var(--warn-line); border-radius: var(--r-block)">
+                      <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--warn); font-weight: var(--w-semibold); margin-bottom: 3px">Что придётся менять, если решение другое</div>
+                      <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink)">{{ q.risk }}</div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="margin-bottom: 10px">
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 3px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">06</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Чего в прототипах нет</h2>
+        </div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 10px">Честный список: по брифу это модули этапа 3, до которых мы договорились не идти. Механики у них те же, что в готовых пяти, — собираются из тех же компонентов.</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px">
+          <sc-for list="{{ gaps }}" as="g" hint-placeholder-count="3">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 6px">{{ g.t }}</div>
+              <div style="display: flex; flex-direction: column; gap: 5px">
+                <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: baseline; gap: 7px; font-size: var(--fs-meta)">
+                    <span style="width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); flex: 0 0 auto; margin-top: 6px"></span>
+                    <span style="color: var(--ink-2)">{{ i.t }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size: var(--fs-micro); line-height: var(--lh-micro); color: var(--ink-3); margin-top: 8px; border-top: 1px solid var(--line); padding-top: 7px">{{ g.reuse }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1264,&quot;height&quot;:900}}">
+const PRINCIPLES = [
+  ["01", "Деньги читаются столбиком", "Правый край, моноширинное, табличные цифры. Ноль — цифра, отсутствие значения — прочерк. Это разные вещи, и путать их нельзя.", "components.css → .num и его модификаторы"],
+  ["02", "Итог выводится из частей, никогда не константа", "Любая сумма в подвале, в заголовке группы и в панели раскрытия считается из тех же данных, что и строки. Число, записанное руками, однажды разойдётся со строками — и продукт потеряет доверие в тот же день.", "Модули 2, 3 и 5 — там это правило и родилось на дефектах"],
+  ["03", "Цвет берётся из семантики, а не из вкуса", "Регистр, статус периода, версия правила, рост и падение, внимание. Если новому элементу нужен цвет, которого нет в семантике, — скорее всего элемент лишний.", "tokens.css → блоки «Регистры» и «Состояния периода»"],
+  ["04", "Подкраска строки — про происхождение, не про величину", "Тёплый фон и метка слева говорят «строка откуда-то пришла»: перенос разницы, правка руками, вложение вместо платежа. Величину числа не красим никогда.", "components.css → .is-carried, .row-mark"],
+  ["05", "Скачивание не похоже на переключение", "Выгрузка — пунктирная граница, стрелка вниз, расширение файла. Переключатель вида — залитый сегмент без иконки. Инвариант, купленный реальным дефектом.", "components.css → .btn--download и .seg"],
+  ["06", "Что нельзя — объяснено на месте", "Кнопка не гаснет молча: рядом причина. «Май утверждён, выберите июнь», «400 RSD не разнесено», «без причины откат недоступен».", "Модуль 3 → подтверждение разбора; модуль 4 → диалог закрытия"],
+  ["07", "Всё, что меняет расчёт, версионируется по датам", "Правка создаёт версию «с какого числа», а не переписывает значение. Отказ называет месяц по имени: «задела бы июнь 2026».", "Этап 2 → раздел 12; components.css → .version"],
+  ["08", "Клавиатура важнее мыши", "Ввод в сетке табеля, переходы по строкам, Esc в диалогах, видимый фокус. Бухгалтер вводит числа с клавиатуры и не любит трогать мышь.", "Модуль 1 → сетка часов, .cell-input"],
+  ["09", "Различие стран — строка в реестре, а не ветка в коде", "Норма часов, коэффициенты, пороги, минималка живут значениями с датой и рамкой. Новая страна — колонка значений; ни один модуль при этом не переписывается, он спрашивает значение по коду.", "Модуль 17 → правила страны; читатели указаны у каждого правила"],
+  ["10", "Порог показывают там, где он сработал", "Табель не заводит собственных порогов: под таблицей стоят числа из профиля страны и подпись, чем они заданы. Спорить с числом идут в реестр, а не в переписку.", "Модуль 1 → сводка по точке; модуль 17 → under.explain, under.block"]
+];
+
+const FILES = [
+  ["tokens.css", "tokens.css", "css", "Токены: цвет с семантикой, типографика на три языка, три плотности строки, радиусы, тени, длительности. Переносится как есть."],
+  ["components.css", "components.css", "css", "Компоненты на этих токенах: шапка, кнопки, переключатели, поля, таблица с липкими колонками, инбокс, раскрытие, диалог, пустые состояния, мобильные правила и печать. Хексов нет — только var(--…); единственное исключение белый фон в @media print, потому что бумага белая в любой теме."],
+  ["Этап 1 - три направления.dc.html", "Этап 1 - три направления.dc.html", "proto", "Три визуальных направления на ведомости июня. Выбран «Реестр». Здесь же живой фильтр точек под 10–50 точек и переключатель ru / en / sr."],
+  ["Этап 2 - дизайн-система.dc.html", "Этап 2 - дизайн-система.dc.html", "proto", "Каталог: цвет, семантика, типографика, три языка с коэффициентами длины, иконки, кнопки пяти уровней в шести состояниях, таблица, инбокс, отказы, диалоги."],
+  ["Роли и права.dc.html", "Роли и права.dc.html", "proto", "Модель доступа: пять ролей от младшей к старшей, матрица из 20 прав, живой экран ролей. Администратор видит всё; у человека одна роль, временная выдаётся со сроком."],
+  ["Онбординг.dc.html", "Онбординг.dc.html", "proto", "Семь шагов партнёра от пустой базы до первой ведомости, карта модулей, разбор рабочего экрана на 11 выносок, первый вход по каждой роли."],
+  ["Модуль 1 - Табель.dc.html", "Модуль 1 - Табель.dc.html", "proto", "Сетка часов с живым вводом, расхождения с Dodo IS, отчёт импорта на пять состояний, мобильные экраны управляющего."],
+  ["Модуль 2 - Сверка с таблицей.dc.html", "Модуль 2 - Сверка с таблицей.dc.html", "proto", "Загрузка Excel бухгалтера, построчное сравнение с группой «округление», пять расхождений разного типа с раскрытием до входов, итог сверки."],
+  ["Модуль 3 - Инбокс и документы.dc.html", "Модуль 3 - Инбокс и документы.dc.html", "proto", "Очередь на 40 позиций с двумя видами строк, пакетное присвоение статьи, экран подтверждения разбора накладной, мобильная загрузка фото."],
+  ["Модуль 4 - Закрытие месяца.dc.html", "Модуль 4 - Закрытие месяца.dc.html", "proto", "12 проверок в трёх группах, живое «отложить с причиной», блокировка кнопки закрытия, список периодов со состояниями."],
+  ["Модуль 5 - P&L с раскрытием.dc.html", "Модуль 5 - P&L с раскрытием.dc.html", "proto", "Отчёт на 17 строк, раскрытие пяти сумм до первичных фактов, разрезы по точкам, консолидация по сети в EUR."],
+  ["Модуль 6 - Наличные расходы.dc.html", "Модуль 6 - Наличные расходы.dc.html", "proto", "Реестр расходов с двумя независимыми фактами — касса и документ, разрыв между ними виден всегда. Касса точки с расчётным остатком против пересчёта, три экрана ввода с телефона."],
+  ["Модуль 7 - Банковская выписка.dc.html", "Модуль 7 - Банковская выписка.dc.html", "proto", "Загрузка выписки с ловлей дублей, сопоставление платежа с несколькими накладными, выбор контрагента с поиском, правила, порог автосопоставления."],
+  ["Модуль 8 - Кадры и правила расчёта.dc.html", "Модуль 8 - Кадры и правила расчёта.dc.html", "proto", "Условия найма версиями по датам. Дата начала даёт три исхода: очередь, пересчёт открытого месяца или доначисление вместо правки закрытого. Восемь правил начисления с регистрами."],
+  ["Модуль 9 - Ведомость по сотрудникам.dc.html", "Модуль 9 - Ведомость по сотрудникам.dc.html", "proto", "Главная таблица продукта: 13 колонок в двух ярусах, липкое имя и итог, раскрытие любой суммы до фактов, выплата по трём регистрам, расчётный лист на сербском."],
+  ["Модуль 10 - Вход и каркас.dc.html", "Модуль 10 - Вход и каркас.dc.html", "proto", "Вход по одноразовому коду на трёх языках, каркас приложения с разделами по фазам работы, единый язык отказов и пустых экранов — шесть состояний."],
+  ["Модуль 11 - Админка.dc.html", "Модуль 11 - Админка.dc.html", "proto", "Смена роли с показом, что человек получит и потеряет, защита последнего администратора, журнал доступов, точки и карточка юрлица."],
+  ["Модуль 12 - Аналитика по людям.dc.html", "Модуль 12 - Аналитика по людям.dc.html", "proto", "ФОТ к выручке за полгода, текучесть, переработки. Главное правило: рядом с процентом всегда база, а при малой базе процента нет вовсе."],
+  ["Модуль 13 - Telegram-бот.dc.html", "Модуль 13 - Telegram-бот.dc.html", "proto", "Четыре сценария на русском и сербском, шесть правил тона с парами «плохо — хорошо» и список того, чего бот не делает."],
+  ["Модуль 14 - Справочник статей.dc.html", "Модуль 14 - Справочник статей.dc.html", "proto", "Дерево статей P&L с признаком регистра, правилами автоподстановки и запретом на удаление использованной статьи."],
+  ["Модуль 15 - Разнесение накладных.dc.html", "Модуль 15 - Разнесение накладных.dc.html", "proto", "Позиции накладной по статьям и точкам, память по поставщику, частичное разнесение с остатком."],
+  ["Модуль 16 - Оплата труда и календарь.dc.html", "Модуль 16 - Оплата труда и календарь.dc.html", "proto", "Шаблоны должностей с вилками и гарантией часов, производственный календарь страны, массовое изменение ставок с предпросмотром «начислено / прирост»."],
+  ["Модуль 17 - Правила страны.dc.html", "Модуль 17 - Правила страны.dc.html", "proto", "Реестр из 19 правил трудового права: страна задаёт значение и рамку, юрлицо ужесточает внутри рамки. Сравнение четырёх стран, история значений по датам, анатомия строки реестра."]
+];
+
+const STEPS = [
+  ["1", "Положите два CSS-файла в статику", "static/pnl/tokens.css и static/pnl/components.css, подключите в base.html в этом порядке. Больше ничего для внешнего вида не нужно: ни сборщика, ни препроцессора."],
+  ["2", "Замените шрифты на локальные", "Скачайте Golos Text (400, 500, 600, 700) и IBM Plex Mono (400, 500, 600) в woff2, положите в static/pnl/fonts, добавьте @font-face в начало tokens.css. Подмножества: latin, latin-ext, cyrillic."],
+  ["3", "Снимайте разметку с прототипов, а не пишите заново", "Открываете нужный модуль, смотрите структуру, переносите в шаблон с классами из components.css. Прототипы намеренно сделаны на плоской разметке без хитростей — она читается как HTML."],
+  ["4", "htmx — только там, где меняется фрагмент", "Ячейка табеля, строка инбокса, панель раскрытия, полоса прогресса. Всё остальное — обычные страницы с сервера. Свой JavaScript только островками: маска числа, горячие клавиши в сетке."],
+  ["5", "Проверьте на 1280 и 768, потом на 375", "Первые два — рабочие ширины бухгалтера. 375 — только сценарии управляющего: часы, расход, накладная, карточки своих людей. Таблицы на телефоне не показываются вовсе, это в components.css."]
+];
+
+const RECIPE = [
+  ["01", "Какая плотность?", "Сколько строк и колонок человек видит одновременно — первый вопрос. Из ответа следует ряд: 26 плотный, 30 ведомость и табель, 34 инбокс и документы. Размер шрифта следует за рядом, а не наоборот."],
+  ["02", "Где на экране деньги?", "Все суммы — класс .num, правый край, моно, табличные цифры. Если на экране есть число, которое не деньги и не дата, спросите себя, зачем оно там."],
+  ["03", "Из чего складывается каждый итог?", "Итог обязан считаться из показанных строк. Если строки отфильтрованы или отмасштабированы, итог считается от того же набора, а проверка сходимости выводится из сравнения, а не пишется словами."],
+  ["04", "Какие состояния у экрана?", "Заполнено, пусто, идёт долгая операция, ошибка, нет прав. Все пять рисуются до сдачи. Пустое объясняет следующий шаг, отказ не выдаёт существование скрытой записи."],
+  ["05", "Что здесь версионируется?", "Если экран меняет что-то, что влияет на расчёт, — правка создаёт версию с датой. И заранее решите, что покажет отказ, когда правка задевает утверждённый месяц."],
+  ["06", "Кто это видит?", "Проверьте по трём осям: объём точек, глубина (операционка или деньги) и распоряжение. Управляющий не видит сумм расчёта нигде, никогда, ни на одном экране."],
+  ["07", "Что тут делает клавиатура?", "Табуляция по форме в осмысленном порядке, Enter — основное действие, Esc — отмена. В сетках — движение по ячейкам стрелками. Фокус виден всегда."]
+];
+
+const QUESTIONS = [
+  ["biz", "Бизнес", "Применять ли коэффициент группы к переработке", "Модуль 2 → сверка", "Расчёт считает переработку от ставки с коэффициентом (OVERTIME_RS v2). В таблице бухгалтера коэффициент применён только к базовым часам — расхождение 2 741 RSD на человека.", "Если верна трактовка бухгалтера — меняется правило и пересчитываются все месяцы после даты новой версии. Экран сверки при этом не меняется, он для этого и сделан."],
+  ["biz", "Бизнес", "Порог переработки: 24 часа — это норма или потолок", "Модуль 1 → сетка часов, модуль 17 → ot.limit.month", "Решено реестром правил: порог живёт в профиле страны, у Сербии 32 ч по чл. 53, юрлицо поставило 24 ч. Выше — замечание, сохранить можно.", "Если в какой-то стране это жёсткий потолок — правило меняет режим с «внутри рамки» на «закон», и там же появляется признак «превышение запрещено». Экран согласования переработки сверх нормы всё равно придётся рисовать отдельно."],
+  ["biz", "Бизнес", "Кто подтверждает значения правил по каждой стране", "Модуль 17 → страны", "Правило заводит разработка (код, тип, читатели), значение вносит юрист страны со ссылкой на статью. До подтверждения клетка пустая, сербские числа по умолчанию не копируются.", "Если юриста в стране нет, значения будет ставить бухгалтер — тогда нужен признак «не подтверждено юристом» и отчёт по таким правилам, иначе через год никто не вспомнит, откуда взялся коэффициент."],
+  ["legal", "Юрист", "Может ли юрлицо быть мягче рамки страны", "Модуль 17 → юрлицо", "Нет. Юрлицо ужесточает внутри рамки и никогда не выходит за неё; попытка не сохраняется и пишется в историю с автором. В прототипе показан такой случай: 24.07 ставили ot.k.holiday = 1,50 при минимуме 2,10.", "Если бывают законные исключения — коллективный договор, особая зона — рамке нужен режим «можно ниже с обоснованием», а обоснование становится обязательным полем с файлом."],
+  ["biz", "Бизнес", "Кто решает спор о часах между IS и точкой", "Модуль 1 → расхождения", "Правка управляющего остаётся правкой: повторная синхронизация её не перезаписывает, а добавляет новое расхождение в список.", "Если решать должен IS — правки руками надо запрещать после закрытия часов, и экран расхождений превращается в журнал, а не в рабочий список."],
+  ["legal", "Юрист", "Можно ли хранить три регистра в одной базе", "Везде", "Три регистра — три среза одной суммы, отличаются только видимостью по набору прав. Изоляции на уровне базы нет.", "Если требуется физическое разделение — меняется модель данных и, возможно, появляется отдельный инстанс. Интерфейс переключателя среза при этом остаётся."],
+  ["legal", "Юрист", "Сколько хранить фото накладных с точек", "Модуль 3", "Вложение живёт в системе бессрочно и остаётся привязанным к документу после разбора.", "Если есть срок хранения — нужен экран истечения и решение, что показывать на месте удалённого файла в раскрытии P&L через три года."],
+  ["ux", "Дизайн", "Кассовый отчёт точки — чей он", "Печатные формы, лист 3", "Макет готов и считается из данных модуля 6, но в продукт не заведён: сверка кассы на точке идёт через менеджера смены, а не через эту систему.", "Либо форма остаётся заготовкой на случай, когда кассу заведут сюда, либо её надо выбросить и не поддерживать. Решает заказчик."],
+  ["dev", "Разработка", "Пересчёт при изменении правила задним числом", "Модуль 5, этап 2", "Правка правила создаёт версию с датой. Утверждённые месяцы не пересчитываются, разница переносится в текущий.", "Если бизнес захочет автоматический пересчёт закрытых месяцев — рушится вся модель состояний периода. Это самое дорогое изменение из списка."],
+  ["dev", "Разработка", "Где считается разнесение нераспределённого", "Модуль 5 → аренда", "Разнесение пропорционально выручке считается на момент построения отчёта и показывается в раскрытии как отдельные строки.", "Если разнесение должно фиксироваться на момент закрытия месяца — нужны сохранённые факты разнесения, и раскрытие показывает их, а не пересчитывает."],
+  ["dev", "Разработка", "Курс валюты для консолидации", "Модуль 5 → консолидация", "Курс на последний день периода, фиксируется вместе с отчётом. Пересчёт задним числом не меняет сохранённую консолидацию.", "Если нужен средневзвешенный курс за период — меняется расчёт, но не интерфейс. Если нужны оба — появляется переключатель, которого сейчас нет."],
+  ["dev", "Разработка", "Как ведёт себя сетка табеля на 60 строках при живом сохранении", "Модуль 1", "Каждая ячейка сохраняется отдельным запросом htmx. На 35 сотрудниках это незаметно.", "На 50 точках и тысяче человек нужен буфер: копить правки и отправлять пачкой. Тогда появляется состояние «не сохранено», которого в дизайне нет и которое противоречит принципу «без кнопки сохранить»."],
+  ["ux", "Дизайн", "Тёмная тема не проверена на большой таблице", "Тёмная тема, модуль 9", "Сделана: блок [data-theme=\"dark\"] в tokens.css, все служебные поверхности components.css переведены на токены, печать из тёмной отключена.", "Не проверено одно: липкие колонки ведомости на 60 строках. На светлом их отделяет тень, на тёмном тень не видна — держит только --line-strong. Смотреть надо вживую, на реальном экране бухгалтера."],
+  ["ux", "Дизайн", "Состояние между экранами в прототипе не живёт", "Прототип.dc.html", "Каркас держит юрлицо, период и роль, но сами экраны грузятся заново и теряют введённое.", "Для показа этого хватает. Для теста на живых людях — нет: человек проверит часы, уйдёт в ведомость и не увидит там своей правки."],
+  ["ux", "Дизайн", "Telegram-бот: осталось выверить тексты с заказчиком", "Модуль 13", "Сделан: четыре сценария на двух языках, шесть правил тона, список того, чего бот не делает.", "Сербские формулировки написаны не носителем — перед запуском их надо прочитать человеку из Сербии. Механик это не меняет."],
+  ["ux", "Дизайн", "Мобильные экраны в коде нарисованы, а не в разметке", "Модуль 1", "Три экрана управляющего в табеле собраны в логике через createElement, поэтому текст в них нельзя править в редакторе.", "Полчаса работы: перенести в шаблон. Стоит сделать до того, как копирайт начнут править не мы."]
+];
+
+const GAPS = [
+  ["Собственные экраны", [
+    { t: "Вход, каркас, демо, «Как это работает»" },
+    { t: "Наличные: список, внесение, нераспределённое" },
+    { t: "Банк и коннектор Dodo IS" },
+    { t: "Кадровая аналитика: численность, движение, ФОТ" }
+  ], "Собираются из готовых частей: таблица, фильтры, карточка, плашки. Новых механик нет."],
+  ["Справочники", [
+    { t: "Жизненный цикл сотрудника и история выплат" },
+    { t: "Группы, точки, юрлица, статьи, календарь" },
+    { t: "Правила: уровни переопределения и версии" },
+    { t: "Администрирование: тенанты, страны, история правок" }
+  ], "Приём версий по датам показан в этапе 2 и в карточке сотрудника — дальше повторяется."],
+  ["Отдельная поверхность", [
+    { t: "Telegram-бот: диалоги и сообщения" },
+    { t: "Тёмная тема" },
+    { t: "Живой дашборд (по брифу не первая очередь)" }
+  ], "Требуют своих решений, а не переноса компонентов. Оценка — по заходу на каждое."]
+];
+
+const WHO = {
+  "Бизнес": ["var(--accent)", "var(--accent-soft)", "var(--accent-line)"],
+  "Юрист": ["var(--reg-supp)", "#F1ECF9", "#DCD0EE"],
+  "Разработка": ["var(--reg-internal)", "#E7F1F1", "#C6DDDD"],
+  "Дизайн": ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"]
+};
+
+class Component extends DCLogic {
+  state = { filter: "all", open: 0 };
+
+  renderVals() {
+    const self = this;
+    const filter = this.state.filter;
+
+    const chip = function (sel) {
+      const base = { display: "inline-flex", alignItems: "center", gap: "6px", height: "22px", padding: "0 9px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+      if (sel) return Object.assign(base, { background: "var(--surface)", color: "var(--ink)", fontWeight: 600, boxShadow: "var(--sh-xs)" });
+      return Object.assign(base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" });
+    };
+
+    const list = QUESTIONS.map(function (q, i) { return { q: q, i: i }; })
+      .filter(function (x) { return filter === "all" || x.q[0] === filter; });
+
+    const count = function (k) { return k === "all" ? QUESTIONS.length : QUESTIONS.filter(function (q) { return q[0] === k; }).length; };
+
+    return {
+      principles: PRINCIPLES.map(function (p) { return { n: p[0], t: p[1], d: p[2], where: p[3] }; }),
+
+      files: FILES.map(function (f) {
+        const isCss = f[2] === "css";
+        return {
+          name: f[0], href: f[1], what: f[3],
+          tag: isCss ? "переносится" : "прототип",
+          nameStyle: {
+            textAlign: "left", padding: "7px 12px", height: "var(--row-loose)",
+            borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)",
+            fontWeight: 400, verticalAlign: "top"
+          },
+          linkStyle: {
+            fontFamily: isCss ? "var(--font-num)" : "var(--font-ui)",
+            fontSize: isCss ? "var(--fs-num)" : "var(--fs-dense)",
+            fontWeight: 500, color: "var(--accent)"
+          },
+          tdStyle: { padding: "7px 12px", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)", verticalAlign: "top" },
+          tagStyle: {
+            display: "inline-flex", alignItems: "center", height: "19px", padding: "0 7px",
+            borderRadius: "var(--r-mark)", fontSize: "var(--fs-meta)", fontWeight: 600, whiteSpace: "nowrap",
+            color: isCss ? "var(--ok)" : "var(--ink-2)",
+            background: isCss ? "var(--ok-soft)" : "var(--surface-3)",
+            border: "1px solid " + (isCss ? "var(--ok-line)" : "var(--line-control)")
+          }
+        };
+      }),
+
+      steps: STEPS.map(function (s) { return { n: s[0], t: s[1], d: s[2] }; }),
+      recipe: RECIPE.map(function (r) { return { n: r[0], q: r[1], a: r[2] }; }),
+
+      filters: [
+        { k: "all", label: "Все вопросы" },
+        { k: "biz", label: "Бизнесу" },
+        { k: "legal", label: "Юристу" },
+        { k: "dev", label: "Разработке" },
+        { k: "ux", label: "Дизайну" }
+      ].map(function (f) {
+        const sel = f.k === filter;
+        return {
+          label: f.label, cnt: String(count(f.k)), sel: sel, notSel: !sel,
+          on: function () { self.setState({ filter: f.k, open: -1 }); },
+          selStyle: chip(true), btnStyle: chip(false),
+          cntStyle: { fontFamily: "var(--font-num)", fontSize: "9.5px", color: "var(--ink-3)" }
+        };
+      }),
+
+      questions: list.map(function (x) {
+        const q = x.q, i = x.i;
+        const open = self.state.open === i;
+        const c = WHO[q[1]];
+        return {
+          n: String(i + 1), who: q[1], q: q[2], where: q[3], now: q[4], risk: q[5], open: open,
+          on: function () { self.setState({ open: open ? -1 : i }); },
+          numStyle: { fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", color: "var(--ink-3)", width: "16px", flex: "0 0 auto" },
+          whoStyle: {
+            display: "inline-flex", alignItems: "center", height: "19px", padding: "0 7px", flex: "0 0 auto",
+            borderRadius: "var(--r-mark)", fontSize: "var(--fs-meta)", fontWeight: 600, whiteSpace: "nowrap",
+            color: c[0], background: c[1], border: "1px solid " + c[2], width: "92px", justifyContent: "center"
+          },
+          whereStyle: { width: "190px", flex: "0 0 auto", fontSize: "var(--fs-meta)", color: "var(--ink-3)", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+          chevStyle: { flex: "0 0 auto", transform: open ? "rotate(90deg)" : "none", transition: "transform var(--t-state) var(--ease)" },
+          rowStyle: {
+            borderBottom: "1px solid var(--line)",
+            borderLeft: "3px solid " + (open ? "var(--accent)" : "transparent"),
+            background: open ? "var(--accent-soft)" : "var(--surface)"
+          },
+          rowHover: { background: open ? "var(--accent-soft)" : "#F6F8FA" }
+        };
+      }),
+
+      gaps: GAPS.map(function (g) { return { t: g[0], items: g[1], reuse: g[2] }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

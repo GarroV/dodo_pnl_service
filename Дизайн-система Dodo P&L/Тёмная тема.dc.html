@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --up:#10704A; --down:#A32B1E;
+    --reg-official:#1F4E9C; --reg-official-soft:#E8EEF8;
+    --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1;
+    --st-draft:#5C6672; --st-calculated:#1F4E9C; --st-approved:#10704A; --st-reopened:#B26B00;
+    --origin-carried:#FFF9EC; --origin-mark:#E0A03A;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+  }
+  [data-theme="dark"] {
+    --canvas:#12161C; --surface:#1A1F27; --surface-2:#171C23; --surface-3:#212832; --surface-head:#232B36;
+    --ink:#E6EBF2; --ink-2:#9BA7B6; --ink-3:#6D7A8A; --ink-empty:#4A5666; --ink-inverse:#12161C;
+    --line:#262E38; --line-2:#222A34; --line-strong:#37424F; --line-control:#3B4653; --line-control-2:#4E5B6A;
+    --accent:#5E9BF5; --accent-press:#82B4FF; --accent-soft:#17263B; --accent-line:#2B4162;
+    --warn:#D9A040; --warn-ink:#F0C273; --warn-mark:#C88B2A; --warn-soft:#2A2214; --warn-line:#4A3A1C;
+    --ok:#4CB88A; --ok-soft:#14261F; --ok-line:#275041;
+    --err:#E8776A; --err-soft:#2B1917; --err-line:#55302C;
+    --up:#4CB88A; --down:#E8776A;
+    --reg-official:#5E9BF5; --reg-official-soft:#17263B;
+    --reg-supp:#A98CE0; --reg-supp-soft:#241D33;
+    --reg-internal:#5FB3B3; --reg-internal-soft:#14282A;
+    --st-draft:#9BA7B6; --st-calculated:#5E9BF5; --st-approved:#4CB88A; --st-reopened:#D9A040;
+    --origin-carried:#241E12; --origin-mark:#C88B2A;
+    --sh-xs:0 1px 2px rgba(0,0,0,.5); --sh-pop:0 18px 44px -16px rgba(0,0,0,.78);
+  }
+  html, body { margin:0; padding:0; background:#EDEFF2; }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: #EDEFF2; font-family: var(--font-ui); color: #1B2028">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: #FFFFFF; border-bottom: 1px solid #CFD5DC; padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: #98A1AC; font-weight: var(--w-semibold)">Дизайн-система · тема</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Тёмная тема: те же компоненты, другие значения токенов</h1>
+        <div style="font-size: var(--fs-dense); color: #5C6672; margin-top: 4px">Ни один компонент не переписан. В <code style="font-family: var(--font-num); font-size: 11.5px">tokens.css</code> добавлен блок <code style="font-family: var(--font-num); font-size: 11.5px">[data-theme="dark"]</code>, который переопределяет значения — разметка про тему не знает. Ниже одна и та же разметка в двух темах рядом.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ modes }}" as="m" hint-placeholder-count="3">
+          <sc-if value="{{ m.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ m.selStyle }}">{{ m.label }}</span>
+          </sc-if>
+          <sc-if value="{{ m.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ m.on }}" style="{{ m.btnStyle }}">{{ m.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <div style="padding: 16px 22px 0">
+
+      <div style="{{ gridStyle }}">
+        <sc-for list="{{ panes }}" as="p" hint-placeholder-count="2">
+          <div>
+            <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 7px">
+              <span style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: #98A1AC; font-weight: var(--w-semibold)">{{ p.label }}</span>
+              <span style="font-family: var(--font-num); font-size: 10px; color: #98A1AC">{{ p.attr }}</span>
+            </div>
+
+            <div data-theme="{{ p.theme }}" style="background: var(--canvas); border: 1px solid #CFD5DC; border-radius: var(--r-block); padding: 14px; display: flex; flex-direction: column; gap: 12px">
+
+              <div style="display: flex; align-items: center; gap: 18px; padding: 0 14px; height: 46px; background: var(--surface); border: 1px solid var(--line-control); border-radius: var(--r-block)">
+                <span style="display: flex; align-items: baseline; gap: 5px">
+                  <span style="font-weight: var(--w-bold); font-size: var(--fs-lead); color: var(--ink)">Dodo</span>
+                  <span style="font-weight: var(--w-medium); font-size: var(--fs-lead); color: var(--accent)">P&amp;L</span>
+                </span>
+                <span style="padding: 6px 11px; border-radius: var(--r-control); background: var(--accent-soft); color: var(--accent); font-size: var(--fs-body); font-weight: var(--w-semibold)">Расчёт</span>
+                <span style="padding: 6px 11px; border-radius: var(--r-control); color: var(--ink-2); font-size: var(--fs-body)">Отчёты</span>
+                <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--ink-3)">Июнь 2026</span>
+              </div>
+
+              <div>
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Поверхности и текст</div>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px">
+                  <sc-for list="{{ surfaces }}" as="s" hint-placeholder-count="5">
+                    <div style="{{ s.chipStyle }}">
+                      <div style="{{ s.swatchStyle }}"></div>
+                      <div style="font-size: 9.5px; line-height: 13px; color: var(--ink-3); margin-top: 5px">{{ s.name }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div>
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Семантика</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                  <sc-for list="{{ chips }}" as="c" hint-placeholder-count="9">
+                    <span style="{{ c.style }}">{{ c.label }}</span>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div>
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Фрагмент ведомости</div>
+                <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+                  <table style="width: 100%; table-layout: fixed">
+                    <thead>
+                      <tr>
+                        <th scope="col" style="{{ thText }}">Сотрудник</th>
+                        <th scope="col" style="{{ thNum }}">Начислено</th>
+                        <th scope="col" style="{{ thNum }}">Удержано</th>
+                        <th scope="col" style="{{ thNumLast }}">К выплате</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+                        <tr style="{{ r.rowStyle }}">
+                          <td style="{{ r.nameStyle }}"><span style="{{ r.markStyle }}"></span>{{ r.name }}</td>
+                          <td style="{{ tdNum }}">{{ r.gross }}</td>
+                          <td style="{{ tdNumMuted }}">{{ r.held }}</td>
+                          <td style="{{ tdNumLast }}">{{ r.net }}</td>
+                        </tr>
+                      </sc-for>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th scope="row" style="{{ footText }}">Итого</th>
+                        <td style="{{ footNum }}">376 940,00</td>
+                        <td style="{{ footNum }}">104 220,00</td>
+                        <td style="{{ footNumLast }}">272 720,00</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 7px">
+                <sc-for list="{{ notes }}" as="n" hint-placeholder-count="2">
+                  <div style="{{ n.style }}">
+                    <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: {{ n.color }}">{{ n.title }}</div>
+                    <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: {{ n.color }}; opacity: .88; margin-top: 2px">{{ n.text }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 7px; flex-wrap: wrap">
+                <button style="height: var(--control-h); padding: 0 14px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-body); font-weight: var(--w-semibold)">Утвердить период</button>
+                <button style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); color: var(--ink); font-size: var(--fs-body)">Пересчитать</button>
+                <button style="height: var(--control-h-sm); padding: 0 11px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: var(--surface-2); color: var(--ink-2); font-size: var(--fs-dense)">Выгрузить <span style="opacity: .55">.xlsx</span></button>
+                <button style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--err-line); border-radius: var(--r-control); background: var(--surface); color: var(--err); font-size: var(--fs-body); font-weight: var(--w-semibold)">Откатить</button>
+              </div>
+
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px">
+        <sc-for list="{{ rules }}" as="r" hint-placeholder-count="6">
+          <div style="background: #FFFFFF; border: 1px solid #CFD5DC; border-radius: var(--r-block); padding: 11px 14px 12px">
+            <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: #98A1AC">{{ r.num }}</div>
+            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-top: 3px">{{ r.title }}</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: #5C6672; margin-top: 3px">{{ r.text }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--r-block); background: #FFF9EC; border: 1px solid #EBD9B4; margin-top: 10px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B26B00" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+        <div>
+          <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: #7A4A00">Что осталось проверить на живых данных</div>
+          <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: #7A4A00; margin-top: 3px">Тёмная тема не проверена на ведомости в 60 строк и 13 колонок при реальном освещении в офисе бухгалтера. Опасное место одно: липкие колонки. На светлом их отделяет тень, на тёмном тень не видна — работает только граница <code style="font-family: var(--font-num); font-size: 11px">--line-strong</code>, и если она окажется слабой, имя слева сольётся с прокручиваемой серединой. Печать из тёмной темы отключена: бумага всегда белая.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;both&quot;,&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;both&quot;,&quot;tsType&quot;:&quot;'both' | 'light' | 'dark'&quot;,&quot;section&quot;:&quot;Показ&quot;}}">
+const SURFACES = [
+  ["--canvas", "фон"],
+  ["--surface", "карточки"],
+  ["--surface-2", "итоги"],
+  ["--surface-3", "шапка"],
+  ["--ink", "текст"]
+];
+
+const CHIPS = [
+  ["ОФ", "official"], ["ДП", "supp"], ["ВН", "internal"],
+  ["Черновик", "draft"], ["Рассчитан", "calculated"], ["Утверждён", "approved"], ["Переоткрыт", "reopened"],
+  ["+18,4%", "up"], ["−6,2%", "down"]
+];
+
+const ROWS = [
+  ["Petar Petrović", "145 000,00", "69 000,00", "76 000,00", false],
+  ["Jelena Đorđević", "105 880,00", "29 412,00", "76 468,00", false],
+  ["Lenka Zdravković", "41 460,00", "10 292,00", "31 168,00", true],
+  ["Nikola Ilić", "84 600,00", "24 516,00", "60 084,00", false]
+];
+
+const RULES = [
+  ["01", "Тёмная — не инверсия светлой", "Поверхности разведены на шесть шагов вместо восьми, иначе карточка на фоне читается как дыра. Чистого чёрного нет нигде."],
+  ["02", "Акцент светлеет, насыщенность падает", "Синий #1F4E9C на тёмном не читается, а полностью насыщенный жжёт глаза через час. Отсюда #5E9BF5 — светлее и спокойнее."],
+  ["03", "Тени заменяются границами", "На тёмном тень почти не видна. Всё, что на светлом отделялось тенью, на тёмном отделяется линией — особенно липкие колонки таблицы."],
+  ["04", "Служебные поверхности — тоже токены", "Дорожка переключателя, ячейки удержаний, выбранная строка инбокса, затемнение под диалогом. Каждая такая мелочь, забытая хексом, становится белым пятном на тёмном."],
+  ["05", "Тёплый фон происхождения остаётся тёплым", "Строка «перенесено с прошлого месяца» и в тёмной теме желтоватая: смысл цвета не меняется от темы, меняется только светлота."],
+  ["06", "Печать всегда светлая", "Из тёмной темы ведомость печатается на белом. Правило уже стоит в tokens.css — тёмная тема в @media print отключается."]
+];
+
+class Component extends DCLogic {
+  state = { mode: null };
+
+  renderVals() {
+    const self = this;
+    const mode = this.state.mode || this.props.mode || "both";
+
+    const panes = mode === "both"
+      ? [{ theme: "light", label: "Светлая", attr: "по умолчанию" }, { theme: "dark", label: "Тёмная", attr: 'data-theme="dark"' }]
+      : mode === "light"
+        ? [{ theme: "light", label: "Светлая", attr: "по умолчанию" }]
+        : [{ theme: "dark", label: "Тёмная", attr: 'data-theme="dark"' }];
+
+    const tone = {
+      official: ["var(--reg-official)", "var(--reg-official-soft)"],
+      supp: ["var(--reg-supp)", "var(--reg-supp-soft)"],
+      internal: ["var(--reg-internal)", "var(--reg-internal-soft)"],
+      draft: ["var(--st-draft)", "var(--surface-3)"],
+      calculated: ["var(--st-calculated)", "var(--accent-soft)"],
+      approved: ["var(--st-approved)", "var(--ok-soft)"],
+      reopened: ["var(--st-reopened)", "var(--warn-soft)"],
+      up: ["var(--up)", "var(--ok-soft)"],
+      down: ["var(--down)", "var(--err-soft)"]
+    };
+
+    const thBase = {
+      background: "var(--surface-head)", padding: "5px 9px", fontSize: "var(--fs-micro)",
+      fontWeight: "var(--w-semibold)", color: "var(--ink-2)",
+      borderBottom: "1px solid var(--line-strong)"
+    };
+    const tdBase = {
+      padding: "0 9px", height: "var(--row)", fontFamily: "var(--font-num)",
+      fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", textAlign: "right",
+      color: "var(--ink)", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)"
+    };
+
+    return {
+      modes: [["both", "Обе"], ["light", "Светлая"], ["dark", "Тёмная"]].map(function (m) {
+        const on = mode === m[0];
+        const base = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+        return {
+          label: m[1], sel: on, notSel: !on,
+          on: function () { self.setState({ mode: m[0] }); },
+          selStyle: Object.assign({}, base, { background: "#E8EEF8", color: "#1F4E9C", fontWeight: "var(--w-semibold)", border: "1px solid #C9D9F0" }),
+          btnStyle: Object.assign({}, base, { background: "#FFFFFF", color: "#5C6672", border: "1px solid #D7DBE0" })
+        };
+      }),
+
+      gridStyle: {
+        display: "grid",
+        gridTemplateColumns: panes.length === 2 ? "1fr 1fr" : "1fr",
+        gap: "14px",
+        alignItems: "start"
+      },
+      panes: panes,
+
+      surfaces: SURFACES.map(function (s) {
+        const isInk = s[0] === "--ink";
+        return {
+          name: s[1],
+          chipStyle: { textAlign: "center" },
+          swatchStyle: {
+            height: "34px", borderRadius: "var(--r-control)",
+            background: "var(" + s[0] + ")",
+            border: "1px solid " + (isInk ? "transparent" : "var(--line-control)")
+          }
+        };
+      }),
+
+      chips: CHIPS.map(function (c) {
+        const t = tone[c[1]];
+        const isReg = c[1] === "official" || c[1] === "supp" || c[1] === "internal";
+        return {
+          label: c[0],
+          style: {
+            display: "inline-flex", alignItems: "center", height: "20px", padding: "0 8px",
+            borderRadius: isReg ? "var(--r-mark)" : "var(--r-control)",
+            fontFamily: isReg ? "var(--font-num)" : "var(--font-ui)",
+            fontSize: isReg ? "var(--fs-num-sm)" : "var(--fs-meta)",
+            fontWeight: "var(--w-semibold)", whiteSpace: "nowrap",
+            color: t[0], background: t[1], border: "1px solid " + t[0]
+          }
+        };
+      }),
+
+      thText: Object.assign({}, thBase, { textAlign: "left", borderRight: "1px solid var(--line-2)" }),
+      thNum: Object.assign({}, thBase, { textAlign: "right", borderRight: "1px solid var(--line-2)" }),
+      thNumLast: Object.assign({}, thBase, { textAlign: "right", borderLeft: "1px solid var(--line-strong)" }),
+      tdNum: tdBase,
+      tdNumMuted: Object.assign({}, tdBase, { color: "var(--ink-2)", background: "var(--surface-2)" }),
+      tdNumLast: Object.assign({}, tdBase, { fontWeight: "var(--w-semibold)", borderRight: 0, borderLeft: "1px solid var(--line-strong)" }),
+
+      rows: ROWS.map(function (r) {
+        return {
+          name: r[0], gross: r[1], held: r[2], net: r[3],
+          rowStyle: { background: r[4] ? "var(--origin-carried)" : "var(--surface)" },
+          markStyle: {
+            display: "inline-block", width: "3px", height: "13px", borderRadius: "1px",
+            marginRight: "7px", verticalAlign: "-2px",
+            background: r[4] ? "var(--origin-mark)" : "transparent"
+          },
+          nameStyle: {
+            padding: "0 9px", height: "var(--row)", fontSize: "var(--fs-dense)",
+            fontWeight: "var(--w-medium)", color: "var(--ink)", whiteSpace: "nowrap",
+            overflow: "hidden", textOverflow: "ellipsis",
+            borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-strong)"
+          }
+        };
+      }),
+
+      footText: {
+        textAlign: "left", padding: "0 9px", height: "32px", background: "var(--surface-2)",
+        borderTop: "2px solid var(--line-strong)", fontSize: "var(--fs-dense)",
+        fontWeight: "var(--w-semibold)", color: "var(--ink)"
+      },
+      footNum: {
+        textAlign: "right", padding: "0 9px", height: "32px", background: "var(--surface-2)",
+        borderTop: "2px solid var(--line-strong)", fontFamily: "var(--font-num)",
+        fontSize: "var(--fs-num)", fontWeight: "var(--w-bold)", fontVariantNumeric: "tabular-nums",
+        color: "var(--ink)"
+      },
+      footNumLast: {
+        textAlign: "right", padding: "0 9px", height: "32px", background: "var(--surface-3)",
+        borderTop: "2px solid var(--line-strong)", borderLeft: "1px solid var(--line-strong)",
+        fontFamily: "var(--font-num)", fontSize: "13px", fontWeight: "var(--w-bold)",
+        fontVariantNumeric: "tabular-nums", color: "var(--ink)"
+      },
+
+      notes: [
+        { title: "Май закрыт 03.06, править нельзя", text: "Разницу проводят доначислением в июне.", color: "var(--warn-ink)",
+          style: { padding: "9px 12px", borderRadius: "var(--r-block)", background: "var(--warn-soft)", border: "1px solid var(--warn-line)" } },
+        { title: "Часы приехали из Dodo IS", text: "Синхронизировано 30.06 в 23:50, расхождений 2.", color: "var(--ok)",
+          style: { padding: "9px 12px", borderRadius: "var(--r-block)", background: "var(--ok-soft)", border: "1px solid var(--ok-line)" } }
+      ],
+
+      rules: RULES.map(function (r) { return { num: r[0], title: r[1], text: r[2] }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --chat-bg:#E6EAEF; --bubble-out:#DCE8FA;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 13</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Бот: четыре сценария и тон, которым он пишет</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Управляющий не откроет приложение ради двух минут, а на сообщение ответит. Бот берёт ровно то, что делается одним нажатием: сумм расчёта он не знает, месяц не закрывает, длинные списки отдаёт экрану.</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+          <sc-for list="{{ langOpts }}" as="l" hint-placeholder-count="2">
+            <sc-if value="{{ l.sel }}" hint-placeholder-val="{{ false }}">
+              <span aria-current="true" style="{{ l.selStyle }}">{{ l.label }}</span>
+            </sc-if>
+            <sc-if value="{{ l.notSel }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ l.on }}" style="{{ l.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ l.label }}</button>
+            </sc-if>
+          </sc-for>
+        </div>
+        <div style="display: flex; gap: 6px">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2">
+            <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+              <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+            </sc-if>
+            <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+            </sc-if>
+          </sc-for>
+        </div>
+      </div>
+    </header>
+
+    <sc-if value="{{ isFlows }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Сценарии</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ flowsNote }}</span>
+        </div>
+
+        <div style="display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap">
+          <sc-for list="{{ chats }}" as="c" hint-placeholder-count="4">
+            <div style="width: 296px; flex: 0 0 auto">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">{{ c.num }} · {{ c.title }}</div>
+              <div style="border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; background: var(--chat-bg); box-shadow: var(--sh-xs)">
+                <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; background: var(--surface); border-bottom: 1px solid var(--line-control)">
+                  <span style="width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--ink-inverse); font-size: 9px; font-weight: var(--w-bold); display: grid; place-items: center; flex: 0 0 auto">P&amp;L</span>
+                  <span style="min-width: 0">
+                    <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-semibold)">Dodo P&amp;L</span>
+                    <span style="display: block; font-size: 10px; color: var(--ink-3)">{{ c.status }}</span>
+                  </span>
+                </div>
+                <div style="padding: 11px 11px 13px; display: flex; flex-direction: column; gap: 7px">
+                  <sc-for list="{{ c.messages }}" as="m" hint-placeholder-count="4">
+                    <div style="{{ m.rowStyle }}">
+                      <div style="{{ m.bubbleStyle }}">
+                        <sc-if value="{{ m.hasPhoto }}" hint-placeholder-val="{{ false }}">
+                          <div style="height: 72px; border-radius: var(--r-control); background: linear-gradient(135deg, #C9CFD6, #EBEEF1); border: 1px solid var(--line-control); margin-bottom: 6px; display: flex; align-items: flex-end; padding: 6px 7px">
+                            <span style="font-size: 10px; color: var(--ink-2); background: rgba(255,255,255,.82); padding: 1px 5px; border-radius: 2px">{{ m.photo }}</span>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ m.hasText }}" hint-placeholder-val="{{ true }}">
+                          <div style="font-size: var(--fs-body); line-height: var(--lh-body)">{{ m.text }}</div>
+                        </sc-if>
+                        <sc-if value="{{ m.hasFacts }}" hint-placeholder-val="{{ false }}">
+                          <div style="margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--line)">
+                            <sc-for list="{{ m.facts }}" as="f" hint-placeholder-count="3">
+                              <div style="display: flex; align-items: baseline; gap: 8px; font-size: var(--fs-meta); line-height: 17px">
+                                <span style="color: var(--ink-2)">{{ f.k }}</span>
+                                <span style="margin-left: auto; font-family: var(--font-num); font-weight: var(--w-medium); white-space: nowrap">{{ f.v }}</span>
+                              </div>
+                            </sc-for>
+                          </div>
+                        </sc-if>
+                        <div style="{{ m.timeStyle }}">{{ m.time }}</div>
+                      </div>
+                    </div>
+                    <sc-if value="{{ m.hasKeys }}" hint-placeholder-val="{{ false }}">
+                      <div style="display: flex; flex-direction: column; gap: 4px">
+                        <sc-for list="{{ m.keys }}" as="k" hint-placeholder-count="2">
+                          <button style="{{ k.style }}" style-hover="{ background: 'var(--accent-soft)', borderColor: 'var(--accent-line)' }">{{ k.label }}</button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 8px">{{ c.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isTone }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Как бот пишет</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Правила короткие, потому что их будут нарушать в спешке.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px">
+          <sc-for list="{{ rules }}" as="r" hint-placeholder-count="6">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 11px 14px 12px">
+              <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ r.num }}</div>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-top: 3px">{{ r.title }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">{{ r.text }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <h3 style="margin: 0 0 10px; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Было бы плохо — стало хорошо</h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px">
+          <sc-for list="{{ pairs }}" as="p" hint-placeholder-count="4">
+            <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+              <div style="padding: 7px 13px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: var(--fs-meta); color: var(--ink-2)">{{ p.case }}</div>
+              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; border-bottom: 1px solid var(--line)">
+                <span style="flex: 0 0 auto; width: 17px; height: 17px; border-radius: 50%; background: var(--err-soft); border: 1px solid var(--err-line); display: grid; place-items: center; margin-top: 1px">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+                </span>
+                <span style="font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-3)">{{ p.bad }}</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px">
+                <span style="flex: 0 0 auto; width: 17px; height: 17px; border-radius: 50%; background: var(--ok-soft); border: 1px solid var(--ok-line); display: grid; place-items: center; margin-top: 1px">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                </span>
+                <span style="font-size: var(--fs-body); line-height: var(--lh-body)">{{ p.good }}</span>
+              </div>
+              <div style="padding: 9px 13px; background: var(--surface-2); border-top: 1px solid var(--line); font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3)">{{ p.why }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h3 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Чего бот не делает</h3>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Этот список важнее списка возможностей: он не даст боту разрастись.</span>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <sc-for list="{{ limits }}" as="l" hint-placeholder-count="5">
+            <div style="display: flex; align-items: flex-start; gap: 11px; padding: 11px 14px; border-bottom: 1px solid var(--line)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M8 12h8"></path></svg>
+              <div>
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ l.title }}</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 2px">{{ l.text }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ru&quot;,&quot;sr&quot;],&quot;default&quot;:&quot;ru&quot;,&quot;tsType&quot;:&quot;'ru' | 'sr'&quot;,&quot;section&quot;:&quot;Язык бота&quot;}}">
+const CHATS = {
+  ru: [
+    { title: "Часы за месяц", status: "отвечает сразу",
+      note: "Бот не зовёт «зайти и проверить». Он приносит цифры в сообщение и оставляет одно нажатие. Расхождения названы поимённо — их всего два.",
+      messages: [
+        { side: "in", time: "30.06, 20:00", text: "Petar, часы за июнь по Vračar приехали из Dodo IS. Проверьте — расчёт начнётся 2 июля.",
+          facts: [["Людей", "14"], ["Часов", "2 380"], ["Расхождений", "2"]] },
+        { side: "in", time: "30.06, 20:00", text: "Расходятся Jelena Đorđević и Nikola Ilić — в IS у них меньше, чем в графике.",
+          keys: ["Часы верные, подтвердить", "Открыть табель"] },
+        { side: "out", time: "20:14", text: "Часы верные, подтвердить" },
+        { side: "in", time: "20:14", text: "Записал. Двум расхождениям поставил пометку — бухгалтер разберёт их до расчёта." }
+      ] },
+    { title: "Расход наличными", status: "отвечает сразу",
+      note: "Самый частый сценарий. Фото приходит первым, бот достаёт сумму и предлагает статью — остаётся подтвердить или поправить.",
+      messages: [
+        { side: "out", time: "12:41", photo: "чек, 1 стр." },
+        { side: "in", time: "12:41", text: "Вижу 12 000,00 RSD, «Сантехник». Статья — ремонт и обслуживание?",
+          keys: ["Да, записать", "Другая статья"] },
+        { side: "out", time: "12:42", text: "Да, записать" },
+        { side: "in", time: "12:42", text: "Записал. Чек ушёл бухгалтеру — в отчёт расход попадёт после подтверждения.",
+          facts: [["В кассе Vračar", "68 000,00"], ["Сегодня потрачено", "17 300,00"]] }
+      ] },
+    { title: "Вопрос от бухгалтера", status: "отвечает сразу",
+      note: "Бухгалтер не пишет управляющему напрямую: вопрос идёт через бота и привязан к строке расхода. Ответ вернётся в инбокс, а не потеряется в переписке.",
+      messages: [
+        { side: "in", time: "02.07, 10:20", text: "Ana Marić спрашивает про расход от 22.06 — «Мойка витрин», 7 500,00. Чека нет.",
+          keys: ["Чек есть, сейчас пришлю", "Чека не было", "Это ошибка, расхода не было"] },
+        { side: "out", time: "10:26", text: "Чека не было" },
+        { side: "in", time: "10:26", text: "Передал. Ana решит, проводить расход без документа или снять, — вы узнаете, когда решит." }
+      ] },
+    { title: "Месяц закрыт", status: "отвечает сразу",
+      note: "Последнее сообщение месяца. Оно ничего не просит — объясняет, что окно закрылось и куда идти, если что-то забыли.",
+      messages: [
+        { side: "in", time: "03.07, 09:05", text: "Июнь закрыт. Часы и расходы за июнь больше не меняются." },
+        { side: "in", time: "09:05", text: "Если что-то забыли внести — напишите Ana Marić, она проведёт это июлем. Задним числом июнь не переписываем.",
+          keys: ["Написать Ana Marić"] },
+        { side: "in", time: "09:05", text: "Июль открыт, расходы уже можно вносить." }
+      ] }
+  ],
+  sr: [
+    { title: "Sati za mesec", status: "odgovara odmah",
+      note: "Управляющий-серб получает то же сообщение на сербском латиницей. Числа в сербском формате: 2.380, а не 2 380.",
+      messages: [
+        { side: "in", time: "30.06, 20:00", text: "Petre, sati za jun na Vračaru stigli su iz Dodo IS-a. Proverite — obračun počinje 2. jula.",
+          facts: [["Ljudi", "14"], ["Sati", "2.380"], ["Neslaganja", "2"]] },
+        { side: "in", time: "30.06, 20:00", text: "Ne slažu se Jelena Đorđević i Nikola Ilić — u IS-u imaju manje nego u rasporedu.",
+          keys: ["Sati su tačni, potvrdi", "Otvori evidenciju"] },
+        { side: "out", time: "20:14", text: "Sati su tačni, potvrdi" },
+        { side: "in", time: "20:14", text: "Zabeležio sam. Dva neslaganja sam označio — računovođa će ih rešiti pre obračuna." }
+      ] },
+    { title: "Gotovinski trošak", status: "odgovara odmah",
+      note: "Фото первым, бот достаёт сумму и предлагает статью. Формат суммы — сербский: 12.000,00.",
+      messages: [
+        { side: "out", time: "12:41", photo: "račun, 1 str." },
+        { side: "in", time: "12:41", text: "Vidim 12.000,00 RSD, «Vodoinstalater». Stavka — popravke i održavanje?",
+          keys: ["Da, zabeleži", "Druga stavka"] },
+        { side: "out", time: "12:42", text: "Da, zabeleži" },
+        { side: "in", time: "12:42", text: "Zabeležio sam. Račun je otišao računovođi — u izveštaj trošak ulazi posle potvrde.",
+          facts: [["U kasi Vračar", "68.000,00"], ["Danas potrošeno", "17.300,00"]] }
+      ] },
+    { title: "Pitanje od računovođe", status: "odgovara odmah",
+      note: "Вопрос от бухгалтера приходит через бота и привязан к строке расхода.",
+      messages: [
+        { side: "in", time: "02.07, 10:20", text: "Ana Marić pita za trošak od 22.06 — «Pranje izloga», 7.500,00. Nema računa.",
+          keys: ["Račun postoji, šaljem", "Računa nije bilo", "Greška, troška nije bilo"] },
+        { side: "out", time: "10:26", text: "Računa nije bilo" },
+        { side: "in", time: "10:26", text: "Prosledio sam. Ana će odlučiti da li trošak prolazi bez dokumenta — javiću vam kad odluči." }
+      ] },
+    { title: "Mesec je zatvoren", status: "odgovara odmah",
+      note: "Последнее сообщение месяца: ничего не просит, объясняет, что окно закрылось.",
+      messages: [
+        { side: "in", time: "03.07, 09:05", text: "Jun je zatvoren. Sati i troškovi za jun se više ne menjaju." },
+        { side: "in", time: "09:05", text: "Ako ste nešto zaboravili — pišite Ani Marić, provešće to kroz jul. Jun se unazad ne prepravlja.",
+          keys: ["Piši Ani Marić"] },
+        { side: "in", time: "09:05", text: "Jul je otvoren, troškove već možete unositi." }
+      ] }
+  ]
+};
+
+const RULES = [
+  ["01", "Одно сообщение — одно действие", "Нужны два ответа — это два сообщения. Управляющий читает стоя у печи, одной рукой."],
+  ["02", "Цифры в сообщении, а не по ссылке", "Ссылка нужна, только когда данных больше, чем помещается: список из тридцати строк отдаём экрану."],
+  ["03", "Бот знает роль и молчит про чужое", "Управляющему он не назовёт сумму расчёта даже в ответ на прямой вопрос — и объяснит, почему."],
+  ["04", "Срок вместо давления", "Не «срочно подтвердите», а «расчёт начнётся 2 июля». Человек сам решит, когда."],
+  ["05", "Подтверждение фактом, а не словом", "Не «успешно сохранено», а «в кассе Vračar 68 000,00». Человек видит результат, а не отчёт бота о себе."],
+  ["06", "Без приветствий и подписей", "Первое сообщение сразу по делу. Бот не представляется, не благодарит дважды и не желает хорошего дня."]
+];
+
+const PAIRS = [
+  ["Напоминание о часах",
+   "⚠️ ВНИМАНИЕ! Вы до сих пор не подтвердили часы за июнь! Пожалуйста, срочно зайдите в систему!",
+   "Petar, часы за июнь ждут вашей проверки. Расчёт начнётся 2 июля.",
+   "Капслок и восклицательные знаки перестают работать на второй раз. Дата работает всегда."],
+  ["Ответ после действия",
+   "Операция выполнена успешно.",
+   "Записал. В кассе Vračar 68 000,00 RSD.",
+   "«Успешно» — отчёт бота о себе. Человеку нужен новый остаток, чтобы сверить с ящиком."],
+  ["Нет доступа",
+   "Недостаточно прав для выполнения запроса.",
+   "Суммы расчёта я не показываю — у вашей роли их нет. Могу прислать часы по вашей точке.",
+   "Отказ называет причину и сразу предлагает то, что человеку доступно."],
+  ["Первое сообщение",
+   "Здравствуйте! Меня зовут Dodo P&L Bot. Я помогу вам вести учёт. Вот что я умею: …",
+   "Petar, вы теперь управляющий Vračar. Я пишу про часы и расходы. Первое — часы за июнь, придут 30 июня вечером.",
+   "Список возможностей никто не читает. Вместо него — что произойдёт дальше и когда."]
+];
+
+const LIMITS = [
+  ["Не показывает суммы расчёта и ведомость", "Даже администратору. Деньги по людям — это экран, где видно все колонки сразу, а не четыре строки в чате."],
+  ["Не закрывает и не переоткрывает период", "Решение с последствиями и с причиной в истории. Кнопка на такое не вешается."],
+  ["Не заводит людей и не меняет ставки", "Справочники живут в приложении. Бот может только напомнить, что у человека нет условий найма на июль."],
+  ["Не спорит и не переспрашивает дважды", "Если ответ непонятен, бот отдаёт вопрос человеку: «Не понял. Открыть расход в приложении?»"],
+  ["Не пишет ночью", "С 22:00 до 8:00 сообщения ждут утра. Исключение одно — закрытие периода: о нём лучше узнать сразу."]
+];
+
+class Component extends DCLogic {
+  state = { tab: "flows", lang: null };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const lang = st.lang || this.props.lang || "ru";
+    const chats = CHATS[lang];
+
+    const segBase = { display: "inline-flex", alignItems: "center", height: "22px", padding: "0 9px", borderRadius: "var(--r-control)", fontSize: "var(--fs-meta)", whiteSpace: "nowrap", border: 0 };
+    const tabBase = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+
+    return {
+      tabs: [["flows", "Сценарии"], ["tone", "Тон"]].map(function (t) {
+        const on = st.tab === t[0];
+        return {
+          label: t[1], sel: on, notSel: !on,
+          on: function () { self.setState({ tab: t[0] }); },
+          selStyle: Object.assign({}, tabBase, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, tabBase, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isFlows: st.tab === "flows",
+      isTone: st.tab === "tone",
+
+      langOpts: [["ru", "Рус"], ["sr", "Srp"]].map(function (l) {
+        const on = lang === l[0];
+        return {
+          label: l[1], sel: on, notSel: !on,
+          on: function () { self.setState({ lang: l[0] }); },
+          selStyle: Object.assign({}, segBase, { background: "var(--surface)", color: "var(--ink)", fontWeight: "var(--w-semibold)", boxShadow: "var(--sh-xs)" }),
+          btnStyle: Object.assign({}, segBase, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" })
+        };
+      }),
+
+      flowsNote: lang === "ru"
+        ? "Управляющий Petar Petrović, точка Beograd Vračar. Язык сообщений — тот же, что человек выбрал в приложении."
+        : "Isti menadžer, isti dan — poruke na jeziku koji je izabrao u aplikaciji.",
+
+      chats: chats.map(function (c, ci) {
+        return {
+          num: "0" + (ci + 1), title: c.title, status: c.status, note: c.note,
+          messages: c.messages.map(function (m) {
+            const out = m.side === "out";
+            return {
+              text: m.text || "", hasText: !!m.text,
+              photo: m.photo || "", hasPhoto: !!m.photo,
+              time: m.time,
+              hasFacts: !!m.facts,
+              facts: (m.facts || []).map(function (f) { return { k: f[0], v: f[1] }; }),
+              hasKeys: !!m.keys,
+              keys: (m.keys || []).map(function (k) {
+                return {
+                  label: k,
+                  style: {
+                    width: "100%", minHeight: "34px", padding: "7px 11px",
+                    borderRadius: "var(--r-control)", border: "1px solid var(--line-control)",
+                    background: "var(--surface)", color: "var(--accent)",
+                    fontSize: "var(--fs-dense)", fontWeight: "var(--w-medium)", textAlign: "center"
+                  }
+                };
+              }),
+              rowStyle: { display: "flex", justifyContent: out ? "flex-end" : "flex-start" },
+              bubbleStyle: {
+                maxWidth: "86%", padding: "8px 10px 6px",
+                borderRadius: out ? "10px 10px 3px 10px" : "10px 10px 10px 3px",
+                background: out ? "var(--bubble-out)" : "var(--surface)",
+                border: "1px solid " + (out ? "#C8DAF4" : "var(--line)"),
+                boxShadow: "var(--sh-xs)"
+              },
+              timeStyle: {
+                marginTop: "3px", textAlign: "right", fontFamily: "var(--font-num)",
+                fontSize: "9.5px", color: "var(--ink-3)"
+              }
+            };
+          })
+        };
+      }),
+
+      rules: RULES.map(function (r) { return { num: r[0], title: r[1], text: r[2] }; }),
+      pairs: PAIRS.map(function (p) { return { case: p[0], bad: p[1], good: p[2], why: p[3] }; }),
+      limits: LIMITS.map(function (l) { return { title: l[0], text: l[1] }; })
+    };
+  }
+}
+
+</script>
+</body>
+</html>

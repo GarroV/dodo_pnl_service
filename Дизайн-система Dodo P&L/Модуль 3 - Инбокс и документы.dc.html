@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, textarea { font:inherit; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модули 8 и 9</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Инбокс классификации и разбор документов</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Очередь того, что система не смогла отнести сама. Разбирают пачкой: решение запоминается и в следующий раз предлагается само. Разобрать сорок штук за десять минут — это цель, а не метафора.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isInbox }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: flex-end; gap: 14px; margin-bottom: 10px; flex-wrap: wrap">
+          <div>
+            <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Что показать</div>
+            <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+              <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+                <sc-if value="{{ f.sel }}" hint-placeholder-val="{{ false }}">
+                  <span aria-current="true" style="{{ f.selStyle }}">{{ f.label }}<span style="{{ f.cntStyle }}">{{ f.cnt }}</span></span>
+                </sc-if>
+                <sc-if value="{{ f.notSel }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ f.on }}" style="{{ f.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ f.label }}<span style="{{ f.cntStyle }}">{{ f.cnt }}</span></button>
+                </sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex: 1"></div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-3)">Space — отметить, Shift+клик — диапазон. Отметьте несколько строк одного поставщика — и присвойте статью всем сразу</div>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <div style="{{ barStyle }}">
+            <button onClick="{{ toggleAll }}" style="{{ allBoxStyle }}">
+              <sc-if value="{{ someSelected }}" hint-placeholder-val="{{ false }}">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path></svg>
+              </sc-if>
+            </button>
+            <sc-if value="{{ noSelection }}" hint-placeholder-val="{{ true }}">
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ queueTitle }}</span>
+              <span style="font-size: var(--fs-meta); color: var(--ink-2)">система запоминает решение и в следующий раз предлагает его сама</span>
+            </sc-if>
+            <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--accent)">{{ selInfo }}</span>
+              <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ selHint }}</span>
+            </sc-if>
+            <div style="margin-left: auto; display: flex; gap: 7px">
+              <button style="{{ bulkStyle }}" disabled="{{ bulkOff }}">Присвоить статью</button>
+              <button style="{{ bulkStyle2 }}" disabled="{{ bulkOff }}">Разнести по точкам</button>
+            </div>
+          </div>
+
+          <sc-for list="{{ items }}" as="i" hint-placeholder-count="9">
+            <div style="{{ i.rowStyle }}" style-hover="{{ i.rowHover }}">
+              <button onClick="{{ i.onCheck }}" style="{{ i.boxStyle }}">
+                <sc-if value="{{ i.checked }}" hint-placeholder-val="{{ false }}">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                </sc-if>
+              </button>
+              <span style="{{ i.kindStyle }}">
+                <sc-if value="{{ i.isAttach }}" hint-placeholder-val="{{ false }}">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7l-6 6a3 3 0 0 0 4 4l6-6a5 5 0 0 0-7-7l-7 7a7 7 0 0 0 10 10"></path></svg>
+                </sc-if>
+                {{ i.kind }}
+              </span>
+              <span style="{{ i.titleStyle }}">{{ i.title }}</span>
+              <span style="{{ i.dateStyle }}">{{ i.date }}</span>
+              <span style="{{ i.stateStyle }}">{{ i.state }}</span>
+              <span style="{{ i.guessStyle }}">{{ i.guess }}</span>
+              <span style="{{ i.sumStyle }}">{{ i.sum }}</span>
+              <span style="width: 150px; flex: 0 0 auto; display: flex; justify-content: flex-end">
+                <button onClick="{{ i.onAction }}" style="{{ i.actionStyle }}" style-hover="{{ i.actionHover }}">{{ i.action }}</button>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px">
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--accent-line); border-radius: var(--r-block)">
+            <span style="display: inline-flex; align-items: center; height: 19px; padding: 0 6px; border-radius: var(--r-mark); background: var(--accent-soft); border: 1px solid var(--accent-line); font-size: 10px; font-weight: var(--w-semibold); color: var(--accent); letter-spacing: .04em; text-transform: uppercase; flex: 0 0 auto">Платёж</span>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Данные есть, классификации нет: сумма, дата и контрагент известны — не хватает статьи и точки. Это строка из банковской выписки, и в P&amp;L она попадёт сразу после присвоения статьи.</div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: var(--r-block)">
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 19px; padding: 0 6px; border-radius: var(--r-mark); background: var(--surface); border: 1px dashed var(--warn-line); font-size: 10px; font-weight: var(--w-semibold); color: var(--warn-ink); letter-spacing: .04em; text-transform: uppercase; flex: 0 0 auto">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7l-6 6a3 3 0 0 0 4 4l6-6a5 5 0 0 0-7-7l-7 7a7 7 0 0 0 10 10"></path></svg>
+              Вложение
+            </span>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink)">Фото, скинутое с точки, где не распознано ни одного поля: ни суммы, ни даты, ни поставщика. В P&amp;L не попадает вообще, пока бухгалтер не разберёт и не подтвердит. Отдельный вид строки — потому что это не платёж, а сырьё для него.</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDoc }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Подтверждение разбора</h2>
+          <span style="display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 8px; border-radius: var(--r-control); background: var(--warn-soft); border: 1px solid var(--warn-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--warn-ink)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--warn-mark)"></span>Требует внимания</span>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">2 из 7 в очереди · слева документ, справа то, что система из него вытащила</span>
+          <div style="margin-left: auto; display: flex; gap: 7px">
+            <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Отложить</button>
+            <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--err-line); border-radius: var(--r-control); background: var(--surface); color: var(--err); font-size: var(--fs-dense)" style-hover="{ background: 'var(--err-soft)' }">Дубликат</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 452px 1fr; gap: 10px; align-items: start">
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v4h4"></path></svg>
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-medium)">IMG_2947.jpg</span>
+              <span style="font-size: var(--fs-meta); color: var(--ink-3)">2,4 МБ · страница 1 из 1</span>
+              <div style="margin-left: auto; display: flex; gap: 4px">
+                <button style="width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)' }">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="m20 20-3.6-3.6"></path><path d="M11 8v6"></path><path d="M8 11h6"></path></svg>
+                </button>
+                <button style="width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)' }">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-3-6.2"></path><path d="M20 4v5h-5"></path></svg>
+                </button>
+              </div>
+            </div>
+            <div style="padding: 14px; background: #DFE3E7">
+              <div style="background: #fff; border: 1px solid var(--line-control-2); box-shadow: 0 2px 8px rgba(20,26,34,.12); padding: 18px 16px; font-family: var(--font-num); font-size: 10.5px; line-height: 15px; color: #3A424C; transform: rotate(-.4deg)">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #C8CCD1; padding-bottom: 7px; margin-bottom: 8px">
+                  <div>
+                    <div style="font-weight: 600; font-size: 12px; color: #1B2028">MLIN VOJVODINA d.o.o.</div>
+                    <div>Novi Sad, Temerinska 42</div>
+                    <div>PIB 104582991</div>
+                  </div>
+                  <div style="text-align: right">
+                    <div style="font-weight: 600; color: #1B2028">OTPREMNICA</div>
+                    <div>br. 2026-0847</div>
+                    <div>18.06.2026</div>
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 2px 0; color: #6B7684; font-size: 9.5px; border-bottom: 1px solid #E4E8EC">
+                  <span style="width: 168px">ARTIKAL</span><span style="width: 52px; text-align: right">KOL</span><span style="width: 62px; text-align: right">CENA</span><span style="width: 74px; text-align: right">UKUPNO</span>
+                </div>
+                <sc-for list="{{ scanLines }}" as="l" hint-placeholder-count="5">
+                  <div style="{{ l.style }}">
+                    <span style="width: 168px">{{ l.art }}</span><span style="width: 52px; text-align: right">{{ l.kol }}</span><span style="width: 62px; text-align: right">{{ l.cena }}</span><span style="width: 74px; text-align: right">{{ l.total }}</span>
+                  </div>
+                </sc-for>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid #C8CCD1; margin-top: 8px; padding-top: 7px; font-weight: 600; color: #1B2028">
+                  <span>UKUPNO ZA PLAĆANJE</span><span>184.320,00 RSD</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 9px; color: #8B939C">Primio: Đ. Milošević · 18.06.2026</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 7px; margin-top: 10px; padding: 7px 9px; background: rgba(255,255,255,.86); border: 1px solid var(--line-control); border-radius: var(--r-control)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">Прислал Đorđe Milošević с точки Vračar · 18.06.2026, 14:12</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line)">
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Что система вытащила</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-3)">поля с жёлтой границей — уверенность ниже порога, проверьте</span>
+              </div>
+              <div style="padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 11px 12px">
+                <sc-for list="{{ fields }}" as="f" hint-placeholder-count="6">
+                  <div style="{{ f.wrapStyle }}">
+                    <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: {{ f.labelColor }}; font-weight: var(--w-semibold); margin-bottom: 4px">{{ f.label }}</label>
+                    <input value="{{ f.value }}" style="{{ f.inputStyle }}" style-focus="{ borderColor: 'var(--accent)', boxShadow: '0 0 0 3px rgba(31,78,156,.14)', outline: 'none' }">
+                    <div style="{{ f.noteStyle }}">{{ f.note }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line)">
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Позиции по статьям P&amp;L</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-3)">одна накладная даёт три факта: сырьё, канцелярия и химия — разные статьи</span>
+                <button style="margin-left: auto; height: 24px; padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2); display: inline-flex; align-items: center; gap: 5px" style-hover="{ borderColor: 'var(--accent)', color: 'var(--accent)' }">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                  Разделить
+                </button>
+              </div>
+              <table style="width: 100%; table-layout: fixed">
+                <thead>
+                  <tr>
+                    <th style="width: 210px; text-align: left; padding: 6px 10px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Позиция</th>
+                    <th style="width: 156px; text-align: left; padding: 6px 10px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Статья P&amp;L</th>
+                    <th style="width: 142px; text-align: left; padding: 6px 10px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2)">Точка</th>
+                    <th style="text-align: right; padding: 6px 10px; background: #E4E8EE; border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink)">Сумма</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ positions }}" as="p" hint-placeholder-count="3">
+                    <tr style-hover="{ background: '#F6F8FA' }">
+                      <td style="{{ p.tdStyle }}">
+                        <div style="font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ p.name }}</div>
+                        <div style="font-size: 10px; color: var(--ink-3)">{{ p.detail }}</div>
+                      </td>
+                      <td style="{{ p.tdStyle }}">
+                        <div style="{{ p.selStyle }}">
+                          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ p.article }}</span>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto; flex: 0 0 auto"><path d="m6 9 6 6 6-6"></path></svg>
+                        </div>
+                        <div style="{{ p.hintStyle }}">{{ p.hint }}</div>
+                      </td>
+                      <td style="{{ p.tdStyle }}">
+                        <div style="display: flex; align-items: center; gap: 7px; height: 27px; padding: 0 8px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 21s-7-5.6-7-11a7 7 0 1 1 14 0c0 5.4-7 11-7 11z"></path><path d="M12 12.4a2.4 2.4 0 1 0 0-4.8 2.4 2.4 0 0 0 0 4.8z"></path></svg>
+                          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ p.point }}</span>
+                        </div>
+                      </td>
+                      <td style="{{ p.sumStyle }}">{{ p.sum }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <th scope="row" colSpan="3" style="text-align: left; padding: 0 10px; height: 32px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-dense); font-weight: var(--w-semibold)">
+                      <div style="display: flex; align-items: center; gap: 9px">
+                        <span>Разнесено</span>
+                        <span style="{{ balanceStyle }}">{{ balanceText }}</span>
+                      </div>
+                    </th>
+                    <td style="text-align: right; padding: 0 10px; background: #E8EDF3; border-top: 2px solid var(--line-strong); font-family: var(--font-num); font-size: 13px; font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ posTotal }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div style="background: var(--surface); border: 1px solid var(--warn-line); border-radius: var(--r-block); padding: 11px 12px">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"></path><path d="M8 4v4"></path><path d="M16 4v4"></path><path d="M4 11h16"></path></svg>
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Дата документа и период — разные</span>
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Накладная от 18.06, но мука поставлена по договору за май. В P&amp;L строка попадёт в тот месяц, который выбран как период, а не в месяц даты документа. Май утверждён — выберите июнь или откройте перенос разницы.</div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 9px">
+                <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+                  <sc-for list="{{ periodOpts }}" as="p" hint-placeholder-count="2">
+                    <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}">
+                      <span aria-current="true" style="{{ p.selStyle }}">{{ p.label }}</span>
+                    </sc-if>
+                    <sc-if value="{{ p.notSel }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ p.on }}" style="{{ p.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ p.label }}</button>
+                    </sc-if>
+                  </sc-for>
+                </div>
+                <span style="{{ periodNoteStyle }}">{{ periodNote }}</span>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 9px; padding: 11px 12px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block)">
+              <button style="{{ confirmStyle }}" disabled="{{ confirmOff }}">Подтвердить и в P&amp;L</button>
+              <button style="flex: 0 0 auto; white-space: nowrap; height: var(--control-h); padding: 0 12px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)" style-hover="{ background: 'var(--surface-3)' }">Сохранить черновик</button>
+              <span style="flex: 1 1 auto; min-width: 0; font-size: var(--fs-meta); color: var(--ink-3)">{{ confirmHint }}</span>
+              <button style="flex: 0 0 auto; white-space: nowrap; height: var(--control-h); padding: 0 12px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body); display: inline-flex; align-items: center; gap: 6px" style-hover="{ background: 'var(--surface-3)' }">
+                Следующий
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Управляющий скидывает накладную, 375 px</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Три экрана и никакого разбора: он фотографирует и уходит. Распознавание и статьи — забота бухгалтера.</span>
+        </div>
+        <div style="display: flex; gap: 14px; align-items: flex-start">
+
+          <div style="width: 391px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Шаг 1 · Снять</div>
+            <div style="background: #14181E; border-radius: 16px; padding: 8px">
+              <div style="background: var(--surface); border-radius: 10px; overflow: hidden">
+                <div style="height: 24px; background: var(--surface-3); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 11px; font-family: var(--font-num); font-size: 9.5px; color: var(--ink-3)"><span>9:41</span><span>375 pt</span></div>
+                <div style="padding: 12px; min-height: 452px">
+                  <div style="font-size: 10.5px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Beograd Vračar</div>
+                  <div style="font-size: 17px; line-height: 23px; font-weight: var(--w-semibold); letter-spacing: -.01em">Скинуть накладную или чек</div>
+                  <div style="font-size: 13px; line-height: 18px; color: var(--ink-2); margin-top: 6px">Просто сфотографируйте. Разбирать ничего не нужно — бухгалтер сделает это сам.</div>
+                  <div style="margin-top: 12px; background: #14181E; border-radius: 8px; height: 244px; position: relative; overflow: hidden; display: grid; place-items: center">
+                    <div style="position: absolute; inset: 20px; border: 1.5px dashed rgba(255,255,255,.34); border-radius: 5px"></div>
+                    <div style="width: 156px; height: 200px; background: rgba(255,255,255,.9); border-radius: 3px; transform: rotate(-1.2deg); padding: 10px 9px; font-family: var(--font-num); font-size: 6.5px; line-height: 9px; color: #56606B">
+                      <div style="font-weight: 600; font-size: 8px; color: #1B2028">MLIN VOJVODINA</div>
+                      <div>OTPREMNICA 2026-0847</div>
+                      <div style="border-top: 1px solid #C8CCD1; margin: 5px 0 4px"></div>
+                      <div style="display: flex; justify-content: space-between"><span>Pšenično brašno T-500</span><span>92 400</span></div>
+                      <div style="display: flex; justify-content: space-between"><span>Brašno integralno</span><span>38 640</span></div>
+                      <div style="display: flex; justify-content: space-between"><span>Kvasac suvi</span><span>21 800</span></div>
+                      <div style="display: flex; justify-content: space-between"><span>Papir A4</span><span>4 200</span></div>
+                      <div style="border-top: 1px solid #C8CCD1; margin: 5px 0 4px"></div>
+                      <div style="display: flex; justify-content: space-between; font-weight: 600; color: #1B2028"><span>UKUPNO</span><span>184 320</span></div>
+                    </div>
+                    <div style="position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 5px 9px; background: rgba(20,24,30,.72); border-radius: 999px">
+                      <span style="width: 6px; height: 6px; border-radius: 50%; background: #6DA0FF"></span>
+                      <span style="font-size: 10.5px; color: #E7EBF0">Держите документ в рамке</span>
+                    </div>
+                  </div>
+                  <button style="width: 100%; min-height: var(--tap-min); border: 1px solid var(--accent); border-radius: var(--r-block); background: var(--accent); color: #fff; font-size: 14px; font-weight: var(--w-semibold); margin-top: 12px">Снять</button>
+                  <button style="width: 100%; min-height: var(--tap-min); border: 1px solid var(--line-control); border-radius: var(--r-block); background: var(--surface); font-size: 14px; margin-top: 8px">Выбрать из галереи</button>
+                </div>
+              </div>
+            </div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 8px">Рамка помогает попасть в кадр, но кривое фото тоже принимается: отклонять снимок на точке — значит потерять документ.</div>
+          </div>
+
+          <div style="width: 391px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Шаг 2 · Что это</div>
+            <div style="background: #14181E; border-radius: 16px; padding: 8px">
+              <div style="background: var(--surface); border-radius: 10px; overflow: hidden">
+                <div style="height: 24px; background: var(--surface-3); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 11px; font-family: var(--font-num); font-size: 9.5px; color: var(--ink-3)"><span>9:41</span><span>375 pt</span></div>
+                <div style="padding: 12px; min-height: 452px">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></svg>
+                    <span style="font-size: 13px; color: var(--ink-2)">Снимок готов</span>
+                  </div>
+                  <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; margin-bottom: 12px">
+                    <div style="height: 108px; background: #DFE3E7; display: grid; place-items: center">
+                      <div style="width: 76px; height: 92px; background: #fff; border: 1px solid var(--line-control-2); transform: rotate(-1deg)"></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--line)">
+                      <span style="font-family: var(--font-num); font-size: 10.5px; color: var(--ink-2)">IMG_2947.jpg · 2,4 МБ</span>
+                      <button style="margin-left: auto; height: 26px; padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: 11.5px; color: var(--ink-2)">Переснять</button>
+                    </div>
+                  </div>
+                  <div style="font-size: 10.5px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Что это</div>
+                  <div style="display: flex; flex-direction: column; gap: 8px">
+                    <button style="width: 100%; min-height: var(--tap-min); border: 1px solid var(--accent); border-radius: var(--r-block); background: var(--accent-soft); color: var(--accent); font-size: 14px; font-weight: var(--w-semibold); text-align: left; padding: 0 12px">Накладная от поставщика</button>
+                    <button style="width: 100%; min-height: var(--tap-min); border: 1px solid var(--line-control); border-radius: var(--r-block); background: var(--surface); font-size: 14px; text-align: left; padding: 0 12px">Чек за расход из кассы</button>
+                  </div>
+                  <div style="font-size: 10.5px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin: 14px 0 6px">Комментарий · необязательно</div>
+                  <textarea placeholder="Например: мука за май, привезли позже" style="width: 100%; height: 58px; padding: 9px 10px; border: 1px solid var(--line-control); border-radius: var(--r-block); font-size: 14px; line-height: 19px; resize: none; color: var(--ink)"></textarea>
+                  <button style="width: 100%; min-height: var(--tap-min); border: 1px solid var(--accent); border-radius: var(--r-block); background: var(--accent); color: #fff; font-size: 14px; font-weight: var(--w-semibold); margin-top: 12px">Отправить бухгалтеру</button>
+                </div>
+              </div>
+            </div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 8px">Два вопроса вместо формы: накладная или чек. Сумму, дату и поставщика управляющий не вводит — это работа распознавания и бухгалтера.</div>
+          </div>
+
+          <div style="width: 391px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Шаг 3 · Ушло</div>
+            <div style="background: #14181E; border-radius: 16px; padding: 8px">
+              <div style="background: var(--surface); border-radius: 10px; overflow: hidden">
+                <div style="height: 24px; background: var(--surface-3); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 11px; font-family: var(--font-num); font-size: 9.5px; color: var(--ink-3)"><span>9:41</span><span>375 pt</span></div>
+                <div style="padding: 12px; min-height: 452px">
+                  <div style="display: grid; place-items: center; padding: 26px 0 8px">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--ok-soft); border: 1px solid var(--ok-line); display: grid; place-items: center">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                    </div>
+                  </div>
+                  <div style="font-size: 17px; line-height: 23px; font-weight: var(--w-semibold); text-align: center">Ушло бухгалтеру</div>
+                  <div style="font-size: 13px; line-height: 18px; color: var(--ink-2); text-align: center; margin-top: 6px">В P&amp;L документ попадёт после того, как бухгалтер его подтвердит. Вам придёт уведомление, если что-то не сойдётся.</div>
+                  <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; margin-top: 12px">
+                    <div style="display: flex; align-items: baseline; gap: 10px; padding: 10px 11px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+                      <span style="font-size: 12.5px; color: var(--ink-2)">Файл</span>
+                      <span style="margin-left: auto; font-family: var(--font-num); font-size: 12px">IMG_2947.jpg</span>
+                    </div>
+                    <div style="display: flex; align-items: baseline; gap: 10px; padding: 10px 11px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+                      <span style="font-size: 12.5px; color: var(--ink-2)">Вид</span>
+                      <span style="margin-left: auto; font-size: 13px; font-weight: var(--w-medium)">Накладная</span>
+                    </div>
+                    <div style="display: flex; align-items: baseline; gap: 10px; padding: 10px 11px; background: var(--surface-2)">
+                      <span style="font-size: 12.5px; color: var(--ink-2)">Статус</span>
+                      <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--warn-ink); font-weight: var(--w-semibold)">
+                        <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--warn-mark)"></span>
+                        Ждёт разбора
+                      </span>
+                    </div>
+                  </div>
+                  <div style="font-size: 10.5px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin: 14px 0 6px">Отправлено сегодня</div>
+                  <div style="display: flex; align-items: center; gap: 9px; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--r-block)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M7 3h7l4 4v14H7z"></path><path d="M14 3v4h4"></path></svg>
+                    <span style="font-size: 12.5px">IMG_2946.jpg</span>
+                    <span style="margin-left: auto; font-size: 11.5px; color: var(--ok)">разобрано</span>
+                  </div>
+                  <button style="width: 100%; min-height: var(--tap-min); border: 1px solid var(--line-control); border-radius: var(--r-block); background: var(--surface); font-size: 14px; margin-top: 12px">Скинуть ещё один</button>
+                </div>
+              </div>
+            </div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 8px">Управляющий видит статус своего документа, но не видит, во что он превратился в P&amp;L: сумм расчёта и статей в его наборе прав нет.</div>
+          </div>
+
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1264,&quot;height&quot;:900},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;inbox&quot;,&quot;doc&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;inbox&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Инбокс&quot;}}">
+const ITEMS = [
+  ["pay", "Mlin Vojvodina d.o.o.", "18.06.2026", "статья не определена", "похоже на «Сырьё» — 4 похожих платежа", 184320, "Сырьё", "guess"],
+  ["att", "IMG_2947.jpg · 2,4 МБ", "сегодня 14:12", "ни одного распознанного поля", "прислал Đorđe Milošević · Vračar", null, "Открыть и разобрать", "attach"],
+  ["pay", "Čistoća Novi Sad", "21.06.2026", "статья не определена", "новый контрагент", 21600, "Выбрать статью", "plain"],
+  ["pay", "Delta Sport d.o.o.", "19.06.2026", "статья не определена", "похоже на «Ремонт» — 2 похожих платежа", 47800, "Ремонт", "guess"],
+  ["att", "IMG_2951.jpg · 1,8 МБ", "сегодня 09:26", "ни одного распознанного поля", "прислала Emilija Vasić · Novi Sad", null, "Открыть и разобрать", "attach"],
+  ["pay", "SBB Telekomunikacije", "20.06.2026", "статья не определена", "похоже на «Коммунальные» — 6 похожих", 8940, "Коммунальные", "guess"],
+  ["pay", "Mlekara Šabac", "22.06.2026", "статья не определена", "похоже на «Сырьё» — 4 похожих платежа", 96450, "Сырьё", "guess"],
+  ["att", "scan_0043.pdf · 640 КБ", "вчера 18:04", "распознан только номер документа", "пришло почтой на inbox@", null, "Открыть и разобрать", "attach"],
+  ["pay", "Kancelarija Plus", "23.06.2026", "статья не определена", "похоже на «Канцелярия» — 3 похожих", 12380, "Канцелярия", "guess"]
+];
+
+const SCAN_LINES = [
+  ["Pšenično brašno T-500", "1 200 kg", "77,00", "92.400,00", false],
+  ["Brašno integralno", "420 kg", "92,00", "38.640,00", false],
+  ["Kvasac suvi", "40 kg", "545,00", "21.800,00", false],
+  ["Maslinovo ulje 5l", "24 kom", "1.120,00", "26.880,00", false],
+  ["Papir A4 80g", "20 kom", "210,00", "4.200,00", true],
+  ["Sredstvo za čišćenje 5l", "2 kom", "200,00", "400,00", true]
+];
+
+const FIELDS = [
+  ["Поставщик", "Mlin Vojvodina d.o.o.", "уверенно · есть в справочнике", false, false],
+  ["Номер документа", "2026-0847", "уверенно", false, false],
+  ["Дата документа", "18.06.2026", "уверенно", false, false],
+  ["Сумма", "184 320,00", null, false, true],
+  ["Период, за который выставлен", "май 2026", "из комментария управляющего · проверьте", true, false],
+  ["Способ оплаты", "не распознано", "выберите: банк или касса", true, false]
+];
+
+const POSITIONS = [
+  ["Мука, дрожжи, масло", "4 позиции · 179 720,00", "Сырьё", "по 4 похожим платежам", "Beograd Vračar", 179720],
+  ["Бумага A4 80г", "1 позиция · 4 200,00", "Канцелярия", "еда и канцелярия — разные статьи", "Beograd Vračar", 4200],
+  ["Средство для чистки", "1 позиция · 400,00", "Химия", "третий факт из той же накладной", "Beograd Vračar", 400]
+];
+
+const DOC_TOTAL = 184320;
+
+function fmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0"); }
+
+class Component extends DCLogic {
+  state = { tab: null, filter: "all", sel: {}, period: "june" };
+
+  get tab() { return this.state.tab || this.props.view || "inbox"; }
+
+  renderVals() {
+    const self = this;
+    const tab = this.tab;
+    const filter = this.state.filter;
+
+    const chip = function (sel) {
+      const base = { display: "inline-flex", alignItems: "center", gap: "6px", height: "22px", padding: "0 9px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+      if (sel) return Object.assign(base, { background: "var(--surface)", color: "var(--ink)", fontWeight: 600, boxShadow: "var(--sh-xs)" });
+      return Object.assign(base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" });
+    };
+
+    let list = ITEMS.map(function (it, i) { return { it: it, i: i }; });
+    if (filter === "pay") list = list.filter(function (x) { return x.it[0] === "pay"; });
+    if (filter === "att") list = list.filter(function (x) { return x.it[0] === "att"; });
+
+    const selCount = Object.keys(this.state.sel).filter(function (k) { return self.state.sel[k]; }).length;
+    const selNames = Object.keys(this.state.sel).filter(function (k) { return self.state.sel[k]; }).map(function (k) { return ITEMS[Number(k)][1]; });
+    const selSum = Object.keys(this.state.sel).filter(function (k) { return self.state.sel[k]; })
+      .reduce(function (a, k) { return a + (ITEMS[Number(k)][5] || 0); }, 0);
+
+    const box = function (checked, tone) {
+      return {
+        width: "15px", height: "15px", borderRadius: "var(--r-mark)", flex: "0 0 auto", display: "grid", placeItems: "center",
+        border: "1px solid " + (checked ? "var(--accent)" : (tone === "attach" ? "var(--warn-line)" : "var(--line-control-2)")),
+        background: checked ? "var(--accent)" : "var(--surface)", padding: 0
+      };
+    };
+
+    const posTotal = POSITIONS.reduce(function (a, p) { return a + p[5]; }, 0);
+    const docTotal = DOC_TOTAL;
+    const balanced = posTotal === docTotal;
+    const periodBlocked = this.state.period === "may";
+    const blocked = periodBlocked || !balanced;
+
+    return {
+      tabs: [
+        { k: "inbox", label: "Инбокс классификации" },
+        { k: "doc", label: "Разбор документа" },
+        { k: "mobile", label: "Мобильная загрузка" }
+      ].map(function (t) {
+        const sel = t.k === tab;
+        const base = { display: "inline-flex", alignItems: "center", height: "var(--control-h-sm)", padding: "0 11px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap" };
+        return {
+          label: t.label, sel: sel, notSel: !sel,
+          on: function () { self.setState({ tab: t.k }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent)", color: "#fff", fontWeight: 600, border: "1px solid var(--accent)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isInbox: tab === "inbox", isDoc: tab === "doc", isMobile: tab === "mobile",
+
+      filters: [
+        { k: "all", label: "Всё", cnt: "40" },
+        { k: "pay", label: "Платежи без статьи", cnt: "31" },
+        { k: "att", label: "Необработанные вложения", cnt: "9" }
+      ].map(function (f) {
+        const sel = f.k === filter;
+        return {
+          label: f.label, cnt: f.cnt, sel: sel, notSel: !sel,
+          on: function () { self.setState({ filter: f.k, sel: {} }); },
+          selStyle: chip(true), btnStyle: chip(false),
+          cntStyle: { fontFamily: "var(--font-num)", fontSize: "9.5px", color: "var(--ink-3)" }
+        };
+      }),
+
+      barStyle: {
+        display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px",
+        background: selCount > 0 ? "var(--accent-soft)" : "var(--surface-3)",
+        borderBottom: "1px solid " + (selCount > 0 ? "var(--accent-line)" : "var(--line-strong)"),
+        transition: "background var(--t-state) var(--ease)"
+      },
+      allBoxStyle: box(selCount > 0, "plain"),
+      someSelected: selCount > 0,
+      noSelection: selCount === 0,
+      hasSelection: selCount > 0,
+      toggleAll: function () {
+        if (selCount > 0) { self.setState({ sel: {} }); return; }
+        const s = {};
+        list.forEach(function (x) { s[x.i] = true; });
+        self.setState({ sel: s });
+      },
+      queueTitle: "Разобрать " + list.length + " из 40",
+      selInfo: "Выбрано " + selCount + (selSum > 0 ? " · " + fmt(selSum) + " RSD" : ""),
+      selHint: selNames.length > 1 && selNames[0].indexOf("Mlin") === 0
+        ? "одна статья на все выбранные — решение запомнится для этого поставщика"
+        : "действие применится ко всем выбранным сразу",
+      bulkOff: selCount === 0 ? true : null,
+      bulkStyle: {
+        height: "var(--control-h-sm)", padding: "0 10px", borderRadius: "var(--r-control)",
+        border: "1px solid " + (selCount > 0 ? "var(--accent)" : "var(--line-control)"),
+        background: selCount > 0 ? "var(--accent)" : "var(--surface)",
+        color: selCount > 0 ? "#fff" : "var(--ink-3)",
+        fontSize: "var(--fs-dense)", fontWeight: selCount > 0 ? 600 : 400,
+        opacity: selCount > 0 ? 1 : .55, cursor: selCount > 0 ? "pointer" : "not-allowed"
+      },
+      bulkStyle2: {
+        height: "var(--control-h-sm)", padding: "0 10px", borderRadius: "var(--r-control)",
+        border: "1px solid var(--line-control)", background: "var(--surface)",
+        color: selCount > 0 ? "var(--ink)" : "var(--ink-3)", fontSize: "var(--fs-dense)",
+        opacity: selCount > 0 ? 1 : .55, cursor: selCount > 0 ? "pointer" : "not-allowed"
+      },
+
+      items: list.map(function (x) {
+        const it = x.it, i = x.i;
+        const attach = it[0] === "att";
+        const checked = !!self.state.sel[i];
+        const tone = it[7];
+        return {
+          checked: checked, isAttach: attach,
+          onCheck: function () {
+            const s = Object.assign({}, self.state.sel);
+            s[i] = !s[i];
+            self.setState({ sel: s });
+          },
+          boxStyle: box(checked, tone),
+          kind: attach ? "Вложение" : "Платёж",
+          kindStyle: {
+            display: "inline-flex", alignItems: "center", gap: "4px", height: "19px", padding: "0 6px",
+            borderRadius: "var(--r-mark)", fontSize: "10px", fontWeight: 600, letterSpacing: ".04em",
+            textTransform: "uppercase", flex: "0 0 auto",
+            background: attach ? "var(--surface)" : "var(--accent-soft)",
+            border: (attach ? "1px dashed var(--warn-line)" : "1px solid var(--accent-line)"),
+            color: attach ? "var(--warn-ink)" : "var(--accent)"
+          },
+          title: it[1],
+          titleStyle: {
+            width: "192px", flex: "0 0 auto", fontSize: "var(--fs-dense)", fontWeight: 500,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            color: attach ? "var(--warn-ink)" : "var(--ink)"
+          },
+          date: it[2],
+          dateStyle: { width: "104px", flex: "0 0 auto", fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", color: "var(--ink-2)" },
+          state: it[3],
+          stateStyle: {
+            flex: "0 0 auto", fontSize: "var(--fs-meta)", padding: "1px 6px", borderRadius: "var(--r-mark)",
+            whiteSpace: "nowrap",
+            color: "var(--warn-ink)",
+            background: attach ? "transparent" : "var(--warn-soft)",
+            border: attach ? "0" : "1px solid var(--warn-line)",
+            opacity: attach ? .85 : 1
+          },
+          guess: it[4],
+          guessStyle: { flex: "1 1 auto", minWidth: 0, fontSize: "var(--fs-meta)", color: "var(--ink-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+          sum: it[5] === null ? "\u2013" : fmt(it[5]),
+          sumStyle: {
+            width: "84px", flex: "0 0 auto", textAlign: "right", fontFamily: "var(--font-num)", fontSize: "13px",
+            fontWeight: it[5] === null ? 400 : 600, fontVariantNumeric: "tabular-nums",
+            color: it[5] === null ? "var(--ink-empty)" : "var(--ink)"
+          },
+          action: it[6],
+          onAction: function () { if (attach) self.setState({ tab: "doc" }); },
+          actionStyle: {
+            height: "24px", padding: "0 9px", borderRadius: "var(--r-control)", flex: "0 0 auto", whiteSpace: "nowrap",
+            fontSize: "var(--fs-meta)",
+            border: "1px solid " + (attach ? "var(--warn-line)" : (tone === "guess" ? "var(--accent)" : "var(--line-control)")),
+            background: "var(--surface)",
+            color: attach ? "var(--warn-ink)" : (tone === "guess" ? "var(--accent)" : "var(--ink-2)"),
+            fontWeight: tone === "plain" ? 400 : 600
+          },
+          actionHover: attach ? { background: "#FFF3DC" } : (tone === "guess" ? { background: "var(--accent-soft)" } : { borderColor: "var(--accent)", color: "var(--accent)" }),
+          rowStyle: {
+            display: "flex", alignItems: "center", gap: "11px", padding: "0 12px", height: "var(--row-loose)",
+            borderBottom: "1px solid var(--line)",
+            borderLeft: attach ? "3px solid var(--warn-mark)" : "3px solid transparent",
+            background: checked ? "#F0F5FC" : (attach ? "var(--warn-soft)" : "var(--surface)")
+          },
+          rowHover: { background: checked ? "#E8F0FA" : (attach ? "#FFF4DE" : "#F6F8FA") }
+        };
+      }),
+
+      scanLines: SCAN_LINES.map(function (l) {
+        return {
+          art: l[0], kol: l[1], cena: l[2], total: l[3],
+          style: {
+            display: "flex", justifyContent: "space-between", padding: "2px 0",
+            borderBottom: "1px solid #F2F4F7",
+            background: l[4] ? "rgba(224,160,58,.16)" : "transparent"
+          }
+        };
+      }),
+
+      fields: FIELDS.map(function (f) {
+        const low = f[3];
+        const note = f[2] !== null ? f[2]
+          : (balanced ? "сходится с суммой позиций" : "не сходится с позициями на " + fmt(docTotal - posTotal));
+        return {
+          label: f[0], value: f[1], note: note,
+          labelColor: low ? "var(--warn)" : "var(--ink-2)",
+          wrapStyle: {},
+          inputStyle: {
+            width: "100%", height: "var(--control-h)", padding: "0 9px", borderRadius: "var(--r-control)",
+            border: "1px solid " + (low ? "var(--warn-line)" : "var(--line-control)"),
+            background: low ? "var(--warn-soft)" : "var(--surface)",
+            fontSize: f[4] ? "var(--fs-lead)" : "var(--fs-body)",
+            fontFamily: f[4] ? "var(--font-num)" : "var(--font-ui)",
+            fontVariantNumeric: f[4] ? "tabular-nums" : "normal",
+            textAlign: f[4] ? "right" : "left",
+            fontWeight: f[4] ? 600 : 400,
+            color: low ? "var(--warn-ink)" : "var(--ink)"
+          },
+          noteStyle: {
+            fontSize: "var(--fs-meta)", marginTop: "4px",
+            color: low ? "var(--warn)" : (f[2] === null && !balanced ? "var(--err)" : "var(--ink-3)")
+          }
+        };
+      }),
+
+      positions: POSITIONS.map(function (p) {
+        return {
+          name: p[0], detail: p[1], article: p[2], hint: p[3], point: p[4], sum: fmt(p[5]),
+          tdStyle: { padding: "6px 10px", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)", verticalAlign: "top" },
+          selStyle: {
+            display: "flex", alignItems: "center", gap: "7px", height: "27px", padding: "0 8px",
+            border: "1px solid var(--accent-line)", borderRadius: "var(--r-control)",
+            background: "var(--accent-soft)", fontSize: "var(--fs-dense)", color: "var(--accent)", fontWeight: 600
+          },
+          hintStyle: { fontSize: "10px", lineHeight: "13px", color: "var(--ink-3)", marginTop: "3px" },
+          sumStyle: {
+            textAlign: "right", padding: "6px 10px", borderBottom: "1px solid var(--line)",
+            fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 600,
+            fontVariantNumeric: "tabular-nums", verticalAlign: "top", whiteSpace: "nowrap"
+          }
+        };
+      }),
+      posTotal: fmt(posTotal),
+      balanceText: balanced ? "сходится с суммой документа" : "не сходится: " + fmt(docTotal - posTotal) + " не разнесено",
+      balanceStyle: {
+        display: "inline-flex", alignItems: "center", gap: "5px", height: "19px", padding: "0 7px",
+        borderRadius: "var(--r-mark)", fontSize: "var(--fs-meta)", fontWeight: 600,
+        background: balanced ? "var(--ok-soft)" : "var(--err-soft)",
+        border: "1px solid " + (balanced ? "var(--ok-line)" : "var(--err-line)"),
+        color: balanced ? "var(--ok)" : "var(--err)"
+      },
+
+      periodOpts: [
+        { k: "may", label: "май 2026" },
+        { k: "june", label: "июнь 2026" }
+      ].map(function (p) {
+        const sel = p.k === self.state.period;
+        return {
+          label: p.label, sel: sel, notSel: !sel,
+          on: function () { self.setState({ period: p.k }); },
+          selStyle: chip(true), btnStyle: chip(false)
+        };
+      }),
+      periodNote: this.state.period === "may"
+        ? "Май утверждён 01.06.2026 — так документ не проведётся"
+        : "Июнь открыт — документ встанет в июньский P&L",
+      periodNoteStyle: {
+        fontSize: "var(--fs-meta)", fontWeight: 600,
+        color: this.state.period === "may" ? "var(--err)" : "var(--ok)"
+      },
+
+      confirmOff: blocked ? true : null,
+      confirmStyle: {
+        flex: "0 0 auto", whiteSpace: "nowrap",
+        height: "var(--control-h)", padding: "0 14px", borderRadius: "var(--r-control)",
+        border: "1px solid var(--accent)", background: "var(--accent)", color: "#fff",
+        fontSize: "var(--fs-body)", fontWeight: 600,
+        opacity: blocked ? .45 : 1, cursor: blocked ? "not-allowed" : "pointer"
+      },
+      confirmHint: periodBlocked
+        ? "Нельзя: период май утверждён. Выберите июнь или перенесите разницу"
+        : (!balanced
+          ? "Нельзя: " + fmt(docTotal - posTotal) + " RSD не разнесено по статьям"
+          : POSITIONS.length + " строки уйдут в июньский P&L: " + POSITIONS.map(function (p) { return p[2] + " " + fmt(p[5]); }).join(", "))
+    };
+  }
+}
+</script>
+</body>
+</html>

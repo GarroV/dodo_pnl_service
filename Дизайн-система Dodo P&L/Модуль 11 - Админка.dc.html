@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9; --reg-supp-line:#DCD0EE;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1; --reg-internal-line:#C6DDDD;
+    --api:#2E6B6B; --api-soft:#E7F1F1; --api-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, select, textarea { font:inherit; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 11</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Админка: люди, точки, юрлица</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Раздел администратора. Смена роли показывает, что человек получит и что потеряет, до нажатия кнопки — иначе никто не решится трогать чужие права.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isPeople }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Люди и доступы</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ peopleMeta }}</span>
+          <button style="margin-left: auto; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-dense); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">Пригласить человека</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 448px; gap: 10px; align-items: start">
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <table style="width: 100%; table-layout: fixed">
+              <thead>
+                <tr>
+                  <sc-for list="{{ peopleHead }}" as="h" hint-placeholder-count="5">
+                    <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ people }}" as="p" hint-placeholder-count="8">
+                  <tr style="{{ p.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                    <td style="{{ p.nameStyle }}">
+                      <span style="display: flex; align-items: center; gap: 8px; min-width: 0">
+                        <span style="{{ p.avatarStyle }}">{{ p.ini }}</span>
+                        <span style="min-width: 0">
+                          <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ p.name }}</span>
+                          <span style="display: block; font-size: 10px; line-height: 13px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ p.mail }}</span>
+                        </span>
+                      </span>
+                    </td>
+                    <td style="{{ p.cellStyle }}"><span style="{{ p.roleStyle }}">{{ p.role }}<span style="{{ p.untilStyle }}">{{ p.until }}</span></span></td>
+                    <td style="{{ p.textStyle }}">{{ p.scope }}</td>
+                    <td style="{{ p.textStyle }}">{{ p.seen }}</td>
+                    <td style="{{ p.lastCellStyle }}">
+                      <button onClick="{{ p.on }}" style="{{ p.btnStyle }}">Сменить роль</button>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="padding: 12px 15px 13px; background: var(--surface-2); border-bottom: 1px solid var(--line)">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Смена роли</div>
+              <div style="font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold); margin-top: 4px">{{ selName }}</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 2px">{{ selNow }}</div>
+            </div>
+
+            <div style="padding: 13px 15px 15px">
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 5px">Новая роль</div>
+              <div style="display: flex; flex-direction: column; gap: 5px">
+                <sc-for list="{{ roleOpts }}" as="r" hint-placeholder-count="4">
+                  <button onClick="{{ r.on }}" style="{{ r.style }}">
+                    <span style="{{ r.dotStyle }}"></span>
+                    <span style="flex: 1; min-width: 0; text-align: left">
+                      <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ r.label }}</span>
+                      <span style="display: block; font-size: 10px; line-height: 14px; color: var(--ink-3)">{{ r.hint }}</span>
+                    </span>
+                  </button>
+                </sc-for>
+              </div>
+
+              <div style="display: flex; align-items: flex-end; gap: 8px; margin-top: 14px">
+                <div style="flex: 1">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 5px">Насколько</div>
+                  <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+                    <sc-for list="{{ termOpts }}" as="t" hint-placeholder-count="2">
+                      <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ true }}">
+                        <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+                      </sc-if>
+                      <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ false }}">
+                        <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ t.label }}</button>
+                      </sc-if>
+                    </sc-for>
+                  </div>
+                </div>
+                <sc-if value="{{ isTemp }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex: 0 0 132px">
+                    <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 5px">До какого числа</div>
+                    <input value="31.07.2026" style="width: 100%; height: var(--control-h); padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-family: var(--font-num); font-size: var(--fs-dense)">
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="{{ diffStyle }}">
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-bottom: 7px">{{ diffTitle }}</div>
+                <sc-if value="{{ hasDiff }}" hint-placeholder-val="{{ true }}">
+                  <div style="display: flex; flex-direction: column; gap: 4px">
+                    <sc-for list="{{ diffLines }}" as="d" hint-placeholder-count="4">
+                      <div style="display: flex; align-items: baseline; gap: 7px">
+                        <span style="{{ d.signStyle }}">{{ d.sign }}</span>
+                        <span style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ d.label }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ noDiff }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ noDiffText }}</div>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ blocked }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 11px; padding: 11px 13px; border-radius: var(--r-block); background: var(--err-soft); border: 1px solid var(--err-line)">
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--err)">{{ blockedTitle }}</div>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--err); margin-top: 3px">{{ blockedText }}</div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ needReason }}" hint-placeholder-val="{{ true }}">
+                <div style="margin-top: 12px">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Причина</div>
+                  <textarea placeholder="Отпуск партнёра, нужно закрыть июнь" style="width: 100%; min-height: 52px; padding: 8px 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); font: var(--w-regular) var(--fs-body) / var(--lh-body) var(--font-ui); color: var(--ink); resize: vertical"></textarea>
+                  <div style="font-size: var(--fs-meta); color: var(--ink-3); margin-top: 4px">Останется в истории рядом с вашим именем.</div>
+                </div>
+              </sc-if>
+
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line)">
+                <button style="{{ applyStyle }}" disabled="{{ blocked }}">{{ applyLabel }}</button>
+                <button style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', color: 'var(--ink)' }">Отмена</button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface); margin-top: 10px">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+            <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">История доступов</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-2)">кто, кому, когда и зачем — не удаляется</span>
+            <a href="#" style="margin-left: auto; font-size: var(--fs-meta)">Выгрузить журнал</a>
+          </div>
+          <sc-for list="{{ audit }}" as="a" hint-placeholder-count="5">
+            <div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 13px; border-bottom: 1px solid var(--line)">
+              <span style="flex: 0 0 84px; font-family: var(--font-num); font-size: var(--fs-meta); color: var(--ink-3)">{{ a.date }}</span>
+              <span style="flex: 1; min-width: 0; font-size: var(--fs-dense)">{{ a.what }}</span>
+              <span style="flex: 0 0 300px; font-size: var(--fs-meta); color: var(--ink-2)">{{ a.why }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPoints }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Точки</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ pointsMeta }}</span>
+          <button style="margin-left: auto; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-dense); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">Добавить точку</button>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <sc-for list="{{ pointsHead }}" as="h" hint-placeholder-count="7">
+                  <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ points }}" as="p" hint-placeholder-count="6">
+                <tr style="{{ p.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <td style="{{ p.nameStyle }}">{{ p.name }}</td>
+                  <td style="{{ p.textStyle }}">{{ p.city }}</td>
+                  <td style="{{ p.textStyle }}">{{ p.entity }}</td>
+                  <td style="{{ p.dateStyle }}">{{ p.since }}</td>
+                  <td style="{{ p.numStyle }}">{{ p.staff }}</td>
+                  <td style="{{ p.cellStyle }}"><span style="{{ p.statusStyle }}">{{ p.status }}</span></td>
+                  <td style="{{ p.lastCellStyle }}"><button style="height: 22px; padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', color: 'var(--ink)' }">{{ p.action }}</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px">
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--surface); border: 1px solid var(--line-strong)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+            <div>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Закрытая точка не исчезает</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">Zemun закрыт в марте, но в отчётах за январь и февраль он есть — там его выручка и его зарплаты. Точка пропадает только из фильтров новых периодов. Удалить её нельзя: вместе с ней исчезли бы закрытые месяцы.</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--warn-soft); border: 1px solid var(--warn-line)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+            <div>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Перенос точки в другое юрлицо — с даты</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink); margin-top: 3px">Точка меняет юрлицо так же, как сотрудник меняет ставку: новой версией с даты. Прошлые месяцы остаются за старым юрлицом, иначе разъедется отчётность обоих. Открытый вопрос: что делать, если дату переноса ставят в середине месяца.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isEntity }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Юрлицо</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">У партнёра одно. У сети — по одному на страну, иногда несколько на страну.</span>
+          <button style="margin-left: auto; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Добавить юрлицо</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start">
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="padding: 13px 15px; border-bottom: 1px solid var(--line)">
+              <div style="font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Dodo Balkan doo</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 2px">Beograd, Srbija · зарегистрировано 14.02.2024</div>
+            </div>
+            <sc-for list="{{ entityRows }}" as="e" hint-placeholder-count="7">
+              <div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 15px; border-bottom: 1px solid var(--line)">
+                <span style="flex: 0 0 168px; font-size: var(--fs-meta); color: var(--ink-2)">{{ e.label }}</span>
+                <span style="{{ e.valueStyle }}">{{ e.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div>
+            <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface); margin-bottom: 10px">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Связь с Dodo IS</span>
+                <span style="{{ apiChipStyle }}">{{ apiStatus }}</span>
+              </div>
+              <sc-for list="{{ apiRows }}" as="a" hint-placeholder-count="4">
+                <div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 13px; border-bottom: 1px solid var(--line)">
+                  <span style="flex: 1; min-width: 0; font-size: var(--fs-dense)">{{ a.label }}</span>
+                  <span style="flex: 0 0 176px; font-family: var(--font-num); font-size: var(--fs-meta); color: var(--ink-2); text-align: right">{{ a.value }}</span>
+                </div>
+              </sc-for>
+              <div style="padding: 11px 13px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3)">Отключить связь нельзя, пока есть открытый период: часы и выручка перестанут приходить в середине месяца.</div>
+            </div>
+
+            <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Периоды</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">закрыт по май включительно</span>
+              </div>
+              <div style="display: flex; gap: 6px; padding: 11px 13px; flex-wrap: wrap">
+                <sc-for list="{{ periods }}" as="p" hint-placeholder-count="6">
+                  <span style="{{ p.style }}"><span style="{{ p.dotStyle }}"></span>{{ p.label }}</span>
+                </sc-for>
+              </div>
+              <div style="padding: 0 13px 12px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3)">Юрлицо нельзя удалить, пока за ним числится хотя бы один закрытый период. Его можно только пометить недействующим — тогда новые точки в него не заводятся, а старая отчётность остаётся доступной.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;requireReason&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Правила доступа&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal' | 'compact'&quot;,&quot;section&quot;:&quot;Вид&quot;}}">
+const CAPS = [
+  ["hours",     "Часы своей зоны"],
+  ["expenses",  "Наличные расходы и накладные"],
+  ["inbox",     "Инбокс и разбор документов"],
+  ["sheet",     "Ведомость и суммы расчёта"],
+  ["calc",      "Расчёт и утверждение периода"],
+  ["rollback",  "Откат утверждения"],
+  ["rates",     "Ставки и условия найма"],
+  ["staff",     "Заводить и увольнять людей"],
+  ["rules",     "Правила расчёта"],
+  ["structure", "Точки, юрлица, статьи расходов"],
+  ["access",    "Роли других людей"],
+  ["history",   "История правок"]
+];
+
+const ROLES = {
+  ops: { label: "Управляющий точки", hint: "своя точка, чаще с телефона", scope: "1 точка",
+         caps: ["hours", "expenses"] },
+  reg: { label: "Управляющий региона", hint: "несколько точек, без сумм расчёта", scope: "5 точек",
+         caps: ["hours", "expenses", "history"] },
+  acc: { label: "Бухгалтер", hint: "ведёт месяц по всем точкам", scope: "все точки",
+         caps: ["hours", "expenses", "inbox", "sheet", "calc", "rates", "staff", "history"] },
+  adm: { label: "Администратор", hint: "видит всё, распоряжается доступом", scope: "все точки",
+         caps: CAPS.map(function (c) { return c[0]; }) }
+};
+const ROLE_ORDER = ["ops", "reg", "acc", "adm"];
+
+const PEOPLE = [
+  { ini: "NP", name: "Nikola Perić",      mail: "nikola@dodo.rs",    role: "adm", until: "",           seen: "сегодня, 09:12" },
+  { ini: "SN", name: "Stefan Nikolić",    mail: "stefan@dodo.rs",    role: "reg", until: "",           seen: "вчера, 18:40" },
+  { ini: "MJ", name: "Milica Jovanović",  mail: "milica@dodo.rs",    role: "adm", until: "31.07.2026", seen: "сегодня, 08:05" },
+  { ini: "AM", name: "Ana Marić",         mail: "ana@bookkeep.rs",   role: "acc", until: "",           seen: "сегодня, 10:31" },
+  { ini: "AĐ", name: "Aleksandra Đurić",  mail: "aleksandra@dodo.rs", role: "reg", until: "",          seen: "вчера, 21:03" },
+  { ini: "PP", name: "Petar Petrović",    mail: "petar@dodo.rs",     role: "ops", until: "",           seen: "сегодня, 07:48" },
+  { ini: "MS", name: "Miloš Stojanović",  mail: "milos@dodo.rs",     role: "ops", until: "",           seen: "3 дня назад" },
+  { ini: "JK", name: "Jovana Kostić",     mail: "jovana@dodo.rs",    role: "ops", until: "",           seen: "не заходила" }
+];
+
+const AUDIT = [
+  ["12.06.2026", "Nikola Perić выдал Milica Jovanović роль администратора до 31.07.2026", "Отпуск партнёра, нужно закрыть июнь"],
+  ["02.06.2026", "Nikola Perić пригласил Jovana Kostić как управляющего точки Novi Beograd", "Новый управляющий вместо уволенного"],
+  ["19.05.2026", "Nikola Perić сменил Stefan Nikolić роль с администратора на управляющего региона", "Передал операционку, доступ к правилам больше не нужен"],
+  ["19.05.2026", "Nikola Perić сменил Aleksandra Đurić роль с управляющего точки на управляющего региона", "Приняла три точки в Beograd"],
+  ["11.04.2026", "Nikola Perić выдал Ana Marić роль бухгалтера", "Договор с бухгалтерским бюро"],
+  ["03.03.2026", "Nikola Perić снял роль у Vladimir Tasić", "Уволен, доступ закрыт в день увольнения"]
+];
+
+const POINTS = [
+  ["Beograd Vračar",   "Beograd",  "Dodo Balkan doo", "14.02.2024", 14, "open"],
+  ["Novi Beograd",     "Beograd",  "Dodo Balkan doo", "20.06.2024", 12, "open"],
+  ["Novi Sad Centar",  "Novi Sad", "Dodo Balkan doo", "05.11.2024", 9,  "open"],
+  ["Zemun",            "Beograd",  "Dodo Balkan doo", "01.09.2024", 0,  "closed"],
+  ["Niš Obrenovićeva", "Niš",      "Dodo Balkan doo", "01.08.2026", 0,  "planned"]
+];
+
+const ENTITY = [
+  ["Полное наименование", "Dodo Balkan doo Beograd", false],
+  ["ПИБ", "112 845 337", true],
+  ["Матични број", "21654982", true],
+  ["Валюта учёта", "RSD — сербский динар", false],
+  ["Валюта консолидации", "EUR", false],
+  ["Расчётный счёт", "160-0000123456-78 · Banca Intesa", true],
+  ["Ответственный бухгалтер", "Ana Marić · внешнее бюро", false]
+];
+
+const API_ROWS = [
+  ["Последняя синхронизация", "сегодня, 10:14"],
+  ["Приходят часы, выручка, сырьё", "3 точки"],
+  ["Расхождений за июнь", "6 сотрудников"],
+  ["Идентификатор партнёра в IS", "RS-000482"]
+];
+
+const PERIODS = [["Январь", "approved"], ["Февраль", "approved"], ["Март", "reopened"], ["Апрель", "approved"], ["Май", "approved"], ["Июнь", "open"]];
+const PERIOD_TONE = {
+  approved: ["var(--ok)", "var(--ok-soft)", "var(--ok-line)"],
+  reopened: ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"],
+  open: ["var(--ink-2)", "var(--surface-3)", "var(--line-control)"]
+};
+
+class Component extends DCLogic {
+  state = { tab: "people", sel: 3, next: "acc", term: null };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const reasonRequired = this.props.requireReason !== false;
+    const rowH = this.props.density === "compact" ? "26px" : "34px";
+
+    const sel = PEOPLE[st.sel] || PEOPLE[0];
+    const term = st.term || (sel.until ? "temp" : "always");
+    const nowRole = ROLES[sel.role];
+    const nextKey = st.next;
+    const nextRole = ROLES[nextKey];
+
+    const admins = PEOPLE.filter(function (p) { return p.role === "adm" && !p.until; });
+    const lastAdmin = sel.role === "adm" && !sel.until && admins.length <= 1;
+    const demotingLastAdmin = lastAdmin && nextKey !== "adm";
+    const sameRole = nextKey === sel.role;
+
+    const gained = nextRole.caps.filter(function (c) { return nowRole.caps.indexOf(c) < 0; });
+    const lost = nowRole.caps.filter(function (c) { return nextRole.caps.indexOf(c) < 0; });
+    const capLabel = function (k) {
+      const c = CAPS.filter(function (x) { return x[0] === k; })[0];
+      return c ? c[1] : k;
+    };
+
+    const th = function (label, w, align, last) {
+      return {
+        label: label,
+        style: {
+          position: "sticky", top: 0, zIndex: 3, background: "var(--surface-head)",
+          padding: "6px 9px", fontSize: "var(--fs-micro)", fontWeight: "var(--w-semibold)",
+          color: "var(--ink-2)", textAlign: align || "left", width: w || "auto",
+          borderBottom: "1px solid var(--line-strong)",
+          borderRight: last ? 0 : "1px solid var(--line-2)"
+        }
+      };
+    };
+    const cell = { padding: "0 9px", height: rowH, fontSize: "var(--fs-dense)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" };
+
+    const roleChip = function (key, temp) {
+      const tone = {
+        adm: ["var(--accent)", "var(--accent-soft)", "var(--accent-line)"],
+        acc: ["var(--reg-supp)", "var(--reg-supp-soft)", "var(--reg-supp-line)"],
+        reg: ["var(--reg-internal)", "var(--reg-internal-soft)", "var(--reg-internal-line)"],
+        ops: ["var(--ink-2)", "var(--surface-3)", "var(--line-control)"]
+      }[key];
+      return {
+        display: "inline-flex", alignItems: "center", padding: "2px 8px",
+        borderRadius: "var(--r-control)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+        whiteSpace: "nowrap", color: tone[0], background: temp ? "var(--warn-soft)" : tone[1],
+        border: "1px " + (temp ? "dashed var(--warn-line)" : "solid " + tone[2])
+      };
+    };
+
+    return {
+      tabs: [["people", "Люди и доступы"], ["points", "Точки"], ["entity", "Юрлицо"]].map(function (t) {
+        const on = st.tab === t[0];
+        const base = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+        return {
+          label: t[1], sel: on, notSel: !on,
+          on: function () { self.setState({ tab: t[0] }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isPeople: st.tab === "people",
+      isPoints: st.tab === "points",
+      isEntity: st.tab === "entity",
+
+      /* ── люди ── */
+      peopleMeta: PEOPLE.length + " учётных записей · " + admins.length + " бессрочный администратор · 1 роль выдана на время",
+      peopleHead: [th("Человек", "auto"), th("Роль", "212px"), th("Зона", "112px"), th("Заходил", "128px"), th("", "124px", "right", true)],
+      people: PEOPLE.map(function (p, i) {
+        const on = i === st.sel;
+        const r = ROLES[p.role];
+        return {
+          ini: p.ini, name: p.name, mail: p.mail, role: r.label, until: p.until ? " · до " + p.until : "",
+          scope: r.scope, seen: p.seen,
+          on: function () { self.setState({ sel: i, next: p.role, term: p.until ? "temp" : "always" }); },
+          rowStyle: { background: on ? "#F0F5FC" : "var(--surface)" },
+          nameStyle: Object.assign({}, cell, { padding: "3px 9px" }),
+          avatarStyle: {
+            width: "26px", height: "26px", borderRadius: "50%", flex: "0 0 auto",
+            background: p.seen === "не заходила" ? "var(--line-control-2)" : "var(--ink)",
+            color: "var(--ink-inverse)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+            display: "grid", placeItems: "center"
+          },
+          cellStyle: { padding: "0 9px", height: rowH, borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" },
+          textStyle: Object.assign({}, cell, { fontSize: "var(--fs-meta)", color: "var(--ink-2)" }),
+          lastCellStyle: { padding: "0 9px", height: rowH, textAlign: "right", borderBottom: "1px solid var(--line)" },
+          roleStyle: roleChip(p.role, !!p.until),
+          untilStyle: p.until ? { fontFamily: "var(--font-num)", fontSize: "9.5px", opacity: .8 } : { display: "none" },
+          btnStyle: {
+            height: "22px", padding: "0 9px", borderRadius: "var(--r-control)",
+            border: "1px solid " + (on ? "var(--accent)" : "var(--line-control)"),
+            background: on ? "var(--accent-soft)" : "var(--surface)",
+            color: on ? "var(--accent)" : "var(--ink-2)",
+            fontSize: "var(--fs-meta)", fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)"
+          }
+        };
+      }),
+
+      selName: sel.name,
+      selNow: "Сейчас: " + nowRole.label + (sel.until ? " · до " + sel.until : " · бессрочно") + " · " + nowRole.scope,
+
+      roleOpts: ROLE_ORDER.map(function (k) {
+        const on = k === nextKey;
+        const r = ROLES[k];
+        return {
+          label: r.label, hint: r.hint,
+          on: function () { self.setState({ next: k }); },
+          style: {
+            display: "flex", alignItems: "center", gap: "9px", width: "100%",
+            padding: "8px 11px", textAlign: "left", borderRadius: "var(--r-control)",
+            border: "1px solid " + (on ? "var(--accent)" : "var(--line-control)"),
+            background: on ? "var(--accent-soft)" : "var(--surface)"
+          },
+          dotStyle: {
+            width: "13px", height: "13px", borderRadius: "50%", flex: "0 0 auto",
+            border: "1px solid " + (on ? "var(--accent)" : "var(--line-control-2)"),
+            background: on ? "var(--accent)" : "var(--surface)",
+            boxShadow: on ? "inset 0 0 0 2.5px var(--surface)" : "none"
+          }
+        };
+      }),
+
+      termOpts: [["always", "Бессрочно"], ["temp", "На время"]].map(function (t) {
+        const on = term === t[0];
+        const base = { display: "inline-flex", alignItems: "center", justifyContent: "center", flex: 1, height: "26px", padding: "0 10px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+        return {
+          label: t[1], sel: on, notSel: !on,
+          on: function () { self.setState({ term: t[0] }); },
+          selStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink)", fontWeight: "var(--w-semibold)", boxShadow: "var(--sh-xs)" }),
+          btnStyle: Object.assign({}, base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" })
+        };
+      }),
+      isTemp: term === "temp",
+
+      hasDiff: !sameRole,
+      noDiff: sameRole,
+      noDiffText: term === "temp" && !sel.until
+        ? "Права те же. Изменится только срок: роль станет временной и вернётся к прежней в указанную дату."
+        : "Роль та же, что и сейчас. Менять нечего.",
+      diffTitle: sameRole ? "Что изменится" : (gained.length && lost.length ? "Получит и потеряет" : (gained.length ? "Что получит" : "Что потеряет")),
+      diffStyle: {
+        marginTop: "13px", padding: "11px 13px", borderRadius: "var(--r-block)",
+        background: lost.length && !sameRole ? "var(--warn-soft)" : "var(--surface-2)",
+        border: "1px solid " + (lost.length && !sameRole ? "var(--warn-line)" : "var(--line)")
+      },
+      diffLines: gained.map(function (c) {
+        return { sign: "+", label: capLabel(c), signStyle: { fontFamily: "var(--font-num)", fontSize: "var(--fs-dense)", fontWeight: "var(--w-bold)", color: "var(--ok)", flex: "0 0 auto" } };
+      }).concat(lost.map(function (c) {
+        return { sign: "\u2212", label: capLabel(c), signStyle: { fontFamily: "var(--font-num)", fontSize: "var(--fs-dense)", fontWeight: "var(--w-bold)", color: "var(--err)", flex: "0 0 auto" } };
+      })),
+
+      blocked: demotingLastAdmin,
+      blockedTitle: "Это последний администратор",
+      blockedText: "Если снять роль сейчас, менять роли и правила расчёта станет некому — и вернуть доступ будет нечем. Сначала назначьте второго администратора, потом меняйте роль этому.",
+
+      needReason: reasonRequired && !sameRole && !demotingLastAdmin,
+      applyLabel: sameRole
+        ? (term === "temp" && !sel.until ? "Сделать роль временной" : "Ничего не менять")
+        : "Сменить роль на «" + nextRole.label + "»",
+      applyStyle: {
+        height: "var(--control-h)", padding: "0 15px", borderRadius: "var(--r-control)",
+        border: "1px solid " + (demotingLastAdmin || sameRole ? "var(--line-control)" : "var(--accent)"),
+        background: demotingLastAdmin || sameRole ? "var(--surface-3)" : "var(--accent)",
+        color: demotingLastAdmin || sameRole ? "var(--ink-3)" : "var(--ink-inverse)",
+        fontSize: "var(--fs-body)", fontWeight: "var(--w-semibold)",
+        cursor: demotingLastAdmin ? "not-allowed" : "pointer"
+      },
+
+      audit: AUDIT.map(function (a) { return { date: a[0], what: a[1], why: a[2] }; }),
+
+      /* ── точки ── */
+      pointsMeta: POINTS.filter(function (p) { return p[5] === "open"; }).length + " работают · 1 закрыта · 1 в планах · всего заведено " + POINTS.length,
+      pointsHead: [th("Точка", "auto"), th("Город", "128px"), th("Юрлицо", "180px"), th("Работает с", "112px"), th("Людей", "80px", "right"), th("Статус", "132px"), th("", "128px", "right", true)],
+      points: POINTS.map(function (p) {
+        const tone = {
+          open: ["var(--ok)", "var(--ok-soft)", "var(--ok-line)", "Работает", "Закрыть точку"],
+          closed: ["var(--ink-2)", "var(--surface-3)", "var(--line-control)", "Закрыта 12.03", "Открыть заново"],
+          planned: ["var(--accent)", "var(--accent-soft)", "var(--accent-line)", "Открытие 01.08", "Настроить"]
+        }[p[5]];
+        return {
+          name: p[0], city: p[1], entity: p[2], since: p[3],
+          staff: p[4] === 0 ? "\u2014" : String(p[4]),
+          status: tone[3], action: tone[4],
+          rowStyle: { background: p[5] === "closed" ? "var(--surface-2)" : "var(--surface)", opacity: p[5] === "closed" ? .72 : 1 },
+          nameStyle: Object.assign({}, cell, { fontWeight: "var(--w-medium)" }),
+          textStyle: Object.assign({}, cell, { fontSize: "var(--fs-meta)", color: "var(--ink-2)" }),
+          dateStyle: Object.assign({}, cell, { fontFamily: "var(--font-num)", fontSize: "var(--fs-meta)", color: "var(--ink-2)" }),
+          numStyle: Object.assign({}, cell, { fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", textAlign: "right", color: p[4] === 0 ? "var(--ink-empty)" : "var(--ink)" }),
+          cellStyle: { padding: "0 9px", height: rowH, borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" },
+          lastCellStyle: { padding: "0 9px", height: rowH, textAlign: "right", borderBottom: "1px solid var(--line)" },
+          statusStyle: {
+            display: "inline-flex", alignItems: "center", padding: "2px 8px",
+            borderRadius: "var(--r-control)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+            whiteSpace: "nowrap", color: tone[0], background: tone[1], border: "1px solid " + tone[2]
+          }
+        };
+      }),
+
+      /* ── юрлицо ── */
+      entityRows: ENTITY.map(function (e) {
+        return {
+          label: e[0], value: e[1],
+          valueStyle: {
+            flex: 1, minWidth: 0, textAlign: "right",
+            fontFamily: e[2] ? "var(--font-num)" : "var(--font-ui)",
+            fontSize: e[2] ? "var(--fs-num)" : "var(--fs-dense)",
+            fontWeight: "var(--w-medium)"
+          }
+        };
+      }),
+      apiStatus: "работает",
+      apiChipStyle: {
+        display: "inline-flex", alignItems: "center", gap: "5px", height: "19px", padding: "0 8px",
+        borderRadius: "var(--r-control)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+        color: "var(--api)", background: "var(--api-soft)", border: "1px solid var(--api-line)"
+      },
+      apiRows: API_ROWS.map(function (a) { return { label: a[0], value: a[1] }; }),
+      periods: PERIODS.map(function (p) {
+        const tone = PERIOD_TONE[p[1]];
+        return {
+          label: p[0],
+          style: {
+            display: "inline-flex", alignItems: "center", gap: "6px", padding: "3px 10px",
+            borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap",
+            color: tone[0], background: tone[1], border: "1px solid " + tone[2]
+          },
+          dotStyle: { width: "5px", height: "5px", borderRadius: "50%", background: "currentColor", flex: "0 0 auto" }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

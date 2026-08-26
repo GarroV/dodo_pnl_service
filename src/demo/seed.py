@@ -129,36 +129,26 @@ GUEST_LOGIN = "demodemo"
 # паролем в одну роль, а кнопкой в другую.
 GUEST_ROLE = "director"
 
-# Учётка осмотра: логин и пароль `admin` (запрос владельца 2026-08-26, «для
-# теста и отсмотра»). Кнопки титульной показывают роли по одной — это и есть
-# демонстрация разграничения; тому же, кто обходит продукт целиком, четыре
-# переключения ради одного обхода мешают. Ему нужен один вход, из которого
-# видно всё.
-ADMIN_LOGIN = "admin"
-# Права набираются **двумя ролями на одном человеке** — продуктовым способом
-# (D047, T170: права и регистры складываются по всем членствам). Не выдуманной
-# пятой ролью «может всё»: такой роли в продукте нет, и демо, показывающее её,
-# врало бы ровно про то, ради чего его показывают. Директор даёт весь цикл
-# месяца, администратор сети — справочники, правила и роли; вместе это все
-# права продукта, и тест сверяет это с их полным списком, а не с копией здесь.
-ADMIN_ROLES = ("director", "admin")
-
-# Логин учётки роли. Обычно это сам код роли — так его не надо нигде искать, — и
-# исключение ровно одно: логин `admin` отдан учётке осмотра, поэтому роль
-# «администратор сети» входит под `netadmin`. Один словарь, а не правка по месту:
-# логин роли спрашивают двое (сид и вход по кнопке демо), и разъехавшись, они
-# дали бы «кнопка не пускает» на ровном месте.
-ROLE_LOGINS = {"admin": "netadmin"}
-
-
-def role_login(code: str) -> str:
-    """Под каким логином входит учётка роли демо."""
-    return ROLE_LOGINS.get(code, code)
+# Учётка, которой смотрят продукт целиком: логин и пароль `admin` (запрос
+# владельца 2026-08-26, «для теста и отсмотра»). Отдельной учётки для этого не
+# нужно — администратор сети и так может всё (D052), поэтому «осмотр» это
+# просто его учётка с паролем, который не надо диктовать по буквам.
+ADMIN_ROLE = "admin"
 
 
 def demo_guest_password() -> str:
     """Пароль простой учётки демо. Меняется переменной, как и остальные."""
     return getattr(settings, "DEMO_GUEST_PASSWORD", None) or "password"
+
+
+def role_password(code: str) -> str:
+    """Пароль учётки роли демо. У администратора сети свой, у остальных общий.
+
+    Одним местом, потому что спрашивают его двое — сид, который учётки заводит,
+    и вход по кнопке демо, который ими входит. Разъехались бы — кнопка «Network
+    administrator» перестала бы пускать, и виновата была бы не она.
+    """
+    return demo_admin_password() if code == ADMIN_ROLE else demo_password()
 
 
 def demo_admin_password() -> str:
@@ -390,7 +380,6 @@ def _groups(tenant, items: dict) -> dict[str, models.EmployeeGroup]:
 
 def _roles_and_users(tenant) -> None:
     units = {u.code: u for u in models.Unit.objects.filter(tenant=tenant)}
-    password = demo_password()
     for code, title, ledgers, unit, permissions in ROLES:
         role = models.Role.objects.create(
             id=det_id("role", code), tenant=tenant, code=code, title=title,
@@ -401,12 +390,10 @@ def _roles_and_users(tenant) -> None:
             shipped_shape=product_shape(code),
         )
         user = models.User.objects.create_user(
-            # Логин роли — через `role_login`, а не код напрямую: `admin` носит
-            # учётка осмотра, и роль администратора сети входит под `netadmin`.
-            # От логина же считается и id: считай его от кода роли — учётка роли
-            # и учётка осмотра получили бы один и тот же uuid.
-            username=role_login(code), password=password,
-            id=det_id("user", role_login(code)), full_name=title,
+            # Пароль у администратора сети свой: его учёткой продукт смотрят
+            # целиком, и `admin` / `admin` диктуется вслух без запинки.
+            username=code, password=role_password(code),
+            id=det_id("user", code), full_name=title,
         )
         models.Membership.objects.create(
             id=det_id("membership", code), tenant=tenant,
@@ -429,22 +416,6 @@ def _roles_and_users(tenant) -> None:
         user_id=guest.pk, role=models.Role.objects.get(tenant=tenant, code=GUEST_ROLE),
         unit_ids=None,
     )
-
-    # Учётка осмотра: один вход, из которого видно весь продукт. Роли даются
-    # набором, а не оптом (D047) — поэтому здесь два членства, а не выдуманная
-    # роль «может всё»: так же складывает права и сама база.
-    admin = models.User.objects.create_user(
-        username=ADMIN_LOGIN, password=demo_admin_password(),
-        id=det_id("user", ADMIN_LOGIN), full_name="Demo admin",
-    )
-    for code in ADMIN_ROLES:
-        models.Membership.objects.create(
-            id=det_id("membership", ADMIN_LOGIN, code), tenant=tenant,
-            user_id=admin.pk, role=models.Role.objects.get(tenant=tenant, code=code),
-            # Точка не задана — вся сеть: осмотр, которому видно одну точку из
-            # трёх, показывал бы продукт срезанным и молча.
-            unit_ids=None,
-        )
 
 
 def _calendar() -> None:

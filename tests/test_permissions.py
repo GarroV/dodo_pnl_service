@@ -243,13 +243,16 @@ def test_a_role_without_a_membership_has_no_rights(db):
 # обязан быть сказан словами — так же, как уже сделано для регистров.
 
 
-def test_admin_is_refused_the_calculation_by_the_right(client, web_env):
+def test_the_calculation_is_refused_by_the_right(client, admin_without_month_rights):
     """Отказ — про право, а не про регистры.
 
     Раньше администратор получал отказ по случайности: ему выдан только
     официальный регистр, и срабатывала проверка регистров. Ту же плашку он
     получил бы, даже если бы право у него было, — значит она ничего не
-    доказывала.
+    доказывала. Поэтому регистры у роли полные, а отобрано ровно право.
+
+    Роль без права создаётся фикстурой, а не берётся готовой: администратор
+    сети с D052 может всё, и «роль, у которой права нет» в продукте кончилась.
     """
     login_as(client, "admin")
     response = client.post(period_url(client) + "calculate/")
@@ -285,8 +288,10 @@ def first_cell(html: str) -> tuple[str, str]:
     return match.group(1), match.group(2)
 
 
-def test_admin_cannot_edit_a_cell_from_the_screen(client, web_env):
-    """Тот самый случай: администратор правил ячейку табеля, и правка проходила."""
+def test_a_role_without_the_right_cannot_edit_a_cell_from_the_screen(
+    client, web_env, admin_without_month_rights
+):
+    """Тот самый случай: роль без права правила ячейку табеля, и правка проходила."""
     import psycopg
 
     login_as(client, "director")
@@ -348,7 +353,9 @@ def test_manager_still_edits_a_cell(client, web_env):
 
 
 @pytest.mark.parametrize("code", ["admin", "manager"])
-def test_a_role_without_the_right_does_not_see_the_calculate_button(client, web_env, code):
+def test_a_role_without_the_right_does_not_see_the_calculate_button(
+    client, admin_without_month_rights, code
+):
     login_as(client, code)
     html = body(client.get(period_url(client)))
 
@@ -368,7 +375,9 @@ def test_a_role_with_the_right_still_sees_the_calculate_button(client, web_env, 
     assert "Расчёт периода не входит в права" not in html
 
 
-def test_a_role_without_the_right_gets_a_read_only_grid(client, web_env):
+def test_a_role_without_the_right_gets_a_read_only_grid(
+    client, web_env, admin_without_month_rights
+):
     """Сетка на чтение: полей ввода нет, данные на месте.
 
     Проверяется именно пара «нет правки — есть данные»: право на правку табеля

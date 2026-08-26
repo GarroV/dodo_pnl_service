@@ -1,21 +1,14 @@
-"""Учётка осмотра демо: `admin` / `admin` со всеми правами сразу.
+"""Демо: `admin` / `admin` — и это учётка роли, которая может всё (D052).
 
-Зачем она есть (запрос владельца 2026-08-26). Кнопки на титульной показывают
-роли по одной — это и есть демонстрация разграничения. Но тому, кто смотрит
-продукт целиком (сам владелец, коллега, заказчик за плечом), переключаться
-между четырьмя ролями ради одного обхода незачем: ему нужен один вход, из
-которого видно всё.
+Зачем отдельным паролем. Продукт целиком смотрят учёткой администратора сети:
+у неё все права, все регистры и вся сеть. Пароль ей задан свой и намеренно
+простой — его диктуют вслух и вписывают руками, а не копируют из переписки.
 
-Прав у неё максимум, и получены они **продуктовым** способом — двумя ролями на
-одном человеке (D047, T170: права складываются по всем членствам). Не выдуманная
-пятая роль: демо обязано показывать то, что партнёр получит у себя, и роль
-«может всё», которой в продукте нет, была бы враньём в самом центре демо.
-
-Зачем это тестом. Учётка заводится сидом, а демо сбрасывается по расписанию —
-заведённая руками на площадке, она исчезала бы каждую ночь. И второе: логин
-`admin` раньше принадлежал учётке роли «администратор сети». Тест держит обе
-стороны — что осмотр видит всё, а кнопка роли по-прежнему входит именно ролью,
-а не осмотром.
+Зачем тестом. Учётки заводит сид, а демо сбрасывается по расписанию: заведённая
+руками на площадке, эта пара исчезала бы каждую ночь. И второе: пароль у роли
+теперь не общий, а свой — значит вход по кнопке титульной и вход паролем берут
+его из одного места, иначе кнопка «Network administrator» молча перестала бы
+пускать.
 
 Проверки идут подпроцессом: демо-база создаётся сидом целиком, как на стенде.
 """
@@ -35,36 +28,28 @@ import json
 from django.contrib.auth import authenticate
 from core import models
 from core.roles import ALL_LEDGERS
-from demo.seed import ADMIN_LOGIN, demo_admin_password, demo_password, role_login
+from demo.seed import ADMIN_ROLE, demo_admin_password, demo_password, role_password
 from web.permissions import TITLES
 
 out = {}
-out["login"] = ADMIN_LOGIN
+out["login"] = ADMIN_ROLE
 out["password"] = demo_admin_password()
-entered = authenticate(username=ADMIN_LOGIN, password=demo_admin_password())
+entered = authenticate(username=ADMIN_ROLE, password=demo_admin_password())
 out["password_works"] = entered is not None
-out["wrong_password_refused"] = authenticate(username=ADMIN_LOGIN, password="nope") is None
+out["wrong_password_refused"] = authenticate(username=ADMIN_ROLE, password="nope") is None
+# Общий пароль демо администратору не подходит: у него свой, и наоборот.
+out["shared_password_refused"] = authenticate(username=ADMIN_ROLE, password=demo_password()) is None
+out["button_uses_the_same_password"] = role_password(ADMIN_ROLE) == demo_admin_password()
+out["other_roles_keep_the_shared_one"] = role_password("director") == demo_password()
 
-# Права и регистры складываются по ВСЕМ членствам — так же, как их складывает
-# сама база (`app_has_permission`, `app_visible_ledgers`). Читаем тем же
-# способом, каким читает продукт (web.principal), а не по одному членству.
-who = models.User.objects.get(username=ADMIN_LOGIN)
+# Права и регистры — по всем членствам, как их складывает сама база.
+who = models.User.objects.get(username=ADMIN_ROLE)
 mine = list(models.Membership.objects.select_related("role").filter(user_id=who.pk))
 out["permissions"] = sorted({code for m in mine for code in (m.role.permissions or [])})
 out["ledgers"] = sorted({code for m in mine for code in (m.role.visible_ledgers or [])})
 out["every_unit"] = any(not m.unit_ids for m in mine)
 out["all_permissions"] = sorted(TITLES)
 out["all_ledgers"] = sorted(ALL_LEDGERS)
-
-# Учётка роли «администратор сети» — отдельный человек с отдельным логином:
-# кнопка на титульной обязана показывать роль, а не осмотр.
-netadmin = models.User.objects.get(username=role_login("admin"))
-out["role_login"] = role_login("admin")
-out["role_login_differs"] = role_login("admin") != ADMIN_LOGIN
-as_role = authenticate(username=role_login("admin"), password=demo_password())
-out["role_password_works"] = as_role is not None
-role_side = list(models.Membership.objects.select_related("role").filter(user_id=netadmin.pk))
-out["role_permissions"] = sorted({c for m in role_side for c in (m.role.permissions or [])})
 print(json.dumps(out))
 """
 
@@ -99,33 +84,31 @@ def probe(dsn: str) -> dict:
 def test_admin_admin_gets_in(demo_db):
     seen = probe(demo_db)
     assert seen["login"] == "admin"
-    assert seen["password"] == "admin", "пароль осмотра сменился — владелец диктует его по памяти"
-    assert seen["password_works"], "учётка осмотра не пускает"
+    assert seen["password"] == "admin", "пароль сменился — владелец диктует его по памяти"
+    assert seen["password_works"], "учётка администратора сети не пускает"
 
 
 def test_a_wrong_password_is_still_refused(demo_db):
-    assert probe(demo_db)["wrong_password_refused"]
+    seen = probe(demo_db)
+    assert seen["wrong_password_refused"]
+    assert seen["shared_password_refused"], "администратор входит и общим паролем демо"
 
 
-def test_the_admin_sees_everything(demo_db):
-    # Смысл учётки — один вход, из которого виден весь продукт. Список прав
-    # сверяется с полным списком продукта, а не с записанным здесь вторым
-    # перечнем: добавится право — тест обязан покраснеть, а не промолчать.
+def test_the_button_and_the_form_take_the_password_from_one_place(demo_db):
+    # Иначе кнопка «Network administrator» на титульной перестала бы пускать —
+    # молча и без единого следа в интерфейсе.
+    seen = probe(demo_db)
+    assert seen["button_uses_the_same_password"]
+    assert seen["other_roles_keep_the_shared_one"], "остальным ролям сменили пароль заодно"
+
+
+def test_the_admin_can_do_everything(demo_db):
+    # Список прав сверяется с полным списком продукта, а не со вторым перечнем
+    # здесь: добавится право — тест обязан покраснеть, а не промолчать.
     seen = probe(demo_db)
     assert seen["permissions"] == seen["all_permissions"], (
-        "у осмотра не все права продукта: "
+        "администратор сети может не всё: "
         f"нет {sorted(set(seen['all_permissions']) - set(seen['permissions']))}"
     )
-    assert seen["ledgers"] == seen["all_ledgers"], "осмотр видит не все регистры учёта"
-    assert seen["every_unit"], "осмотр ограничен точкой — часть сети он не увидит"
-
-
-def test_the_network_admin_button_still_enters_as_the_role(demo_db):
-    # Иначе демо перестало бы показывать разграничение: кнопка обещает роль
-    # «администратор сети», а внутри оказывался бы человек, который может всё.
-    seen = probe(demo_db)
-    assert seen["role_login_differs"], "учётка роли и учётка осмотра — один логин"
-    assert seen["role_password_works"], "кнопка роли больше не входит"
-    assert seen["role_permissions"] == ["directory.manage", "roles.manage", "rules.manage"], (
-        "роль администратора сети получила чужие права"
-    )
+    assert seen["ledgers"] == seen["all_ledgers"], "администратор видит не все регистры"
+    assert seen["every_unit"], "администратор ограничен точкой — часть сети он не увидит"

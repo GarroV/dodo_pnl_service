@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --api:#2E6B6B; --api-soft:#E7F1F1; --api-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input { font:inherit; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  @keyframes spin { to { transform:rotate(360deg) } }
+  @keyframes flash { from { background:#DCEBFF } to { background:transparent } }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 4</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Табель: сетка часов, импорт, закрытие по точкам</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Часы приезжают из Dodo IS по API. Руками правят то, чего в IS нет или что разошлось с фактом — и каждая такая правка видна как правка, а не растворяется в данных.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isGrid }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 14px 13px; margin-bottom: 10px">
+          <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Часы <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Июнь 2026</h2>
+            <span style="display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 8px; border-radius: var(--r-control); background: var(--surface-3); border: 1px solid var(--line-control); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--ink-2)"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--ink-2)"></span>Открыт</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-3)">норма июня 176 ч · сохранение на лету, кнопки «сохранить всё» нет</span>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+              <div style="display: flex; align-items: center; gap: 7px; height: var(--control-h-sm); padding: 0 9px; border: 1px solid var(--api-line); background: var(--api-soft); border-radius: var(--r-control)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--api)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-3-6.2"></path><path d="M20 4v5h-5"></path></svg>
+                <span style="font-size: var(--fs-meta); color: var(--api); font-weight: var(--w-semibold)">Dodo IS: синхронизировано 30.06, 23:50</span>
+              </div>
+              <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Подтянуть заново</button>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: flex-end; gap: 14px; margin-top: 12px; flex-wrap: wrap">
+            <div>
+              <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Точка</div>
+              <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+                <sc-for list="{{ pointOpts }}" as="p" hint-placeholder-count="3">
+                  <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}">
+                    <span aria-current="true" style="{{ p.selStyle }}">{{ p.label }}<span style="{{ p.badgeStyle }}">{{ p.badge }}</span></span>
+                  </sc-if>
+                  <sc-if value="{{ p.notSel }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ p.on }}" style="{{ p.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ p.label }}<span style="{{ p.badgeStyle }}">{{ p.badge }}</span></button>
+                  </sc-if>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Показать</div>
+              <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+                <sc-for list="{{ filterOpts }}" as="f" hint-placeholder-count="3">
+                  <sc-if value="{{ f.sel }}" hint-placeholder-val="{{ false }}">
+                    <span aria-current="true" style="{{ f.selStyle }}">{{ f.label }}</span>
+                  </sc-if>
+                  <sc-if value="{{ f.notSel }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ f.on }}" style="{{ f.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ f.label }}</button>
+                  </sc-if>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex: 1"></div>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="font-size: 10px; color: var(--ink-3)">Скачать файл</span>
+              <button style="height: 24px; padding: 0 8px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD; display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-meta); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)' }">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 12 5 5 5-5"></path><path d="M4 21h16"></path></svg>
+                Табель <span style="opacity:.55">xlsx</span>
+              </button>
+              <button onClick="{{ goImport }}" style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense); display: inline-flex; align-items: center; gap: 6px" style-hover="{ background: 'var(--surface-3)' }">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"></path><path d="m7 12 5-5 5 5"></path><path d="M4 3h16"></path></svg>
+                Загрузить таблицу
+              </button>
+              <button onClick="{{ openClose }}" style="{{ closeBtnStyle }}" style-hover="{{ closeBtnHover }}">{{ closeBtnLabel }}</button>
+            </div>
+          </div>
+        </div>
+
+        <sc-if value="{{ hasWarnings }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: var(--r-block); margin-bottom: 10px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+            <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">{{ warnTitle }}</span>
+            <span style="font-size: var(--fs-meta); color: var(--warn-ink); opacity: .85">{{ warnList }}</span>
+            <button onClick="{{ showWarnOnly }}" style="margin-left: auto; height: 24px; padding: 0 9px; border: 1px solid var(--warn-line); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--warn-ink); white-space: nowrap; flex: 0 0 auto" style-hover="{ background: '#FFF3DC' }">Показать только их</button>
+          </div>
+        </sc-if>
+
+        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px">
+          <div style="font-size: var(--fs-meta); color: var(--ink-2)">{{ rowInfo }}</div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-3)">Tab — вправо, Enter — вниз, стрелки — по сетке. Правка сохраняется сразу</div>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: auto; max-height: 486px; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed; min-width: 1180px">
+            <thead>
+              <tr>
+                <th rowSpan="2" style="position: sticky; left: 0; top: 0; z-index: 5; width: 226px; text-align: left; padding: 6px 9px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); vertical-align: bottom">Сотрудник</th>
+                <th colSpan="4" style="position: sticky; top: 0; z-index: 4; background: var(--surface-3); color: var(--ink-2); font-size: 10px; font-weight: var(--w-bold); letter-spacing: .07em; text-transform: uppercase; text-align: left; padding: 0 8px; height: 20px; line-height: 20px; border-bottom: 1px solid var(--line-2); border-right: 1px solid var(--line-strong)">Отработано</th>
+                <th colSpan="2" style="position: sticky; top: 0; z-index: 4; background: #EDEFF2; color: var(--ink-2); font-size: 10px; font-weight: var(--w-bold); letter-spacing: .07em; text-transform: uppercase; text-align: left; padding: 0 8px; height: 20px; line-height: 20px; border-bottom: 1px solid var(--line-2); border-right: 1px solid var(--line-strong)">Отсутствие</th>
+                <th rowSpan="2" style="position: sticky; top: 0; z-index: 4; width: 108px; text-align: right; padding: 6px 8px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); vertical-align: bottom">Сдельно</th>
+                <th rowSpan="2" style="position: sticky; right: 196px; top: 0; z-index: 5; width: 96px; text-align: right; padding: 6px 8px; background: #EDEFF2; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); border-left: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); vertical-align: bottom">Договор</th>
+                <th rowSpan="2" style="position: sticky; right: 96px; top: 0; z-index: 5; width: 100px; text-align: right; padding: 6px 8px; background: #EDEFF2; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); vertical-align: bottom">Δ к договору</th>
+                <th rowSpan="2" style="position: sticky; right: 0; top: 0; z-index: 5; width: 96px; text-align: right; padding: 6px 9px; background: #E4E8EE; border-bottom: 1px solid var(--line-strong); border-left: 1px solid var(--line-strong); font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink); vertical-align: bottom">Всего часов</th>
+              </tr>
+              <tr>
+                <sc-for list="{{ cols }}" as="c" hint-placeholder-count="6">
+                  <th style="{{ c.thStyle }}">{{ c.label }}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="14">
+                <tr style="{{ r.trStyle }}" style-hover="{{ r.trHover }}">
+                  <th scope="row" style="{{ r.nameStyle }}">
+                    <div style="display: flex; align-items: center; gap: 6px; min-width: 0">
+                      <span style="{{ r.markStyle }}"></span>
+                      <span style="font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ r.name }}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; padding-left: 9px; min-width: 0">
+                      <sc-if value="{{ r.hasFlag }}" hint-placeholder-val="{{ false }}">
+                        <span style="{{ r.flagStyle }}">{{ r.flag }}</span>
+                      </sc-if>
+                      <span style="font-size: 10px; color: var(--ink-3); line-height: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ r.sub }}</span>
+                    </div>
+                  </th>
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="7">
+                    <td style="{{ c.tdStyle }}">
+                      <sc-if value="{{ c.editable }}" hint-placeholder-val="{{ true }}">
+                        <input value="{{ c.value }}" onFocus="{{ c.onFocus }}" onBlur="{{ c.onBlur }}" onInput="{{ c.onInput }}" onKeyDown="{{ c.onKey }}" style="{{ c.inputStyle }}">
+                      </sc-if>
+                      <sc-if value="{{ c.locked }}" hint-placeholder-val="{{ false }}">
+                        <span style="{{ c.lockedStyle }}">{{ c.value }}</span>
+                      </sc-if>
+                    </td>
+                  </sc-for>
+                  <td style="{{ r.contractStyle }}">{{ r.contract }}</td>
+                  <td style="{{ r.deltaStyle }}">{{ r.delta }}</td>
+                  <td style="{{ r.totalStyle }}">{{ r.total }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" style="position: sticky; left: 0; bottom: 0; z-index: 6; text-align: left; padding: 0 9px; height: 32px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Итого по точке</th>
+                <sc-for list="{{ totals }}" as="t" hint-placeholder-count="7">
+                  <td style="{{ t.style }}">{{ t.v }}</td>
+                </sc-for>
+                <td style="{{ contractFootStyle }}">{{ contractTotal }}</td>
+                <td style="{{ deltaFootStyle }}">{{ deltaTotal }}</td>
+                <td style="position: sticky; right: 0; bottom: 0; z-index: 7; text-align: right; padding: 0 9px; height: 32px; background: #E8EDF3; border-top: 2px solid var(--line-strong); border-left: 1px solid var(--line-strong); font-family: var(--font-num); font-size: 13px; font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ grandTotal }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <sc-if value="{{ hasGuarSummary }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 10px; border: 1px solid var(--line-strong); border-radius: var(--r-block); background: var(--surface); overflow: hidden">
+            <div style="display: flex; align-items: stretch; flex-wrap: wrap">
+              <div style="flex: 0 0 auto; padding: 10px 15px 11px; border-right: 1px solid var(--line)">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Лишние часы</div>
+                <div style="font-family: var(--font-num); font-size: 15px; font-weight: var(--w-bold); color: var(--warn-ink); margin-top: 3px">{{ guarOver }}</div>
+              </div>
+              <div style="flex: 0 0 auto; padding: 10px 15px 11px; border-right: 1px solid var(--line)">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Недостающие</div>
+                <div style="font-family: var(--font-num); font-size: 15px; font-weight: var(--w-bold); color: var(--err); margin-top: 3px">{{ guarUnder }}</div>
+              </div>
+              <div style="flex: 0 0 auto; padding: 10px 15px 11px; border-right: 1px solid var(--line)">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Сальдо</div>
+                <div style="font-family: var(--font-num); font-size: 15px; font-weight: var(--w-bold); margin-top: 3px">{{ guarNet }}</div>
+              </div>
+              <div style="flex: 1; min-width: 260px; padding: 10px 15px 11px; display: flex; flex-direction: column; justify-content: center">
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ guarExplain }}</div>
+                <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); margin-top: 3px">Часы не переносятся автоматически: кто мог выйти в ту смену, знает управляющий, а не система. Итог «Договор» и «Δ» — {{ guarNote }}, поэтому он не сходится с «Всего часов» по всей точке.</div>
+              </div>
+            </div>
+            <sc-if value="{{ guarBlockOn }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ guarBlockStyle }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6"></path><path d="M12 16.5v.5"></path></svg>
+                <span style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ guarBlock }}</span>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <div style="display: flex; gap: 16px; margin-top: 9px; font-size: var(--fs-meta); color: var(--ink-3); flex-wrap: wrap">
+          <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 3px; height: 12px; background: var(--warn-mark); border-radius: 1px"></span>правка руками — расходится с Dodo IS</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 10px; height: 12px; background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: 1px"></span>Δ к договору — сверх гарантии или недоработка от {{ underExplainLabel }}</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 3px; height: 12px; background: var(--line-control-2); border-radius: 1px"></span>уволен в этом месяце</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px"><span style="font-family: var(--font-num); color: var(--ink-3)">0</span>ноль — значение есть</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px"><span style="font-family: var(--font-num); color: var(--ink-empty)">–</span>значения нет</span>
+          <span>подчёркнутое жёлтым — подсказка, но сохранить не мешает</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDiff }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Приехало из Dodo IS / внесли руками</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">июнь 2026 · 3 точки · расхождения по 6 сотрудникам из 35</span>
+          <div style="margin-left: auto; display: flex; align-items: center; gap: 7px">
+            <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Принять данные IS везде</button>
+            <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-dense); font-weight: var(--w-semibold)" style-hover="{ background: 'var(--accent-press)' }">Оставить правки</button>
+          </div>
+        </div>
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <div style="display: grid; grid-template-columns: 232px 130px 96px 96px 92px 1fr 152px; gap: 10px; padding: 8px 12px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">
+            <div>Сотрудник</div><div>Тип часа</div><div style="text-align: right">Из Dodo IS</div><div style="text-align: right">Внесено</div><div style="text-align: right">Разница</div><div>Кто и почему</div><div>Решение</div>
+          </div>
+          <sc-for list="{{ diffs }}" as="d" hint-placeholder-count="6">
+            <div style="{{ d.rowStyle }}" style-hover="{ background: '#F6F8FA' }">
+              <div style="min-width: 0">
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ d.name }}</div>
+                <div style="font-size: 10px; color: var(--ink-3)">{{ d.point }}</div>
+              </div>
+              <div style="font-size: var(--fs-dense); color: var(--ink-2)">{{ d.kind }}</div>
+              <div style="{{ d.isStyle }}">{{ d.is }}</div>
+              <div style="{{ d.manStyle }}">{{ d.man }}</div>
+              <div style="{{ d.deltaStyle }}">{{ d.delta }}</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); line-height: var(--lh-meta); min-width: 0">{{ d.who }}</div>
+              <div style="display: flex; gap: 5px">
+                <button style="height: 24px; padding: 0 8px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap" style-hover="{ borderColor: 'var(--accent)', color: 'var(--accent)' }">Взять IS</button>
+                <button style="height: 24px; padding: 0 8px; border: 1px solid var(--accent-line); border-radius: var(--r-control); background: var(--accent-soft); font-size: var(--fs-meta); color: var(--accent); font-weight: var(--w-semibold); white-space: nowrap" style-hover="{ background: '#DBE7F7' }">Оставить</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px; flex: 0 0 auto"><path d="M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"></path><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+          <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Экран не заставляет выбирать сторону: у правки руками есть автор, время и причина, и она остаётся правкой. Если человек оставил своё значение, следующая синхронизация из IS его не перезапишет — она добавит новое расхождение в этот же список.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isImport }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+        <div style="display: grid; grid-template-columns: 1fr 372px; gap: 10px; align-items: start">
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+            <div style="padding: 11px 13px; border-bottom: 1px solid var(--line)">
+              <div style="font-size: var(--fs-title); font-weight: var(--w-semibold); line-height: var(--lh-title)">Отчёт импорта</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 2px">tabela_juni_2026.xlsx · 38 строк · загружено 01.07.2026, 08:42</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--line)">
+              <sc-for list="{{ importStats }}" as="s" hint-placeholder-count="5">
+                <div style="{{ s.cellStyle }}">
+                  <div style="font-family: var(--font-num); font-size: 22px; font-weight: var(--w-bold); font-variant-numeric: tabular-nums; color: {{ s.color }}">{{ s.n }}</div>
+                  <div style="font-size: var(--fs-meta); font-weight: var(--w-semibold); margin-top: 2px">{{ s.label }}</div>
+                  <div style="font-size: 10px; line-height: 13px; color: var(--ink-3); margin-top: 3px">{{ s.note }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding: 11px 13px">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 7px">Что требует решения</div>
+              <div style="display: flex; flex-direction: column; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+                <sc-for list="{{ importIssues }}" as="i" hint-placeholder-count="5">
+                  <div style="display: grid; grid-template-columns: 40px 1fr 168px 132px; gap: 10px; align-items: center; padding: 8px 10px; background: var(--surface)">
+                    <span style="font-family: var(--font-num); font-size: 10px; color: var(--ink-3)">{{ i.line }}</span>
+                    <div style="min-width: 0">
+                      <div style="font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ i.name }}</div>
+                      <div style="font-size: 10px; color: var(--ink-3)">{{ i.detail }}</div>
+                    </div>
+                    <span style="{{ i.tagStyle }}">{{ i.tag }}</span>
+                    <button style="{{ i.actionStyle }}">{{ i.action }}</button>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display: flex; align-items: center; gap: 9px; margin-top: 11px">
+                <button onClick="{{ goGrid }}" style="flex: 0 0 auto; white-space: nowrap; height: var(--control-h); padding: 0 13px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-body); font-weight: var(--w-semibold)" style-hover="{ background: 'var(--accent-press)' }">Применить 31 строку</button>
+                <button style="flex: 0 0 auto; white-space: nowrap; height: var(--control-h); padding: 0 12px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)" style-hover="{ background: 'var(--surface-3)' }">Отменить импорт</button>
+                <span style="flex: 1 1 auto; min-width: 0; font-size: var(--fs-meta); color: var(--ink-3)">Семь строк останутся неприменёнными, пока не решите, что с ними делать</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="background: var(--surface); border: 1px dashed var(--line-control-2); border-radius: var(--r-block); padding: 22px 16px; text-align: center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px"><path d="M12 21V9"></path><path d="m7 12 5-5 5 5"></path><path d="M4 3h16"></path></svg>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Перетащите свой xlsx или csv</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 4px">Колонки подбираются сами: имя, точка, типы часов. Если колонка не распознана — спросим, но файл не отклоним.</div>
+              <button style="height: var(--control-h-sm); padding: 0 12px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense); margin-top: 10px" style-hover="{ background: 'var(--surface-3)' }">Выбрать файл</button>
+            </div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 13px">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 7px">Как читать отчёт</div>
+              <div style="display: flex; flex-direction: column; gap: 7px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">
+                <div><b style="color: var(--ink)">Не найдено</b> — такого человека нет в базе. Либо заведите его, либо это опечатка в имени.</div>
+                <div><b style="color: var(--ink)">Пропущено</b> — человек есть, но записывать некуда: нет условий найма на июнь или точка закрыта.</div>
+                <div>Разница между этими двумя строками — единственная причина, по которой отчёт вообще нужен: первое исправляют в справочнике, второе — в условиях найма.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Управляющий, 375 px</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Заходит на две минуты, стоя на точке. Часы уже приехали из IS — он подтверждает и правит расхождения, а не набивает сетку.</span>
+        </div>
+        <div style="display: flex; gap: 14px; align-items: flex-start">
+          <div>
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Шаг 1 · Что от меня хотят</div>
+            <div style="background: #14181E; border-radius: 16px; padding: 8px; width: 391px">
+              <div style="background: var(--surface); border-radius: 10px; overflow: hidden">
+                <div style="height: 24px; background: var(--surface-3); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 11px; font-family: var(--font-num); font-size: 9.5px; color: var(--ink-3)"><span>9:41</span><span>375 pt</span></div>
+                <div style="min-height: 448px; padding: 12px">
+                  <div style="font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin-bottom: 6px">Beograd Vračar · июнь</div>
+                  <div style="font-size: 17px; line-height: 23px; font-weight: 600; letter-spacing: -.01em">Часы приехали из Dodo IS</div>
+                  <div style="font-size: 13px; line-height: 18px; color: var(--ink-2); margin-top: 6px">13 человек, 2 348 часов. Проверять всё не нужно — система нашла два места, где данные расходятся с фактом.</div>
+                  <div style="border: 1px solid var(--warn-line); border-radius: 4px; overflow: hidden; margin-top: 10px">
+                    <div style="padding: 10px 11px; background: var(--warn-soft); border-bottom: 1px solid var(--warn-line); display: flex; align-items: center; gap: 8px">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                      <span style="font-size: 13px; font-weight: 600; color: var(--warn-ink)">Требует вашего взгляда</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 0 11px; min-height: 52px; border-bottom: 1px solid var(--line)">
+                      <div style="flex: 1; min-width: 0">
+                        <div style="font-size: 14px; font-weight: 500">Miloš Stojanović</div>
+                        <div style="font-size: 11.5px; color: var(--ink-3)">переработка 32 ч, порог 24</div>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 0 11px; min-height: 52px">
+                      <div style="flex: 1; min-width: 0">
+                        <div style="font-size: 14px; font-weight: 500">Vojin Kostić</div>
+                        <div style="font-size: 11.5px; color: var(--ink-3)">часы после увольнения 12.06</div>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg>
+                    </div>
+                  </div>
+                  <button style="width: 100%; min-height: 44px; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; margin-top: 10px">Разобрать первое</button>
+                  <button style="width: 100%; min-height: 44px; border: 1px solid var(--line-control); border-radius: 4px; background: var(--surface); font-size: 14px; margin-top: 8px">Остальное верно, подтвердить</button>
+                  <div style="font-size: 11.5px; color: var(--ink-3); margin-top: 10px; line-height: 16px">Часы закрывает бухгалтер. Ваше подтверждение — это отметка «я свою точку проверил».</div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 8px; width: 391px">Не список дел, а одно предложение: часы приехали, есть два расхождения. Всё остальное можно подтвердить одной кнопкой.</div>
+          </div>
+
+          <div>
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Шаг 2 · Правка одного человека</div>
+            <div style="background: #14181E; border-radius: 16px; padding: 8px; width: 391px">
+              <div style="background: var(--surface); border-radius: 10px; overflow: hidden">
+                <div style="height: 24px; background: var(--surface-3); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 11px; font-family: var(--font-num); font-size: 9.5px; color: var(--ink-3)"><span>9:41</span><span>375 pt</span></div>
+                <div style="min-height: 448px; padding: 12px">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></svg>
+                    <span style="font-size: 13px; color: var(--ink-2)">1 из 2</span>
+                  </div>
+                  <div style="font-size: 17px; line-height: 23px; font-weight: 600; letter-spacing: -.01em">Miloš Stojanović</div>
+                  <div style="font-size: 12.5px; color: var(--ink-3); margin-top: 2px">Повар · Кухня · Beograd Vračar</div>
+                  <div style="margin-top: 14px">
+                    <div style="font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin-bottom: 6px">Переработка, часов</div>
+                    <div style="display: flex; align-items: center; gap: 10px">
+                      <input value="32" inputMode="numeric" style="flex: 1; min-width: 0; height: 52px; border: 1px solid var(--accent); border-radius: 4px; background: #fff; text-align: right; padding: 0 12px; font-family: var(--font-num); font-size: 24px; font-variant-numeric: tabular-nums; box-shadow: 0 0 0 3px rgba(31,78,156,.14); outline: none">
+                      <div style="width: 104px; flex: 0 0 auto">
+                        <div style="font-size: 10.5px; color: var(--ink-3)">из Dodo IS</div>
+                        <div style="font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 20px; color: var(--ink-2)">24</div>
+                      </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 7px; font-size: 12px; color: var(--warn)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                      Выше порога на 8 ч — сохранить всё равно можно
+                    </div>
+                  </div>
+                  <div style="margin-top: 14px">
+                    <div style="font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin-bottom: 6px">Причина правки · обязательно</div>
+                    <textarea style="width: 100%; height: 62px; padding: 9px 10px; border: 1px solid var(--line-control); border-radius: 4px; font-size: 14px; line-height: 19px; resize: none; font-family: inherit; color: var(--ink)">Две смены за Vojin после увольнения</textarea>
+                    <div style="font-size: 11.5px; color: var(--ink-3); margin-top: 5px">Причина видна бухгалтеру в списке расхождений</div>
+                  </div>
+                  <button style="width: 100%; min-height: 44px; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; margin-top: 10px">Сохранить и дальше</button>
+                  <button style="width: 100%; min-height: 44px; border: 1px solid var(--line-control); border-radius: 4px; background: var(--surface); font-size: 14px; margin-top: 8px">Оставить как в IS</button>
+                </div>
+              </div>
+            </div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 8px; width: 391px">Крупное поле, значение из IS рядом, причина обязательна. Кнопка «оставить как в IS» — тоже решение, а не отказ.</div>
+          </div>
+
+          <div>
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">Шаг 3 · Готово</div>
+            <div style="background: #14181E; border-radius: 16px; padding: 8px; width: 391px">
+              <div style="background: var(--surface); border-radius: 10px; overflow: hidden">
+                <div style="height: 24px; background: var(--surface-3); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 11px; font-family: var(--font-num); font-size: 9.5px; color: var(--ink-3)"><span>9:41</span><span>375 pt</span></div>
+                <div style="min-height: 448px; padding: 12px">
+                  <div style="display: grid; place-items: center; padding: 26px 0 8px">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--ok-soft); border: 1px solid var(--ok-line); display: grid; place-items: center">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                    </div>
+                  </div>
+                  <div style="font-size: 17px; line-height: 23px; font-weight: 600; letter-spacing: -.01em; text-align: center">Точка проверена</div>
+                  <div style="font-size: 13px; line-height: 18px; color: var(--ink-2); margin-top: 6px; text-align: center">Две правки ушли бухгалтеру с причинами. Часы за июнь по Vračar подтверждены 01.07 в 9:41.</div>
+                  <div style="border: 1px solid var(--line-strong); border-radius: 4px; overflow: hidden; margin-top: 10px">
+                    <div style="display: flex; align-items: baseline; gap: 10px; padding: 10px 11px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+                      <span style="font-size: 12.5px; color: var(--ink-2)">Всего часов</span>
+                      <span style="margin-left: auto; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600">2 356</span>
+                    </div>
+                    <div style="display: flex; align-items: baseline; gap: 10px; padding: 10px 11px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+                      <span style="font-size: 12.5px; color: var(--ink-2)">Правок руками</span>
+                      <span style="margin-left: auto; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600; color: var(--warn-ink)">2</span>
+                    </div>
+                    <div style="display: flex; align-items: baseline; gap: 10px; padding: 10px 11px; background: var(--surface-2)">
+                      <span style="font-size: 12.5px; color: var(--ink-2)">Сотрудников</span>
+                      <span style="margin-left: auto; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600">13</span>
+                    </div>
+                  </div>
+                  <button style="width: 100%; min-height: 44px; border: 1px solid var(--line-control); border-radius: 4px; background: var(--surface); font-size: 14px; margin-top: 10px">Внести расход из кассы</button>
+                  <button style="width: 100%; min-height: 44px; border: 1px solid var(--line-control); border-radius: 4px; background: var(--surface); font-size: 14px; margin-top: 8px">Скинуть накладную</button>
+                  <div style="font-size: 11.5px; color: var(--ink-3); margin-top: 12px; line-height: 16px">Если бухгалтер откроет часы обратно, вам придёт уведомление с причиной.</div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 8px; width: 391px">Итог не хвалит, а отчитывается: что ушло бухгалтеру и когда. Рядом два следующих дела управляющего.</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ closeDialog }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ dismissClose }}" style="position: fixed; inset: 0; z-index: 80; background: rgba(10,13,17,.5); display: grid; place-items: center">
+        <div onClick="{{ stopProp }}" style="width: 468px; background: var(--surface); border-radius: var(--r-block); box-shadow: 0 30px 80px -20px rgba(10,13,17,.6); overflow: hidden">
+          <div style="display: flex; align-items: center; gap: 9px; padding: 13px 15px; background: var(--surface-3); border-bottom: 1px solid var(--line)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v9H6z"></path><path d="M9 11V8a3 3 0 0 1 6 0v3"></path></svg>
+            <div style="font-size: var(--fs-title); font-weight: var(--w-semibold)">Закрыть часы по {{ closePoint }}?</div>
+          </div>
+          <div style="padding: 13px 15px">
+            <div style="font-size: var(--fs-body); line-height: var(--lh-body)">После закрытия часы этой точки не меняются, и расчёт можно запускать. Другие точки остаются открытыми — закрытие идёт по каждой независимо.</div>
+            <div style="margin-top: 11px; border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+              <div style="display: flex; align-items: baseline; gap: 10px; padding: 7px 11px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">Сотрудников</span>
+                <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-body); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">{{ closeCount }}</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 10px; padding: 7px 11px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">Всего часов</span>
+                <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-body); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums">{{ closeHours }}</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 10px; padding: 7px 11px; background: var(--warn-soft)">
+                <span style="font-size: var(--fs-meta); color: var(--warn-ink)">Незакрытых замечаний</span>
+                <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-body); font-weight: var(--w-semibold); font-variant-numeric: tabular-nums; color: var(--warn-ink)">{{ closeWarns }}</span>
+              </div>
+            </div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 9px">Замечания не мешают закрыть: система предупреждает, но не запрещает. Открыть часы обратно сможет бухгалтер — с указанием причины.</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 9px; padding: 11px 15px; background: var(--surface-2); border-top: 1px solid var(--line)">
+            <span style="font-size: var(--fs-meta); color: var(--ink-3)">Esc — отмена</span>
+            <div style="flex: 1"></div>
+            <button onClick="{{ dismissClose }}" style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)" style-hover="{ background: 'var(--surface-3)' }">Отмена</button>
+            <button onClick="{{ confirmClose }}" style="height: var(--control-h); padding: 0 14px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: #fff; font-size: var(--fs-body); font-weight: var(--w-semibold)" style-hover="{ background: 'var(--accent-press)' }">Закрыть часы</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1264,&quot;height&quot;:900},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;grid&quot;,&quot;diff&quot;,&quot;import&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;grid&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Табель&quot;}}">
+const RAW = [
+  ["Petar Petrović", "kitchen", "vracar", "Повар", [96, 9, 0, 15, 56, 0], null, null],
+  ["Milica Jovanović", "kitchen", "vracar", "Повар", [168, 24, 8, 4, 0, 0], null, null],
+  ["Teodora Savić", "kitchen", "vracar", "Пиццамейкер", [176, 16, 0, 0, 0, 0], null, null],
+  ["Miloš Stojanović", "kitchen", "vracar", "Повар", [160, 32, 8, 32, 0, 0], "ot", null],
+  ["Nina Đukić", "kitchen", "vracar", "Пиццамейкер", [152, 12, 0, 0, 24, 0], null, null],
+  ["Vuk Marković", "courier", "vracar", "Курьер", [176, 48, 0, 6, 0, 0], null, 412],
+  ["Uroš Pavlović", "courier", "vracar", "Курьер", [168, 40, 0, 0, 0, 8], null, 388],
+  ["Nemanja Lazić", "courier", "vracar", "Курьер", [160, 44, 8, 0, 0, 0], null, 401],
+  ["Strahinja Vuković", "courier", "vracar", "Курьер", [144, 36, 0, 0, 32, 0], null, 342],
+  ["Vojin Kostić", "courier", "vracar", "Курьер", [72, 18, 0, 0, 0, 0], "fired", 168],
+  ["Katarina Nikolić", "shift", "vracar", "Менеджер смены", [176, 8, 8, 0, 0, 0], null, null],
+  ["Tijana Radić", "shift", "vracar", "Менеджер смены", [168, 12, 0, 4, 0, 8], null, null],
+  ["Đorđe Milošević", "manager", "vracar", "Управляющий", [176, 0, 0, 0, 0, 0], null, null],
+  ["Ana Marić", "kitchen", "novibg", "Пиццамейкер", [176, 20, 0, 0, 0, 0], null, null],
+  ["Stefan Nikolić", "kitchen", "novibg", "Повар", [168, 28, 8, 6, 0, 0], null, null],
+  ["Nikola Ilić", "kitchen", "novibg", "Повар", [0, 0, 0, 0, 0, 0], "nohours", null],
+  ["Jovana Petrović", "kitchen", "novibg", "Пиццамейкер", [160, 16, 0, 0, 16, 0], null, null],
+  ["Dušan Todorović", "kitchen", "novibg", "Повар", [176, 24, 0, 8, 0, 0], null, null],
+  ["Filip Ristić", "courier", "novibg", "Курьер", [176, 52, 8, 4, 0, 0], null, 438],
+  ["Aleksandar Krstić", "courier", "novibg", "Курьер", [152, 32, 0, 0, 24, 0], null, 356],
+  ["Ivan Radovanović", "courier", "novibg", "Курьер", [168, 40, 0, 12, 0, 0], null, 402],
+  ["Danilo Kovačević", "courier", "novibg", "Курьер", [160, 36, 0, 0, 0, 16], null, 371],
+  ["Ivana Stevanović", "shift", "novibg", "Менеджер смены", [176, 12, 8, 0, 0, 0], null, null],
+  ["Dunja Popović", "shift", "novibg", "Менеджер смены", [168, 8, 0, 6, 8, 0], null, null],
+  ["Hana Stamenković", "manager", "novibg", "Управляющий", [176, 0, 0, 0, 0, 0], null, null],
+  ["Marko Jovanović", "kitchen", "novisad", "Повар", [176, 36, 8, 32, 0, 0], "ot", null],
+  ["Sofija Mitrović", "kitchen", "novisad", "Пиццамейкер", [168, 20, 0, 0, 0, 0], null, null],
+  ["Lazar Đorđević", "kitchen", "novisad", "Повар", [160, 24, 0, 4, 16, 0], null, null],
+  ["Marija Obradović", "kitchen", "novisad", "Пиццамейкер", [212, 28, 8, 0, 0, 0], "over", null],
+  ["Ognjen Simić", "courier", "novisad", "Курьер", [176, 44, 0, 8, 0, 0], null, 421],
+  ["Bogdan Mićić", "courier", "novisad", "Курьер", [168, 40, 8, 0, 0, 0], null, 396],
+  ["Matija Živković", "courier", "novisad", "Курьер", [120, 28, 0, 0, 40, 0], null, 284],
+  ["Aleksandra Đurić", "shift", "novisad", "Менеджер смены", [176, 12, 0, 4, 0, 0], null, null],
+  ["Lenka Zdravković", "shift", "novisad", "Менеджер смены", [128, 8, 0, 0, 0, 24], null, null],
+  ["Emilija Vasić", "manager", "novisad", "Управляющий", [168, 0, 0, 0, 8, 0], null, null]
+];
+
+const EDITED = { "Miloš Stojanović": [3], "Marija Obradović": [0], "Vojin Kostić": [0, 1], "Ana Marić": [1] };
+
+/* Гарантия часов по договору. Значение наследуется из шаблона должности
+   (модуль 16) и может быть переопределено договором человека — здесь такой
+   один: у Milica Jovanović договор на 160 ч при норме июня 176.
+   У сдельщиков гарантии нет: им платят за факт, сравнивать не с чем. */
+const NORM_JUNE = 176;
+const CONTRACT = { "Milica Jovanović": 160 };
+/* Пороги из профиля страны, модуль 17: under.explain и under.block.
+   Здесь они читаются, а не задаются — в табеле их менять нельзя. */
+const UNDER_EXPLAIN = 8;
+const UNDER_BLOCK = 24;
+
+function contractOf(e) {
+  if (e[6]) return null;
+  return CONTRACT[e[0]] !== undefined ? CONTRACT[e[0]] : NORM_JUNE;
+}
+
+/* Ноль пишем нулём, а не прочерком: «ровно по договору» — это факт,
+   а прочерк значит «гарантии нет». Разные вещи, разные знаки. */
+function deltaText(d) {
+  if (d === null) return "\u2013";
+  if (d === 0) return "0";
+  return (d > 0 ? "+" : "\u2212") + Math.abs(d);
+}
+
+function deltaStyle(d) {
+  /* Колонка липкая, поэтому фон обязан быть непрозрачным во всех ветках:
+     под transparent при горизонтальном скролле просвечивают ячейки часов. */
+  let color = "var(--ink-2)", bg = "var(--surface)";
+  if (d === null) color = "var(--ink-empty)";
+  else if (d === 0) color = "var(--ink-3)";
+  else if (d > 0) { color = "var(--warn-ink)"; bg = "var(--warn-soft)"; }
+  else if (-d >= UNDER_BLOCK) { color = "var(--err)"; bg = "var(--err-soft)"; }
+  else if (-d >= UNDER_EXPLAIN) { color = "var(--warn-ink)"; bg = "var(--warn-soft)"; }
+  return {
+    position: "sticky", right: "96px", zIndex: 2,
+    textAlign: "right", padding: "0 8px", height: "var(--row)", background: bg,
+    borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-strong)",
+    fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums",
+    fontWeight: d !== null && d !== 0 ? 600 : 400, color: color
+  };
+}
+
+const COLS = [
+  ["Обычные", 106, "work"], ["Ночные", 100, "work"], ["Праздничные", 108, "work"], ["Переработка", 108, "work"],
+  ["Отпуск", 100, "away"], ["Больничный", 104, "away"]
+];
+
+const POINTS = { vracar: "Beograd Vračar", novibg: "Novi Beograd", novisad: "Novi Sad" };
+const POINT_ORDER = ["vracar", "novibg", "novisad"];
+const CLOSED = { vracar: false, novibg: true, novisad: false };
+
+const GROUPS = { kitchen: "Кухня", courier: "Курьеры", shift: "Менеджеры смены", manager: "Управляющие" };
+
+const FLAGS = {
+  ot: ["переработка выше порога", "warn"],
+  over: ["больше нормы на 36 ч", "warn"],
+  fired: ["уволен 12.06", "muted"],
+  nohours: ["нет часов за июнь", "warn"]
+};
+
+const DIFFS = [
+  ["Miloš Stojanović", "vracar", "Переработка", 24, 32, "Đorđe Milošević · 28.06 · «две смены за Vojin после увольнения»"],
+  ["Marija Obradović", "novisad", "Обычные", 176, 212, "Emilija Vasić · 30.06 · «подменяла на Novi Sad, в IS не завели»"],
+  ["Vojin Kostić", "vracar", "Обычные", 88, 72, "Milica Jovanović · 01.07 · «уволен 12.06, часы после даты убраны»"],
+  ["Ana Marić", "novibg", "Ночные", 16, 20, "Hana Stamenković · 29.06 · «ночная приёмка 27.06»"],
+  ["Matija Živković", "novisad", "Отпуск", 32, 40, "Emilija Vasić · 24.06 · «отпуск продлён на неделю, приказ 18.06»"],
+  ["Nikola Ilić", "novibg", "Обычные", 0, 0, "из IS не приехало ничего · человек в базе есть, смен нет"]
+];
+
+const IMPORT_STATS = [
+  [31, "Совпало", "имя и точка нашлись, часы обновлены", "var(--ok)"],
+  [2, "Создано", "новых записей часов за июнь", "var(--accent)"],
+  [1, "Обновлено", "часы изменились относительно IS", "var(--warn)"],
+  [3, "Не найдено", "такого человека нет в базе", "var(--err)"],
+  [1, "Пропущено", "человек есть, записывать некуда", "var(--ink-2)"]
+];
+
+const IMPORT_ISSUES = [
+  ["14", "Nikola Petrović", "в базе нет никого с таким именем · похоже на «Nikola Ilić»", "Не найдено", "err", "Сопоставить"],
+  ["21", "Jelena Đorđević", "в базе нет · возможно, новый сотрудник", "Не найдено", "err", "Завести"],
+  ["27", "Milan Tomić", "в базе нет · строка без точки", "Не найдено", "err", "Сопоставить"],
+  ["33", "Lenka Zdravković", "есть в базе, но условий найма на июнь нет", "Пропущено", "warn", "Открыть карточку"],
+  ["36", "Marija Obradović", "212 ч — больше нормы на 36 ч", "Обновлено", "ok", "Применить"]
+];
+
+function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0"); }
+
+class Component extends DCLogic {
+  state = { tab: null, point: "vracar", filter: "all", vals: {}, focus: null, closeDlg: null };
+
+  get tab() { return this.state.tab || this.props.view || "grid"; }
+
+  componentDidMount() { document.addEventListener("keydown", this.onEsc); }
+  componentWillUnmount() { document.removeEventListener("keydown", this.onEsc); }
+  onEsc = (e) => { if (e.key === "Escape" && this.state.closeDlg) this.setState({ closeDlg: null }); };
+
+  key(name, ci) { return name + "|" + ci; }
+
+  cellValue(emp, ci) {
+    const k = this.key(emp[0], ci);
+    if (this.state.vals[k] !== undefined) return this.state.vals[k];
+    return emp[4][ci];
+  }
+
+  isEdited(emp, ci) {
+    if (this.state.vals[this.key(emp[0], ci)] !== undefined) return true;
+    const e = EDITED[emp[0]];
+    return !!(e && e.indexOf(ci) >= 0);
+  }
+
+  renderVals() {
+    const self = this;
+    const tab = this.tab;
+    const pt = this.state.point;
+
+    let list = RAW.filter(function (e) { return e[2] === pt; });
+    if (this.state.filter === "warn") list = list.filter(function (e) { return e[5]; });
+    if (this.state.filter === "edited") list = list.filter(function (e) {
+      for (var i = 0; i < 6; i++) if (self.isEdited(e, i)) return true;
+      return false;
+    });
+
+    const warnEmps = RAW.filter(function (e) { return e[2] === pt && e[5] && FLAGS[e[5]]; });
+    const closed = CLOSED[pt];
+
+    const chip = function (sel) {
+      const base = { display: "inline-flex", alignItems: "center", gap: "6px", height: "22px", padding: "0 9px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+      if (sel) return Object.assign(base, { background: "var(--surface)", color: "var(--ink)", fontWeight: 600, boxShadow: "var(--sh-xs)" });
+      return Object.assign(base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" });
+    };
+
+    const totals = [0, 0, 0, 0, 0, 0];
+    let piece = 0;
+    const rows = list.map(function (e) {
+      const cells = [];
+      let rowTotal = 0;
+      for (var ci = 0; ci < 6; ci++) {
+        const v = self.cellValue(e, ci);
+        const edited = self.isEdited(e, ci);
+        const num = Number(v) || 0;
+        totals[ci] += num;
+        rowTotal += num;
+        const flagged = (e[5] === "over" && ci === 0) || (e[5] === "ot" && ci === 3);
+        const isCur = self.state.focus === self.key(e[0], ci);
+        cells.push((function (ci, v, edited, flagged, isCur) {
+          const k = self.key(e[0], ci);
+          const inputStyle = {
+            width: "100%", height: "26px", border: "1px solid transparent", borderRadius: "var(--r-mark)",
+            background: isCur ? "#fff" : "transparent", textAlign: "right", padding: "0 7px",
+            fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums",
+            color: num === 0 ? "var(--ink-3)" : (flagged ? "var(--warn-ink)" : "var(--ink)"),
+            outline: "none", boxShadow: isCur ? "0 0 0 2px var(--accent)" : "none",
+            borderBottom: flagged ? "2px solid var(--warn-mark)" : "1px solid transparent"
+          };
+          return {
+            editable: !closed, locked: closed, value: String(v),
+            onFocus: function () { self.setState({ focus: k }); },
+            onBlur: function () { self.setState({ focus: null }); },
+            onInput: function (ev) {
+              const nv = ev.target.value.replace(/[^\d]/g, "");
+              const vv = Object.assign({}, self.state.vals);
+              vv[k] = nv === "" ? 0 : Number(nv);
+              self.setState({ vals: vv });
+            },
+            onKey: function (ev) {
+              const inputs = Array.prototype.slice.call(document.querySelectorAll("tbody input"));
+              const idx = inputs.indexOf(ev.target);
+              if (idx < 0) return;
+              const per = 6;
+              let next = -1;
+              if (ev.key === "Enter" || ev.key === "ArrowDown") next = idx + per;
+              else if (ev.key === "ArrowUp") next = idx - per;
+              else if (ev.key === "ArrowRight" && ev.target.selectionStart === ev.target.value.length) next = idx + 1;
+              else if (ev.key === "ArrowLeft" && ev.target.selectionStart === 0) next = idx - 1;
+              if (next >= 0 && next < inputs.length) { ev.preventDefault(); inputs[next].focus(); inputs[next].select(); }
+            },
+            inputStyle: inputStyle,
+            lockedStyle: {
+              display: "block", textAlign: "right", padding: "0 8px", fontFamily: "var(--font-num)",
+              fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", color: num === 0 ? "var(--ink-3)" : "var(--ink-2)"
+            },
+            tdStyle: {
+              padding: "2px 1px", height: "var(--row)", borderBottom: "1px solid var(--line)",
+              borderRight: "1px solid " + (ci === 3 ? "var(--line-strong)" : "var(--line-2)"),
+              background: edited ? "var(--warn-soft)" : (ci >= 4 ? "#FAFAFB" : "transparent")
+            }
+          };
+        })(ci, v, edited, flagged, isCur));
+      }
+      const pc = e[6];
+      if (pc) piece += pc;
+      cells.push({
+        editable: false, locked: true, value: pc ? fmt(pc) : "\u2013",
+        lockedStyle: {
+          display: "block", textAlign: "right", padding: "0 8px", fontFamily: "var(--font-num)",
+          fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", color: pc ? "var(--ink)" : "var(--ink-empty)"
+        },
+        tdStyle: { padding: "2px 1px", height: "var(--row)", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)", background: "var(--surface-2)" },
+        onFocus: null, onBlur: null, onInput: null, onKey: null, inputStyle: {}
+      });
+
+      const flag = e[5] ? (FLAGS[e[5]] || null) : null;
+      const anyEdit = (function () { for (var i = 0; i < 6; i++) if (self.isEdited(e, i)) return true; return false; })();
+      return {
+        name: e[0], sub: flag ? e[3] : e[3] + " · " + GROUPS[e[1]], hasFlag: !!flag, flag: flag ? flag[0] : "",
+        flagStyle: flag ? {
+          display: "inline-block", fontSize: "9.5px", lineHeight: "13px", padding: "0 4px", borderRadius: "var(--r-mark)",
+          whiteSpace: "nowrap", flex: "0 1 auto", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "132px",
+          color: flag[1] === "warn" ? "var(--warn-ink)" : "var(--ink-3)",
+          background: flag[1] === "warn" ? "var(--warn-soft)" : "var(--surface-3)",
+          border: "1px solid " + (flag[1] === "warn" ? "var(--warn-line)" : "var(--line-control)")
+        } : {},
+        markStyle: { width: "3px", height: "15px", borderRadius: "1px", flex: "0 0 auto", background: anyEdit ? "var(--warn-mark)" : (e[5] === "fired" ? "var(--line-control-2)" : "transparent") },
+        trStyle: {}, trHover: { background: "#F6F8FA" },
+        nameStyle: {
+          position: "sticky", left: 0, zIndex: 2, textAlign: "left", padding: "1px 9px", height: "var(--row)",
+          background: "var(--surface)", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-strong)",
+          fontSize: "var(--fs-dense)", fontWeight: 400, lineHeight: "15px", overflow: "hidden"
+        },
+        cells: cells,
+        contract: contractOf(e) === null ? "\u2013" : fmt(contractOf(e)),
+        contractStyle: {
+          position: "sticky", right: "196px", zIndex: 2,
+          textAlign: "right", padding: "0 8px", height: "var(--row)", background: "var(--surface-2)",
+          borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)",
+          borderLeft: "1px solid var(--line-strong)",
+          fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums",
+          color: contractOf(e) === null ? "var(--ink-empty)" : "var(--ink-2)"
+        },
+        dNum: contractOf(e) === null ? null : rowTotal - contractOf(e),
+        delta: deltaText(contractOf(e) === null ? null : rowTotal - contractOf(e)),
+        deltaStyle: deltaStyle(contractOf(e) === null ? null : rowTotal - contractOf(e)),
+        total: fmt(rowTotal),
+        totalStyle: {
+          position: "sticky", right: 0, zIndex: 2, textAlign: "right", padding: "0 9px", height: "var(--row)",
+          background: "var(--surface)", borderBottom: "1px solid var(--line)", borderLeft: "1px solid var(--line-strong)",
+          fontFamily: "var(--font-num)", fontSize: "13px", fontWeight: 600, fontVariantNumeric: "tabular-nums"
+        }
+      };
+    });
+
+    const grand = totals.reduce(function (a, b) { return a + b; }, 0);
+
+    /* Сводка по точке. Автопереноса часов нет сознательно: система не знает,
+       кто из недобравших физически мог выйти в ту смену. Она показывает обе
+       стороны и оставляет решение управляющему. */
+    const withGuar = rows.filter(function (r) { return r.dNum !== null; });
+    const overRows = withGuar.filter(function (r) { return r.dNum > 0; });
+    const underRows = withGuar.filter(function (r) { return r.dNum < 0; });
+    const overSum = overRows.reduce(function (a, r) { return a + r.dNum; }, 0);
+    const underSum = underRows.reduce(function (a, r) { return a - r.dNum; }, 0);
+    const explainRows = underRows.filter(function (r) { return -r.dNum >= UNDER_EXPLAIN; });
+    const blockRows = underRows.filter(function (r) { return -r.dNum >= UNDER_BLOCK; });
+    const contractSum = withGuar.reduce(function (a, r) { return a + Number(String(r.contract).replace(/\s/g, "")); }, 0);
+
+    const footCell = function (v, i) {
+      return {
+        v: fmt(v),
+        style: {
+          textAlign: "right", padding: "0 8px", height: "32px", background: "var(--surface-2)",
+          borderTop: "2px solid var(--line-strong)",
+          borderRight: "1px solid " + (i === 3 ? "var(--line-strong)" : "var(--line-2)"),
+          fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 600, fontVariantNumeric: "tabular-nums",
+          position: "sticky", bottom: 0, zIndex: 4
+        }
+      };
+    };
+
+    const phoneScreens = [
+      { title: "Шаг 1 · Что от меня хотят", tag: "375 pt", note: "Не список дел, а одно предложение: часы приехали, есть два расхождения. Всё остальное — потом.", body: null },
+      { title: "Шаг 2 · Правка одного человека", tag: "375 pt", note: "Крупное поле, значение из IS рядом, причина обязательна. Кнопки 44 px, клавиатура числовая.", body: null },
+      { title: "Шаг 3 · Готово", tag: "375 pt", note: "Подтверждение и выход. Управляющий не закрывает часы — это делает бухгалтер.", body: null }
+    ];
+
+    return {
+      tabs: [
+        { k: "grid", label: "Сетка часов" },
+        { k: "diff", label: "Расхождения с IS" },
+        { k: "import", label: "Импорт таблицы" },
+        { k: "mobile", label: "Мобильный вид" }
+      ].map(function (t) {
+        const sel = t.k === tab;
+        const base = { display: "inline-flex", alignItems: "center", height: "var(--control-h-sm)", padding: "0 11px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap" };
+        return {
+          label: t.label, sel: sel, notSel: !sel,
+          on: function () { self.setState({ tab: t.k }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent)", color: "#fff", fontWeight: 600, border: "1px solid var(--accent)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isGrid: tab === "grid", isDiff: tab === "diff", isImport: tab === "import", isMobile: tab === "mobile",
+      goImport: function () { self.setState({ tab: "import" }); },
+      goGrid: function () { self.setState({ tab: "grid" }); },
+
+      pointOpts: POINT_ORDER.map(function (k) {
+        const sel = k === pt;
+        const n = RAW.filter(function (e) { return e[2] === k; }).length;
+        return {
+          label: POINTS[k], sel: sel, notSel: !sel, badge: CLOSED[k] ? "закрыто" : n + " чел.",
+          on: function () { self.setState({ point: k, filter: "all" }); },
+          selStyle: chip(true), btnStyle: chip(false),
+          badgeStyle: {
+            fontFamily: "var(--font-num)", fontSize: "9.5px", padding: "0 4px", borderRadius: "var(--r-mark)",
+            color: CLOSED[k] ? "var(--ok)" : "var(--ink-3)",
+            background: CLOSED[k] ? "var(--ok-soft)" : "transparent",
+            border: "1px solid " + (CLOSED[k] ? "var(--ok-line)" : "transparent")
+          }
+        };
+      }),
+
+      filterOpts: [
+        { k: "all", label: "Всех" },
+        { k: "warn", label: "С замечаниями" },
+        { k: "edited", label: "Правленные руками" }
+      ].map(function (f) {
+        const sel = f.k === self.state.filter;
+        return { label: f.label, sel: sel, notSel: !sel, on: function () { self.setState({ filter: f.k }); }, selStyle: chip(true), btnStyle: chip(false) };
+      }),
+
+      hasWarnings: warnEmps.length > 0,
+      warnTitle: warnEmps.length + " замечания по этой точке",
+      warnList: warnEmps.map(function (e) { return e[0] + " — " + FLAGS[e[5]][0]; }).join(" · "),
+      showWarnOnly: function () { self.setState({ filter: "warn" }); },
+
+      rowInfo: rows.length + " из " + RAW.filter(function (e) { return e[2] === pt; }).length + " сотрудников · " + POINTS[pt] + (closed ? " · часы закрыты, поля только на чтение" : ""),
+
+      cols: COLS.map(function (c, i) {
+        return {
+          label: c[0],
+          thStyle: {
+            position: "sticky", top: "20px", zIndex: 4, width: c[1] + "px", textAlign: "right", padding: "5px 8px",
+            background: c[2] === "away" ? "#EDEFF2" : "var(--surface-3)",
+            borderBottom: "1px solid var(--line-strong)",
+            borderRight: "1px solid " + (i === 3 ? "var(--line-strong)" : "var(--line-2)"),
+            fontSize: "var(--fs-micro)", fontWeight: 600, color: "var(--ink-2)", whiteSpace: "nowrap"
+          }
+        };
+      }),
+
+      rows: rows,
+
+      contractTotal: fmt(contractSum),
+      contractFootStyle: {
+        textAlign: "right", padding: "0 8px", height: "32px", background: "#EAEDF1",
+        borderTop: "2px solid var(--line-strong)", borderRight: "1px solid var(--line-2)",
+        borderLeft: "1px solid var(--line-strong)",
+        fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 600,
+        fontVariantNumeric: "tabular-nums", color: "var(--ink-2)",
+        position: "sticky", right: "196px", bottom: 0, zIndex: 6
+      },
+      deltaTotal: deltaText(overSum - underSum),
+      deltaFootStyle: Object.assign({}, deltaStyle(overSum - underSum), {
+        height: "32px", borderTop: "2px solid var(--line-strong)", borderBottom: 0,
+        background: (overSum - underSum) === 0 ? "#EAEDF1" : deltaStyle(overSum - underSum).background,
+        position: "sticky", right: "96px", bottom: 0, zIndex: 6
+      }),
+
+      hasGuarSummary: withGuar.length > 0,
+      guarOver: overRows.length === 0 ? "нет" : "+" + overSum + " ч у " + overRows.length + " чел.",
+      guarUnder: underRows.length === 0 ? "нет" : "\u2212" + underSum + " ч у " + underRows.length + " чел.",
+      guarNet: deltaText(overSum - underSum) + " ч по точке",
+      guarExplain: explainRows.length === 0
+        ? "Недоработок сверх " + UNDER_EXPLAIN + " ч нет"
+        : explainRows.length + " " + (explainRows.length === 1 ? "человек требует" : "чел. требуют") + " объяснения: "
+          + explainRows.map(function (r) { return r.name; }).join(", "),
+      /* Порог блокировки имеет смысл только для периода, который ещё закрывают.
+         На закрытой точке то же число — уже не запрет, а факт прошлого:
+         красный тон здесь читался бы как «действие невозможно». */
+      guarBlockOn: blockRows.length > 0,
+      guarBlock: blockRows.length === 0
+        ? ""
+        : (CLOSED[pt]
+          ? "Июнь закрыт с недоработкой: у " + blockRows.map(function (r) { return r.name + " \u2212" + (-r.dNum) + " ч"; }).join(", ")
+            + ". Это больше порога " + UNDER_BLOCK + " ч — период закрыли решением бухгалтера, причина в истории закрытия."
+          : "Закрытие июня заблокировано: у " + blockRows.map(function (r) { return r.name; }).join(", ")
+            + " недоработка больше " + UNDER_BLOCK + " ч. Порог задан профилем страны, в табеле его не поменять."),
+      guarBlockStyle: {
+        display: "flex", alignItems: "flex-start", gap: "8px", padding: "9px 15px 10px",
+        background: CLOSED[pt] ? "var(--surface-2)" : "var(--err-soft)",
+        borderTop: "1px solid " + (CLOSED[pt] ? "var(--line)" : "var(--err-line)"),
+        color: CLOSED[pt] ? "var(--ink-3)" : "var(--err)"
+      },
+      guarNote: withGuar.length + " из " + rows.length + " с гарантией часов · у сдельщиков её нет",
+      underExplainLabel: UNDER_EXPLAIN + " ч",
+      totals: totals.map(footCell).concat([{
+        v: fmt(piece),
+        style: {
+          textAlign: "right", padding: "0 8px", height: "32px", background: "var(--surface-2)",
+          borderTop: "2px solid var(--line-strong)", borderRight: "1px solid var(--line-2)",
+          fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: 600, fontVariantNumeric: "tabular-nums",
+          position: "sticky", bottom: 0, zIndex: 4
+        }
+      }]),
+      grandTotal: fmt(grand),
+
+      closeBtnLabel: closed ? "Открыть часы" : "Закрыть часы по точке",
+      closeBtnStyle: closed
+        ? { height: "var(--control-h-sm)", padding: "0 11px", borderRadius: "var(--r-control)", border: "1px solid var(--line-control)", background: "var(--surface)", fontSize: "var(--fs-dense)", color: "var(--ink-2)" }
+        : { height: "var(--control-h-sm)", padding: "0 11px", borderRadius: "var(--r-control)", border: "1px solid var(--accent)", background: "var(--accent)", color: "#fff", fontSize: "var(--fs-dense)", fontWeight: 600 },
+      closeBtnHover: closed ? { background: "var(--surface-3)" } : { background: "var(--accent-press)" },
+      openClose: function () { if (!closed) self.setState({ closeDlg: pt }); },
+
+      closeDialog: this.state.closeDlg !== null,
+      closePoint: this.state.closeDlg ? POINTS[this.state.closeDlg] : "",
+      closeCount: this.state.closeDlg ? RAW.filter(function (e) { return e[2] === self.state.closeDlg; }).length : 0,
+      closeHours: fmt(grand),
+      closeWarns: warnEmps.length,
+      dismissClose: function () { self.setState({ closeDlg: null }); },
+      confirmClose: function () { self.setState({ closeDlg: null }); },
+      stopProp: function (ev) { ev.stopPropagation(); },
+
+      diffs: DIFFS.map(function (d) {
+        const delta = d[4] - d[3];
+        const num = function (align) {
+          return { textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", color: align };
+        };
+        return {
+          name: d[0], point: POINTS[d[1]], kind: d[2], is: fmt(d[3]), man: fmt(d[4]), who: d[5],
+          delta: (delta > 0 ? "+" : "") + fmt(delta),
+          isStyle: num("var(--ink-2)"), manStyle: Object.assign(num("var(--ink)"), { fontWeight: 600 }),
+          deltaStyle: Object.assign(num(delta === 0 ? "var(--ink-3)" : (delta > 0 ? "var(--warn-ink)" : "var(--ink-2)")), { fontWeight: 600 }),
+          rowStyle: {
+            display: "grid", gridTemplateColumns: "232px 130px 96px 96px 92px 1fr 152px", gap: "10px",
+            alignItems: "center", padding: "8px 12px", borderBottom: "1px solid var(--line)",
+            borderLeft: "3px solid " + (delta === 0 ? "var(--line-control-2)" : "var(--warn-mark)"),
+            background: "var(--surface)"
+          }
+        };
+      }),
+
+      importStats: IMPORT_STATS.map(function (s, i) {
+        return {
+          n: s[0], label: s[1], note: s[2], color: s[3],
+          cellStyle: { padding: "11px 12px 12px", borderRight: i < 4 ? "1px solid var(--line)" : "0" }
+        };
+      }),
+
+      importIssues: IMPORT_ISSUES.map(function (i) {
+        const tone = i[4];
+        const c = tone === "err" ? ["var(--err)", "var(--err-soft)", "var(--err-line)"]
+          : tone === "warn" ? ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"]
+            : ["var(--ok)", "var(--ok-soft)", "var(--ok-line)"];
+        return {
+          line: i[0], name: i[1], detail: i[2], tag: i[3], action: i[5],
+          tagStyle: {
+            display: "inline-flex", alignItems: "center", height: "20px", padding: "0 7px", borderRadius: "var(--r-control)",
+            background: c[1], border: "1px solid " + c[2], color: c[0], fontSize: "var(--fs-meta)", fontWeight: 600, width: "fit-content"
+          },
+          actionStyle: {
+            height: "26px", padding: "0 10px", borderRadius: "var(--r-control)", border: "1px solid var(--line-control)",
+            background: "var(--surface)", fontSize: "var(--fs-meta)", color: "var(--ink-2)", whiteSpace: "nowrap"
+          }
+        };
+      }),
+
+      phoneCount: phoneScreens.length
+    };
+  }
+
+  phoneBody(i) {
+    const E = React.createElement;
+    const S = {
+      pad: { padding: "12px" },
+      kick: { fontSize: "10.5px", letterSpacing: ".1em", textTransform: "uppercase", color: "var(--ink-3)", fontWeight: 600, marginBottom: "6px" },
+      h: { fontSize: "17px", lineHeight: "23px", fontWeight: 600, letterSpacing: "-.01em" },
+      p: { fontSize: "13px", lineHeight: "18px", color: "var(--ink-2)", marginTop: "6px" },
+      btn: { width: "100%", minHeight: "44px", border: "1px solid var(--accent)", borderRadius: "4px", background: "var(--accent)", color: "#fff", fontSize: "14px", fontWeight: 600, marginTop: "10px" },
+      btn2: { width: "100%", minHeight: "44px", border: "1px solid var(--line-control)", borderRadius: "4px", background: "var(--surface)", fontSize: "14px", marginTop: "8px" },
+      card: { border: "1px solid var(--line-strong)", borderRadius: "4px", overflow: "hidden", marginTop: "10px" },
+      rowT: { display: "flex", alignItems: "center", gap: "10px", padding: "0 11px", minHeight: "52px", borderBottom: "1px solid var(--line)" },
+      num: { fontFamily: "var(--font-num)", fontVariantNumeric: "tabular-nums" }
+    };
+
+    if (i === 0) {
+      return E("div", { style: S.pad },
+        E("div", { style: S.kick }, "Beograd Vračar · июнь"),
+        E("div", { style: S.h }, "Часы приехали из Dodo IS"),
+        E("div", { style: S.p }, "13 человек, 2 348 часов. Проверять всё не нужно — система нашла два места, где данные расходятся с фактом."),
+        E("div", { style: Object.assign({}, S.card, { borderColor: "var(--warn-line)" }) },
+          E("div", { style: { padding: "10px 11px", background: "var(--warn-soft)", borderBottom: "1px solid var(--warn-line)", display: "flex", alignItems: "center", gap: "8px" } },
+            E("svg", { width: 15, height: 15, viewBox: "0 0 24 24", fill: "none", stroke: "var(--warn)", strokeWidth: 1.9, strokeLinecap: "round", strokeLinejoin: "round" },
+              E("path", { d: "M12 4 3 20h18L12 4z" }), E("path", { d: "M12 10v4" }), E("path", { d: "M12 17h.01" })),
+            E("span", { style: { fontSize: "13px", fontWeight: 600, color: "var(--warn-ink)" } }, "Требует вашего взгляда")),
+          E("div", { style: S.rowT },
+            E("div", { style: { flex: 1, minWidth: 0 } },
+              E("div", { style: { fontSize: "14px", fontWeight: 500 } }, "Miloš Stojanović"),
+              E("div", { style: { fontSize: "11.5px", color: "var(--ink-3)" } }, "переработка 32 ч, порог 24")),
+            E("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "var(--ink-3)", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" }, E("path", { d: "m9 6 6 6-6 6" }))),
+          E("div", { style: Object.assign({}, S.rowT, { borderBottom: "0" }) },
+            E("div", { style: { flex: 1, minWidth: 0 } },
+              E("div", { style: { fontSize: "14px", fontWeight: 500 } }, "Vojin Kostić"),
+              E("div", { style: { fontSize: "11.5px", color: "var(--ink-3)" } }, "часы после увольнения 12.06")),
+            E("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "var(--ink-3)", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" }, E("path", { d: "m9 6 6 6-6 6" })))),
+        E("button", { style: S.btn }, "Разобрать первое"),
+        E("button", { style: S.btn2 }, "Остальное верно, подтвердить"),
+        E("div", { style: { fontSize: "11.5px", color: "var(--ink-3)", marginTop: "10px", lineHeight: "16px" } },
+          "Часы закрывает бухгалтер. Ваше подтверждение — это отметка «я свою точку проверил»."));
+    }
+
+    if (i === 1) {
+      return E("div", { style: S.pad },
+        E("div", { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" } },
+          E("svg", { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "var(--ink-2)", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" }, E("path", { d: "m15 6-6 6 6 6" })),
+          E("span", { style: { fontSize: "13px", color: "var(--ink-2)" } }, "1 из 2")),
+        E("div", { style: S.h }, "Miloš Stojanović"),
+        E("div", { style: { fontSize: "12.5px", color: "var(--ink-3)", marginTop: "2px" } }, "Повар · Кухня · Beograd Vračar"),
+        E("div", { style: { marginTop: "14px" } },
+          E("div", { style: S.kick }, "Переработка, часов"),
+          E("div", { style: { display: "flex", alignItems: "center", gap: "10px" } },
+            E("input", {
+              defaultValue: "32", inputMode: "numeric",
+              style: { flex: 1, minWidth: 0, height: "52px", border: "1px solid var(--accent)", borderRadius: "4px", background: "#fff", textAlign: "right", padding: "0 12px", fontFamily: "var(--font-num)", fontSize: "24px", fontVariantNumeric: "tabular-nums", boxShadow: "0 0 0 3px rgba(31,78,156,.14)", outline: "none" }
+            }),
+            E("div", { style: { width: "104px", flex: "0 0 auto" } },
+              E("div", { style: { fontSize: "10.5px", color: "var(--ink-3)" } }, "из Dodo IS"),
+              E("div", { style: Object.assign({}, S.num, { fontSize: "20px", color: "var(--ink-2)" }) }, "24"))),
+          E("div", { style: { display: "flex", alignItems: "center", gap: "6px", marginTop: "7px", fontSize: "12px", color: "var(--warn)" } },
+            E("svg", { width: 13, height: 13, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round", strokeLinejoin: "round" },
+              E("path", { d: "M12 4 3 20h18L12 4z" }), E("path", { d: "M12 10v4" }), E("path", { d: "M12 17h.01" })),
+            "Выше порога на 8 ч — сохранить всё равно можно")),
+        E("div", { style: { marginTop: "14px" } },
+          E("div", { style: S.kick }, "Причина правки · обязательно"),
+          E("textarea", {
+            defaultValue: "Две смены за Vojin после увольнения",
+            style: { width: "100%", height: "62px", padding: "9px 10px", border: "1px solid var(--line-control)", borderRadius: "4px", fontSize: "14px", lineHeight: "19px", resize: "none", fontFamily: "inherit", color: "var(--ink)" }
+          }),
+          E("div", { style: { fontSize: "11.5px", color: "var(--ink-3)", marginTop: "5px" } }, "Причина видна бухгалтеру в списке расхождений")),
+        E("button", { style: S.btn }, "Сохранить и дальше"),
+        E("button", { style: S.btn2 }, "Оставить как в IS"));
+    }
+
+    return E("div", { style: S.pad },
+      E("div", { style: { display: "grid", placeItems: "center", padding: "26px 0 8px" } },
+        E("div", { style: { width: "52px", height: "52px", borderRadius: "50%", background: "var(--ok-soft)", border: "1px solid var(--ok-line)", display: "grid", placeItems: "center" } },
+          E("svg", { width: 26, height: 26, viewBox: "0 0 24 24", fill: "none", stroke: "var(--ok)", strokeWidth: 2.4, strokeLinecap: "round", strokeLinejoin: "round" }, E("path", { d: "m5 13 4 4L19 7" })))),
+      E("div", { style: Object.assign({}, S.h, { textAlign: "center" }) }, "Точка проверена"),
+      E("div", { style: Object.assign({}, S.p, { textAlign: "center" }) }, "Две правки ушли бухгалтеру с причинами. Часы за июнь по Vračar подтверждены 01.07 в 9:41."),
+      E("div", { style: S.card },
+        E("div", { style: { display: "flex", alignItems: "baseline", gap: "10px", padding: "10px 11px", borderBottom: "1px solid var(--line)", background: "var(--surface-2)" } },
+          E("span", { style: { fontSize: "12.5px", color: "var(--ink-2)" } }, "Всего часов"),
+          E("span", { style: Object.assign({}, S.num, { marginLeft: "auto", fontSize: "15px", fontWeight: 600 }) }, "2 356")),
+        E("div", { style: { display: "flex", alignItems: "baseline", gap: "10px", padding: "10px 11px", borderBottom: "1px solid var(--line)", background: "var(--surface-2)" } },
+          E("span", { style: { fontSize: "12.5px", color: "var(--ink-2)" } }, "Правок руками"),
+          E("span", { style: Object.assign({}, S.num, { marginLeft: "auto", fontSize: "15px", fontWeight: 600, color: "var(--warn-ink)" }) }, "2")),
+        E("div", { style: { display: "flex", alignItems: "baseline", gap: "10px", padding: "10px 11px", background: "var(--surface-2)" } },
+          E("span", { style: { fontSize: "12.5px", color: "var(--ink-2)" } }, "Сотрудников"),
+          E("span", { style: Object.assign({}, S.num, { marginLeft: "auto", fontSize: "15px", fontWeight: 600 }) }, "13"))),
+      E("button", { style: S.btn2 }, "Внести расход из кассы"),
+      E("button", { style: S.btn2 }, "Скинуть накладную"),
+      E("div", { style: { fontSize: "11.5px", color: "var(--ink-3)", marginTop: "12px", lineHeight: "16px" } },
+        "Если бухгалтер откроет часы обратно, вам придёт уведомление с причиной."));
+  }
+  /* phoneBody больше не вызывается: три экрана управляющего перенесены
+     в разметку, чтобы их текст правился в редакторе. Метод оставлен
+     мёртвым до ревью — при переносе в Django не копировать. */
+}
+</script>
+</body>
+</html>

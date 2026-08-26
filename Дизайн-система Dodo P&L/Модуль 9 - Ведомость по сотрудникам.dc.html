@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --origin-carried:#FFF9EC;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-official-soft:#E8EEF8;
+    --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9; --reg-supp-line:#DCD0EE;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1; --reg-internal-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, select, textarea { font:inherit; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 9</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Ведомость: тринадцать колонок, из которых складывается выплата</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Экран, ради которого выбрано направление «Реестр». Имя слева и итог справа не уезжают, середина прокручивается. Любая сумма раскрывается до фактов: часы из табеля, ставка из версии условий, правило из справочника.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isSheet }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 12px 14px 13px; margin-bottom: 10px">
+          <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
+            <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Расчёт зарплаты <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Июнь 2026</h2>
+            <span style="{{ statusStyle }}">{{ statusLabel }}</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ sheetMeta }}</span>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+              <button style="height: var(--control-h-sm); padding: 0 10px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD; color: var(--ink-2); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)', borderColor: 'var(--ink-3)' }">Выгрузить <span style="opacity: .55">.xlsx</span></button>
+              <button style="height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-dense); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">Пересчитать</button>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 14px; margin-top: 12px; flex-wrap: wrap">
+            <div>
+              <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Точка</div>
+              <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+                <sc-for list="{{ pointOpts }}" as="p" hint-placeholder-count="4">
+                  <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}">
+                    <span aria-current="true" style="{{ p.selStyle }}">{{ p.label }}<span style="{{ p.badgeStyle }}">{{ p.badge }}</span></span>
+                  </sc-if>
+                  <sc-if value="{{ p.notSel }}" hint-placeholder-val="{{ true }}">
+                    <button onClick="{{ p.on }}" style="{{ p.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ p.label }}<span style="{{ p.badgeStyle }}">{{ p.badge }}</span></button>
+                  </sc-if>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Показывать регистры</div>
+              <div style="display: flex; gap: 6px">
+                <sc-for list="{{ regOpts }}" as="r" hint-placeholder-count="3">
+                  <button onClick="{{ r.on }}" style="{{ r.style }}">{{ r.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: auto; background: var(--surface); max-height: 486px">
+          <table style="table-layout: fixed; border-collapse: separate; border-spacing: 0">
+            <thead>
+              <tr>
+                <th scope="col" rowspan="2" style="position: sticky; left: 0; top: 0; z-index: 6; width: 190px; background: var(--surface-head); padding: 4px 9px; text-align: left; vertical-align: bottom; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong)">Сотрудник</th>
+                <th scope="colgroup" colspan="{{ accrualSpan }}" style="position: sticky; top: 0; z-index: 4; height: 21px; padding: 0 9px; background: var(--surface-3); font-size: var(--fs-micro); font-weight: var(--w-bold); letter-spacing: .07em; text-transform: uppercase; text-align: left; color: var(--ink-2); border-right: 1px solid var(--line-strong)">Начисления</th>
+                <th scope="colgroup" colspan="{{ deductSpan }}" style="position: sticky; top: 0; z-index: 4; height: 21px; padding: 0 9px; background: #EDEFF2; font-size: var(--fs-micro); font-weight: var(--w-bold); letter-spacing: .07em; text-transform: uppercase; text-align: left; color: var(--ink-2); border-right: 1px solid var(--line-strong)">Удержания</th>
+                <th scope="col" rowspan="2" style="position: sticky; right: 0; top: 0; z-index: 6; width: 116px; background: var(--surface-head); padding: 4px 9px; text-align: right; vertical-align: bottom; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); border-bottom: 1px solid var(--line-strong); border-left: 1px solid var(--line-strong)">К выплате</th>
+              </tr>
+              <tr>
+                <sc-for list="{{ cols }}" as="c" hint-placeholder-count="13">
+                  <th scope="col" style="{{ c.headStyle }}">
+                    <span style="display: block">{{ c.label }}</span>
+                    <span style="{{ c.regStyle }}">{{ c.reg }}</span>
+                  </th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="15">
+                <tr style="{{ r.rowStyle }}">
+                  <th scope="row" style="{{ r.nameStyle }}">
+                    <span style="display: flex; align-items: center; gap: 6px; min-width: 0">
+                      <span style="{{ r.markStyle }}"></span>
+                      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--w-medium)">{{ r.name }}</span>
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 6px; padding-left: 9px; min-width: 0">
+                      <span style="font-size: var(--fs-micro); line-height: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ r.sub }}</span>
+                    </span>
+                  </th>
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="13">
+                    <td style="{{ c.tdStyle }}">
+                      <sc-if value="{{ c.clickable }}" hint-placeholder-val="{{ false }}">
+                        <button onClick="{{ c.on }}" style="{{ c.btnStyle }}">{{ c.v }}</button>
+                      </sc-if>
+                      <sc-if value="{{ c.plain }}" hint-placeholder-val="{{ true }}">
+                        <span style="{{ c.spanStyle }}">{{ c.v }}</span>
+                      </sc-if>
+                    </td>
+                  </sc-for>
+                  <td style="{{ r.netStyle }}">{{ r.net }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" style="position: sticky; left: 0; bottom: 0; z-index: 6; text-align: left; padding: 0 9px; height: 34px; background: var(--surface-2); border-top: 2px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ footLabel }}</th>
+                <sc-for list="{{ totals }}" as="t" hint-placeholder-count="13">
+                  <td style="{{ t.style }}">{{ t.v }}</td>
+                </sc-for>
+                <td style="position: sticky; right: 0; bottom: 0; z-index: 7; background: #E8EDF3; border-top: 2px solid var(--line-strong); border-left: 1px solid var(--line-strong); text-align: right; padding: 0 9px; height: 34px; font-family: var(--font-num); font-size: 13.5px; font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ netTotal }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div style="{{ traceStyle }}">
+          <sc-if value="{{ hasTrace }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 9px; flex-wrap: wrap">
+                <span style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Откуда взялось число</span>
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ traceTitle }}</span>
+                <span style="{{ traceRegStyle }}">{{ traceReg }}</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ traceRule }}</span>
+                <button onClick="{{ closeTrace }}" style="margin-left: auto; height: 22px; padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-meta); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', color: 'var(--ink)' }">Свернуть</button>
+              </div>
+              <div style="border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+                <sc-for list="{{ traceFacts }}" as="f" hint-placeholder-count="3">
+                  <div style="display: grid; grid-template-columns: 170px 1fr 132px; gap: 14px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line)">
+                    <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ f.label }}</span>
+                    <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ f.source }}</span>
+                    <span style="{{ f.valueStyle }}">{{ f.value }}</span>
+                  </div>
+                </sc-for>
+                <div style="display: grid; grid-template-columns: 170px 1fr 132px; gap: 14px; align-items: center; padding: 8px 12px; background: var(--surface-2)">
+                  <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Итого</span>
+                  <span style="{{ traceCheckStyle }}">{{ traceCheck }}</span>
+                  <span style="text-align: right; font-family: var(--font-num); font-size: var(--fs-lead); font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ traceTotal }}</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noTrace }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; align-items: center; gap: 9px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+              <span style="font-size: var(--fs-meta); color: var(--ink-2)">Нажмите на любую сумму с пунктиром — покажем, из каких фактов она собрана и какое правило её посчитало.</span>
+            </div>
+          </sc-if>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPayout }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">К выплате <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Июнь 2026</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Три регистра — три разные выплаты. В один платёж они не складываются.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px">
+          <sc-for list="{{ payoutCards }}" as="p" hint-placeholder-count="3">
+            <div style="{{ p.cardStyle }}">
+              <div style="display: flex; align-items: center; gap: 7px">
+                <span style="{{ p.chipStyle }}">{{ p.chip }}</span>
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ p.title }}</span>
+              </div>
+              <div style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; margin-top: 9px">{{ p.sum }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 4px">{{ p.method }}</div>
+              <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); margin-top: 6px">{{ p.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: auto; background: var(--surface); max-height: 452px">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <sc-for list="{{ payoutHead }}" as="h" hint-placeholder-count="6">
+                  <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ payoutRows }}" as="r" hint-placeholder-count="15">
+                <tr style="background: var(--surface)" style-hover="{ background: 'var(--surface-2)' }">
+                  <td style="{{ r.nameStyle }}">{{ r.name }}</td>
+                  <td style="{{ r.textStyle }}">{{ r.point }}</td>
+                  <sc-for list="{{ r.sums }}" as="s" hint-placeholder-count="3">
+                    <td style="{{ s.style }}">{{ s.v }}</td>
+                  </sc-for>
+                  <td style="{{ r.totalStyle }}">{{ r.total }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" colspan="2" style="position: sticky; bottom: 0; z-index: 4; text-align: left; padding: 0 9px; height: 32px; background: var(--surface-2); border-top: 2px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Итого по {{ payoutCount }}</th>
+                <sc-for list="{{ payoutTotals }}" as="t" hint-placeholder-count="4">
+                  <td style="{{ t.style }}">{{ t.v }}</td>
+                </sc-for>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--warn-soft); border: 1px solid var(--warn-line); margin-top: 10px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+          <div>
+            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Наличная часть уменьшает кассу точки</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink); margin-top: 3px">{{ cashWarning }} Выплата по внутреннему регистру берётся из кассы и должна появиться в её остатке в тот же день, иначе пересчёт кассы разойдётся на эту сумму. Связь с кассой — открытый вопрос: держать выплату отдельной строкой расхода или отдельным типом операции.</div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSlip }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: grid; grid-template-columns: 520px 1fr; gap: 10px; align-items: start">
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="padding: 13px 16px; border-bottom: 1px solid var(--line)">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Obračun zarade · jun 2026</div>
+              <div style="font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold); margin-top: 4px">{{ slipName }}</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 2px">{{ slipMeta }}</div>
+            </div>
+            <sc-for list="{{ slipLines }}" as="s" hint-placeholder-count="6">
+              <div style="{{ s.rowStyle }}">
+                <span style="flex: 1; min-width: 0; font-size: var(--fs-dense)">{{ s.label }}</span>
+                <span style="flex: 0 0 172px; font-family: var(--font-num); font-size: var(--fs-meta); color: var(--ink-3); text-align: right">{{ s.formula }}</span>
+                <span style="{{ s.sumStyle }}">{{ s.sum }}</span>
+              </div>
+            </sc-for>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; background: var(--surface-2); border-top: 2px solid var(--line-strong)">
+              <span style="flex: 1; font-size: var(--fs-body); font-weight: var(--w-semibold)">Za isplatu na račun</span>
+              <span style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ slipNet }}</span>
+            </div>
+            <div style="padding: 11px 16px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); border-top: 1px solid var(--line)">Расчётный лист печатается на сербском: это документ для сотрудника, а не экран бухгалтера. Регистры в нём не упоминаются.</div>
+          </div>
+
+          <div>
+            <div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--r-block); background: var(--err-soft); border: 1px solid var(--err-line); margin-bottom: 10px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+              <div>
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--err)">Расчётный лист и фактическая выплата расходятся</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--err); margin-top: 3px">{{ slipGapText }}</div>
+              </div>
+            </div>
+
+            <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface); margin-bottom: 10px">
+              <div style="padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Что человек получит на самом деле</div>
+              <sc-for list="{{ slipReal }}" as="s" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 13px; border-bottom: 1px solid var(--line)">
+                  <span style="{{ s.chipStyle }}">{{ s.chip }}</span>
+                  <span style="flex: 1; min-width: 0; font-size: var(--fs-dense)">{{ s.label }}</span>
+                  <span style="flex: 0 0 128px; font-size: var(--fs-meta); color: var(--ink-3); text-align: right">{{ s.method }}</span>
+                  <span style="{{ s.sumStyle }}">{{ s.sum }}</span>
+                </div>
+              </sc-for>
+              <div style="display: flex; align-items: center; gap: 10px; padding: 10px 13px; background: var(--surface-2); border-top: 2px solid var(--line-strong)">
+                <span style="flex: 1; font-size: var(--fs-dense); font-weight: var(--w-semibold)">Итого на руки</span>
+                <span style="font-family: var(--font-num); font-size: var(--fs-lead); font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ slipRealTotal }}</span>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--surface); border: 1px solid var(--line-strong)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+              <div>
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Вопрос к заказчику, а не к дизайну</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">Показывать ли сотруднику полную сумму, или расчётный лист остаётся строго официальным. От ответа зависит, нужен ли второй документ и кто имеет право его печатать. Пока в прототипе лист официальный, а полная картина видна только тем, у кого есть доступ к внутреннему регистру.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;taxRate&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:20,&quot;min&quot;:0,&quot;max&quot;:40,&quot;step&quot;:1,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Правила расчёта&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal' | 'compact'&quot;,&quot;section&quot;:&quot;Вид&quot;}}">
+const POINTS = { vracar: "Beograd Vračar", novibg: "Novi Beograd", novisad: "Novi Sad" };
+const POINT_ORDER = ["vracar", "novibg", "novisad"];
+
+const REG = {
+  official: ["ОФ", "var(--reg-official)", "var(--reg-official-soft)", "Официальный"],
+  supp:     ["ДП", "var(--reg-supp)",     "var(--reg-supp-soft)",     "Дополнительный"],
+  internal: ["ВН", "var(--reg-internal)", "var(--reg-internal-soft)", "Внутренний"]
+};
+
+const STAFF = [
+  { n: "Petar Petrović",   p: "vracar",  r: "Управляющий",    t: "salary", rate: 145000, h: 176, night: 0,  over: 0, shifts: 0,  deliv: 0,   mentor: 0,  bonus: 0,    adv: 40000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Milica Jovanović", p: "novibg",  r: "Управляющий",    t: "salary", rate: 145000, h: 176, night: 0,  over: 0, shifts: 0,  deliv: 0,   mentor: 0,  bonus: 0,    adv: 40000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Miloš Stojanović", p: "novisad", r: "Управляющий",    t: "salary", rate: 138000, h: 176, night: 0,  over: 0, shifts: 0,  deliv: 0,   mentor: 0,  bonus: 0,    adv: 40000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Dušan Kovačević",  p: "vracar",  r: "Смена-менеджер", t: "shift",  rate: 4800,   h: 176, night: 32, over: 0, shifts: 22, deliv: 0,   mentor: 0,  bonus: 7400, adv: 25000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Aleksa Marković",  p: "novisad", r: "Смена-менеджер", t: "shift",  rate: 4600,   h: 160, night: 24, over: 0, shifts: 20, deliv: 0,   mentor: 0,  bonus: 7100, adv: 25000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Jelena Đorđević",  p: "vracar",  r: "Пиццамейкер",    t: "hour",   rate: 420,    h: 176, night: 24, over: 0, shifts: 0,  deliv: 0,   mentor: 40, bonus: 6400, adv: 20000, uni: 0,    short: 0,    extra: 5040, move: "" },
+  { n: "Nikola Ilić",      p: "vracar",  r: "Курьер",         t: "hour",   rate: 380,    h: 168, night: 32, over: 0, shifts: 0,  deliv: 214, mentor: 0,  bonus: 5800, adv: 15000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Ivana Đurić",      p: "vracar",  r: "Кассир",         t: "hour",   rate: 400,    h: 160, night: 16, over: 0, shifts: 0,  deliv: 0,   mentor: 0,  bonus: 5800, adv: 15000, uni: 1200, short: 0,    extra: 0,    move: "" },
+  { n: "Lenka Zdravković", p: "vracar",  r: "Пиццамейкер",    t: "hour",   rate: 400,    h: 84,  night: 8,  over: 0, shifts: 0,  deliv: 0,   mentor: 0,  bonus: 2900, adv: 0,     uni: 0,    short: 3400, extra: 0,    move: "left" },
+  { n: "Marija Obradović", p: "novibg",  r: "Кассир",         t: "hour",   rate: 400,    h: 176, night: 20, over: 0, shifts: 0,  deliv: 0,   mentor: 0,  bonus: 6100, adv: 15000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Vuk Pavlović",     p: "novibg",  r: "Курьер",         t: "hour",   rate: 380,    h: 172, night: 28, over: 0, shifts: 0,  deliv: 198, mentor: 0,  bonus: 6100, adv: 15000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Tijana Simić",     p: "novibg",  r: "Пиццамейкер",    t: "hour",   rate: 410,    h: 96,  night: 12, over: 0, shifts: 0,  deliv: 0,   mentor: 0,  bonus: 3200, adv: 0,     uni: 1200, short: 0,    extra: 0,    move: "hired" },
+  { n: "Stefan Nikolić",   p: "novisad", r: "Пиццамейкер",    t: "hour",   rate: 415,    h: 184, night: 24, over: 8, shifts: 0,  deliv: 0,   mentor: 24, bonus: 6300, adv: 20000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Sara Ristić",      p: "novisad", r: "Кассир",         t: "hour",   rate: 395,    h: 176, night: 18, over: 0, shifts: 0,  deliv: 0,   mentor: 0,  bonus: 6300, adv: 15000, uni: 0,    short: 0,    extra: 0,    move: "" },
+  { n: "Bojan Lukić",      p: "novisad", r: "Курьер",         t: "hour",   rate: 375,    h: 180, night: 30, over: 4, shifts: 0,  deliv: 186, mentor: 0,  bonus: 6300, adv: 15000, uni: 1200, short: 0,    extra: 0,    move: "" }
+];
+
+const DELIVERY_FEE = 45;
+const MENTOR_FEE = 30;
+
+/* ключ, подпись, регистр, группа */
+const COLS = [
+  ["pay",      "Оплата",       "official", "a"],
+  ["night",    "Ночные",       "official", "a"],
+  ["over",     "Переработка",  "official", "a"],
+  ["deliv",    "Доставки",     "supp",     "a"],
+  ["mentor",   "Наставник",    "supp",     "a"],
+  ["bonus",    "Бонус точки",  "internal", "a"],
+  ["extra",    "Доначисление", "official", "a"],
+  ["gross",    "Начислено",    null,       "a"],
+  ["adv",      "Аванс",        "official", "d"],
+  ["uni",      "Форма",        "official", "d"],
+  ["short",    "Недостача",    "official", "d"],
+  ["tax",      "Налог, взносы", "official", "d"],
+  ["withheld", "Удержано",     null,       "d"]
+];
+
+function fmt(n) {
+  return Math.abs(n).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function r2(n) { return Math.round(n * 100) / 100; }
+
+function compute(e, taxRate) {
+  const pay = e.t === "salary" ? e.rate : (e.t === "shift" ? e.shifts * e.rate : e.h * e.rate);
+  const night = e.t === "salary" ? 0 : r2(e.night * (e.t === "shift" ? e.rate / 8 : e.rate) * 0.25);
+  const over = r2(e.over * e.rate * 1.5);
+  const deliv = e.deliv * DELIVERY_FEE;
+  const mentor = e.mentor * MENTOR_FEE;
+  const officialGross = pay + night + over + e.extra;
+  const tax = r2(officialGross * taxRate);
+  const gross = officialGross + deliv + mentor + e.bonus;
+  const withheld = e.adv + e.uni + e.short + tax;
+  return {
+    pay: pay, night: night, over: over, deliv: deliv, mentor: mentor,
+    bonus: e.bonus, extra: e.extra, gross: gross,
+    adv: e.adv, uni: e.uni, short: e.short, tax: tax, withheld: withheld,
+    net: gross - withheld,
+    officialNet: officialGross - tax - e.adv - e.uni - e.short,
+    suppNet: deliv + mentor,
+    internalNet: e.bonus
+  };
+}
+
+class Component extends DCLogic {
+  state = { tab: "sheet", point: "all", regs: { official: true, supp: true, internal: true }, trace: null };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const taxRate = (this.props.taxRate ?? 20) / 100;
+    const rowH = this.props.density === "compact" ? "26px" : "30px";
+    const colW = this.props.density === "compact" ? 86 : 94;
+
+    const scoped = STAFF.filter(function (e) { return st.point === "all" || e.p === st.point; });
+    const calc = scoped.map(function (e) { return { e: e, c: compute(e, taxRate) }; });
+
+    const visibleCols = COLS.filter(function (c) { return !c[2] || st.regs[c[2]]; });
+    const accrualSpan = visibleCols.filter(function (c) { return c[3] === "a"; }).length;
+    const deductSpan = visibleCols.filter(function (c) { return c[3] === "d"; }).length;
+
+    const sumOf = function (key) {
+      return calc.reduce(function (s, x) { return s + x.c[key]; }, 0);
+    };
+    const netTotal = calc.reduce(function (s, x) { return s + x.c.net; }, 0);
+
+    const regChip = function (k, extra) {
+      const r = REG[k];
+      return Object.assign({
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        minWidth: "22px", height: "14px", padding: "0 3px", flex: "0 0 auto",
+        borderRadius: "var(--r-mark)", border: "1px solid " + r[1], color: r[1],
+        fontFamily: "var(--font-num)", fontSize: "9.5px", lineHeight: "12px"
+      }, extra || {});
+    };
+
+    const numTd = function (dim, deduct, last) {
+      return {
+        width: colW + "px", textAlign: "right", padding: "0 8px", height: rowH,
+        fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums",
+        whiteSpace: "nowrap", background: deduct ? "#FAFAFB" : "transparent",
+        color: dim ? "var(--ink-2)" : "var(--ink)",
+        borderBottom: "1px solid var(--line)",
+        borderRight: last ? "1px solid var(--line-strong)" : "1px solid var(--line-2)"
+      };
+    };
+
+    /* ── раскрытие ── */
+    const TRACE = {
+      pay: function (e, c) {
+        return e.t === "salary"
+          ? { rule: "Оклад · правило «Оклад» с 01.02.2026", reg: "official",
+              facts: [["Месячный оклад", "версия условий с 01.02 · модуль 8", c.pay],
+                      ["Отработано", "табель июня · " + e.h + " ч из 176", null],
+                      ["Пропорция", "полный месяц, оклад не делится", null]],
+              total: c.pay }
+          : e.t === "shift"
+          ? { rule: "Оплата за смену · правило с 01.04.2026", reg: "official",
+              facts: [["Смен по табелю", "модуль 1 · табель", e.shifts],
+                      ["Ставка смены", "версия условий · модуль 8", e.rate],
+                      ["Смены × ставку", "правило «Оплата за смену»", c.pay]],
+              total: c.pay }
+          : { rule: "Часовая оплата · правило с 01.01.2026", reg: "official",
+              facts: [["Часов по табелю", "модуль 1 · приехало из Dodo IS", e.h],
+                      ["Ставка", "версия условий · модуль 8", e.rate],
+                      ["Часы × ставку", "правило «Часовая оплата»", c.pay]],
+              total: c.pay };
+      },
+      night: function (e, c) {
+        return { rule: "Ночные часы · правило с 01.01.2026", reg: "official",
+          facts: [["Ночных часов", "22:00—06:00 по табелю", e.night],
+                  ["Базовая ставка", "версия условий · модуль 8", e.t === "shift" ? r2(e.rate / 8) : e.rate],
+                  ["Надбавка", "×0,25 сверх базовой", null]],
+          total: c.night };
+      },
+      over: function (e, c) {
+        return { rule: "Переработка · правило с 01.03.2026", reg: "official",
+          facts: [["Часов сверх нормы", e.h + " ч при норме 176 ч", e.over],
+                  ["Ставка", "версия условий · модуль 8", e.rate],
+                  ["Коэффициент", "×1,5 за час переработки", null]],
+          total: c.over };
+      },
+      deliv: function (e, c) {
+        return { rule: "Доставки · правило с 01.02.2026", reg: "supp",
+          facts: [["Доставок за месяц", "Dodo IS · заказы курьера", e.deliv],
+                  ["Ставка за доставку", "правило «Доставки»", DELIVERY_FEE]],
+          total: c.deliv };
+      },
+      mentor: function (e, c) {
+        return { rule: "Наставничество · правило с 01.05.2026", reg: "supp",
+          facts: [["Часов наставника", "отметка в карточке · модуль 8", e.mentor],
+                  ["Доплата за час", "правило «Наставничество»", MENTOR_FEE]],
+          total: c.mentor };
+      },
+      bonus: function (e, c) {
+        return { rule: "Бонус за выручку · правило с 01.04.2026", reg: "internal",
+          facts: [["Выручка точки сверх плана", "Dodo IS · июнь", 1600000],
+                  ["Доля фонда", "0,4% от превышения", 6400],
+                  ["Делится на смену", "по отработанным часам", null]],
+          total: c.bonus };
+      },
+      extra: function (e, c) {
+        return { rule: "Доначисление за май · модуль 8", reg: "official",
+          facts: [["Часов мая", "закрытый период, не пересчитывается", 168],
+                  ["Разница ставки", "420,00 → 450,00 с 01.05", 30],
+                  ["Причина", "повышение согласовано 28.04, дошло в июне", null]],
+          total: c.extra };
+      },
+      tax: function (e, c) {
+        return { rule: "Налог и взносы · официальный регистр", reg: "official",
+          facts: [["База обложения", "только официальные начисления", r2(c.pay + c.night + c.over + c.extra)],
+                  ["Ставка", "упрощённо для прототипа, " + (taxRate * 100) + "%", null]],
+          total: c.tax };
+      },
+      adv: function (e, c) {
+        return { rule: "Аванс · выплачен 15.06", reg: "official",
+          facts: [["Выплачено авансом", "платёжное поручение от 15.06", e.adv],
+                  ["Способ", "на карту, официальный регистр", null]],
+          total: c.adv };
+      },
+      uni: function (e, c) {
+        return { rule: "Удержание за форму · правило с 01.03.2026", reg: "official",
+          facts: [["Стоимость комплекта", "3 600,00 в три захода", 3600],
+                  ["Удержание этого месяца", "второй из трёх", e.uni]],
+          total: c.uni };
+      },
+      short: function (e, c) {
+        return { rule: "Недостача · разовое удержание", reg: "official",
+          facts: [["Расхождение кассы", "27.06 · модуль 6", 2300],
+                  ["Пересчёт при увольнении", "15.06, акт подписан", 1100]],
+          total: c.short };
+      }
+    };
+
+    let trace = null;
+    if (st.trace) {
+      const hit = calc.filter(function (x) { return x.e.n === st.trace.name; })[0];
+      const maker = TRACE[st.trace.key];
+      if (hit && maker) {
+        const t = maker(hit.e, hit.c);
+        const sum = t.facts.reduce(function (s, f) { return s + (f[2] === null ? 0 : 0); }, 0);
+        trace = {
+          title: hit.e.n + " · " + (COLS.filter(function (c) { return c[0] === st.trace.key; })[0] || ["", ""])[1],
+          rule: t.rule, reg: t.reg, facts: t.facts, total: t.total
+        };
+      }
+    }
+
+    const tabDefs = [["sheet", "Ведомость"], ["payout", "К выплате"], ["slip", "Расчётный лист"]];
+    const tabBase = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+
+    /* ── к выплате ── */
+    const officialSum = calc.reduce(function (s, x) { return s + x.c.officialNet; }, 0);
+    const suppSum = calc.reduce(function (s, x) { return s + x.c.suppNet; }, 0);
+    const internalSum = calc.reduce(function (s, x) { return s + x.c.internalNet; }, 0);
+
+    const payTh = function (label, w, align, sticky) {
+      return {
+        label: label,
+        style: {
+          position: "sticky", top: 0, zIndex: 3, background: "var(--surface-head)",
+          padding: "6px 9px", fontSize: "var(--fs-micro)", fontWeight: "var(--w-semibold)",
+          color: "var(--ink-2)", textAlign: align || "left", width: w,
+          borderBottom: "1px solid var(--line-strong)",
+          borderRight: sticky ? 0 : "1px solid var(--line-2)"
+        }
+      };
+    };
+    const payNum = function (bold, last) {
+      return {
+        textAlign: "right", padding: "0 9px", height: rowH,
+        fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums",
+        fontWeight: bold ? "var(--w-semibold)" : "var(--w-regular)",
+        borderBottom: "1px solid var(--line)", borderRight: last ? 0 : "1px solid var(--line-2)"
+      };
+    };
+    const payFoot = function (last) {
+      return {
+        position: "sticky", bottom: 0, zIndex: 4, background: last ? "#E8EDF3" : "var(--surface-2)",
+        borderTop: "2px solid var(--line-strong)", textAlign: "right", padding: "0 9px", height: "32px",
+        fontFamily: "var(--font-num)", fontSize: last ? "13.5px" : "13px",
+        fontWeight: "var(--w-bold)", fontVariantNumeric: "tabular-nums"
+      };
+    };
+
+    /* ── расчётный лист: Jelena ── */
+    const slipEmp = STAFF.filter(function (e) { return e.n === "Jelena Đorđević"; })[0];
+    const slipC = compute(slipEmp, taxRate);
+    const slipOfficialGross = r2(slipC.pay + slipC.night + slipC.over + slipC.extra);
+
+    return {
+      tabs: tabDefs.map(function (t) {
+        const on = st.tab === t[0];
+        return {
+          label: t[1], sel: on, notSel: !on,
+          on: function () { self.setState({ tab: t[0] }); },
+          selStyle: Object.assign({}, tabBase, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, tabBase, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isSheet: st.tab === "sheet",
+      isPayout: st.tab === "payout",
+      isSlip: st.tab === "slip",
+
+      statusLabel: "Рассчитан",
+      statusStyle: {
+        display: "inline-flex", alignItems: "center", gap: "5px", height: "21px", padding: "0 8px",
+        borderRadius: "var(--r-control)", background: "var(--accent-soft)", border: "1px solid var(--accent-line)",
+        fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)", color: "var(--accent)"
+      },
+      sheetMeta: scoped.length + " человек · норма 176 ч · пересчитан 30.06 в 23:58 · не утверждён",
+
+      pointOpts: [["all", "Все"]].concat(POINT_ORDER.map(function (k) { return [k, POINTS[k]]; })).map(function (p) {
+        const on = st.point === p[0];
+        const n = p[0] === "all" ? STAFF.length : STAFF.filter(function (e) { return e.p === p[0]; }).length;
+        const base = { display: "inline-flex", alignItems: "center", gap: "5px", height: "24px", padding: "0 10px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+        return {
+          label: p[1], badge: String(n), sel: on, notSel: !on,
+          on: function () { self.setState({ point: p[0], trace: null }); },
+          selStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink)", fontWeight: "var(--w-semibold)", boxShadow: "var(--sh-xs)" }),
+          btnStyle: Object.assign({}, base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" }),
+          badgeStyle: { fontFamily: "var(--font-num)", fontSize: "9.5px", color: "var(--ink-3)" }
+        };
+      }),
+
+      regOpts: ["official", "supp", "internal"].map(function (k) {
+        const on = st.regs[k];
+        const r = REG[k];
+        return {
+          label: r[3],
+          on: function () {
+            const next = Object.assign({}, st.regs);
+            next[k] = !next[k];
+            self.setState({ regs: next, trace: null });
+          },
+          style: {
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            height: "var(--control-h-sm)", padding: "0 10px", borderRadius: "var(--r-control)",
+            fontSize: "var(--fs-dense)", whiteSpace: "nowrap",
+            border: "1px solid " + (on ? r[1] : "var(--line-control)"),
+            background: on ? r[2] : "var(--surface)",
+            color: on ? r[1] : "var(--ink-3)",
+            fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)",
+            textDecoration: on ? "none" : "line-through"
+          }
+        };
+      }),
+
+      accrualSpan: accrualSpan,
+      deductSpan: deductSpan,
+      cols: visibleCols.map(function (c, i) {
+        const deduct = c[3] === "d";
+        const subtotal = c[0] === "gross" || c[0] === "withheld";
+        return {
+          label: c[1],
+          reg: c[2] ? REG[c[2]][0] : "",
+          headStyle: {
+            position: "sticky", top: "21px", zIndex: 3, width: colW + "px",
+            background: subtotal ? "var(--surface-2)" : "var(--surface-head)",
+            padding: "4px 8px 3px", textAlign: "right", verticalAlign: "bottom",
+            fontSize: "var(--fs-micro)", lineHeight: "13px",
+            fontWeight: subtotal ? "var(--w-bold)" : "var(--w-semibold)",
+            color: "var(--ink-2)", borderBottom: "1px solid var(--line-strong)",
+            borderRight: subtotal ? "1px solid var(--line-strong)" : "1px solid var(--line-2)"
+          },
+          regStyle: c[2]
+            ? { display: "inline-block", marginTop: "2px", fontFamily: "var(--font-num)", fontSize: "9px", color: REG[c[2]][1], letterSpacing: ".04em" }
+            : { display: "none" }
+        };
+      }),
+
+      rows: calc.map(function (x) {
+        const e = x.e, c = x.c;
+        const carried = e.move === "left" || e.move === "hired";
+        return {
+          name: e.n,
+          sub: POINTS[e.p] + " · " + e.r + (e.move === "left" ? " · уволен 15.06" : (e.move === "hired" ? " · принят 10.06" : "")),
+          rowStyle: { background: carried ? "var(--origin-carried)" : "var(--surface)" },
+          markStyle: { width: "3px", height: "15px", borderRadius: "1px", flex: "0 0 auto", background: carried ? "var(--warn-mark)" : "transparent" },
+          nameStyle: {
+            position: "sticky", left: 0, zIndex: 2, width: "190px",
+            background: carried ? "var(--origin-carried)" : "var(--surface)",
+            textAlign: "left", padding: "1px 9px", height: rowH,
+            fontSize: "var(--fs-dense)", fontWeight: "var(--w-regular)", lineHeight: "15px",
+            overflow: "hidden", borderBottom: "1px solid var(--line)",
+            borderRight: "1px solid var(--line-strong)"
+          },
+          cells: visibleCols.map(function (col, i) {
+            const key = col[0];
+            const v = c[key];
+            const subtotal = key === "gross" || key === "withheld";
+            const clickable = !subtotal && v !== 0 && !!TRACE[key];
+            const open = st.trace && st.trace.name === e.n && st.trace.key === key;
+            return {
+              v: v === 0 ? "\u2014" : fmt(v),
+              clickable: clickable,
+              plain: !clickable,
+              on: function () { self.setState({ trace: { name: e.n, key: key } }); },
+              tdStyle: Object.assign({}, numTd(col[3] === "d" && !subtotal, col[3] === "d", subtotal), {
+                padding: 0,
+                background: open ? "#DCEBFF" : (subtotal ? "var(--surface-2)" : (col[3] === "d" ? "#FAFAFB" : "var(--surface)"))
+              }),
+              btnStyle: {
+                width: "100%", height: rowH, padding: "0 8px", border: 0,
+                borderBottom: "1px dotted var(--ink-3)", background: "transparent",
+                textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)",
+                fontVariantNumeric: "tabular-nums", color: "var(--ink)"
+              },
+              spanStyle: {
+                display: "block", padding: "0 8px", lineHeight: rowH,
+                textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)",
+                fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap",
+                fontWeight: subtotal ? "var(--w-semibold)" : "var(--w-regular)",
+                color: v === 0 ? "var(--ink-empty)" : (col[3] === "d" ? "var(--ink-2)" : "var(--ink)")
+              }
+            };
+          }),
+          net: fmt(c.net),
+          netStyle: {
+            position: "sticky", right: 0, zIndex: 2, width: "116px",
+            background: carried ? "var(--origin-carried)" : "var(--surface)",
+            textAlign: "right", padding: "0 9px", height: rowH,
+            fontFamily: "var(--font-num)", fontSize: "13px", fontWeight: "var(--w-semibold)",
+            fontVariantNumeric: "tabular-nums",
+            borderBottom: "1px solid var(--line)", borderLeft: "1px solid var(--line-strong)"
+          }
+        };
+      }),
+
+      footLabel: "Итого · " + scoped.length + " чел.",
+      totals: visibleCols.map(function (col) {
+        const subtotal = col[0] === "gross" || col[0] === "withheld";
+        const v = sumOf(col[0]);
+        return {
+          v: v === 0 ? "\u2014" : fmt(v),
+          style: {
+            position: "sticky", bottom: 0, zIndex: 4, width: colW + "px",
+            background: subtotal ? "#E8EDF3" : "var(--surface-2)",
+            borderTop: "2px solid var(--line-strong)",
+            borderRight: subtotal ? "1px solid var(--line-strong)" : "1px solid var(--line-2)",
+            textAlign: "right", padding: "0 8px", height: "34px",
+            fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: "var(--w-semibold)",
+            fontVariantNumeric: "tabular-nums",
+            color: v === 0 ? "var(--ink-empty)" : "var(--ink)"
+          }
+        };
+      }),
+      netTotal: fmt(netTotal),
+
+      hasTrace: !!trace,
+      noTrace: !trace,
+      traceStyle: {
+        marginTop: "10px", padding: "12px 14px", borderRadius: "var(--r-block)",
+        background: trace ? "var(--surface-2)" : "var(--surface)",
+        border: "1px solid " + (trace ? "var(--line-strong)" : "var(--line)")
+      },
+      traceTitle: trace ? trace.title : "",
+      traceRule: trace ? trace.rule : "",
+      traceReg: trace ? REG[trace.reg][0] : "",
+      traceRegStyle: trace ? regChip(trace.reg) : { display: "none" },
+      closeTrace: function () { self.setState({ trace: null }); },
+      traceFacts: (trace ? trace.facts : []).map(function (f) {
+        return {
+          label: f[0], source: f[1],
+          value: f[2] === null ? "\u2014" : (Math.abs(f[2]) >= 1000 || f[2] % 1 !== 0 ? fmt(f[2]) : String(f[2])),
+          valueStyle: {
+            textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)",
+            fontVariantNumeric: "tabular-nums",
+            color: f[2] === null ? "var(--ink-empty)" : "var(--ink)"
+          }
+        };
+      }),
+      traceCheck: "сходится со строкой ведомости",
+      traceCheckStyle: {
+        display: "inline-flex", alignItems: "center", height: "19px", padding: "0 7px",
+        borderRadius: "var(--r-mark)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+        whiteSpace: "nowrap", width: "fit-content",
+        color: "var(--ok)", background: "var(--ok-soft)", border: "1px solid var(--ok-line)"
+      },
+      traceTotal: trace ? fmt(trace.total) : "",
+
+      /* ── к выплате ── */
+      payoutCards: [
+        ["official", "Официальный", officialSum, "На карту с расчётного счёта юрлица", "Проходит через банк и налоговую. Основание — подписанная ведомость."],
+        ["supp", "Дополнительный", suppSum, "На карту, отдельным реестром", "Доставки и наставничество. Отдельный платёжный файл в тот же день."],
+        ["internal", "Внутренний", internalSum, "Наличными из кассы точки", "Бонус за выручку. Выдаёт управляющий, подпись в ведомости точки."]
+      ].map(function (p) {
+        const r = REG[p[0]];
+        return {
+          chip: r[0], title: p[1], sum: fmt(p[2]), method: p[3], note: p[4],
+          cardStyle: { background: "var(--surface)", border: "1px solid " + r[1] + "40", borderLeft: "3px solid " + r[1], borderRadius: "var(--r-block)", padding: "12px 14px 13px" },
+          chipStyle: regChip(p[0], { height: "16px", fontSize: "var(--fs-num-sm)" })
+        };
+      }),
+      payoutHead: [
+        payTh("Сотрудник", "196px"), payTh("Точка", "132px"),
+        payTh("Официальный", "auto", "right"), payTh("Дополнительный", "156px", "right"),
+        payTh("Наличными", "140px", "right"), payTh("Итого на руки", "132px", "right", true)
+      ],
+      payoutRows: calc.map(function (x) {
+        return {
+          name: x.e.n, point: POINTS[x.e.p],
+          nameStyle: { padding: "0 9px", height: rowH, fontSize: "var(--fs-dense)", fontWeight: "var(--w-medium)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" },
+          textStyle: { padding: "0 9px", height: rowH, fontSize: "var(--fs-meta)", color: "var(--ink-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" },
+          sums: [x.c.officialNet, x.c.suppNet, x.c.internalNet].map(function (v) {
+            return { v: v === 0 ? "\u2014" : fmt(v), style: Object.assign({}, payNum(false), { color: v === 0 ? "var(--ink-empty)" : "var(--ink)" }) };
+          }),
+          total: fmt(x.c.net),
+          totalStyle: Object.assign({}, payNum(true, true), { background: "var(--surface-2)" })
+        };
+      }),
+      payoutCount: scoped.length + " сотрудникам",
+      payoutTotals: [officialSum, suppSum, internalSum, netTotal].map(function (v, i) {
+        return { v: fmt(v), style: payFoot(i === 3) };
+      }),
+      cashWarning: "Наличными в июне уходит " + fmt(internalSum) + " по " + calc.filter(function (x) { return x.c.internalNet > 0; }).length + " сотрудникам.",
+
+      /* ── расчётный лист ── */
+      slipName: slipEmp.n,
+      slipMeta: "Pica majstor · Beograd Vračar · " + slipEmp.h + " sati",
+      slipLines: [
+        ["Osnovna zarada", slipEmp.h + " č × " + fmt(slipEmp.rate), slipC.pay, false],
+        ["Noćni rad", slipEmp.night + " č × 25%", slipC.night, false],
+        ["Naknadni obračun za maj", "168 č × 30,00", slipC.extra, false],
+        ["Bruto", "zbir gore", slipOfficialGross, true],
+        ["Porez i doprinosi", (taxRate * 100) + "% od bruto", -slipC.tax, false],
+        ["Akontacija 15.06", "isplaćeno na račun", -slipEmp.adv, false]
+      ].map(function (s, i, all) {
+        return {
+          label: s[0], formula: s[1], sum: (s[2] < 0 ? "\u2212" : "") + fmt(s[2]),
+          rowStyle: {
+            display: "flex", alignItems: "center", gap: "12px", padding: "9px 16px",
+            borderBottom: "1px solid var(--line)",
+            background: s[3] ? "var(--surface-2)" : "var(--surface)"
+          },
+          sumStyle: {
+            flex: "0 0 122px", textAlign: "right", fontFamily: "var(--font-num)",
+            fontSize: "var(--fs-lead)", fontVariantNumeric: "tabular-nums",
+            fontWeight: s[3] ? "var(--w-bold)" : "var(--w-regular)",
+            color: s[2] < 0 ? "var(--ink-2)" : "var(--ink)"
+          }
+        };
+      }),
+      slipNet: fmt(slipC.officialNet),
+      slipGapText: "В листе стоит " + fmt(slipC.officialNet) + ". На руки человек получит " + fmt(slipC.net) + " — разница " + fmt(slipC.net - slipC.officialNet) + " идёт по дополнительному и внутреннему регистрам и в официальном документе не появляется.",
+      slipReal: [
+        ["official", "По расчётному листу", "на карту", slipC.officialNet],
+        ["supp", "Наставничество", "на карту, второй реестр", slipC.suppNet],
+        ["internal", "Бонус за выручку точки", "наличными из кассы", slipC.internalNet]
+      ].map(function (s) {
+        return {
+          chip: REG[s[0]][0], label: s[1], method: s[2], sum: fmt(s[3]),
+          chipStyle: regChip(s[0], { height: "16px", fontSize: "var(--fs-num-sm)" }),
+          sumStyle: { flex: "0 0 116px", textAlign: "right", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", fontWeight: "var(--w-semibold)" }
+        };
+      }),
+      slipRealTotal: fmt(slipC.net)
+    };
+  }
+}
+</script>
+</body>
+</html>

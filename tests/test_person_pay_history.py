@@ -573,12 +573,15 @@ def test_the_unit_manager_is_refused_with_words(client, web_env, sql):
     assert "Расчёт периода" in body(answer), "отказ не назвал действия"
 
 
-def test_the_network_admin_is_refused_too(client, web_env, sql, person):
+def test_a_role_that_sees_everything_is_refused_too(
+    client, web_env, sql, person, admin_without_month_rights
+):
     """Все три регистра — ещё не право на данные расчёта.
 
-    У администратора сети регистры полные, а прав на расчёт нет ни одного, и
-    это намеренно (`core.roles`). Проверка стоит рядом с проверкой управляющего
-    потому, что ловит другую ошибку: «открыть тому, кому видно всё».
+    Проверка стоит рядом с проверкой управляющего потому, что ловит другую
+    ошибку: «открыть тому, кому видно всё». Роль с полными регистрами и без
+    прав расчёта создаётся фикстурой: администратор сети, на котором это
+    условие держалось раньше, теперь может всё (D052).
     """
     login_as(client, "admin")
     answer = client.get(f"/directory/employees/{person}/pay/")

@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9; --reg-supp-line:#DCD0EE;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1; --reg-internal-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, select, textarea { font:inherit; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  @keyframes pnl-spin { to { transform:rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 10</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Вход, каркас приложения, язык отказов</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Разделы собраны по фазам работы, а не по сущностям: человек приходит «занести расходы», а не «открыть справочник контрагентов». Каркас один на все роли — меняется не вёрстка, а набор пунктов.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Вход</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Пароля в сервисе нет: одноразовый код на рабочую почту.</span>
+          <div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+            <span style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Язык</span>
+            <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+              <sc-for list="{{ langOpts }}" as="l" hint-placeholder-count="3">
+                <sc-if value="{{ l.sel }}" hint-placeholder-val="{{ false }}">
+                  <span aria-current="true" style="{{ l.selStyle }}">{{ l.label }}</span>
+                </sc-if>
+                <sc-if value="{{ l.notSel }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ l.on }}" style="{{ l.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ l.label }}</button>
+                </sc-if>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap">
+
+          <div style="width: 396px; flex: 0 0 auto">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">1 · Почта</div>
+            <div style="border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); box-shadow: var(--sh-xs); padding: 26px 28px 24px">
+              <div style="display: flex; align-items: baseline; gap: 6px">
+                <span style="font-size: 17px; font-weight: var(--w-bold); letter-spacing: -.01em">Dodo</span>
+                <span style="font-size: 17px; font-weight: var(--w-medium); color: var(--accent)">P&amp;L</span>
+              </div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 3px">{{ t_lead }}</div>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 22px 0 5px">{{ t_emailLabel }}</div>
+              <input value="petar@dodo.rs" style="width: 100%; height: 38px; padding: 0 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-lead); color: var(--ink)">
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 6px">{{ t_emailHint }}</div>
+
+              <button style="width: 100%; height: 40px; margin-top: 16px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-lead); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">{{ t_getCode }}</button>
+
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line)">{{ t_footer }}</div>
+            </div>
+          </div>
+
+          <div style="width: 396px; flex: 0 0 auto">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">2 · Код</div>
+            <div style="border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); box-shadow: var(--sh-xs); padding: 26px 28px 24px">
+              <div style="font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">{{ t_codeTitle }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 4px">{{ t_codeHint }}</div>
+
+              <div style="display: flex; gap: 7px; margin-top: 20px">
+                <sc-for list="{{ codeBoxes }}" as="c" hint-placeholder-count="6">
+                  <div style="{{ c.style }}">{{ c.v }}</div>
+                </sc-for>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 16px">
+                <button style="height: 34px; padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body); color: var(--ink-3)" disabled="{{ true }}">{{ t_resend }}</button>
+                <button style="height: 34px; padding: 0 13px; border: 1px solid transparent; border-radius: var(--r-control); background: transparent; font-size: var(--fs-body); color: var(--accent)" style-hover="{ background: 'var(--surface-3)' }">{{ t_back }}</button>
+              </div>
+
+              <div style="display: flex; align-items: flex-start; gap: 9px; margin-top: 18px; padding: 10px 12px; border-radius: var(--r-control); background: var(--surface-2); border: 1px solid var(--line)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ t_security }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width: 396px; flex: 0 0 auto">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 6px">3 · Контекст</div>
+            <div style="border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); box-shadow: var(--sh-xs); padding: 26px 28px 24px">
+              <div style="font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">{{ t_ctxTitle }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 4px">{{ t_ctxHint }}</div>
+
+              <div style="margin-top: 16px; border: 1px solid var(--accent); border-radius: var(--r-block); background: var(--accent-soft); padding: 12px 13px">
+                <div style="font-size: var(--fs-lead); font-weight: var(--w-semibold)">Dodo Balkan doo</div>
+                <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 2px">{{ t_entityMeta }}</div>
+                <div style="font-family: var(--font-num); font-size: var(--fs-meta); color: var(--ink-2); margin-top: 6px">{{ t_points }}</div>
+              </div>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 16px 0 6px">{{ t_rightsLabel }}</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                <sc-for list="{{ loginSections }}" as="r" hint-placeholder-count="5">
+                  <span style="{{ r.style }}">{{ r.label }}</span>
+                </sc-for>
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 8px">{{ t_rightsNote }}</div>
+
+              <button style="width: 100%; height: 40px; margin-top: 18px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-lead); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">{{ t_enter }}</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--surface); border: 1px solid var(--line-strong); margin-top: 12px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+          <div>
+            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Третий шаг показывается не всем</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">У партнёра одно юрлицо — экран выбора он видит один раз и потом заходит сразу в приложение. Он нужен бухгалтеру на аутсорсе, который ведёт несколько партнёров: ошибиться юрлицом дороже, чем ошибиться цифрой, поэтому контекст остаётся в шапке всё время работы.</div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isShell }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Каркас</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Роль меняет набор пунктов, а не вёрстку.</span>
+          <div style="margin-left: auto; display: flex; align-items: center; gap: 12px">
+            <div style="display: flex; gap: 6px">
+              <sc-for list="{{ roleOpts }}" as="r" hint-placeholder-count="3">
+                <button onClick="{{ r.on }}" style="{{ r.style }}">{{ r.label }}</button>
+              </sc-for>
+            </div>
+            <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+              <sc-for list="{{ langOpts }}" as="l" hint-placeholder-count="3">
+                <sc-if value="{{ l.sel }}" hint-placeholder-val="{{ false }}">
+                  <span aria-current="true" style="{{ l.selStyle }}">{{ l.label }}</span>
+                </sc-if>
+                <sc-if value="{{ l.notSel }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ l.on }}" style="{{ l.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ l.label }}</button>
+                </sc-if>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--canvas)">
+
+          <div style="height: 50px; display: flex; align-items: center; gap: 20px; padding: 0 18px; background: var(--surface); border-bottom: 1px solid var(--line-control)">
+            <div style="display: flex; align-items: baseline; gap: 5px; flex: 0 0 auto">
+              <span style="font-weight: var(--w-bold); font-size: var(--fs-lead); letter-spacing: -.01em">Dodo</span>
+              <span style="font-weight: var(--w-medium); font-size: var(--fs-lead); color: var(--accent)">P&amp;L</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 2px; min-width: 0">
+              <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+                <sc-if value="{{ n.current }}" hint-placeholder-val="{{ false }}">
+                  <span aria-current="page" style="{{ n.currentStyle }}">{{ n.label }}<span style="{{ n.badgeStyle }}">{{ n.badge }}</span></span>
+                </sc-if>
+                <sc-if value="{{ n.notCurrent }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ n.on }}" style="{{ n.linkStyle }}" style-hover="{ background: 'var(--surface-3)', color: 'var(--ink)' }">{{ n.label }}<span style="{{ n.badgeStyle }}">{{ n.badge }}</span></button>
+                </sc-if>
+              </sc-for>
+            </div>
+            <div style="flex: 1"></div>
+            <div style="display: flex; align-items: center; gap: 10px; padding-right: 12px; border-right: 1px solid var(--line-2); flex: 0 0 auto">
+              <div style="text-align: right">
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Dodo Balkan doo</div>
+                <div style="font-size: var(--fs-meta); color: var(--ink-3)">{{ t_shellEntityMeta }}</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; flex: 0 0 auto">
+              <sc-for list="{{ shellRoles }}" as="r" hint-placeholder-count="2">
+                <span style="{{ r.style }}">{{ r.label }}<span style="{{ r.untilStyle }}">{{ r.until }}</span></span>
+              </sc-for>
+              <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--ink-inverse); font-size: var(--fs-meta); font-weight: var(--w-semibold); display: grid; place-items: center">{{ initials }}</div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; padding: 8px 18px; background: var(--surface-2); border-bottom: 1px solid var(--line)">
+            <span style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">{{ t_period }}</span>
+            <div style="display: flex; align-items: center; gap: 2px">
+              <sc-for list="{{ months }}" as="m" hint-placeholder-count="4">
+                <sc-if value="{{ m.current }}" hint-placeholder-val="{{ false }}">
+                  <span aria-current="true" style="{{ m.currentStyle }}"><span style="{{ m.dotStyle }}"></span>{{ m.label }}</span>
+                </sc-if>
+                <sc-if value="{{ m.notCurrent }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ m.on }}" style="{{ m.style }}" style-hover="{ background: 'var(--surface-3)' }"><span style="{{ m.dotStyle }}"></span>{{ m.label }}</button>
+                </sc-if>
+              </sc-for>
+            </div>
+            <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ periodNote }}</span>
+            <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--ink-3)">{{ t_periodHint }}</span>
+          </div>
+
+          <div style="display: flex; gap: 12px; padding: 14px 18px 18px; min-height: 268px">
+            <div style="width: 258px; flex: 0 0 auto">
+              <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); background: var(--surface); box-shadow: var(--sh-pop); overflow: hidden">
+                <div style="padding: 7px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-bold)">{{ openMenuTitle }}</div>
+                <sc-for list="{{ openMenu }}" as="m" hint-placeholder-count="4">
+                  <div style="{{ m.rowStyle }}">
+                    <span style="flex: 1; min-width: 0; font-size: var(--fs-dense); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ m.label }}</span>
+                    <span style="{{ m.countStyle }}">{{ m.count }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 8px">{{ t_menuNote }}</div>
+            </div>
+
+            <div style="flex: 1; min-width: 0; border: 1px dashed var(--line-control-2); border-radius: var(--r-block); background: #FBFCFD; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 20px">
+              <div style="font-family: var(--font-num); font-size: var(--fs-dense); color: var(--ink-3)">1264 × auto</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); text-align: center; max-width: 380px">{{ t_workArea }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px">
+          <sc-for list="{{ shellNotes }}" as="n" hint-placeholder-count="3">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 11px 14px 12px">
+              <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ n.num }}</div>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-top: 3px">{{ n.title }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">{{ n.text }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStates }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Язык отказов и пустых экранов</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Отказ всегда называет причину, объект и того, кто может помочь. «Недостаточно прав» без продолжения — запрещено.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <sc-for list="{{ states }}" as="s" hint-placeholder-count="6">
+            <div style="{{ s.cardStyle }}">
+              <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap">
+                <span style="{{ s.chipStyle }}">{{ s.chip }}</span>
+                <span style="font-size: var(--fs-lead); font-weight: var(--w-semibold)">{{ s.title }}</span>
+              </div>
+              <div style="font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ink-2); margin-top: 6px">{{ s.text }}</div>
+              <sc-if value="{{ s.hasProgress }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 11px">
+                  <div style="height: 6px; background: var(--surface-3); border-radius: 999px; overflow: hidden">
+                    <div style="{{ s.barStyle }}"></div>
+                  </div>
+                  <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 5px; font-size: var(--fs-meta); color: var(--ink-2)">
+                    <span>{{ s.progressLeft }}</span>
+                    <span style="font-family: var(--font-num)">{{ s.progressRight }}</span>
+                  </div>
+                </div>
+              </sc-if>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap">
+                <sc-if value="{{ s.hasAction }}" hint-placeholder-val="{{ true }}">
+                  <button style="{{ s.actionStyle }}">{{ s.action }}</button>
+                </sc-if>
+                <span style="font-size: var(--fs-meta); color: var(--ink-3); flex: 1; min-width: 0">{{ s.hint }}</span>
+              </div>
+              <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); border-top: 1px dashed var(--line-control); padding-top: 8px; margin-top: 11px">{{ s.rule }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ru&quot;,&quot;en&quot;,&quot;sr&quot;],&quot;default&quot;:&quot;ru&quot;,&quot;tsType&quot;:&quot;'ru' | 'en' | 'sr'&quot;,&quot;section&quot;:&quot;Контекст&quot;},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;accountant&quot;,&quot;manager&quot;,&quot;partner&quot;],&quot;default&quot;:&quot;accountant&quot;,&quot;tsType&quot;:&quot;'accountant' | 'manager' | 'partner'&quot;,&quot;section&quot;:&quot;Контекст&quot;}}">
+const L = {
+  ru: {
+    lead: "Учёт и отчётность партнёра",
+    emailLabel: "Рабочая почта",
+    emailHint: "Пришлём одноразовый код. Пароля в сервисе нет — забывать нечего.",
+    getCode: "Получить код",
+    footer: "Доступ выдаёт администратор вашего юрлица. Если почты нет в списке, код не придёт и мы об этом честно скажем.",
+    codeTitle: "Код из письма",
+    codeHint: "Отправили на petar@dodo.rs. Код живёт 10 минут.",
+    resend: "Отправить снова через 0:47",
+    back: "Другая почта",
+    security: "Сессия живёт 12 часов. На чужом компьютере выходите сами — автоматически мы не выйдем.",
+    ctxTitle: "Куда входим",
+    ctxHint: "У вас доступ к одному юрлицу.",
+    entityMeta: "Сербия · учёт в RSD · консолидация в EUR",
+    points: "3 точки · июнь 2026 открыт",
+    rightsLabel: "Что откроется",
+    rightsNote: "Набор прав задаёт администратор юрлица. При входе его не выбирают.",
+    enter: "Войти",
+    period: "Период",
+    periodHint: "Период один на всё приложение",
+    shellEntityMeta: "Сербия · RSD",
+    menuNote: "Счётчик у пункта — это работа, которая ждёт человека. Ноль не показываем.",
+    workArea: "Рабочая область. Ширина макета 1264, минимальный экран 1280. Ниже 768 показываются только сценарии управляющего.",
+    months: ["Март", "Апрель", "Май", "Июнь"],
+    periodOpen: "открыт · правки разрешены",
+    periodApproved: "утверждён · только чтение",
+    until: "до 31.07",
+    sets: { accountant: "Бухгалтер", admin: "Администратор", ops: "Управляющий Vračar", partner: "Партнёр", observer: "Наблюдатель" },
+    nav: { collect: "Сбор данных", payroll: "Расчёт", reports: "Отчёты", refs: "Справочники", settings: "Настройки" },
+    menu: {
+      collect: [["Табель", "6"], ["Наличные расходы", "3"], ["Банковская выписка", "5"], ["Инбокс документов", "12"]],
+      payroll: [["Ведомость", ""], ["Закрытие месяца", "2"], ["Выплаты", ""]],
+      reports: [["P&L", ""], ["Сверка с таблицей", "1"], ["Аналитика по людям", ""]],
+      refs: [["Сотрудники", ""], ["Правила расчёта", ""], ["Контрагенты", ""], ["Точки", ""]],
+      settings: [["Доступы", ""], ["Юрлица", ""], ["Интеграция с Dodo IS", ""]]
+    }
+  },
+  en: {
+    lead: "Partner accounting and reporting",
+    emailLabel: "Work email",
+    emailHint: "We'll send a one-time code. There is no password to forget.",
+    getCode: "Get the code",
+    footer: "Access is granted by your entity's administrator. If your address isn't on the list, no code will arrive — and we'll say so plainly.",
+    codeTitle: "Code from the email",
+    codeHint: "Sent to petar@dodo.rs. The code lives 10 minutes.",
+    resend: "Resend in 0:47",
+    back: "Use another email",
+    security: "A session lasts 12 hours. On a shared computer, sign out yourself — we won't do it for you.",
+    ctxTitle: "Where you're signing in",
+    ctxHint: "You have access to one legal entity.",
+    entityMeta: "Serbia · books in RSD · consolidated in EUR",
+    points: "3 stores · June 2026 open",
+    rightsLabel: "What you'll get",
+    rightsNote: "The set of rights is granted by your entity's administrator. You don't choose it at sign-in.",
+    enter: "Sign in",
+    period: "Period",
+    periodHint: "One period across the whole app",
+    shellEntityMeta: "Serbia · RSD",
+    menuNote: "A counter on an item is work waiting for a person. Zero is not shown.",
+    workArea: "Work area. Layout width 1264, minimum screen 1280. Below 768 only the store manager's screens are served.",
+    months: ["March", "April", "May", "June"],
+    periodOpen: "open · edits allowed",
+    periodApproved: "approved · read only",
+    until: "until 31.07",
+    sets: { accountant: "Accountant", admin: "Administrator", ops: "Vračar manager", partner: "Partner", observer: "Observer" },
+    nav: { collect: "Data entry", payroll: "Payroll", reports: "Reports", refs: "Directories", settings: "Settings" },
+    menu: {
+      collect: [["Timesheet", "6"], ["Cash expenses", "3"], ["Bank statement", "5"], ["Document inbox", "12"]],
+      payroll: [["Payroll sheet", ""], ["Month closing", "2"], ["Payouts", ""]],
+      reports: [["P&L", ""], ["Spreadsheet check", "1"], ["People analytics", ""]],
+      refs: [["Employees", ""], ["Pay rules", ""], ["Counterparties", ""], ["Stores", ""]],
+      settings: [["Access", ""], ["Legal entities", ""], ["Dodo IS integration", ""]]
+    }
+  },
+  sr: {
+    lead: "Računovodstvo i izveštaji partnera",
+    emailLabel: "Poslovna e-pošta",
+    emailHint: "Šaljemo jednokratni kod. Lozinke nema — nema šta da se zaboravi.",
+    getCode: "Pošalji kod",
+    footer: "Pristup dodeljuje administrator vašeg pravnog lica. Ako adresa nije na spisku, kod neće stići i to ćemo vam reći otvoreno.",
+    codeTitle: "Kod iz poruke",
+    codeHint: "Poslato na petar@dodo.rs. Kod važi 10 minuta.",
+    resend: "Pošalji ponovo za 0:47",
+    back: "Druga e-pošta",
+    security: "Sesija traje 12 sati. Na tuđem računaru odjavite se sami — mi to nećemo uraditi umesto vas.",
+    ctxTitle: "Gde se prijavljujete",
+    ctxHint: "Imate pristup jednom pravnom licu.",
+    entityMeta: "Srbija · knjige u RSD · konsolidacija u EUR",
+    points: "3 lokala · jun 2026 otvoren",
+    rightsLabel: "Šta vam se otvara",
+    rightsNote: "Skup prava dodeljuje administrator pravnog lica. Pri prijavi se ne bira.",
+    enter: "Prijavi se",
+    period: "Period",
+    periodHint: "Jedan period za celu aplikaciju",
+    shellEntityMeta: "Srbija · RSD",
+    menuNote: "Brojač pored stavke je posao koji čeka čoveka. Nulu ne prikazujemo.",
+    workArea: "Radna površina. Širina makete 1264, minimalni ekran 1280. Ispod 768 prikazuju se samo ekrani menadžera lokala.",
+    months: ["Mart", "April", "Maj", "Jun"],
+    periodOpen: "otvoren · izmene dozvoljene",
+    periodApproved: "odobren · samo čitanje",
+    until: "do 31.07",
+    sets: { accountant: "Računovođa", admin: "Administrator", ops: "Menadžer Vračar", partner: "Partner", observer: "Posmatrač" },
+    nav: { collect: "Unos podataka", payroll: "Obračun", reports: "Izveštaji", refs: "Šifarnici", settings: "Podešavanja" },
+    menu: {
+      collect: [["Evidencija sati", "6"], ["Gotovinski troškovi", "3"], ["Izvod banke", "5"], ["Prijem dokumenata", "12"]],
+      payroll: [["Obračun zarade", ""], ["Zatvaranje meseca", "2"], ["Isplate", ""]],
+      reports: [["P&L", ""], ["Provera sa tabelom", "1"], ["Analitika ljudi", ""]],
+      refs: [["Zaposleni", ""], ["Pravila obračuna", ""], ["Poslovni partneri", ""], ["Lokali", ""]],
+      settings: [["Pristupi", ""], ["Pravna lica", ""], ["Integracija sa Dodo IS", ""]]
+    }
+  }
+};
+
+const ROLES = {
+  accountant: { label: "Бухгалтер", nav: ["collect", "payroll", "reports", "refs"], sets: [["accountant", "accountant"]], initials: "AM", who: "Ana Marić" },
+  manager:    { label: "Управляющий точки", nav: ["collect"], sets: [["ops", "ops"]], initials: "PP", who: "Petar Petrović" },
+  partner:    { label: "Администратор", nav: ["collect", "payroll", "reports", "refs", "settings"], sets: [["admin", "admin"]], initials: "NP", who: "Nikola Perić" }
+};
+
+const SET_TONE = {
+  accountant: ["var(--reg-supp)", "var(--reg-supp-soft)", "var(--reg-supp-line)", "solid"],
+  admin:      ["var(--accent)", "var(--accent-soft)", "var(--accent-line)", "solid"],
+  ops:        ["var(--reg-internal)", "var(--reg-internal-soft)", "var(--reg-internal-line)", "solid"],
+  temp:       ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)", "dashed"]
+};
+
+/* Порядок совпадает с t.months — названия живут в словаре, здесь только состояние. */
+const MONTH_STATE = ["approved", "approved", "approved", "open"];
+const MONTH_TONE = { approved: "var(--ok)", open: "var(--ink-2)", reopened: "var(--warn)" };
+
+class Component extends DCLogic {
+  state = { tab: "shell", lang: null, role: null, section: "collect", month: 3 };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const lang = st.lang || this.props.lang || "ru";
+    const t = L[lang];
+    const roleKey = st.role || this.props.role || "accountant";
+    const role = ROLES[roleKey] || ROLES.accountant;
+
+    const tabBase = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+    const segBase = { display: "inline-flex", alignItems: "center", gap: "5px", height: "22px", padding: "0 9px", borderRadius: "var(--r-control)", fontSize: "var(--fs-meta)", whiteSpace: "nowrap", border: 0 };
+
+    const section = role.nav.indexOf(st.section) >= 0 ? st.section : role.nav[0];
+
+    const setChip = function (kind) {
+      const s = SET_TONE[kind];
+      return {
+        display: "inline-flex", alignItems: "center", padding: "2px 8px",
+        borderRadius: "var(--r-control)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+        whiteSpace: "nowrap", color: s[0], background: s[1], border: "1px " + s[3] + " " + s[2]
+      };
+    };
+
+    const STATES = [
+      { chip: "Нет доступа", tone: "plain", title: "Раздел «Ведомость» вам не открыт",
+        text: "У вас уровень «Управляющий Vračar». На нём есть часы и расходы своей точки, но не суммы расчёта — они начинаются со ступени бухгалтера.",
+        action: "Написать администратору", actionTone: "ghost",
+        hint: "Администратор юрлица — Nikola Perić",
+        rule: "Отказ называет объект, причину и человека. Кнопки «запросить доступ» нет: письмо администратору честнее, чем заявка в никуда." },
+      { chip: "Нет доступа", tone: "accent", title: "Раздел закрыт, но вы можете открыть его сами",
+        text: "У вас уровень «Администратор» — вы распоряжаетесь доступами. Поднимите себе уровень по другому юрлицу — действие попадёт в журнал доступов и будет видно партнёру.",
+        action: "Открыть себе доступ", actionTone: "primary",
+        hint: "Запишем: кто, когда, зачем",
+        rule: "Если человек может обойти отказ, отказ обязан это сказать. Иначе он выглядит как поломка." },
+      { chip: "Период закрыт", tone: "warn", title: "Май закрыт 03.06, править нельзя",
+        text: "Ведомость подписана и выплачена. Изменение задним числом рассинхронизирует подпись и сумму. Разницу проводят доначислением в июне.",
+        action: "Открыть июнь", actionTone: "primary",
+        hint: "Переоткрыть май может только партнёр",
+        rule: "Никогда не «сохранение недоступно». Всегда — какой месяц, когда закрыт и что делать вместо." },
+      { chip: "Пусто", tone: "plain", title: "За июнь ещё ни одного наличного расхода",
+        text: "Период открыт, данные вносятся руками или приходят с телефона управляющего. Пусто — это не ошибка, это состояние начала месяца.",
+        action: "Внести первый расход", actionTone: "primary",
+        hint: "Или подождать, пока внесёт точка",
+        rule: "Пустое состояние отличает «нет данных» от «нет доступа» и от «не загрузилось». Три разных экрана, а не один." },
+      { chip: "Не отвечает", tone: "err", title: "Dodo IS не отдал часы за 30.06",
+        text: "Последняя удачная синхронизация — 29.06 в 23:50. Данные за 30 июня не приехали. Уже внесённое руками не потерялось и на месте.",
+        action: "Подтянуть заново", actionTone: "primary",
+        hint: "Если не поможет — можно закрыть месяц без последнего дня и доначислить позже",
+        rule: "Ошибка внешней системы всегда говорит, что уцелело. Иначе человек начнёт вносить всё заново." },
+      { chip: "Считаем", tone: "accent", title: "Пересчёт ведомости за июнь", progress: 62,
+        text: "Пересчитываем 35 сотрудников по трём точкам. Пока идёт расчёт, ведомость доступна только на чтение.",
+        progressLeft: "Шаг 2 из 3 · начисления по правилам", progressRight: "22 из 35",
+        action: "", actionTone: "",
+        hint: "Можно уйти на другой экран — расчёт не прервётся",
+        rule: "Долгая операция показывает шаг и остаток, а не крутилку. Человек должен решить, ждать ему или нет." }
+    ];
+
+    const stateTone = {
+      plain: ["var(--surface)", "var(--line-strong)", "var(--ink-2)", "var(--surface-3)", "var(--line-control)"],
+      accent: ["var(--surface)", "var(--accent-line)", "var(--accent)", "var(--accent-soft)", "var(--accent-line)"],
+      warn: ["var(--warn-soft)", "var(--warn-line)", "var(--warn-ink)", "var(--surface)", "var(--warn-line)"],
+      err: ["var(--err-soft)", "var(--err-line)", "var(--err)", "var(--surface)", "var(--err-line)"]
+    };
+
+    return {
+      tabs: [["login", "Вход"], ["shell", "Каркас"], ["states", "Состояния"]].map(function (x) {
+        const on = st.tab === x[0];
+        return {
+          label: x[1], sel: on, notSel: !on,
+          on: function () { self.setState({ tab: x[0] }); },
+          selStyle: Object.assign({}, tabBase, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, tabBase, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isLogin: st.tab === "login",
+      isShell: st.tab === "shell",
+      isStates: st.tab === "states",
+
+      langOpts: [["ru", "Рус"], ["en", "Eng"], ["sr", "Srp"]].map(function (x) {
+        const on = lang === x[0];
+        return {
+          label: x[1], sel: on, notSel: !on,
+          on: function () { self.setState({ lang: x[0] }); },
+          selStyle: Object.assign({}, segBase, { background: "var(--surface)", color: "var(--ink)", fontWeight: "var(--w-semibold)", boxShadow: "var(--sh-xs)" }),
+          btnStyle: Object.assign({}, segBase, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" })
+        };
+      }),
+
+      t_lead: t.lead, t_emailLabel: t.emailLabel, t_emailHint: t.emailHint, t_getCode: t.getCode,
+      t_footer: t.footer, t_codeTitle: t.codeTitle, t_codeHint: t.codeHint, t_resend: t.resend,
+      t_back: t.back, t_security: t.security, t_ctxTitle: t.ctxTitle, t_ctxHint: t.ctxHint,
+      t_entityMeta: t.entityMeta, t_points: t.points, t_rightsLabel: t.rightsLabel,
+      t_rightsNote: t.rightsNote, t_enter: t.enter, t_period: t.period, t_periodHint: t.periodHint,
+      t_shellEntityMeta: t.shellEntityMeta, t_menuNote: t.menuNote, t_workArea: t.workArea,
+
+      codeBoxes: ["4", "1", "7", "0", "", ""].map(function (v, i) {
+        const filled = v !== "";
+        const caret = !filled && i === 4;
+        return {
+          v: v,
+          style: {
+            flex: 1, height: "46px", display: "grid", placeItems: "center",
+            borderRadius: "var(--r-control)",
+            border: "1px solid " + (caret ? "var(--accent)" : "var(--line-control)"),
+            background: filled ? "var(--surface)" : "var(--surface-2)",
+            boxShadow: caret ? "0 0 0 3px rgba(31,78,156,.14)" : "none",
+            fontFamily: "var(--font-num)", fontSize: "20px", fontWeight: "var(--w-semibold)",
+            color: "var(--ink)"
+          }
+        };
+      }),
+      loginSections: role.nav.map(function (k, i) {
+        return {
+          label: t.nav[k],
+          style: {
+            display: "inline-flex", alignItems: "center", padding: "3px 9px",
+            borderRadius: "var(--r-control)", fontSize: "var(--fs-meta)",
+            whiteSpace: "nowrap", color: "var(--ink-2)",
+            background: "var(--surface-3)", border: "1px solid var(--line-control)"
+          }
+        };
+      }),
+
+      /* ── каркас ── */
+      roleOpts: Object.keys(ROLES).map(function (k) {
+        const on = roleKey === k;
+        return {
+          label: ROLES[k].label,
+          on: function () { self.setState({ role: k }); },
+          style: {
+            height: "var(--control-h-sm)", padding: "0 10px", borderRadius: "var(--r-control)",
+            fontSize: "var(--fs-dense)", whiteSpace: "nowrap",
+            border: "1px solid " + (on ? "var(--accent)" : "var(--line-control)"),
+            background: on ? "var(--accent-soft)" : "var(--surface)",
+            color: on ? "var(--accent)" : "var(--ink-2)",
+            fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)"
+          }
+        };
+      }),
+      nav: role.nav.map(function (k) {
+        const on = k === section;
+        const items = t.menu[k];
+        const total = items.reduce(function (s, i) { return s + (i[1] ? Number(i[1]) : 0); }, 0);
+        const base = { padding: "6px 11px", borderRadius: "var(--r-control)", fontSize: "var(--fs-body)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: "6px", border: 0 };
+        return {
+          label: t.nav[k], badge: total > 0 ? String(total) : "",
+          current: on, notCurrent: !on,
+          on: function () { self.setState({ section: k }); },
+          currentStyle: Object.assign({}, base, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)" }),
+          linkStyle: Object.assign({}, base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" }),
+          badgeStyle: total > 0
+            ? { fontFamily: "var(--font-num)", fontSize: "9.5px", padding: "1px 4px", borderRadius: "999px", background: on ? "var(--accent)" : "var(--ink-3)", color: "var(--ink-inverse)" }
+            : { display: "none" }
+        };
+      }),
+      shellRoles: role.sets.map(function (s) {
+        return {
+          label: t.sets[s[0]], until: s[1] === "temp" ? t.until : "",
+          style: setChip(s[1]),
+          untilStyle: s[1] === "temp"
+            ? { fontFamily: "var(--font-num)", fontSize: "9.5px", opacity: .75, marginLeft: "4px" }
+            : { display: "none" }
+        };
+      }),
+      initials: role.initials,
+
+      months: MONTH_STATE.map(function (state, i) {
+        const on = st.month === i;
+        const base = { display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0, background: "transparent", color: "var(--ink-2)", cursor: "pointer" };
+        return {
+          label: t.months[i] + " 2026", current: on, notCurrent: !on,
+          on: function () { self.setState({ month: i }); },
+          style: base,
+          currentStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink)", fontWeight: "var(--w-semibold)", boxShadow: "var(--sh-xs)", cursor: "default" }),
+          dotStyle: { width: "6px", height: "6px", borderRadius: "50%", flex: "0 0 auto", background: MONTH_TONE[state] }
+        };
+      }),
+      periodNote: MONTH_STATE[st.month] === "open" ? t.periodOpen : t.periodApproved,
+
+      openMenuTitle: t.nav[section],
+      openMenu: t.menu[section].map(function (m, i, all) {
+        const on = i === 0;
+        return {
+          label: m[0], count: m[1],
+          rowStyle: {
+            display: "flex", alignItems: "center", gap: "8px", height: "30px", padding: "0 12px",
+            borderBottom: i < all.length - 1 ? "1px solid var(--line)" : 0,
+            background: on ? "var(--accent-soft)" : "var(--surface)",
+            color: on ? "var(--accent)" : "var(--ink)",
+            fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)"
+          },
+          countStyle: m[1]
+            ? { fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", padding: "1px 5px", borderRadius: "999px", background: "var(--warn-soft)", border: "1px solid var(--warn-line)", color: "var(--warn-ink)", flex: "0 0 auto" }
+            : { display: "none" }
+        };
+      }),
+
+      shellNotes: [
+        ["01", "Разделы — по фазам работы", "Не «Сотрудники, Контрагенты, Документы», а «Сбор, Расчёт, Отчёты». Человек приходит с задачей, а не с сущностью."],
+        ["02", "Период один на всё приложение", "Меняется в одном месте и держится при переходах. Иначе бухгалтер правит июнь, глядя на майские цифры."],
+        ["03", "Уровень один, и он всегда виден", "Администратор видит всё, что видят остальные, плюс правила и доступы. Временный подъём показан пунктиром и с датой окончания."]
+      ].map(function (n) { return { num: n[0], title: n[1], text: n[2] }; }),
+
+      /* ── состояния ── */
+      states: STATES.map(function (s) {
+        const tone = stateTone[s.tone];
+        return {
+          chip: s.chip, title: s.title, text: s.text,
+          hasProgress: !!s.progress,
+          progressLeft: s.progressLeft || "", progressRight: s.progressRight || "",
+          barStyle: { height: "100%", width: (s.progress || 0) + "%", background: "var(--accent)" },
+          hasAction: !!s.action, action: s.action, hint: s.hint, rule: s.rule,
+          cardStyle: { background: tone[0], border: "1px solid " + tone[1], borderRadius: "var(--r-block)", padding: "13px 15px 14px" },
+          chipStyle: {
+            display: "inline-flex", alignItems: "center", height: "19px", padding: "0 7px",
+            borderRadius: "var(--r-mark)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+            whiteSpace: "nowrap", color: tone[2], background: tone[3], border: "1px solid " + tone[4]
+          },
+          actionStyle: s.actionTone === "primary"
+            ? { height: "var(--control-h-sm)", padding: "0 12px", border: "1px solid var(--accent)", borderRadius: "var(--r-control)", background: "var(--accent)", color: "var(--ink-inverse)", fontSize: "var(--fs-dense)", fontWeight: "var(--w-semibold)" }
+            : { height: "var(--control-h-sm)", padding: "0 12px", border: "1px solid var(--line-control)", borderRadius: "var(--r-control)", background: "var(--surface)", color: "var(--ink)", fontSize: "var(--fs-dense)" }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

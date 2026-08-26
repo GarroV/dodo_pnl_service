@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9; --reg-supp-line:#DCD0EE;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1; --reg-internal-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, select, textarea { font:inherit; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 16</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Оплата труда: должности, календарь, массовые изменения</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Слой между справочниками и людьми. Должность задаёт тип оплаты, вилку ставки и обязательные надбавки — человека заводят в два клика, а не собирают с нуля. Норма часов приходит из календаря страны, а не из константы 176.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isJobs }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Должности</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ jobsMeta }}</span>
+          <button style="margin-left: auto; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-dense); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">Завести должность</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 416px; gap: 10px; align-items: start">
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <table style="width: 100%; table-layout: auto">
+              <thead>
+                <tr>
+                  <sc-for list="{{ jobHead }}" as="h" hint-placeholder-count="6">
+                    <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ jobs }}" as="j" hint-placeholder-count="6">
+                  <tr style="{{ j.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                    <td style="{{ j.nameStyle }}">{{ j.name }}</td>
+                    <td style="{{ j.textStyle }}">{{ j.pay }}</td>
+                    <td style="{{ j.rangeStyle }}">{{ j.range }}</td>
+                    <td style="{{ j.guarStyle }}">{{ j.guar }}</td>
+                    <td style="{{ j.textStyle }}">{{ j.extras }}</td>
+                    <td style="{{ j.numStyle }}">{{ j.people }}</td>
+                    <td style="{{ j.lastCellStyle }}"><button onClick="{{ j.on }}" style="{{ j.btnStyle }}">Открыть</button></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="padding: 12px 15px 13px; background: var(--surface-2); border-bottom: 1px solid var(--line)">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Шаблон должности</div>
+              <div style="font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold); margin-top: 4px">{{ selName }}</div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 2px">{{ selMeta }}</div>
+            </div>
+            <div style="padding: 13px 15px 15px">
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 5px">Тип оплаты</div>
+              <div style="display: flex; gap: 6px">
+                <sc-for list="{{ payOpts }}" as="p" hint-placeholder-count="3">
+                  <button onClick="{{ p.on }}" style="{{ p.style }}">{{ p.label }}</button>
+                </sc-for>
+              </div>
+
+              <div style="display: flex; align-items: flex-end; gap: 8px; margin-top: 14px">
+                <div style="flex: 1">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 5px">Вилка от</div>
+                  <div style="display: flex; align-items: center; height: var(--control-h); border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); overflow: hidden">
+                    <button onClick="{{ minDown }}" style="width: 30px; height: 100%; border: 0; border-right: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2)">−</button>
+                    <span style="flex: 1; text-align: center; font-family: var(--font-num); font-size: var(--fs-body); font-variant-numeric: tabular-nums">{{ minRate }}</span>
+                    <button onClick="{{ minUp }}" style="width: 30px; height: 100%; border: 0; border-left: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2)">+</button>
+                  </div>
+                </div>
+                <div style="flex: 1">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 5px">до</div>
+                  <div style="display: flex; align-items: center; height: var(--control-h); border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); overflow: hidden">
+                    <button onClick="{{ maxDown }}" style="width: 30px; height: 100%; border: 0; border-right: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2)">−</button>
+                    <span style="flex: 1; text-align: center; font-family: var(--font-num); font-size: var(--fs-body); font-variant-numeric: tabular-nums">{{ maxRate }}</span>
+                    <button onClick="{{ maxUp }}" style="width: 30px; height: 100%; border: 0; border-left: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2)">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 14px 0 5px">Ставка вне вилки</div>
+              <div style="display: flex; gap: 6px">
+                <sc-for list="{{ policyOpts }}" as="p" hint-placeholder-count="3">
+                  <button onClick="{{ p.on }}" style="{{ p.style }}">{{ p.label }}</button>
+                </sc-for>
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 5px">{{ policyNote }}</div>
+
+              <div style="display: flex; align-items: baseline; gap: 8px; margin: 14px 0 5px">
+                <span style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Гарантия часов по договору</span>
+                <a href="Модуль 17 - Правила страны.dc.html" style="font-size: 10px; color: var(--ink-3)">contract.guarantee</a>
+              </div>
+              <div style="display: flex; gap: 6px">
+                <sc-for list="{{ guarOpts }}" as="g" hint-placeholder-count="3">
+                  <button onClick="{{ g.on }}" style="{{ g.style }}">{{ g.label }}</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ guarFixed }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: center; width: 168px; height: var(--control-h); margin-top: 7px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); overflow: hidden">
+                  <button onClick="{{ guarDown }}" style="width: 30px; height: 100%; border: 0; border-right: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2)">−</button>
+                  <span style="flex: 1; text-align: center; font-family: var(--font-num); font-size: var(--fs-body); font-variant-numeric: tabular-nums">{{ guarHours }} <span style="font-size: var(--fs-meta); color: var(--ink-3)">ч/мес</span></span>
+                  <button onClick="{{ guarUp }}" style="width: 30px; height: 100%; border: 0; border-left: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2)">+</button>
+                </div>
+              </sc-if>
+              <div style="{{ guarNoteStyle }}">
+                <div>{{ guarNote }}</div>
+                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(27,32,40,.09); color: var(--ink)">{{ guarResolved }}</div>
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 5px">{{ guarOverrides }}</div>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 14px 0 6px">Надбавки по умолчанию</div>
+              <div style="border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+                <sc-for list="{{ extras }}" as="e" hint-placeholder-count="4">
+                  <button onClick="{{ e.on }}" style="{{ e.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                    <span style="{{ e.boxStyle }}">
+                      <sc-if value="{{ e.on2 }}" hint-placeholder-val="{{ true }}">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                      </sc-if>
+                    </span>
+                    <span style="flex: 1; min-width: 0; text-align: left">
+                      <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ e.label }}</span>
+                      <span style="display: block; font-size: 10px; line-height: 14px; color: var(--ink-3)">{{ e.rule }}</span>
+                    </span>
+                    <span style="{{ e.regStyle }}">{{ e.reg }}</span>
+                  </button>
+                </sc-for>
+              </div>
+
+              <div style="{{ outStyle }}">
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ outTitle }}</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); margin-top: 3px">{{ outText }}</div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line)">
+                <button style="height: var(--control-h); padding: 0 15px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-body); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">Сохранить с 01.08.2026</button>
+                <span style="flex: 1; min-width: 0; text-align: right; font-size: var(--fs-meta); color: var(--ink-3)">Шаблон не меняет условия уже нанятых</span>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCal }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Производственный календарь <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Сербия, 2026</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ calMeta }}</span>
+          <div style="margin-left: auto; display: flex; gap: 6px">
+            <button style="height: var(--control-h-sm); padding: 0 11px; border: 1px dashed var(--line-control-2); border-radius: var(--r-control); background: #FBFCFD; color: var(--ink-2); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)', borderColor: 'var(--ink-3)' }">Загрузить <span style="opacity: .55">.csv</span></button>
+            <button style="height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Календарь другой страны</button>
+          </div>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface); margin-bottom: 10px">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <sc-for list="{{ calHead }}" as="h" hint-placeholder-count="6">
+                  <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ months }}" as="m" hint-placeholder-count="12">
+                <tr style="{{ m.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <td style="{{ m.nameStyle }}">{{ m.name }}</td>
+                  <td style="{{ m.numStyle }}">{{ m.days }}</td>
+                  <td style="{{ m.numStyle }}">{{ m.work }}</td>
+                  <td style="{{ m.holidayStyle }}">{{ m.holidays }}</td>
+                  <td style="{{ m.normStyle }}">{{ m.norm }}</td>
+                  <td style="{{ m.noteStyle }}">{{ m.note }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" style="text-align: left; padding: 0 9px; height: 32px; background: var(--surface-2); border-top: 2px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Год</th>
+                <sc-for list="{{ calTotals }}" as="t" hint-placeholder-count="5">
+                  <td style="{{ t.style }}">{{ t.v }}</td>
+                </sc-for>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--surface); border: 1px solid var(--line-strong)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+            <div>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Норма — не константа 176</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">В июне 2026 норма 176 часов, в январе 152 из-за праздников. Переработка считается от нормы месяца, а не от круглого числа. Пиццерия работает и в праздники — часы в такие дни оплачиваются отдельным правилом.</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--warn-soft); border: 1px solid var(--warn-line)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+            <div>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Календарь меняется задним числом редко, но метко</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink); margin-top: 3px">Правительство переносит выходной — норма месяца меняется. Если месяц закрыт, норма остаётся прежней: пересчитывать закрытый период нельзя. Открытый пересчитается, и в табеле появится пометка «норма изменилась».</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isBulk }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: grid; grid-template-columns: 452px 1fr; gap: 10px; align-items: start">
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="padding: 12px 15px 13px; background: var(--surface-2); border-bottom: 1px solid var(--line)">
+              <div style="font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Массовое изменение ставки</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">Поднять ставку группе людей одной операцией. Каждому создастся своя версия условий с датой — так же, как если бы вы правили карточки по одной.</div>
+            </div>
+            <div style="padding: 13px 15px 15px">
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 5px">Кого меняем</div>
+              <select value="{{ bulkJob }}" onChange="{{ setBulkJob }}" style="{{ selectStyle }}">
+                <sc-for list="{{ bulkJobOpts }}" as="o" hint-placeholder-count="6">
+                  <option value="{{ o.key }}">{{ o.label }}</option>
+                </sc-for>
+              </select>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 14px 0 5px">Насколько</div>
+              <div style="display: flex; gap: 6px; margin-bottom: 8px">
+                <sc-for list="{{ kindOpts }}" as="k" hint-placeholder-count="2">
+                  <button onClick="{{ k.on }}" style="{{ k.style }}">{{ k.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display: flex; align-items: center; height: 46px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--surface); overflow: hidden; box-shadow: 0 0 0 3px rgba(31,78,156,.14)">
+                <button onClick="{{ amtDown }}" style="width: 42px; height: 100%; border: 0; border-right: 1px solid var(--line); background: var(--surface-2); font-size: 18px; color: var(--ink-2)">−</button>
+                <span style="flex: 1; text-align: center; font-family: var(--font-num); font-size: 20px; font-variant-numeric: tabular-nums">{{ bulkAmount }}</span>
+                <button onClick="{{ amtUp }}" style="width: 42px; height: 100%; border: 0; border-left: 1px solid var(--line); background: var(--surface-2); font-size: 18px; color: var(--ink-2)">+</button>
+              </div>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 14px 0 5px">Действует с</div>
+              <div style="display: flex; gap: 6px">
+                <sc-for list="{{ dateOpts }}" as="d" hint-placeholder-count="2">
+                  <button onClick="{{ d.on }}" style="{{ d.style }}">
+                    <span style="display: block; font-family: var(--font-num); font-size: var(--fs-body); font-weight: var(--w-semibold)">{{ d.date }}</span>
+                    <span style="display: block; font-size: 10px; line-height: 14px; opacity: .8">{{ d.note }}</span>
+                  </button>
+                </sc-for>
+              </div>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 14px 0 5px">Причина · обязательно</div>
+              <textarea placeholder="Индексация к росту цен, согласовано 20.07" style="width: 100%; min-height: 50px; padding: 8px 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); font: var(--w-regular) var(--fs-body) / var(--lh-body) var(--font-ui); color: var(--ink); resize: vertical"></textarea>
+
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line)">
+                <button style="{{ applyStyle }}" disabled="{{ applyDisabled }}">{{ applyLabel }}</button>
+                <span style="flex: 1; min-width: 0; text-align: right; font-size: var(--fs-meta); color: var(--ink-3)">Операция попадёт в историю каждого человека</span>
+              </div>
+
+            </div>
+          </div>
+
+          <div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px">
+              <sc-for list="{{ bulkKpis }}" as="k" hint-placeholder-count="3">
+                <div style="{{ k.cardStyle }}">
+                  <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">{{ k.label }}</div>
+                  <div style="{{ k.valueStyle }}">{{ k.value }}</div>
+                  <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); margin-top: 3px">{{ k.note }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Кого затронет</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">до применения · «начислено» — по новой ставке и норме месяца, «прирост» — разница к прежней</span>
+              </div>
+              <table style="width: 100%; table-layout: fixed">
+                <thead>
+                  <tr>
+                    <sc-for list="{{ affHead }}" as="h" hint-placeholder-count="6">
+                      <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                    </sc-for>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ affected }}" as="a" hint-placeholder-count="8">
+                    <tr style="{{ a.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                      <td style="{{ a.nameStyle }}">{{ a.name }}</td>
+                      <td style="{{ a.textStyle }}">{{ a.point }}</td>
+                      <td style="{{ a.numStyle }}">{{ a.was }}</td>
+                      <td style="{{ a.becomeStyle }}">{{ a.become }}</td>
+                      <td style="{{ a.monthStyle }}">{{ a.month }}</td>
+                      <td style="{{ a.deltaStyle }}">{{ a.delta }}</td>
+                      <td style="{{ a.flagCellStyle }}"><span style="{{ a.flagStyle }}">{{ a.flag }}</span></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              <sc-if value="{{ hasViolation }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; background: var(--warn-soft); border-top: 1px solid var(--warn-line)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink)">{{ violationText }}</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isRefs }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Все справочники</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Один слой настроек. Каждый справочник живёт версиями по датам — прошлые месяцы считаются по своей версии.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px">
+          <sc-for list="{{ refs }}" as="r" hint-placeholder-count="6">
+            <div style="{{ r.cardStyle }}">
+              <div style="display: flex; align-items: baseline; gap: 8px">
+                <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ r.num }}</span>
+                <span style="{{ r.chipStyle }}">{{ r.chip }}</span>
+              </div>
+              <div style="font-size: var(--fs-body); font-weight: var(--w-semibold); margin-top: 7px">{{ r.title }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">{{ r.text }}</div>
+              <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); border-top: 1px dashed var(--line-control); padding-top: 7px; margin-top: 9px">{{ r.where }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <sc-for list="{{ laws }}" as="l" hint-placeholder-count="4">
+            <div style="{{ l.style }}">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: {{ l.color }}">{{ l.title }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: {{ l.color }}; margin-top: 3px">{{ l.text }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal' | 'compact'&quot;,&quot;section&quot;:&quot;Вид&quot;}}">
+/* ключ, название, тип оплаты, вилка min, вилка max, надбавки, политика выхода за вилку,
+   гарантия часов по договору.
+   Численности здесь нет — она считается по ростеру PEOPLE.
+
+   Гарантия: null — нет (платим за фактические часы);
+             "calendar" — сколько бы ни было в норме месяца, столько и гарантируем;
+             число — фиксированные часы независимо от календаря (неполная занятость).
+   Числом гарантию задавать опаснее: в январе норма 152, и договор на 176
+   сделает человека вечно перерабатывающим. Поэтому шаблон по умолчанию — календарь. */
+const JOBS = [
+  ["pizza", "Пиццамейкер", "hour", 380, 460, ["night", "mentor"], "warn", null],
+  ["courier", "Курьер", "hour", 350, 420, ["night", "delivery"], "warn", null],
+  ["cashier", "Кассир", "hour", 370, 440, ["night"], "warn", null],
+  ["shift", "Смена-менеджер", "shift", 4400, 5200, ["night", "bonus"], "error", null],
+  ["manager", "Управляющий точки", "salary", 130000, 160000, ["bonus"], "error", "calendar"],
+  ["region", "Управляющий региона", "salary", 180000, 230000, ["bonus"], "error", "calendar"]
+];
+
+const GUAR_KINDS = [
+  [null, "Нет", "Платим за фактические часы. Переработки у такой должности не бывает — есть просто часы."],
+  ["calendar", "Норма месяца", "Гарантия равна норме производственного календаря и меняется вместе с ним: 152 ч в январе, 176 ч в июне. Это безопасный вариант по умолчанию."],
+  ["fixed", "Фиксировано", "Часы не зависят от календаря. Так оформляют неполную занятость: договор на 160 ч при норме 176 даёт 16 часов сверхурочных даже без единой лишней смены."]
+];
+
+function guarHoursIn(g, monthNorm) {
+  if (g === null || g === undefined) return null;
+  if (g === "calendar") return monthNorm;
+  return g;
+}
+function guarShort(g) {
+  if (g === null || g === undefined) return "—";
+  if (g === "calendar") return "Норма месяца";
+  return g + " ч";
+}
+
+const PAY_KINDS = { hour: "Почасовая", shift: "За смену", salary: "Оклад" };
+const UNIT = { hour: "RSD/ч", shift: "RSD/смена", salary: "RSD/мес" };
+
+const EXTRAS = {
+  night:    ["Ночные часы", "22:00—06:00, ×1,25", "official"],
+  delivery: ["Доставки", "количество × 45,00", "supp"],
+  mentor:   ["Наставничество", "часы наставника × 30,00", "supp"],
+  bonus:    ["Бонус за выручку", "0,4% сверх плана ÷ смену", "internal"]
+};
+
+const REG = {
+  official: ["ОФ", "var(--accent)"],
+  supp: ["ДП", "var(--reg-supp)"],
+  internal: ["ВН", "var(--reg-internal)"]
+};
+
+/* месяц, дней, рабочих, праздников, норма часов, заметка */
+const CALENDAR = [
+  ["Январь", 31, 19, 3, 152, "Нова година, Божић"],
+  ["Февраль", 28, 19, 2, 152, "Дан државности, 15—16.02"],
+  ["Март", 31, 22, 0, 176, ""],
+  ["Апрель", 30, 20, 2, 160, "Васкрс, 10—13.04"],
+  ["Май", 31, 20, 1, 160, "Празник рада, 01.05"],
+  ["Июнь", 30, 22, 0, 176, ""],
+  ["Июль", 31, 23, 0, 184, ""],
+  ["Август", 31, 21, 0, 168, ""],
+  ["Сентябрь", 30, 22, 0, 176, ""],
+  ["Октябрь", 31, 22, 0, 176, ""],
+  ["Ноябрь", 30, 20, 1, 160, "Дан примирја, 11.11"],
+  ["Декабрь", 31, 23, 0, 184, ""]
+];
+
+/* имя, должность, точка, текущая ставка */
+const PEOPLE = [
+  ["Jelena Đorđević", "pizza", "Beograd Vračar", 420],
+  ["Stefan Nikolić", "pizza", "Novi Sad Centar", 415],
+  ["Tijana Simić", "pizza", "Novi Beograd", 410],
+  ["Lenka Zdravković", "pizza", "Beograd Vračar", 400],
+  ["Marko Ilić", "pizza", "Beograd Dorćol", 455],
+  ["Ana Petrović", "pizza", "Beograd Zvezdara", 395],
+  ["Filip Jovanović", "pizza", "Beograd Vračar", 430],
+  ["Miloš Todorović", "pizza", "Novi Beograd", 405],
+  ["Katarina Vasić", "pizza", "Novi Sad Centar", 390],
+  ["Nemanja Stanković", "pizza", "Beograd Dorćol", 425],
+  ["Jovana Milić", "pizza", "Beograd Zvezdara", 385],
+  ["Uroš Rakić", "pizza", "Beograd Vračar", 440],
+  ["Teodora Savić", "pizza", "Novi Beograd", 400],
+  ["Nikola Ilić", "courier", "Beograd Vračar", 380],
+  ["Vuk Pavlović", "courier", "Novi Beograd", 380],
+  ["Bojan Lukić", "courier", "Novi Sad Centar", 375],
+  ["Đorđe Mitrović", "courier", "Beograd Dorćol", 390],
+  ["Lazar Krstić", "courier", "Beograd Zvezdara", 370],
+  ["Petar Radić", "courier", "Beograd Vračar", 405],
+  ["Stevan Božić", "courier", "Novi Beograd", 360],
+  ["Ivana Đurić", "cashier", "Beograd Vračar", 400],
+  ["Marija Obradović", "cashier", "Novi Beograd", 400],
+  ["Sara Ristić", "cashier", "Novi Sad Centar", 395],
+  ["Milica Tomić", "cashier", "Beograd Dorćol", 410],
+  ["Nataša Popović", "cashier", "Beograd Zvezdara", 390],
+  ["Dragana Nikolić", "cashier", "Beograd Vračar", 420],
+  ["Kristina Janković", "cashier", "Novi Beograd", 385],
+  ["Aleksandra Perić", "cashier", "Novi Sad Centar", 405],
+  ["Dušan Kovačević", "shift", "Beograd Vračar", 4800],
+  ["Aleksa Marković", "shift", "Novi Sad Centar", 4600],
+  ["Vladimir Antić", "shift", "Novi Beograd", 5000],
+  ["Igor Stanišić", "shift", "Beograd Dorćol", 4500],
+  ["Petar Petrović", "manager", "Beograd Vračar", 145000],
+  ["Milica Jovanović", "manager", "Novi Beograd", 140000, 160],
+  ["Miloš Stojanović", "manager", "Novi Sad Centar", 138000],
+  ["Nikola Perić", "region", "Все точки", 205000]
+];
+
+/* Рабочий период прототипа — июнь 2026. Норма и число смен берутся из
+   производственного календаря той же страницы, а не из константы: иначе
+   вкладка «Календарь» была бы витриной, ни на что не влияющей. */
+const PERIOD = 5;
+const PERIOD_NAME = CALENDAR[PERIOD][0] + " 2026";
+/* Предложный падеж месяца: «в июне», а не «в июнь». Держим формой, а не
+   строкой на месте — иначе при смене периода на март или август падеж поедет. */
+const MONTH_IN = ["январе", "феврале", "марте", "апреле", "мае", "июне",
+                  "июле", "августе", "сентябре", "октябре", "ноябре", "декабре"];
+const PERIOD_IN = "в " + MONTH_IN[PERIOD] + " 2026";
+const HOURS_PER_MONTH = CALENDAR[PERIOD][4];
+const SHIFTS_PER_MONTH = CALENDAR[PERIOD][2];
+
+const REFS = [
+  ["01", "Должности", "job", "Тип оплаты, вилка ставки, обязательные надбавки. Заводит человека в два клика.", "Эта страница, вкладка 1"],
+  ["02", "Производственный календарь", "job", "Праздники и норма часов по месяцам, по странам. Переработка считается от нормы месяца.", "Эта страница, вкладка 2"],
+  ["03", "Правила расчёта", "pay", "Восемь компонентов начисления: формула, регистр, версия с даты.", "Модуль 8, вкладка 3"],
+  ["04", "Статьи расходов", "pay", "Девятнадцать статей. Статья указывает на строку P&L, а не наоборот.", "Модуль 14"],
+  ["05", "Контрагенты и правила", "ext", "Признак в выписке → контрагент → статья. Копится из решений бухгалтера.", "Модуль 7, вкладка 3"],
+  ["06", "Точки и юрлица", "ext", "Структура бизнеса. Точку не удаляют, а закрывают с даты.", "Модуль 11"]
+];
+
+const LAWS = [
+  ["Шаблон не трогает уже нанятых", "Поменяли вилку пиццамейкера — у тринадцати работающих ничего не изменилось. Шаблон работает только на новых и подсказывает при массовом изменении. Иначе одна правка справочника молча переписала бы ФОТ.", "plain"],
+  ["Вилка предупреждает, а не запрещает", "У почасовых должностей выход за вилку — предупреждение: рынок бывает сильнее регламента. У окладных — запрет: там вилка это бюджет, а не ориентир. Политика задаётся у каждой должности.", "warn"],
+  ["Массовое изменение — это те же версии", "Кнопка не создаёт особую сущность. Каждому человеку записывается своя версия условий с той же датой и одной причиной на всех. Отменить можно по одному.", "ok"],
+  ["Норма часов приходит из календаря", "Не константа в коде и не поле в настройках расчёта. Один календарь на страну, его подменяют при переносе выходных — и норма месяца меняется вместе с ним.", "plain"]
+];
+
+function fmt(n, d) {
+  return Math.abs(n).toLocaleString("ru-RU", { minimumFractionDigits: d === undefined ? 2 : d, maximumFractionDigits: d === undefined ? 2 : d });
+}
+function plural(n, forms) {
+  const a = n % 100, b = n % 10;
+  if (a > 10 && a < 20) return forms[2];
+  if (b === 1) return forms[0];
+  if (b > 1 && b < 5) return forms[1];
+  return forms[2];
+}
+
+/* Шаг ввода и разумная прибавка зависят от типа оплаты:
+   380 RSD/ч и 145 000 RSD/мес нельзя крутить одним и тем же шагом. */
+function stepFor(kind) {
+  return kind === "salary" ? 5000 : (kind === "shift" ? 100 : 5);
+}
+function defaultRaise(jobDef) {
+  const s = stepFor(jobDef[2]);
+  const mid = (jobDef[3] + jobDef[4]) / 2;
+  return Math.max(s, Math.round(mid * 0.05 / s) * s);
+}
+
+class Component extends DCLogic {
+  state = {
+    tab: "jobs", sel: 0, kind: null, min: null, max: null, policy: null, extras: null,
+    bulkJob: "courier", bulkKind: "abs", bulkAmount: 20, bulkFrom: "next"
+  };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const rowH = this.props.density === "compact" ? "26px" : "30px";
+
+    const job = JOBS[st.sel] || JOBS[0];
+    const countOf = function (key) {
+      return PEOPLE.filter(function (p) { return p[1] === key; }).length;
+    };
+    const kind = st.kind || job[2];
+    const min = st.min === null ? job[3] : st.min;
+    const max = st.max === null ? job[4] : st.max;
+    const policy = st.policy || job[6];
+    const extras = st.extras || job[5];
+    const step = stepFor(kind);
+
+    const th = function (label, w, align, last) {
+      return {
+        label: label,
+        style: {
+          background: "var(--surface-head)", padding: "6px 9px", fontSize: "var(--fs-micro)",
+          fontWeight: "var(--w-semibold)", color: "var(--ink-2)", textAlign: align || "left", width: w || "auto",
+          borderBottom: "1px solid var(--line-strong)", borderRight: last ? 0 : "1px solid var(--line-2)"
+        }
+      };
+    };
+    const cell = { padding: "0 9px", height: rowH, fontSize: "var(--fs-dense)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" };
+    const num = function (extra) {
+      return Object.assign({}, cell, { fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", textAlign: "right", fontVariantNumeric: "tabular-nums" }, extra || {});
+    };
+    const pill = function (on, tone) {
+      const c = tone || ["var(--accent)", "var(--accent-soft)", "var(--accent-line)"];
+      return {
+        flex: 1, minHeight: "34px", padding: "0 8px", borderRadius: "var(--r-control)",
+        fontSize: "var(--fs-dense)", whiteSpace: "nowrap",
+        border: "1px solid " + (on ? c[0] : "var(--line-control)"),
+        background: on ? c[1] : "var(--surface)",
+        color: on ? c[0] : "var(--ink-2)",
+        fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)"
+      };
+    };
+
+    /* Гарантия: undefined в state означает «как в шаблоне», а не «нет гарантии» —
+       поэтому null здесь значимое значение и проверять надо именно undefined. */
+    const guar = st.guar === undefined ? job[7] : st.guar;
+    const guarInJune = guarHoursIn(guar, HOURS_PER_MONTH);
+    const guarOverrideCount = PEOPLE.filter(function (p) { return p[1] === job[0] && p[4] !== undefined; }).length;
+
+    /* ── массовое изменение ── */
+    const bulkPeople = PEOPLE.filter(function (p) { return p[1] === st.bulkJob; });
+    const bulkJobDef = JOBS.filter(function (j) { return j[0] === st.bulkJob; })[0] || JOBS[0];
+    const bulkStep = stepFor(bulkJobDef[2]);
+    const newRate = function (cur) {
+      return st.bulkKind === "abs" ? cur + st.bulkAmount : Math.round(cur * (1 + st.bulkAmount / 100));
+    };
+    const perMonth = function (rate) {
+      return bulkJobDef[2] === "salary" ? rate : (bulkJobDef[2] === "shift" ? rate * SHIFTS_PER_MONTH : rate * HOURS_PER_MONTH);
+    };
+    const deltaFot = bulkPeople.reduce(function (a, p) { return a + (perMonth(newRate(p[3])) - perMonth(p[3])); }, 0);
+    /* Считать «в месяц» без указания месяца нельзя: у почасовых в январе
+       152 часа, в июле 184 — разница в ФОТ по одной и той же ставке 20%. */
+    const fotBasis = bulkJobDef[2] === "salary" ? "оклад" :
+      (bulkJobDef[2] === "shift" ? SHIFTS_PER_MONTH + " " + plural(SHIFTS_PER_MONTH, ["смена", "смены", "смен"]) : HOURS_PER_MONTH + " ч. нормы");
+    const violations = bulkPeople.filter(function (p) { return newRate(p[3]) > bulkJobDef[4]; });
+    const blocked = bulkJobDef[6] === "error" && violations.length > 0;
+
+    return {
+      tabs: [["jobs", "Должности"], ["cal", "Календарь"], ["bulk", "Массовое изменение"], ["refs", "Справочники"]].map(function (t) {
+        const on = st.tab === t[0];
+        const base = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+        return {
+          label: t[1], sel: on, notSel: !on,
+          on: function () { self.setState({ tab: t[0] }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isJobs: st.tab === "jobs",
+      isCal: st.tab === "cal",
+      isBulk: st.tab === "bulk",
+      isRefs: st.tab === "refs",
+
+      /* ── должности ── */
+      jobsMeta: JOBS.length + " " + plural(JOBS.length, ["должность", "должности", "должностей"])
+        + " · " + PEOPLE.length + " " + plural(PEOPLE.length, ["человек", "человека", "человек"]) + " в прототипе",
+      jobHead: [th("Должность", "auto"), th("Тип оплаты", "auto"), th("Вилка ставки", "152px", "right"),
+                th("Гарантия часов", "142px"), th("Надбавки по умолчанию", "100%"),
+                th("Людей", "64px", "right"), th("", "88px", "right", true)],
+      jobs: JOBS.map(function (j, i) {
+        const on = i === st.sel;
+        return {
+          name: j[0] === job[0] ? j[1] : j[1],
+          pay: PAY_KINDS[j[2]],
+          range: fmt(j[3], 0) + " — " + fmt(j[4], 0),
+          extras: j[5].map(function (k) { return EXTRAS[k][0]; }).join(" · "),
+          people: String(countOf(j[0])),
+          guar: guarShort(j[7]),
+          guarStyle: Object.assign({}, cell, {
+            fontSize: "var(--fs-meta)",
+            color: j[7] === null ? "var(--ink-3)" : "var(--ink-2)",
+            overflow: "visible", textOverflow: "clip"
+          }),
+          on: function () { self.setState({ sel: i, kind: null, min: null, max: null, policy: null, extras: null, guar: undefined }); },
+          rowStyle: { background: on ? "#F0F5FC" : "var(--surface)" },
+          nameStyle: Object.assign({}, cell, { fontWeight: "var(--w-medium)", overflow: "visible", textOverflow: "clip" }),
+          textStyle: Object.assign({}, cell, { fontSize: "var(--fs-meta)", color: "var(--ink-2)", overflow: "visible", textOverflow: "clip" }),
+          rangeStyle: num(),
+          numStyle: num({ color: "var(--ink-2)" }),
+          lastCellStyle: { padding: "0 9px", height: rowH, textAlign: "right", borderBottom: "1px solid var(--line)" },
+          btnStyle: {
+            height: "22px", padding: "0 9px", borderRadius: "var(--r-control)",
+            border: "1px solid " + (on ? "var(--accent)" : "var(--line-control)"),
+            background: on ? "var(--accent-soft)" : "var(--surface)",
+            color: on ? "var(--accent)" : "var(--ink-2)", fontSize: "var(--fs-meta)"
+          }
+        };
+      }),
+
+      selName: job[1],
+      selMeta: countOf(job[0]) + " " + plural(countOf(job[0]), ["человек работает", "человека работают", "человек работают"]) + " сейчас · " + UNIT[kind],
+      payOpts: ["hour", "shift", "salary"].map(function (k) {
+        return { label: PAY_KINDS[k], on: function () { self.setState({ kind: k }); }, style: pill(kind === k) };
+      }),
+
+      guarOpts: GUAR_KINDS.map(function (g) {
+        const on = g[0] === null ? guar === null : (g[0] === "calendar" ? guar === "calendar" : typeof guar === "number");
+        return {
+          label: g[1],
+          on: function () { self.setState({ guar: g[0] === "fixed" ? (typeof guar === "number" ? guar : HOURS_PER_MONTH - 16) : g[0] }); },
+          style: pill(on)
+        };
+      }),
+      guarFixed: typeof guar === "number",
+      guarHours: typeof guar === "number" ? String(guar) : "",
+      guarUp: function () { self.setState({ guar: Math.min(248, (typeof guar === "number" ? guar : 160) + 4) }); },
+      guarDown: function () { self.setState({ guar: Math.max(4, (typeof guar === "number" ? guar : 160) - 4) }); },
+      guarNote: (GUAR_KINDS.filter(function (g) {
+        return g[0] === (guar === null ? null : (guar === "calendar" ? "calendar" : "fixed"));
+      })[0] || GUAR_KINDS[0])[2],
+      guarResolved: guarInJune === null
+        ? PERIOD_IN.charAt(0).toUpperCase() + PERIOD_IN.slice(1) + " сравнивать не с чем — в табеле у такого человека только факт."
+        : PERIOD_IN.charAt(0).toUpperCase() + PERIOD_IN.slice(1) + " это " + guarInJune + " ч при норме " + HOURS_PER_MONTH + " ч"
+          + (guarInJune < HOURS_PER_MONTH
+            ? ". Отработает норму — получит " + (HOURS_PER_MONTH - guarInJune) + " ч сверхурочных, ничего не перерабатывая сверх графика точки."
+            : ". Часы сверх этого идут в переработку."),
+      guarOverrides: guarOverrideCount === 0
+        ? "Ни у кого из " + countOf(job[0]) + " не переопределена индивидуально"
+        : guarOverrideCount + " " + plural(guarOverrideCount, ["человек переопределил", "человека переопределили", "человек переопределили"])
+          + " договором: " + PEOPLE.filter(function (p) { return p[1] === job[0] && p[4] !== undefined; })
+            .map(function (p) { return p[0].split(" ")[0] + " " + p[0].split(" ")[1] + " — " + p[4] + " ч"; }).join(", "),
+      guarWarn: typeof guar === "number",
+      guarNoteStyle: {
+        marginTop: "7px", padding: "9px 11px 10px", borderRadius: "var(--r-block)",
+        background: guar === null ? "var(--surface-2)" : (typeof guar === "number" ? "var(--warn-soft)" : "var(--accent-soft)"),
+        border: "1px solid " + (guar === null ? "var(--line)" : (typeof guar === "number" ? "var(--warn-line)" : "var(--accent-line)")),
+        fontSize: "var(--fs-meta)", lineHeight: "var(--lh-meta)", color: "var(--ink-2)"
+      },
+      minRate: fmt(min, 0),
+      maxRate: fmt(max, 0),
+      minUp: function () { self.setState({ min: Math.min(max - step, min + step) }); },
+      minDown: function () { self.setState({ min: Math.max(0, min - step) }); },
+      maxUp: function () { self.setState({ max: max + step }); },
+      maxDown: function () { self.setState({ max: Math.max(min + step, max - step) }); },
+
+      policyOpts: [["warn", "Предупредить"], ["error", "Запретить"], ["ignore", "Разрешить молча"]].map(function (p) {
+        const on = policy === p[0];
+        const tone = p[0] === "error" ? ["var(--err)", "var(--err-soft)", "var(--err-line)"]
+          : (p[0] === "warn" ? ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"] : null);
+        return { label: p[1], on: function () { self.setState({ policy: p[0] }); }, style: pill(on, tone) };
+      }),
+      policyNote: policy === "error"
+        ? "Ставку вне вилки нельзя будет сохранить ни в карточке, ни массовым изменением. Так делают для окладных должностей: там вилка — это бюджет."
+        : (policy === "warn"
+            ? "Ставку вне вилки можно сохранить, но система скажет об этом и запишет в историю. Для почасовых: рынок бывает сильнее регламента."
+            : "Никаких сообщений. Вилка остаётся справочной цифрой для отчётов — на ввод не влияет."),
+
+      extras: Object.keys(EXTRAS).map(function (k) {
+        const on = extras.indexOf(k) >= 0;
+        const e = EXTRAS[k];
+        return {
+          label: e[0], rule: e[1], reg: REG[e[2]][0], on2: on,
+          on: function () {
+            const next = extras.slice();
+            const i = next.indexOf(k);
+            if (i >= 0) next.splice(i, 1); else next.push(k);
+            self.setState({ extras: next });
+          },
+          rowStyle: {
+            display: "flex", alignItems: "center", gap: "10px", width: "100%",
+            padding: "9px 11px", border: 0, borderBottom: "1px solid var(--line)",
+            background: on ? "var(--surface)" : "var(--surface-2)", textAlign: "left"
+          },
+          boxStyle: {
+            width: "15px", height: "15px", flex: "0 0 auto", display: "grid", placeItems: "center",
+            borderRadius: "var(--r-mark)", border: "1px solid " + (on ? "var(--accent)" : "var(--line-control-2)"),
+            background: on ? "var(--accent)" : "var(--surface)", color: "var(--ink-inverse)"
+          },
+          regStyle: {
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            minWidth: "24px", height: "16px", padding: "0 4px", flex: "0 0 auto",
+            borderRadius: "var(--r-mark)", border: "1px solid " + REG[e[2]][1], color: REG[e[2]][1],
+            fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", lineHeight: "14px"
+          }
+        };
+      }),
+
+      outStyle: {
+        marginTop: "13px", padding: "11px 13px", borderRadius: "var(--r-block)",
+        background: "var(--surface-2)", border: "1px solid var(--line)", color: "var(--ink-2)"
+      },
+      outTitle: "Что получит новый " + job[1].toLowerCase(),
+      outText: PAY_KINDS[kind] + " от " + fmt(min, 0) + " до " + fmt(max, 0) + " " + UNIT[kind]
+        + (extras.length ? ", надбавки: " + extras.map(function (k) { return EXTRAS[k][0].toLowerCase(); }).join(", ") : ", без надбавок")
+        + ". Ставку внутри вилки бухгалтер ставит руками — шаблон не выбирает за него.",
+
+      /* ── календарь ── */
+      calMeta: CALENDAR.reduce(function (a, m) { return a + m[3]; }, 0) + " праздничных дней · норма года "
+        + CALENDAR.reduce(function (a, m) { return a + m[4]; }, 0) + " ч",
+      calHead: [th("Месяц", "160px"), th("Дней", "84px", "right"), th("Рабочих", "96px", "right"),
+                th("Праздников", "112px", "right"), th("Норма, ч", "104px", "right"), th("Что за дни", "auto", "left", true)],
+      months: CALENDAR.map(function (m) {
+        const isJune = m[0] === "Июнь";
+        return {
+          name: m[0], days: String(m[1]), work: String(m[2]),
+          holidays: m[3] === 0 ? "\u2014" : String(m[3]),
+          norm: String(m[4]), note: m[5] || "\u2014",
+          rowStyle: { background: isJune ? "var(--accent-soft)" : "var(--surface)" },
+          nameStyle: Object.assign({}, cell, { fontWeight: isJune ? "var(--w-semibold)" : "var(--w-medium)" }),
+          numStyle: num({ color: "var(--ink-2)" }),
+          holidayStyle: num({ color: m[3] === 0 ? "var(--ink-empty)" : "var(--warn-ink)" }),
+          normStyle: num({ fontWeight: "var(--w-semibold)" }),
+          noteStyle: Object.assign({}, cell, { fontSize: "var(--fs-meta)", color: m[5] ? "var(--ink-2)" : "var(--ink-empty)", borderRight: 0 })
+        };
+      }),
+      calTotals: [
+        String(CALENDAR.reduce(function (a, m) { return a + m[1]; }, 0)),
+        String(CALENDAR.reduce(function (a, m) { return a + m[2]; }, 0)),
+        String(CALENDAR.reduce(function (a, m) { return a + m[3]; }, 0)),
+        String(CALENDAR.reduce(function (a, m) { return a + m[4]; }, 0)),
+        ""
+      ].map(function (v, i) {
+        return {
+          v: v,
+          style: {
+            background: i === 3 ? "#E8EDF3" : "var(--surface-2)", borderTop: "2px solid var(--line-strong)",
+            textAlign: i === 4 ? "left" : "right", padding: "0 9px", height: "32px",
+            fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: "var(--w-bold)",
+            fontVariantNumeric: "tabular-nums"
+          }
+        };
+      }),
+
+      /* ── массовое ── */
+      selectStyle: {
+        width: "100%", height: "var(--control-h)", padding: "0 34px 0 10px",
+        borderRadius: "var(--r-control)", fontSize: "var(--fs-body)",
+        appearance: "none", WebkitAppearance: "none", MozAppearance: "none",
+        backgroundColor: "var(--surface)",
+        backgroundImage: "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%235C6672' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>\")",
+        backgroundRepeat: "no-repeat", backgroundPosition: "right 9px center",
+        border: "1px solid var(--line-control)", color: "var(--ink)", boxShadow: "var(--sh-xs)"
+      },
+      bulkJob: st.bulkJob,
+      bulkJobOpts: JOBS.map(function (j) {
+        return { key: j[0], label: j[1] + " · " + countOf(j[0]) + " чел." };
+      }),
+      setBulkJob: function (e) {
+        const next = JOBS.filter(function (j) { return j[0] === e.target.value; })[0] || JOBS[0];
+        self.setState({
+          bulkJob: e.target.value,
+          bulkAmount: st.bulkKind === "abs" ? defaultRaise(next) : st.bulkAmount
+        });
+      },
+      kindOpts: [["abs", "На сумму"], ["pct", "На процент"]].map(function (k) {
+        const on = st.bulkKind === k[0];
+        return {
+          label: k[1],
+          on: function () { self.setState({ bulkKind: k[0], bulkAmount: k[0] === "abs" ? defaultRaise(bulkJobDef) : 5 }); },
+          style: pill(on)
+        };
+      }),
+      bulkAmount: st.bulkKind === "abs" ? "+" + fmt(st.bulkAmount, 0) + " " + UNIT[bulkJobDef[2]] : "+" + st.bulkAmount + "%",
+      amtUp: function () { self.setState({ bulkAmount: st.bulkAmount + (st.bulkKind === "abs" ? bulkStep : 1) }); },
+      amtDown: function () { self.setState({ bulkAmount: Math.max(0, st.bulkAmount - (st.bulkKind === "abs" ? bulkStep : 1)) }); },
+      dateOpts: [["now", "01.07.2026", "текущий месяц"], ["next", "01.08.2026", "следующий месяц"]].map(function (d) {
+        const on = st.bulkFrom === d[0];
+        return {
+          date: d[1], note: d[2],
+          on: function () { self.setState({ bulkFrom: d[0] }); },
+          style: {
+            flex: "1 1 0", minWidth: 0, padding: "7px 10px 8px", textAlign: "left",
+            borderRadius: "var(--r-control)",
+            border: "1px solid " + (on ? "var(--accent)" : "var(--line-control)"),
+            background: on ? "var(--accent-soft)" : "var(--surface)",
+            color: on ? "var(--accent)" : "var(--ink-2)"
+          }
+        };
+      }),
+
+      bulkKpis: [
+        ["Затронет", bulkPeople.length + " чел.", "из " + PEOPLE.length + " в прототипе", false],
+        ["ФОТ вырастет на", fmt(deltaFot), "RSD за " + PERIOD_NAME.toLowerCase() + " · " + fotBasis, false],
+        ["Вне вилки должности", violations.length === 0 ? "нет" : violations.length + " чел.", violations.length === 0 ? "все внутри " + fmt(bulkJobDef[3], 0) + "—" + fmt(bulkJobDef[4], 0) : "потолок " + fmt(bulkJobDef[4], 0), violations.length > 0]
+      ].map(function (k) {
+        return {
+          label: k[0], value: k[1], note: k[2],
+          cardStyle: {
+            background: k[3] ? "var(--warn-soft)" : "var(--surface)",
+            border: "1px solid " + (k[3] ? "var(--warn-line)" : "var(--line-strong)"),
+            borderRadius: "var(--r-block)", padding: "11px 14px 12px"
+          },
+          valueStyle: {
+            fontFamily: "var(--font-num)", fontSize: "var(--fs-num-hero)", fontWeight: "var(--w-bold)",
+            fontVariantNumeric: "tabular-nums", marginTop: "5px",
+            color: k[3] ? "var(--warn-ink)" : "var(--ink)"
+          }
+        };
+      }),
+
+      affHead: [th("Сотрудник", "auto"), th("Точка", "118px"), th("Ставка сейчас", "96px", "right"),
+                th("Станет", "96px", "right"), th("Начислено за " + PERIOD_NAME.split(" ")[0].toLowerCase(), "116px", "right"),
+                th("Прирост", "92px", "right"), th("", "100px", "left", true)],
+      affected: bulkPeople.map(function (p) {
+        const nr = newRate(p[3]);
+        const over = nr > bulkJobDef[4];
+        return {
+          name: p[0], point: p[2],
+          was: fmt(p[3], 0), become: fmt(nr, 0),
+          month: fmt(perMonth(nr), 0),
+          delta: "+" + fmt(perMonth(nr) - perMonth(p[3]), 0),
+          flag: over ? (bulkJobDef[6] === "error" ? "выше потолка" : "выше вилки") : "",
+          rowStyle: { background: over ? "var(--warn-soft)" : "var(--surface)" },
+          nameStyle: Object.assign({}, cell, { fontWeight: "var(--w-medium)" }),
+          textStyle: Object.assign({}, cell, { fontSize: "var(--fs-meta)", color: "var(--ink-2)" }),
+          numStyle: num({ color: "var(--ink-2)" }),
+          becomeStyle: num({ fontWeight: "var(--w-semibold)", color: over ? "var(--warn-ink)" : "var(--ink)" }),
+          monthStyle: num({ fontWeight: "var(--w-medium)" }),
+          deltaStyle: num({ color: "var(--ok)", fontSize: "var(--fs-num-sm)" }),
+          flagCellStyle: { padding: "0 9px", height: rowH, borderBottom: "1px solid var(--line)" },
+          flagStyle: over
+            ? { display: "inline-flex", alignItems: "center", height: "18px", padding: "0 7px", borderRadius: "var(--r-mark)", fontSize: "10.5px", fontWeight: "var(--w-semibold)", whiteSpace: "nowrap", color: "var(--warn-ink)", background: "var(--surface)", border: "1px solid var(--warn-line)" }
+            : { display: "none" }
+        };
+      }),
+      hasViolation: violations.length > 0,
+      violationText: blocked
+        ? "У должности «" + bulkJobDef[1] + "» ставка вне вилки запрещена. " + violations.length + " " + plural(violations.length, ["человек выйдет", "человека выйдут", "человек выйдут"]) + " за потолок " + fmt(bulkJobDef[4], 0) + " — операция не применится, пока не поднимете вилку или не уменьшите прибавку."
+        : violations.length + " " + plural(violations.length, ["человек выйдет", "человека выйдут", "человек выйдут"]) + " за вилку должности. Сохранить можно: у почасовых это предупреждение. Каждый выход запишется в историю с причиной.",
+
+      applyDisabled: blocked || bulkPeople.length === 0,
+      applyLabel: blocked ? "Вилка не позволяет"
+        : (bulkPeople.length === 0 ? "Никого не затронет"
+          : "Применить к " + bulkPeople.length + " " + plural(bulkPeople.length, ["человеку", "людям", "людям"])),
+      applyStyle: {
+        height: "var(--control-h)", padding: "0 15px", borderRadius: "var(--r-control)",
+        border: "1px solid " + (blocked || bulkPeople.length === 0 ? "var(--line-control)" : "var(--accent)"),
+        background: blocked || bulkPeople.length === 0 ? "var(--surface-3)" : "var(--accent)",
+        color: blocked || bulkPeople.length === 0 ? "var(--ink-3)" : "var(--ink-inverse)",
+        fontSize: "var(--fs-body)", fontWeight: "var(--w-semibold)",
+        cursor: blocked || bulkPeople.length === 0 ? "not-allowed" : "pointer"
+      },
+
+      /* ── справочники ── */
+      refs: REFS.map(function (r) {
+        const tone = { job: ["var(--accent)", "var(--accent-soft)", "var(--accent-line)", "Оплата труда"],
+                       pay: ["var(--reg-supp)", "var(--reg-supp-soft)", "var(--reg-supp-line)", "Расчёт и учёт"],
+                       ext: ["var(--reg-internal)", "var(--reg-internal-soft)", "var(--reg-internal-line)", "Структура"] }[r[2]];
+        return {
+          num: r[0], title: r[1], text: r[3], where: r[4], chip: tone[3],
+          cardStyle: { background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: "var(--r-block)", padding: "12px 14px 13px" },
+          chipStyle: {
+            display: "inline-flex", alignItems: "center", padding: "1px 7px",
+            borderRadius: "var(--r-mark)", fontSize: "10px", fontWeight: "var(--w-semibold)",
+            whiteSpace: "nowrap", color: tone[0], background: tone[1], border: "1px solid " + tone[2]
+          }
+        };
+      }),
+      laws: LAWS.map(function (l) {
+        const t = { plain: ["var(--surface)", "var(--line-strong)", "var(--ink)"],
+                    warn: ["var(--warn-soft)", "var(--warn-line)", "var(--warn-ink)"],
+                    ok: ["var(--ok-soft)", "var(--ok-line)", "var(--ok)"] }[l[2]];
+        return {
+          title: l[0], text: l[1], color: t[2],
+          style: { background: t[0], border: "1px solid " + t[1], borderRadius: "var(--r-block)", padding: "12px 14px 13px" }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

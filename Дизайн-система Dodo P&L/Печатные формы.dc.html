@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper:#FFFFFF; --ink:#14181F; --ink-2:#4A535F; --ink-3:#7C8794; --ink-empty:#AEB6BF;
+    --rule:#C7CDD4; --rule-2:#E2E6EA; --rule-strong:#8E97A1;
+    --accent:#1F4E9C; --warn-soft:#FFF9EC; --warn-line:#E4D3AE;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  html, body { margin:0; padding:0; background:#DFE3E8; }
+  * { box-sizing:border-box; }
+
+  /* Печатную геометрию документ держит сам: один лист A4 = одна .page,
+     на экране те же миллиметры на сером столе. */
+  .desk { display:flex; flex-direction:column; align-items:center; gap:10mm; padding:10mm 0; }
+  .page {
+    width:210mm; height:297mm; flex:0 0 auto;
+    background:var(--paper); color:var(--ink);
+    font-family:var(--font-ui);
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(20,26,34,.16), 0 12px 32px -12px rgba(20,26,34,.32);
+  }
+  .n { font-family:var(--font-num); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+
+  @page { size:A4; margin:0 }
+  @media print {
+    html, body { background:#fff }
+    .desk { display:block; gap:0; padding:0 }
+    .page { box-shadow:none; break-after:page }
+    .page:last-child { break-after:auto }
+    thead { display:table-header-group }
+    tr { break-inside:avoid }
+  }
+</style>
+<meta name="omelette-owns-print" content="a4">
+</helmet>
+
+<div class="desk">
+
+  <section class="page" style="padding: 14mm 12mm 12mm; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: flex-start; gap: 12mm; padding-bottom: 4mm; border-bottom: 1.5pt solid var(--ink)">
+      <div style="flex: 1">
+        <div style="font-size: 8pt; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600">Dodo Balkan doo · ПИБ 112845337</div>
+        <div style="font-size: 15pt; font-weight: 700; letter-spacing: -.01em; margin-top: 2mm">Платёжная ведомость за июнь 2026</div>
+        <div style="font-size: 8.5pt; color: var(--ink-2); margin-top: 1.5mm">Официальный регистр · Beograd Vračar, Novi Beograd, Novi Sad · RSD</div>
+      </div>
+      <div style="text-align: right; flex: 0 0 auto">
+        <div style="font-size: 8pt; color: var(--ink-3)">Документ</div>
+        <div style="font-family: var(--font-num); font-size: 10pt; font-weight: 600">VD-2026-06-01</div>
+        <div style="font-size: 8pt; color: var(--ink-3); margin-top: 2mm">Сформирован</div>
+        <div style="font-family: var(--font-num); font-size: 9pt">03.07.2026, 09:04</div>
+      </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 5mm">
+      <thead>
+        <tr>
+          <th scope="col" style="width: 8mm; padding: 1.6mm 1.5mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: right; border-bottom: .75pt solid var(--ink)">№</th>
+          <th scope="col" style="padding: 1.6mm 2mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: left; border-bottom: .75pt solid var(--ink)">Сотрудник</th>
+          <th scope="col" style="width: 24mm; padding: 1.6mm 2mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: left; border-bottom: .75pt solid var(--ink)">Должность</th>
+          <th scope="col" style="width: 16mm; padding: 1.6mm 1.5mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: right; border-bottom: .75pt solid var(--ink)">Часы</th>
+          <th scope="col" style="width: 24mm; padding: 1.6mm 1.5mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: right; border-bottom: .75pt solid var(--ink)">Начислено</th>
+          <th scope="col" style="width: 22mm; padding: 1.6mm 1.5mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: right; border-bottom: .75pt solid var(--ink)">Удержано</th>
+          <th scope="col" style="width: 24mm; padding: 1.6mm 1.5mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: right; border-bottom: .75pt solid var(--ink)">К выплате</th>
+          <th scope="col" style="width: 30mm; padding: 1.6mm 2mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: left; border-bottom: .75pt solid var(--ink)">Подпись</th>
+        </tr>
+      </thead>
+      <tbody>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="15">
+          <tr style="{{ r.trStyle }}">
+            <td class="n" style="{{ r.numStyle }}">{{ r.i }}</td>
+            <td style="{{ r.nameStyle }}">{{ r.name }}</td>
+            <td style="{{ r.roleStyle }}">{{ r.role }}</td>
+            <td class="n" style="{{ r.cellStyle }}">{{ r.hours }}</td>
+            <td class="n" style="{{ r.cellStyle }}">{{ r.gross }}</td>
+            <td class="n" style="{{ r.mutedStyle }}">{{ r.held }}</td>
+            <td class="n" style="{{ r.netStyle }}">{{ r.net }}</td>
+            <td style="{{ r.signStyle }}"></td>
+          </tr>
+        </sc-for>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row" colspan="3" style="padding: 2.2mm 2mm; font-size: 9pt; font-weight: 700; text-align: left; border-top: 1pt solid var(--ink)">Итого · {{ count }}</th>
+          <td class="n" style="padding: 2.2mm 1.5mm; font-size: 8.5pt; font-weight: 700; border-top: 1pt solid var(--ink)">{{ totalHours }}</td>
+          <td class="n" style="padding: 2.2mm 1.5mm; font-size: 8.5pt; font-weight: 700; border-top: 1pt solid var(--ink)">{{ totalGross }}</td>
+          <td class="n" style="padding: 2.2mm 1.5mm; font-size: 8.5pt; font-weight: 700; border-top: 1pt solid var(--ink)">{{ totalHeld }}</td>
+          <td class="n" style="padding: 2.2mm 1.5mm; font-size: 9.5pt; font-weight: 700; border-top: 1pt solid var(--ink)">{{ totalNet }}</td>
+          <td style="border-top: 1pt solid var(--ink)"></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div style="font-size: 7.5pt; line-height: 11pt; color: var(--ink-2); margin-top: 4mm">Сумма прописью: {{ words }}</div>
+
+    <div style="flex: 1"></div>
+
+    <div style="display: flex; gap: 10mm; padding-top: 6mm; margin-top: 6mm; border-top: .75pt solid var(--rule)">
+      <div style="flex: 1">
+        <div style="height: 12mm; border-bottom: .75pt solid var(--ink)"></div>
+        <div style="font-size: 8pt; color: var(--ink-2); margin-top: 1.5mm">Расчёт составил · бухгалтер</div>
+        <div style="font-size: 8pt; color: var(--ink-3)">Ana Marić</div>
+      </div>
+      <div style="flex: 1">
+        <div style="height: 12mm; border-bottom: .75pt solid var(--ink)"></div>
+        <div style="font-size: 8pt; color: var(--ink-2); margin-top: 1.5mm">Утвердил · администратор</div>
+        <div style="font-size: 8pt; color: var(--ink-3)">Nikola Perić</div>
+      </div>
+      <div style="flex: 0 0 46mm">
+        <div style="height: 12mm; border-bottom: .75pt solid var(--ink)"></div>
+        <div style="font-size: 8pt; color: var(--ink-2); margin-top: 1.5mm">Дата подписания</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: baseline; gap: 4mm; margin-top: 4mm; font-size: 7pt; color: var(--ink-3)">
+      <span>Лист 1 из 1 · документ выведен из данных периода, правка бумажной копии силы не имеет</span>
+      <span style="margin-left: auto; font-family: var(--font-num)">VD-2026-06-01</span>
+    </div>
+  </section>
+
+  <section class="page" style="padding: 16mm 14mm 14mm; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: flex-start; gap: 12mm; padding-bottom: 4mm; border-bottom: 1.5pt solid var(--ink)">
+      <div style="flex: 1">
+        <div style="font-size: 8pt; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600">Dodo Balkan doo · PIB 112845337</div>
+        <div style="font-size: 15pt; font-weight: 700; letter-spacing: -.01em; margin-top: 2mm">Obračun zarade za jun 2026</div>
+      </div>
+      <div style="text-align: right; flex: 0 0 auto">
+        <div style="font-size: 8pt; color: var(--ink-3)">Isplata</div>
+        <div style="font-family: var(--font-num); font-size: 10pt; font-weight: 600">05.07.2026</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8mm; margin-top: 5mm">
+      <div style="flex: 1">
+        <div style="font-size: 8pt; color: var(--ink-3)">Zaposleni</div>
+        <div style="font-size: 12pt; font-weight: 600; margin-top: 1mm">Jelena Đorđević</div>
+        <div style="font-size: 8.5pt; color: var(--ink-2); margin-top: .5mm">Pica majstor · Beograd Vračar</div>
+      </div>
+      <div style="flex: 0 0 auto; text-align: right">
+        <div style="font-size: 8pt; color: var(--ink-3)">Sati u mesecu</div>
+        <div style="font-family: var(--font-num); font-size: 12pt; font-weight: 600; margin-top: 1mm">176</div>
+        <div style="font-size: 8.5pt; color: var(--ink-2); margin-top: .5mm">norma 176</div>
+      </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 6mm">
+      <thead>
+        <tr>
+          <th scope="col" style="padding: 1.8mm 2mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: left; border-bottom: .75pt solid var(--ink)">Stavka</th>
+          <th scope="col" style="width: 46mm; padding: 1.8mm 2mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: left; border-bottom: .75pt solid var(--ink)">Obračun</th>
+          <th scope="col" style="width: 30mm; padding: 1.8mm 2mm; font-size: 7.5pt; font-weight: 600; color: var(--ink-2); text-align: right; border-bottom: .75pt solid var(--ink)">Iznos, RSD</th>
+        </tr>
+      </thead>
+      <tbody>
+        <sc-for list="{{ slip }}" as="s" hint-placeholder-count="6">
+          <tr>
+            <td style="{{ s.labelStyle }}">{{ s.label }}</td>
+            <td style="{{ s.formulaStyle }}">{{ s.formula }}</td>
+            <td class="n" style="{{ s.sumStyle }}">{{ s.sum }}</td>
+          </tr>
+        </sc-for>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row" colspan="2" style="padding: 3mm 2mm; font-size: 10.5pt; font-weight: 700; text-align: left; border-top: 1pt solid var(--ink)">Za isplatu na račun</th>
+          <td class="n" style="padding: 3mm 2mm; font-size: 13pt; font-weight: 700; border-top: 1pt solid var(--ink)">{{ slipNet }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div style="margin-top: 5mm; padding: 3mm 4mm; border: .75pt solid var(--rule-2); background: #FAFBFC">
+      <div style="font-size: 8pt; font-weight: 600">Račun za isplatu</div>
+      <div style="font-family: var(--font-num); font-size: 9pt; margin-top: 1mm">160-0000987654-32 · Banca Intesa</div>
+    </div>
+
+    <div style="flex: 1"></div>
+
+    <div style="display: flex; gap: 10mm; padding-top: 6mm; border-top: .75pt solid var(--rule)">
+      <div style="flex: 1">
+        <div style="height: 12mm; border-bottom: .75pt solid var(--ink)"></div>
+        <div style="font-size: 8pt; color: var(--ink-2); margin-top: 1.5mm">Obračun sastavio</div>
+      </div>
+      <div style="flex: 1">
+        <div style="height: 12mm; border-bottom: .75pt solid var(--ink)"></div>
+        <div style="font-size: 8pt; color: var(--ink-2); margin-top: 1.5mm">Zaposleni · primio obračun</div>
+      </div>
+    </div>
+
+    <div style="font-size: 7pt; line-height: 10pt; color: var(--ink-3); margin-top: 4mm">Obračun se izdaje na srpskom jeziku. Prigovor na obračun podnosi se u roku od 30 dana od dana prijema.</div>
+  </section>
+
+  <section class="page" style="padding: 16mm 14mm 14mm; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: flex-start; gap: 12mm; padding-bottom: 4mm; border-bottom: 1.5pt solid var(--ink)">
+      <div style="flex: 1">
+        <div style="font-size: 8pt; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600">Dodo Balkan doo</div>
+        <div style="font-size: 15pt; font-weight: 700; letter-spacing: -.01em; margin-top: 2mm">Кассовый отчёт точки за июнь 2026</div>
+        <div style="font-size: 8.5pt; color: var(--ink-2); margin-top: 1.5mm">Beograd Vračar · управляющий Petar Petrović · RSD</div>
+      </div>
+      <div style="text-align: right; flex: 0 0 auto">
+        <div style="font-size: 8pt; color: var(--ink-3)">Документ</div>
+        <div style="font-family: var(--font-num); font-size: 10pt; font-weight: 600">KO-2026-06-VR</div>
+      </div>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 5mm">
+      <tbody>
+        <sc-for list="{{ cashRows }}" as="c" hint-placeholder-count="5">
+          <tr>
+            <td style="{{ c.labelStyle }}">{{ c.label }}</td>
+            <td style="{{ c.noteStyle }}">{{ c.note }}</td>
+            <td class="n" style="{{ c.sumStyle }}">{{ c.sum }}</td>
+          </tr>
+        </sc-for>
+      </tbody>
+    </table>
+
+    <div style="display: flex; gap: 4mm; margin-top: 5mm">
+      <div style="flex: 1; padding: 3.5mm 4mm; border: .75pt solid var(--rule)">
+        <div style="font-size: 7.5pt; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600">Расчётный остаток</div>
+        <div class="n" style="font-size: 14pt; font-weight: 700; text-align: left; margin-top: 1.5mm">{{ calcEnd }}</div>
+      </div>
+      <div style="flex: 1; padding: 3.5mm 4mm; border: .75pt solid var(--rule)">
+        <div style="font-size: 7.5pt; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600">Пересчитано в кассе</div>
+        <div class="n" style="font-size: 14pt; font-weight: 700; text-align: left; margin-top: 1.5mm">{{ counted }}</div>
+      </div>
+      <div style="flex: 1; padding: 3.5mm 4mm; border: 1pt solid var(--ink); background: var(--warn-soft)">
+        <div style="font-size: 7.5pt; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); font-weight: 600">Расхождение</div>
+        <div class="n" style="font-size: 14pt; font-weight: 700; text-align: left; margin-top: 1.5mm">{{ delta }}</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 5mm">
+      <div style="font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin-bottom: 2mm">Объяснение расхождения</div>
+      <div style="border: .75pt solid var(--rule); min-height: 22mm; padding: 3mm"></div>
+      <div style="font-size: 7pt; color: var(--ink-3); margin-top: 1.5mm">Заполняется от руки при сдаче отчёта. В системе то же поле обязательно — расхождение нельзя закрыть без причины.</div>
+    </div>
+
+    <div style="flex: 1"></div>
+
+    <div style="display: flex; gap: 10mm; padding-top: 6mm; border-top: .75pt solid var(--rule)">
+      <div style="flex: 1">
+        <div style="height: 12mm; border-bottom: .75pt solid var(--ink)"></div>
+        <div style="font-size: 8pt; color: var(--ink-2); margin-top: 1.5mm">Сдал · управляющий точки</div>
+        <div style="font-size: 8pt; color: var(--ink-3)">Petar Petrović</div>
+      </div>
+      <div style="flex: 1">
+        <div style="height: 12mm; border-bottom: .75pt solid var(--ink)"></div>
+        <div style="font-size: 8pt; color: var(--ink-2); margin-top: 1.5mm">Принял · бухгалтер</div>
+        <div style="font-size: 8pt; color: var(--ink-3)">Ana Marić</div>
+      </div>
+      <div style="flex: 0 0 46mm">
+        <div style="height: 12mm; border-bottom: .75pt solid var(--ink)"></div>
+        <div style="font-size: 8pt; color: var(--ink-2); margin-top: 1.5mm">Дата</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal' | 'compact'&quot;,&quot;section&quot;:&quot;Плотность ведомости&quot;}}">
+/* Один источник для обоих листов: имя, должность, часы, начислено
+   по официальному регистру, аванс, форма, недостача.
+   Налог и итог считаются, а не вписаны — иначе листы разъезжаются. */
+const TAX = 0.20;
+const STAFF = [
+  ["Petar Petrović",   "Управляющий",    176, 145000,   40000, 0,    0],
+  ["Milica Jovanović", "Управляющий",    176, 145000,   40000, 0,    0],
+  ["Miloš Stojanović", "Управляющий",    176, 138000,   40000, 0,    0],
+  ["Dušan Kovačević",  "Смена-менеджер", 176, 110400,   25000, 0,    0],
+  ["Aleksa Marković",  "Смена-менеджер", 160,  95450,   25000, 0,    0],
+  ["Jelena Đorđević",  "Пиццамейкер",    176,  81480,   20000, 0,    0],
+  ["Nikola Ilić",      "Курьер",         168,  66880,   15000, 0,    0],
+  ["Ivana Đurić",      "Кассир",         160,  65600,   15000, 1200, 0],
+  ["Lenka Zdravković", "Пиццамейкер",     84,  34400,       0, 0,    3400],
+  ["Marija Obradović", "Кассир",         176,  72400,   15000, 0,    0],
+  ["Vuk Pavlović",     "Курьер",         172,  68020,   15000, 0,    0],
+  ["Tijana Simić",     "Пиццамейкер",     96,  40590,       0, 1200, 0],
+  ["Stefan Nikolić",   "Пиццамейкер",    184,  83830,   20000, 0,    0],
+  ["Sara Ristić",      "Кассир",         176,  71297.5, 15000, 0,    0],
+  ["Bojan Lukić",      "Курьер",         180,  72562.5, 15000, 1200, 0]
+];
+
+const SLIP_NAME = "Jelena Đorđević";
+/* Разбивка начисленного этого человека. Сумма обязана дать его строку ведомости. */
+const SLIP_PARTS = [
+  ["Osnovna zarada",          "176 č × 420,00", 73920],
+  ["Noćni rad",               "24 č × 25%",      2520],
+  ["Naknadni obračun za maj", "168 č × 30,00",   5040]
+];
+
+const CASH = [
+  ["Остаток на 01.06.2026", "перенесён с мая", 58700, false],
+  ["Наличная выручка", "из Dodo IS, 30 смен", 1246800, false],
+  ["Расходы наличными", "9 записей, реестр приложен", -77500, false],
+  ["Инкассация", "7 выемок", -1160000, false],
+  ["Расчётный остаток на 30.06.2026", "выведен из строк выше", 68000, true]
+];
+
+const COUNTED = 65700;
+
+function fmt(n) {
+  return Math.abs(n).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function signed(n) {
+  return (n < 0 ? "\u2212" : "") + fmt(n);
+}
+
+/* Сумма прописью — по-русски, до миллионов. Нужна на подписной ведомости. */
+const ONES = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять",
+  "десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать",
+  "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"];
+const ONES_F = ["", "одна", "две", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+const TENS = ["", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"];
+const HUNDREDS = ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"];
+
+function trio(n, female) {
+  const out = [];
+  const h = Math.floor(n / 100);
+  const rest = n % 100;
+  if (h) out.push(HUNDREDS[h]);
+  if (rest < 20) {
+    if (rest) out.push(female && rest < 10 ? ONES_F[rest] : ONES[rest]);
+  } else {
+    out.push(TENS[Math.floor(rest / 10)]);
+    const u = rest % 10;
+    if (u) out.push(female && u < 10 ? ONES_F[u] : ONES[u]);
+  }
+  return out.join(" ");
+}
+function plural(n, forms) {
+  const a = n % 100, b = n % 10;
+  if (a > 10 && a < 20) return forms[2];
+  if (b === 1) return forms[0];
+  if (b > 1 && b < 5) return forms[1];
+  return forms[2];
+}
+function words(total) {
+  const whole = Math.floor(total);
+  const kop = Math.round((total - whole) * 100);
+  const mil = Math.floor(whole / 1000000);
+  const thou = Math.floor((whole % 1000000) / 1000);
+  const rest = whole % 1000;
+  const parts = [];
+  if (mil) parts.push(trio(mil, false) + " " + plural(mil, ["миллион", "миллиона", "миллионов"]));
+  if (thou) parts.push(trio(thou, true) + " " + plural(thou, ["тысяча", "тысячи", "тысяч"]));
+  if (rest || (!mil && !thou)) parts.push(trio(rest, false));
+  const s = parts.join(" ").replace(/\s+/g, " ").trim();
+  return s.charAt(0).toUpperCase() + s.slice(1)
+    + " " + plural(whole, ["динар", "динара", "динаров"])
+    + " " + (kop < 10 ? "0" + kop : String(kop)) + " "
+    + plural(kop, ["пара", "пары", "пар"]);
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    const dense = this.props.density === "compact";
+    const rowPad = dense ? "1mm 1.5mm" : "1.5mm 1.5mm";
+    const fs = dense ? "7.5pt" : "8pt";
+
+    const calc = STAFF.map(function (r) {
+      const tax = Math.round(r[3] * TAX * 100) / 100;
+      const held = tax + r[4] + r[5] + r[6];
+      return { name: r[0], role: r[1], hours: r[2], gross: r[3], tax: tax, adv: r[4], held: held, net: r[3] - held };
+    });
+    const totalHours = calc.reduce(function (s, r) { return s + r.hours; }, 0);
+    const totalGross = calc.reduce(function (s, r) { return s + r.gross; }, 0);
+    const totalHeld = calc.reduce(function (s, r) { return s + r.held; }, 0);
+    const totalNet = totalGross - totalHeld;
+
+    const base = {
+      padding: rowPad, fontSize: fs, borderBottom: ".5pt solid var(--rule-2)",
+      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+    };
+
+    const she = calc.filter(function (r) { return r.name === SLIP_NAME; })[0] || calc[0];
+    const SLIP = SLIP_PARTS.map(function (p) { return [p[0], p[1], p[2], false]; })
+      .concat([
+        ["Bruto", "zbir gore", she.gross, true],
+        ["Porez i doprinosi", (TAX * 100) + "% od bruto", -she.tax, false],
+        ["Akontacija 15.06", "isplaćeno na račun", -she.adv, false]
+      ]);
+    const slipNet = she.net;
+    const calcEnd = CASH.filter(function (c) { return c[3]; })[0][2];
+
+    return {
+      rows: calc.map(function (r, i) {
+        return {
+          i: String(i + 1), name: r.name, role: r.role,
+          hours: String(r.hours), gross: fmt(r.gross), held: fmt(r.held), net: fmt(r.net),
+          trStyle: { background: i % 2 === 1 ? "#FAFBFC" : "transparent" },
+          numStyle: Object.assign({}, base, { color: "var(--ink-3)", fontSize: "7pt" }),
+          nameStyle: Object.assign({}, base, { padding: rowPad.replace("1.5mm", "2mm"), fontWeight: 500, textAlign: "left" }),
+          roleStyle: Object.assign({}, base, { padding: rowPad.replace("1.5mm", "2mm"), color: "var(--ink-2)", fontSize: "7.5pt", textAlign: "left" }),
+          cellStyle: base,
+          mutedStyle: Object.assign({}, base, { color: "var(--ink-2)" }),
+          netStyle: Object.assign({}, base, { fontWeight: 600 }),
+          signStyle: Object.assign({}, base, { padding: rowPad.replace("1.5mm", "2mm"), borderBottom: ".5pt solid var(--rule)" })
+        };
+      }),
+      count: STAFF.length + " " + plural(STAFF.length, ["человек", "человека", "человек"]),
+      totalHours: String(totalHours),
+      totalGross: fmt(totalGross),
+      totalHeld: fmt(totalHeld),
+      totalNet: fmt(totalNet),
+      words: words(totalNet),
+
+      slip: SLIP.map(function (s) {
+        return {
+          label: s[0], formula: s[1], sum: signed(s[2]),
+          labelStyle: {
+            padding: "2.2mm 2mm", fontSize: "9pt",
+            fontWeight: s[3] ? 700 : 400,
+            background: s[3] ? "#F4F6F8" : "transparent",
+            borderBottom: ".5pt solid var(--rule-2)"
+          },
+          formulaStyle: {
+            padding: "2.2mm 2mm", fontFamily: "var(--font-num)", fontSize: "8pt",
+            color: "var(--ink-3)",
+            background: s[3] ? "#F4F6F8" : "transparent",
+            borderBottom: ".5pt solid var(--rule-2)"
+          },
+          sumStyle: {
+            padding: "2.2mm 2mm", fontSize: "9.5pt",
+            fontWeight: s[3] ? 700 : 400,
+            color: s[2] < 0 ? "var(--ink-2)" : "var(--ink)",
+            background: s[3] ? "#F4F6F8" : "transparent",
+            borderBottom: ".5pt solid var(--rule-2)"
+          }
+        };
+      }),
+      slipNet: fmt(slipNet),
+
+      cashRows: CASH.map(function (c) {
+        return {
+          label: c[0], note: c[1], sum: signed(c[2]),
+          labelStyle: {
+            padding: "2.4mm 2mm", fontSize: c[3] ? "10pt" : "9pt",
+            fontWeight: c[3] ? 700 : 400,
+            borderBottom: c[3] ? "1pt solid var(--ink)" : ".5pt solid var(--rule-2)",
+            borderTop: c[3] ? "1pt solid var(--ink)" : "none"
+          },
+          noteStyle: {
+            padding: "2.4mm 2mm", fontSize: "8pt", color: "var(--ink-3)",
+            borderBottom: c[3] ? "1pt solid var(--ink)" : ".5pt solid var(--rule-2)",
+            borderTop: c[3] ? "1pt solid var(--ink)" : "none"
+          },
+          sumStyle: {
+            width: "34mm", padding: "2.4mm 2mm",
+            fontSize: c[3] ? "11pt" : "9.5pt", fontWeight: c[3] ? 700 : 400,
+            borderBottom: c[3] ? "1pt solid var(--ink)" : ".5pt solid var(--rule-2)",
+            borderTop: c[3] ? "1pt solid var(--ink)" : "none"
+          }
+        };
+      }),
+      calcEnd: fmt(calcEnd),
+      counted: fmt(COUNTED),
+      delta: signed(COUNTED - calcEnd)
+    };
+  }
+}
+</script>
+</body>
+</html>

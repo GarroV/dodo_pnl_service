@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9; --reg-supp-line:#DCD0EE;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1; --reg-internal-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, select, textarea { font:inherit; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 15</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Разнесение накладных: чья и за что — решает операционный директор</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Бухгалтер видит бумагу и сумму, но не знает, на какую точку ушло сырьё и что за «монтаж по договору». Поэтому очередь разделена: сначала операционный директор говорит чья и за что, потом бухгалтер сверяет сумму и НДС. До разнесения накладная в P&amp;L не попадает.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isQueue }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Очередь <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Июнь 2026</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ queueMeta }}</span>
+          <div style="margin-left: auto; display: flex; gap: 6px">
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+              <button onClick="{{ f.on }}" style="{{ f.style }}">{{ f.label }}<span style="{{ f.countStyle }}">{{ f.count }}</span></button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 486px; gap: 10px; align-items: start">
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-meta); color: var(--ink-2)">
+              <span style="font-weight: var(--w-semibold)">{{ shownCount }}</span>
+              <span style="margin-left: auto; font-family: var(--font-num)">на сумму {{ shownSum }}</span>
+            </div>
+            <div style="max-height: 520px; overflow: auto">
+              <sc-for list="{{ rows }}" as="r" hint-placeholder-count="7">
+                <button onClick="{{ r.on }}" style="{{ r.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <span style="{{ r.barStyle }}"></span>
+                  <span style="{{ r.thumbStyle }}"></span>
+                  <span style="flex: 1; min-width: 0; text-align: left">
+                    <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ r.supplier }}</span>
+                    <span style="display: block; font-size: var(--fs-meta); color: var(--ink-3); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ r.meta }}</span>
+                    <span style="{{ r.chipStyle }}">{{ r.chip }}</span>
+                  </span>
+                  <span style="{{ r.sumStyle }}">{{ r.sum }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+
+            <div style="display: flex; gap: 12px; padding: 13px 15px; background: var(--surface-2); border-bottom: 1px solid var(--line)">
+              <div style="width: 92px; height: 118px; flex: 0 0 auto; border-radius: var(--r-control); background: linear-gradient(135deg, #C9CFD6, #EBEEF1); border: 1px solid var(--line-control); display: flex; align-items: flex-end; padding: 5px">
+                <span style="font-size: 9.5px; color: var(--ink-2); background: rgba(255,255,255,.85); padding: 1px 4px; border-radius: 2px">{{ selPhoto }}</span>
+              </div>
+              <div style="flex: 1; min-width: 0">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Из документа · не редактируется</div>
+                <div style="font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ selSupplier }}</div>
+                <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 2px">{{ selMeta }}</div>
+                <div style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; margin-top: 7px">{{ selSum }}</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 3px">{{ selContent }}</div>
+              </div>
+            </div>
+
+            <div style="padding: 13px 15px 15px">
+
+              <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 6px">
+                <span style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Чья накладная</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ splitHint }}</span>
+                <button onClick="{{ toggleSplit }}" style="{{ splitBtnStyle }}">{{ splitBtnLabel }}</button>
+              </div>
+
+              <sc-if value="{{ isSingle }}" hint-placeholder-val="{{ true }}">
+                <select value="{{ point }}" onChange="{{ setPoint }}" style="{{ pointStyle }}">
+                  <option value="">Выберите точку</option>
+                  <sc-for list="{{ pointOpts }}" as="p" hint-placeholder-count="5">
+                    <option value="{{ p.key }}">{{ p.label }}</option>
+                  </sc-for>
+                </select>
+              </sc-if>
+
+              <sc-if value="{{ isSplit }}" hint-placeholder-val="{{ false }}">
+                <div style="border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+                  <sc-for list="{{ shares }}" as="s" hint-placeholder-count="5">
+                    <div style="{{ s.rowStyle }}">
+                      <span style="flex: 1; min-width: 0; font-size: var(--fs-dense)">{{ s.name }}</span>
+                      <span style="flex: 0 0 128px; font-family: var(--font-num); font-size: var(--fs-num); color: var(--ink-2); text-align: right">{{ s.money }}</span>
+                      <span style="display: flex; align-items: center; height: 28px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); overflow: hidden; flex: 0 0 auto">
+                        <button onClick="{{ s.dec }}" style="width: 26px; height: 100%; border: 0; border-right: 1px solid var(--line); background: var(--surface-2); font-size: 15px; color: var(--ink-2)">−</button>
+                        <span style="width: 44px; text-align: center; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums">{{ s.pct }}</span>
+                        <button onClick="{{ s.inc }}" style="width: 26px; height: 100%; border: 0; border-left: 1px solid var(--line); background: var(--surface-2); font-size: 15px; color: var(--ink-2)">+</button>
+                      </span>
+                    </div>
+                  </sc-for>
+                  <div style="{{ splitTotalStyle }}">
+                    <span style="flex: 1; font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ splitTotalLabel }}</span>
+                    <span style="font-family: var(--font-num); font-size: var(--fs-lead); font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ splitTotal }}</span>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 6px; margin-top: 8px">
+                  <button onClick="{{ byRevenue }}" style="height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Разложить по выручке</button>
+                  <button onClick="{{ evenly }}" style="height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Поровну</button>
+                </div>
+              </sc-if>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin: 14px 0 6px">За что · статья из справочника</div>
+              <select value="{{ article }}" onChange="{{ setArticle }}" style="{{ articleStyle }}">
+                <option value="">Выберите статью</option>
+                <sc-for list="{{ articleOpts }}" as="a" hint-placeholder-count="7">
+                  <option value="{{ a.label }}">{{ a.label }}</option>
+                </sc-for>
+              </select>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); margin-top: 5px">{{ articleNote }}</div>
+
+              <sc-if value="{{ hasGuess }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ applyGuess }}" style="display: flex; align-items: center; gap: 9px; width: 100%; margin-top: 9px; padding: 9px 11px; text-align: left; border: 1px dashed var(--accent-line); border-radius: var(--r-control); background: var(--accent-soft)" style-hover="{ borderStyle: 'solid' }">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 3v2"></path><path d="M12 19v2"></path><path d="M5 12H3"></path><path d="M21 12h-2"></path><circle cx="12" cy="12" r="4"></circle></svg>
+                  <span style="flex: 1; min-width: 0; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--accent)">{{ guessText }}</span>
+                </button>
+              </sc-if>
+
+              <div style="{{ resultStyle }}">
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ resultTitle }}</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); margin-top: 3px">{{ resultText }}</div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line)">
+                <button onClick="{{ send }}" style="{{ sendStyle }}" disabled="{{ sendDisabled }}">{{ sendLabel }}</button>
+                <button onClick="{{ reject }}" style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', color: 'var(--ink)' }">Не наша</button>
+                <span style="flex: 1; min-width: 0; text-align: right; font-size: var(--fs-meta); color: var(--ink-3)">{{ sendHint }}</span>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isFlow }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Путь накладной</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Четыре руки, и ни одна не делает чужую работу.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px">
+          <sc-for list="{{ flow }}" as="f" hint-placeholder-count="4">
+            <div style="{{ f.style }}">
+              <div style="display: flex; align-items: baseline; gap: 8px">
+                <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ f.num }}</span>
+                <span style="{{ f.whoStyle }}">{{ f.who }}</span>
+              </div>
+              <div style="font-size: var(--fs-body); font-weight: var(--w-semibold); margin-top: 7px">{{ f.title }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">{{ f.text }}</div>
+              <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); border-top: 1px dashed var(--line-control); padding-top: 7px; margin-top: 9px">{{ f.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <sc-for list="{{ laws }}" as="l" hint-placeholder-count="4">
+            <div style="{{ l.style }}">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: {{ l.color }}">{{ l.title }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: {{ l.color }}; margin-top: 3px">{{ l.text }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal' | 'compact'&quot;,&quot;section&quot;:&quot;Вид&quot;}}">
+const POINTS = [
+  ["vracar", "Beograd Vračar", 4460000],
+  ["novibg", "Novi Beograd", 3640000],
+  ["novisad", "Novi Sad Centar", 2860000],
+  ["zvezdara", "Beograd Zvezdara", 2140000],
+  ["dorcol", "Beograd Dorćol", 1760000]
+];
+
+const ARTICLES = ["Сырьё и упаковка", "Ремонт и обслуживание", "Коммунальные услуги", "Маркетинг", "Оборудование", "Хозрасходы", "Прочее"];
+
+/* id, поставщик, номер, дата, сумма, содержимое, подсказка правила, откуда пришла */
+const INVOICES = [
+  ["i1", "Komerc Promet doo", "2026-1288", "28.06", 186400, "Мука, сыр, соус — 14 позиций", "Сырьё и упаковка", "почта поставщика", 412],
+  ["i2", "Frigo Servis", "2026-0412", "26.06", 24500, "Ремонт холодильной камеры", "Ремонт и обслуживание", "фото с точки Vračar", 7],
+  ["i3", "Papir Plus", "2026-3301", "25.06", 41200, "Коробки 32 см, 2 000 шт.", "Сырьё и упаковка", "почта поставщика", 64],
+  ["i4", "Elektro Montaža", "2026-0088", "24.06", 68900, "Монтаж вывески", "", "фото с точки Dorćol", 0],
+  ["i5", "Voda Trade", "2026-7712", "23.06", 9300, "Вода и напитки", "Сырьё и упаковка", "почта поставщика", 58],
+  ["i6", "Reklama Media", "2026-0455", "22.06", 124000, "Печать и монтаж баннеров, 5 адресов", "Маркетинг", "почта поставщика", 9],
+  ["i7", "Gorenje Servis", "2026-0912", "19.06", 38700, "Замена компрессора", "Ремонт и обслуживание", "фото с точки Novi Sad", 3]
+];
+
+const FLOW = [
+  ["01", "Точка или поставщик", "ops", "Накладная попадает в систему",
+   "Управляющий фотографирует бумагу, поставщик присылает файл на почту. Оба пути ведут в одну очередь.", "Модуль 6 и модуль 3"],
+  ["02", "Операционный директор", "reg", "Говорит, чья и за что",
+   "Ставит точку и статью. Если накладная общая — раскладывает по точкам в процентах.", "Этот экран"],
+  ["03", "Бухгалтер", "acc", "Сверяет сумму и НДС",
+   "Видит уже разнесённую накладную: точка и статья проставлены. Его дело — цифры и документ.", "Модуль 3, инбокс"],
+  ["04", "P&L", "sys", "Сумма встаёт в строку отчёта",
+   "Строка берётся из статьи по справочнику. В раскрытии видно накладную, кто разнёс и кто подтвердил.", "Модуль 5 и модуль 14"]
+];
+
+const LAWS = [
+  ["Бухгалтер не угадывает, а сверяет", "Раньше он присваивал статью сам — по названию поставщика. «Elektro Montaža» может быть и ремонтом, и вывеской, и новым оборудованием: это три разные строки P&L. Знает только тот, кто заказывал работу.", "plain"],
+  ["Правило подсказывает, но не решает", "Если поставщик уже приходил и его всегда относили к одной статье, система предложит её. Предложение показано кнопкой, а не подставлено в поле: нажатие — решение человека.", "plain"],
+  ["Деление по точкам — в процентах, а не в суммах", "Проценты переживают исправление суммы бухгалтером. Если он поправит 124 000 на 126 400, доли останутся прежними и пересчитаются сами.", "ok"],
+  ["Неразнесённая накладная не идёт в P&L", "Она видна в очереди и в сумме «ждёт разнесения», но в отчёт не попадает. Иначе расход появился бы без точки, и P&L точек перестал бы складываться в P&L юрлица.", "warn"]
+];
+
+function fmt(n) {
+  return Math.abs(n).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function plural(n, forms) {
+  const a = n % 100, b = n % 10;
+  if (a > 10 && a < 20) return forms[2];
+  if (b === 1) return forms[0];
+  if (b > 1 && b < 5) return forms[1];
+  return forms[2];
+}
+
+class Component extends DCLogic {
+  state = { tab: "queue", filter: "open", sel: "i1", done: {}, mode: null, point: null, article: null, shares: null };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const rowH = this.props.density === "compact" ? "26px" : "30px";
+
+    const inv = INVOICES.filter(function (v) { return v[0] === st.sel; })[0] || INVOICES[0];
+    const openList = INVOICES.filter(function (v) { return !st.done[v[0]]; });
+    const doneList = INVOICES.filter(function (v) { return st.done[v[0]] && !st.done[v[0]].rejected; });
+    const rejectedList = INVOICES.filter(function (v) { return st.done[v[0]] && st.done[v[0]].rejected; });
+    const visible = st.filter === "open" ? openList
+      : (st.filter === "done" ? doneList
+        : (st.filter === "rejected" ? rejectedList : INVOICES));
+
+    const emptyShares = function () {
+      const m = {};
+      POINTS.forEach(function (p) { m[p[0]] = 0; });
+      return m;
+    };
+    const assigned = st.done[inv[0]] && !st.done[inv[0]].rejected ? st.done[inv[0]] : null;
+    const rejected = !!(st.done[inv[0]] && st.done[inv[0]].rejected);
+    const shares = st.shares || (assigned && assigned.shares) || emptyShares();
+    const curPoint = st.point !== null ? st.point : ((assigned && assigned.point) || null);
+    const curArticle = st.article !== null ? st.article : ((assigned && assigned.article) || null);
+    const total = POINTS.reduce(function (a, p) { return a + (shares[p[0]] || 0); }, 0);
+    const isSplit = st.mode !== null ? st.mode === "split" : !!(assigned && assigned.shares);
+    const balanced = total === 100;
+    const ready = isSplit ? (balanced && !!curArticle) : (!!curPoint && !!curArticle);
+    const guess = inv[6];
+    const guessCount = inv[8];
+    const showGuess = !!guess && curArticle !== guess && !assigned;
+    const label = function (v) {
+      const d = st.done[v[0]];
+      if (!d) return "";
+      if (d.rejected) return "не наша — отклонена";
+      const where = d.shares
+        ? "делится на " + POINTS.filter(function (p) { return (d.shares[p[0]] || 0) > 0; }).length + " точки"
+        : (POINTS.filter(function (p) { return p[0] === d.point; })[0] || POINTS[0])[1];
+      return where + " · " + d.article;
+    };
+
+    const selectStyle = function (filled) {
+      return {
+        width: "100%", height: "var(--control-h)", padding: "0 34px 0 10px",
+        borderRadius: "var(--r-control)", fontSize: "var(--fs-body)",
+        appearance: "none", WebkitAppearance: "none", MozAppearance: "none",
+        backgroundColor: "var(--surface)",
+        backgroundImage: "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%235C6672' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>\")",
+        backgroundRepeat: "no-repeat", backgroundPosition: "right 9px center",
+        border: "1px solid " + (filled ? "var(--line-control)" : "var(--accent)"),
+        color: filled ? "var(--ink)" : "var(--ink-3)"
+      };
+    };
+    const bump = function (key, d) {
+      return function () {
+        const next = Object.assign({}, shares);
+        next[key] = Math.max(0, Math.min(100, (next[key] || 0) + d));
+        self.setState({ shares: next });
+      };
+    };
+
+    return {
+      tabs: [["queue", "Очередь"], ["flow", "Путь накладной"]].map(function (t) {
+        const on = st.tab === t[0];
+        const base = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+        return {
+          label: t[1], sel: on, notSel: !on,
+          on: function () { self.setState({ tab: t[0] }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isQueue: st.tab === "queue",
+      isFlow: st.tab === "flow",
+
+      queueMeta: openList.length + " " + plural(openList.length, ["ждёт разнесения", "ждут разнесения", "ждут разнесения"])
+        + " на " + fmt(openList.reduce(function (a, v) { return a + v[4]; }, 0)) + " RSD",
+      filters: [["open", "Ждут", openList.length], ["done", "Разнесены", doneList.length], ["rejected", "Отклонены", rejectedList.length], ["all", "Все", INVOICES.length]].map(function (f) {
+        const on = st.filter === f[0];
+        return {
+          label: f[1], count: String(f[2]),
+          on: function () { self.setState({ filter: f[0] }); },
+          style: {
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            height: "var(--control-h-sm)", padding: "0 10px", borderRadius: "var(--r-control)",
+            fontSize: "var(--fs-dense)", whiteSpace: "nowrap",
+            border: "1px solid " + (on ? "var(--accent)" : "var(--line-control)"),
+            background: on ? "var(--accent-soft)" : "var(--surface)",
+            color: on ? "var(--accent)" : "var(--ink-2)",
+            fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)"
+          },
+          countStyle: { fontFamily: "var(--font-num)", fontSize: "9.5px", opacity: .7 }
+        };
+      }),
+      shownCount: visible.length + " " + plural(visible.length, ["накладная", "накладные", "накладных"]),
+      shownSum: fmt(visible.reduce(function (a, v) { return a + v[4]; }, 0)),
+
+      rows: visible.map(function (v, i) {
+        const done = st.done[v[0]];
+        const on = v[0] === st.sel;
+        return {
+          supplier: v[1],
+          meta: "№ " + v[2] + " · " + v[3] + " · " + v[7],
+          sum: fmt(v[4]),
+          chip: label(v) || v[5],
+          on: function () { self.setState({ sel: v[0], point: null, article: null, mode: null, shares: null }); },
+          rowStyle: {
+            display: "flex", alignItems: "flex-start", gap: "10px", width: "100%",
+            padding: "10px 12px 10px 0", border: 0,
+            borderBottom: i < visible.length - 1 ? "1px solid var(--line)" : 0,
+            background: on ? "#F0F5FC" : (done ? "var(--ok-soft)" : "var(--surface)"),
+            textAlign: "left"
+          },
+          barStyle: { width: "3px", alignSelf: "stretch", flex: "0 0 auto", background: on ? "var(--accent)" : "transparent" },
+          thumbStyle: {
+            width: "34px", height: "42px", flex: "0 0 auto", borderRadius: "2px",
+            background: "linear-gradient(135deg, #C9CFD6, #EBEEF1)", border: "1px solid var(--line-control)"
+          },
+          chipStyle: {
+            display: "inline-flex", alignItems: "center", height: "17px", padding: "0 6px",
+            marginTop: "4px", borderRadius: "var(--r-mark)", fontSize: "10.5px",
+            fontWeight: "var(--w-semibold)", whiteSpace: "nowrap",
+            color: done ? "var(--ok)" : "var(--ink-2)",
+            background: done ? "var(--surface)" : "var(--surface-3)",
+            border: "1px " + (done ? "solid var(--ok-line)" : "dashed var(--line-control)")
+          },
+          sumStyle: {
+            flex: "0 0 110px", textAlign: "right", fontFamily: "var(--font-num)",
+            fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums", fontWeight: "var(--w-medium)"
+          }
+        };
+      }),
+
+      selPhoto: "скан, 1 стр.",
+      selSupplier: inv[1],
+      selMeta: "№ " + inv[2] + " от " + inv[3] + " · пришла " + inv[7],
+      selSum: fmt(inv[4]) + " RSD",
+      selContent: inv[5],
+
+      splitHint: isSplit ? "проценты, сумма разложится сама" : "одна точка на всю накладную",
+      splitBtnLabel: isSplit ? "Одна точка" : "Разделить между точками",
+      toggleSplit: function () {
+        self.setState({ mode: isSplit ? "single" : "split", shares: isSplit ? null : emptyShares(), point: null });
+      },
+      splitBtnStyle: {
+        marginLeft: "auto", height: "24px", padding: "0 9px", borderRadius: "var(--r-control)",
+        border: "1px solid " + (isSplit ? "var(--accent)" : "var(--line-control)"),
+        background: isSplit ? "var(--accent-soft)" : "var(--surface)",
+        color: isSplit ? "var(--accent)" : "var(--ink-2)", fontSize: "var(--fs-meta)"
+      },
+      isSingle: !isSplit,
+      isSplit: isSplit,
+
+      pointOpts: POINTS.map(function (p) { return { key: p[0], label: p[1] }; }),
+      point: curPoint || "",
+      setPoint: function (e) { self.setState({ point: e.target.value || null }); },
+      pointStyle: selectStyle(!!curPoint),
+
+      shares: POINTS.map(function (p) {
+        const pct = shares[p[0]] || 0;
+        return {
+          name: p[1], pct: pct + "%",
+          money: pct === 0 ? "\u2014" : fmt(inv[4] * pct / 100),
+          inc: bump(p[0], 5), dec: bump(p[0], -5),
+          rowStyle: {
+            display: "flex", alignItems: "center", gap: "10px",
+            padding: "7px 11px", borderBottom: "1px solid var(--line)",
+            background: pct > 0 ? "var(--surface)" : "var(--surface-2)"
+          }
+        };
+      }),
+      splitTotal: total + "%",
+      splitTotalLabel: balanced ? "Разложено полностью" : (total > 100 ? "Больше ста процентов" : "Осталось разложить " + (100 - total) + "%"),
+      splitTotalStyle: {
+        display: "flex", alignItems: "center", gap: "10px", padding: "9px 11px",
+        background: balanced ? "var(--ok-soft)" : "var(--warn-soft)",
+        borderTop: "1px solid " + (balanced ? "var(--ok-line)" : "var(--warn-line)"),
+        color: balanced ? "var(--ok)" : "var(--warn-ink)"
+      },
+      byRevenue: function () {
+        const sum = POINTS.reduce(function (a, p) { return a + p[2]; }, 0);
+        const next = {};
+        let acc = 0;
+        POINTS.forEach(function (p, i) {
+          const v = i === POINTS.length - 1 ? 100 - acc : Math.round(p[2] / sum * 20) * 5;
+          next[p[0]] = v;
+          acc += v;
+        });
+        self.setState({ shares: next });
+      },
+      evenly: function () {
+        const next = {};
+        POINTS.forEach(function (p) { next[p[0]] = 20; });
+        self.setState({ shares: next });
+      },
+
+      articleOpts: ARTICLES.map(function (a) { return { label: a }; }),
+      article: curArticle || "",
+      setArticle: function (e) { self.setState({ article: e.target.value || null }); },
+      articleStyle: selectStyle(!!curArticle),
+      articleNote: curArticle
+        ? "В отчёте сумма встанет в строку по справочнику статей."
+        : "Пока статья не выбрана, накладная не уйдёт бухгалтеру: ему некуда её положить.",
+
+      hasGuess: showGuess,
+      guessText: guess
+        ? "Этот поставщик " + guessCount + " " + plural(guessCount, ["раз", "раза", "раз"]) + " шёл по статье «" + guess + "». Поставить её?"
+        : "",
+      applyGuess: function () { self.setState({ article: guess }); },
+
+      resultStyle: {
+        marginTop: "13px", padding: "11px 13px", borderRadius: "var(--r-block)",
+        background: rejected ? "var(--surface-2)" : (assigned || ready ? "var(--ok-soft)" : "var(--surface-2)"),
+        border: "1px solid " + (rejected ? "var(--line-strong)" : (assigned || ready ? "var(--ok-line)" : "var(--line)")),
+        color: rejected ? "var(--ink-2)" : (assigned || ready ? "var(--ok)" : "var(--ink-2)")
+      },
+      resultTitle: rejected ? "Отклонена" : (assigned ? "Уже разнесена" : (ready ? "Готово к отправке бухгалтеру" : "Что нужно указать")),
+      resultText: rejected
+        ? "Накладная помечена как чужая и в P&L не пойдёт. Она остаётся в списке: если поставщик пришлёт её снова, система узнает дубль. Укажите точку и статью, чтобы вернуть её в работу."
+        : (assigned
+        ? label(inv) + ". Поменяйте точку или статью и отправьте заново — переразнесение останется в истории накладной."
+        : (ready
+        ? (isSplit
+            ? "Накладная уйдёт разложенной на " + POINTS.filter(function (p) { return (shares[p[0]] || 0) > 0; }).length + " точки по процентам. Бухгалтер сверит сумму и НДС, пропорции пересчитаются сами."
+            : "Точка и статья проставлены. Бухгалтер получит накладную готовой — ему останутся сумма и НДС.")
+        : (isSplit
+            ? "Разложите сто процентов и выберите статью."
+            : (!curPoint ? "Укажите точку — без неё расход не встанет в P&L точки." : "Выберите статью — она решает строку отчёта.")))),
+
+      sendDisabled: !ready,
+      sendLabel: ready ? (rejected ? "Вернуть в работу" : (assigned ? "Переразнести" : "Отправить бухгалтеру")) : (isSplit && !balanced ? "Разложите 100%" : (!curPoint && !isSplit ? "Укажите точку" : "Выберите статью")),
+      sendStyle: {
+        height: "var(--control-h)", padding: "0 15px", borderRadius: "var(--r-control)",
+        border: "1px solid " + (ready ? "var(--accent)" : "var(--line-control)"),
+        background: ready ? "var(--accent)" : "var(--surface-3)",
+        color: ready ? "var(--ink-inverse)" : "var(--ink-3)",
+        fontSize: "var(--fs-body)", fontWeight: "var(--w-semibold)",
+        cursor: ready ? "pointer" : "not-allowed"
+      },
+      sendHint: "Кто разнёс — останется в истории накладной",
+      send: function () {
+        if (!ready) return;
+        const next = Object.assign({}, st.done);
+        next[inv[0]] = isSplit
+          ? { shares: Object.assign({}, shares), article: curArticle }
+          : { point: curPoint, article: curArticle };
+        const rest = INVOICES.filter(function (v) { return !next[v[0]]; })[0];
+        self.setState({ done: next, sel: rest ? rest[0] : inv[0], point: null, article: null, mode: null, shares: null });
+      },
+      reject: function () {
+        const next = Object.assign({}, st.done);
+        next[inv[0]] = { rejected: true };
+        self.setState({ done: next, point: null, article: null, mode: null, shares: null });
+      },
+
+      flow: FLOW.map(function (f) {
+        const tone = {
+          ops: ["var(--reg-internal)", "var(--reg-internal-soft)", "var(--reg-internal-line)"],
+          reg: ["var(--accent)", "var(--accent-soft)", "var(--accent-line)"],
+          acc: ["var(--reg-supp)", "var(--reg-supp-soft)", "var(--reg-supp-line)"],
+          sys: ["var(--ink-2)", "var(--surface-3)", "var(--line-control)"]
+        }[f[2]];
+        return {
+          num: f[0], who: f[1], title: f[3], text: f[4], note: f[5],
+          style: {
+            background: f[2] === "reg" ? "var(--accent-soft)" : "var(--surface)",
+            border: "1px solid " + (f[2] === "reg" ? "var(--accent-line)" : "var(--line-strong)"),
+            borderRadius: "var(--r-block)", padding: "12px 14px 13px"
+          },
+          whoStyle: {
+            display: "inline-flex", alignItems: "center", padding: "1px 7px",
+            borderRadius: "var(--r-mark)", fontSize: "10px", fontWeight: "var(--w-semibold)",
+            whiteSpace: "nowrap", color: tone[0], background: tone[1], border: "1px solid " + tone[2]
+          }
+        };
+      }),
+      laws: LAWS.map(function (l) {
+        const t = {
+          plain: ["var(--surface)", "var(--line-strong)", "var(--ink)"],
+          ok: ["var(--ok-soft)", "var(--ok-line)", "var(--ok)"],
+          warn: ["var(--warn-soft)", "var(--warn-line)", "var(--warn-ink)"]
+        }[l[2]];
+        return {
+          title: l[0], text: l[1], color: t[2],
+          style: { background: t[0], border: "1px solid " + t[1], borderRadius: "var(--r-block)", padding: "12px 14px 13px" }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

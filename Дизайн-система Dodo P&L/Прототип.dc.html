@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="160" fill="#1F4E9C"></rect>
+    <rect x="34" y="40" width="172" height="80" rx="5" fill="#FFFFFF"></rect>
+    <rect x="34" y="40" width="172" height="15" rx="5" fill="#E8EEF8"></rect>
+    <rect x="44" y="65" width="62" height="7" rx="2" fill="#CFD5DC"></rect>
+    <rect x="44" y="79" width="152" height="5" rx="2" fill="#E9ECEF"></rect>
+    <rect x="44" y="90" width="152" height="5" rx="2" fill="#E9ECEF"></rect>
+    <rect x="44" y="101" width="94" height="5" rx="2" fill="#E9ECEF"></rect>
+    <rect x="158" y="99" width="38" height="9" rx="2" fill="#1F4E9C"></rect>
+  </svg>
+</template>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9; --reg-supp-line:#DCD0EE;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1; --reg-internal-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-title:16px; --lh-title:22px; --fs-lead:14px; --fs-body:13px; --lh-body:18px;
+    --fs-dense:12.5px; --fs-meta:11.5px; --lh-meta:16px; --fs-micro:10.5px;
+    --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); height:100%; }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="height: 100vh; min-width: 1280px; display: flex; flex-direction: column; background: var(--canvas); font-family: var(--font-ui); color: var(--ink); overflow: hidden">
+
+  <div style="height: 50px; flex: 0 0 auto; display: flex; align-items: center; gap: 18px; padding: 0 18px; background: var(--surface); border-bottom: 1px solid var(--line-control); position: relative; z-index: 40">
+    <button onClick="{{ goHome }}" style="display: flex; align-items: baseline; gap: 5px; flex: 0 0 auto; border: 0; background: transparent; padding: 0">
+      <span style="font-weight: var(--w-bold); font-size: var(--fs-lead); letter-spacing: -.01em; color: var(--ink)">Dodo</span>
+      <span style="font-weight: var(--w-medium); font-size: var(--fs-lead); color: var(--accent)">P&amp;L</span>
+    </button>
+
+    <div style="display: flex; align-items: center; gap: 2px; min-width: 0">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <div style="position: relative">
+          <button onClick="{{ n.on }}" style="{{ n.style }}">
+            {{ n.label }}<span style="{{ n.badgeStyle }}">{{ n.badge }}</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: .5"><path d="m6 9 6 6 6-6"></path></svg>
+          </button>
+          <sc-if value="{{ n.open }}" hint-placeholder-val="{{ false }}">
+            <div style="position: absolute; top: 38px; left: 0; width: 274px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); box-shadow: var(--sh-pop); overflow: hidden; z-index: 50">
+              <sc-for list="{{ n.items }}" as="i" hint-placeholder-count="4">
+                <button onClick="{{ i.on }}" style="{{ i.style }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <span style="flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ i.label }}</span>
+                  <span style="{{ i.countStyle }}">{{ i.count }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex: 1"></div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding-right: 12px; border-right: 1px solid var(--line-2); flex: 0 0 auto">
+      <div style="text-align: right">
+        <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Dodo Balkan doo</div>
+        <div style="font-size: var(--fs-meta); color: var(--ink-3)">Сербия · RSD</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 7px; flex: 0 0 auto">
+      <button onClick="{{ cycleRole }}" style="{{ roleChipStyle }}" style-hover="{ borderStyle: 'solid' }">{{ roleLabel }}</button>
+      <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--ink-inverse); font-size: var(--fs-meta); font-weight: var(--w-semibold); display: grid; place-items: center">{{ initials }}</div>
+    </div>
+  </div>
+
+  <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 12px; padding: 7px 18px; background: var(--surface-2); border-bottom: 1px solid var(--line); position: relative; z-index: 30">
+    <span style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Период</span>
+    <div style="display: flex; align-items: center; gap: 2px">
+      <sc-for list="{{ months }}" as="m" hint-placeholder-count="4">
+        <sc-if value="{{ m.current }}" hint-placeholder-val="{{ false }}">
+          <span aria-current="true" style="{{ m.currentStyle }}"><span style="{{ m.dotStyle }}"></span>{{ m.label }}</span>
+        </sc-if>
+        <sc-if value="{{ m.notCurrent }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ m.on }}" style="{{ m.style }}" style-hover="{ background: 'var(--surface-3)' }"><span style="{{ m.dotStyle }}"></span>{{ m.label }}</button>
+        </sc-if>
+      </sc-for>
+    </div>
+    <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ periodNote }}</span>
+    <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--ink-3)">{{ screenTitle }}</span>
+    <a href="{{ src }}" target="_blank" style="font-size: var(--fs-meta); white-space: nowrap">Открыть отдельно</a>
+  </div>
+
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; min-height: 0; overflow: auto; padding: 22px 18px 40px">
+      <div style="max-width: 1180px; margin: 0 auto">
+
+        <div style="display: flex; align-items: flex-end; gap: 16px; margin-bottom: 16px; flex-wrap: wrap">
+          <div style="flex: 1; min-width: 320px">
+            <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Прототип целиком</div>
+            <h1 style="margin: 4px 0 0; font-size: 22px; line-height: 28px; font-weight: var(--w-semibold); letter-spacing: -.015em">Месяц бухгалтера: от часов до подписанного P&amp;L</h1>
+            <div style="font-size: var(--fs-dense); line-height: 18px; color: var(--ink-2); margin-top: 5px; max-width: 760px">Разделы в шапке открывают настоящие экраны. Роль и период живут в каркасе.</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">01</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Сквозной путь месяца</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">восемь шагов подряд</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px">
+          <sc-for list="{{ path }}" as="p" hint-placeholder-count="8">
+            <button onClick="{{ p.on }}" disabled="{{ p.locked }}" style="{{ p.cardStyle }}">
+              <div style="display: flex; align-items: baseline; gap: 8px">
+                <span style="{{ p.numStyle }}">{{ p.num }}</span>
+                <span style="{{ p.whoStyle }}">{{ p.who }}</span>
+              </div>
+              <div style="font-size: var(--fs-body); font-weight: var(--w-semibold); margin-top: 7px; text-align: left">{{ p.title }}</div>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 9px; margin-bottom: 9px">
+          <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">02</span>
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Все экраны</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">включая систему и документы проекта</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px">
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="6">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden">
+              <div style="padding: 7px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-bold)">{{ g.label }}</div>
+              <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="4">
+                <button onClick="{{ i.on }}" style="{{ i.style }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <span style="flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ i.label }}</span>
+                  <span style="{{ i.countStyle }}">{{ i.count }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+          <div>
+            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Что здесь настоящее, а что нет</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">Настоящие: разметка, поведение внутри экранов, все числа и их пересчёт. Ненастоящее: переходы между экранами не сохраняют состояние — открыв табель после ведомости, вы увидите его исходное состояние. Свой заголовок каждого модуля здесь скрыт, чтобы не спорить с шапкой приложения; в отдельной вкладке он на месте вместе с пояснениями для заказчика.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isScreen }}" hint-placeholder-val="{{ false }}">
+    <div style="flex: 1; min-height: 0; position: relative; background: var(--canvas)">
+      <iframe src="{{ src }}" onLoad="{{ onFrameLoad }}" title="{{ screenTitle }}" style="width: 100%; height: 100%; border: 0; display: block; background: var(--canvas)"></iframe>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;accountant&quot;,&quot;admin&quot;,&quot;manager&quot;],&quot;default&quot;:&quot;accountant&quot;,&quot;tsType&quot;:&quot;'accountant' | 'admin' | 'manager'&quot;,&quot;section&quot;:&quot;Контекст&quot;}}">
+/* ключ, подпись, файл, счётчик */
+const SCREENS = {
+  timesheet:  ["Табель",                 "Модуль 1 - Табель.dc.html", "6"],
+  cash:       ["Наличные расходы",       "Модуль 6 - Наличные расходы.dc.html", "3"],
+  bank:       ["Банковская выписка",     "Модуль 7 - Банковская выписка.dc.html", "5"],
+  inbox:      ["Инбокс документов",      "Модуль 3 - Инбокс и документы.dc.html", "12"],
+  invoices:   ["Разнесение накладных", "Модуль 15 - Разнесение накладных.dc.html", "7"],
+  articles:   ["Справочник статей",   "Модуль 14 - Справочник статей.dc.html", ""],
+  payroll:    ["Оплата труда и календарь", "Модуль 16 - Оплата труда и календарь.dc.html", ""],
+  rules:      ["Правила страны",         "Модуль 17 - Правила страны.dc.html", ""],
+  mobile:     ["Мобильный прототип",   "Мобильный прототип.dc.html", ""],
+  print:      ["Печатные формы",       "Печатные формы.dc.html", ""],
+  sheet:      ["Ведомость",              "Модуль 9 - Ведомость по сотрудникам.dc.html", ""],
+  reconcile:  ["Сверка с таблицей",      "Модуль 2 - Сверка с таблицей.dc.html", "1"],
+  closing:    ["Закрытие месяца",        "Модуль 4 - Закрытие месяца.dc.html", "2"],
+  pnl:        ["P&L с раскрытием",       "Модуль 5 - P&L с раскрытием.dc.html", ""],
+  people:     ["Аналитика по людям",     "Модуль 12 - Аналитика по людям.dc.html", ""],
+  staff:      ["Сотрудники и правила",   "Модуль 8 - Кадры и правила расчёта.dc.html", ""],
+  admin:      ["Юрлица, точки, доступы", "Модуль 11 - Админка.dc.html", ""],
+  roles:      ["Роли и права",           "Роли и права.dc.html", ""],
+  login:      ["Вход и каркас",          "Модуль 10 - Вход и каркас.dc.html", ""],
+  bot:        ["Telegram-бот",           "Модуль 13 - Telegram-бот.dc.html", ""],
+  onboarding: ["Онбординг партнёра",     "Онбординг.dc.html", ""],
+  system:     ["Дизайн-система",         "Этап 2 - дизайн-система.dc.html", ""],
+  dark:       ["Тёмная тема",            "Тёмная тема.dc.html", ""],
+  directions: ["Три направления",        "Этап 1 - три направления.dc.html", ""],
+  handoff:    ["Передача разработке",    "Этап 4 - Передача.dc.html", ""]
+};
+
+const SECTIONS = [
+  ["collect",  "Сбор данных",  ["timesheet", "cash", "bank", "invoices", "inbox"]],
+  ["payroll",  "Расчёт",       ["sheet", "reconcile", "closing"]],
+  ["reports",  "Отчёты",       ["pnl", "people", "print"]],
+  ["refs",     "Справочники",  ["staff", "payroll", "rules", "articles"]],
+  ["settings", "Настройки",    ["admin", "roles"]]
+];
+
+const EXTRA = [
+  ["Каркас и мобильные", ["login", "mobile", "bot", "onboarding"]],
+  ["Дизайн-система", ["system", "dark", "directions"]],
+  ["Документы проекта", ["handoff"]]
+];
+
+const ROLES = {
+  accountant: { label: "Бухгалтер", ini: "AM", sections: ["collect", "payroll", "reports", "refs"] },
+  admin:      { label: "Администратор", ini: "NP", sections: ["collect", "payroll", "reports", "refs", "settings"] },
+  manager:    { label: "Управляющий точки", ini: "PP", sections: ["collect"] }
+};
+const ROLE_ORDER = ["accountant", "admin", "manager"];
+const MANAGER_SCREENS = ["timesheet", "cash"];
+
+const PATH = [
+  ["01", "Управляющий", "Проверяет часы точки", "", "timesheet"],
+  ["02", "Управляющий", "Вносит наличные расходы", "", "cash"],
+  ["03", "Операционный", "Разносит накладные", "", "invoices"],
+  ["04", "Бухгалтер", "Разбирает документы", "", "inbox"],
+  ["05", "Бухгалтер", "Разносит выписку", "", "bank"],
+  ["06", "Бухгалтер", "Считает ведомость", "", "sheet"],
+  ["07", "Бухгалтер", "Закрывает месяц", "", "closing"],
+  ["08", "Партнёр", "Смотрит P&L", "", "pnl"]
+];
+
+const MONTH_STATE = [["Март", "approved"], ["Апрель", "approved"], ["Май", "approved"], ["Июнь", "open"]];
+const MONTH_TONE = { approved: "var(--ok)", open: "var(--ink-2)", reopened: "var(--warn)" };
+
+class Component extends DCLogic {
+  state = { screen: null, open: null, role: "accountant", month: 3 };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const role = ROLES[st.role];
+
+    const allowed = function (key) {
+      if (st.role !== "manager") return true;
+      return MANAGER_SCREENS.indexOf(key) >= 0;
+    };
+
+    const cur = st.screen && SCREENS[st.screen] ? SCREENS[st.screen] : null;
+
+    const open = function (key) {
+      return function () { self.setState({ screen: key, open: null }); };
+    };
+
+    const itemStyle = function (on) {
+      return {
+        display: "flex", alignItems: "center", gap: "8px", width: "100%",
+        padding: "0 13px", height: "32px", border: 0,
+        borderBottom: "1px solid var(--line)",
+        background: on ? "var(--accent-soft)" : "var(--surface)",
+        color: on ? "var(--accent)" : "var(--ink)",
+        fontSize: "var(--fs-dense)",
+        fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)",
+        textAlign: "left"
+      };
+    };
+    const countStyle = function (c) {
+      return c
+        ? { fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", padding: "1px 5px", borderRadius: "999px", background: "var(--warn-soft)", border: "1px solid var(--warn-line)", color: "var(--warn-ink)", flex: "0 0 auto" }
+        : { display: "none" };
+    };
+
+    return {
+      isHome: !cur,
+      isScreen: !!cur,
+      src: cur ? cur[1] : "",
+      screenTitle: cur ? cur[0] : "Прототип целиком",
+      goHome: function () { self.setState({ screen: null, open: null }); },
+
+      /* Правило в <style>, а не мутация элемента: разметка модуля монтируется
+         рантаймом уже после события load, и querySelector в этот момент пуст. */
+      onFrameLoad: function (e) {
+        try {
+          const doc = e.target.contentDocument;
+          if (!doc || doc.getElementById("__shell-chrome")) return;
+          const s = doc.createElement("style");
+          s.id = "__shell-chrome";
+          s.textContent = "header { display: none !important }"
+            + " x-dc > div { min-height: 0 !important }";
+          doc.head.appendChild(s);
+        } catch (err) { /* другой источник — оставляем как есть */ }
+      },
+
+      nav: SECTIONS.filter(function (s) { return role.sections.indexOf(s[0]) >= 0; }).map(function (s) {
+        const items = s[2].filter(allowed);
+        const isOpen = st.open === s[0];
+        const hasCurrent = items.indexOf(st.screen) >= 0;
+        const total = items.reduce(function (a, k) { return a + (SCREENS[k][2] ? Number(SCREENS[k][2]) : 0); }, 0);
+        return {
+          label: s[1], badge: total > 0 ? String(total) : "", open: isOpen,
+          on: function () { self.setState({ open: isOpen ? null : s[0] }); },
+          style: {
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            padding: "6px 10px", borderRadius: "var(--r-control)", border: 0,
+            fontSize: "var(--fs-body)", whiteSpace: "nowrap",
+            background: isOpen || hasCurrent ? "var(--accent-soft)" : "transparent",
+            color: isOpen || hasCurrent ? "var(--accent)" : "var(--ink-2)",
+            fontWeight: hasCurrent ? "var(--w-semibold)" : "var(--w-regular)"
+          },
+          badgeStyle: total > 0
+            ? { fontFamily: "var(--font-num)", fontSize: "9.5px", padding: "1px 4px", borderRadius: "999px", background: hasCurrent || isOpen ? "var(--accent)" : "var(--ink-3)", color: "var(--ink-inverse)" }
+            : { display: "none" },
+          items: items.map(function (k) {
+            return {
+              label: SCREENS[k][0], count: SCREENS[k][2], on: open(k),
+              style: itemStyle(k === st.screen), countStyle: countStyle(SCREENS[k][2])
+            };
+          })
+        };
+      }),
+
+      roleLabel: role.label,
+      initials: role.ini,
+      cycleRole: function () {
+        const i = ROLE_ORDER.indexOf(st.role);
+        const next = ROLE_ORDER[(i + 1) % ROLE_ORDER.length];
+        const keep = next === "manager" && MANAGER_SCREENS.indexOf(st.screen) < 0 ? null : st.screen;
+        self.setState({ role: next, screen: keep, open: null });
+      },
+      roleChipStyle: {
+        padding: "3px 9px", borderRadius: "var(--r-control)",
+        fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)", whiteSpace: "nowrap",
+        color: st.role === "manager" ? "var(--reg-internal)" : (st.role === "admin" ? "var(--accent)" : "var(--reg-supp)"),
+        background: st.role === "manager" ? "var(--reg-internal-soft)" : (st.role === "admin" ? "var(--accent-soft)" : "var(--reg-supp-soft)"),
+        border: "1px dashed " + (st.role === "manager" ? "var(--reg-internal-line)" : (st.role === "admin" ? "var(--accent-line)" : "var(--reg-supp-line)"))
+      },
+
+      months: MONTH_STATE.map(function (m, i) {
+        const on = st.month === i;
+        const base = { display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0, background: "transparent", color: "var(--ink-2)", cursor: "pointer" };
+        return {
+          label: m[0] + " 2026", current: on, notCurrent: !on,
+          on: function () { self.setState({ month: i }); },
+          style: base,
+          currentStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink)", fontWeight: "var(--w-semibold)", boxShadow: "var(--sh-xs)", cursor: "default" }),
+          dotStyle: { width: "6px", height: "6px", borderRadius: "50%", flex: "0 0 auto", background: MONTH_TONE[m[1]] }
+        };
+      }),
+      periodNote: MONTH_STATE[st.month][1] === "open" ? "открыт · правки разрешены" : "утверждён · только чтение",
+
+      path: PATH.map(function (p) {
+        const on = allowed(p[4]);
+        const tone = p[1] === "Управляющий"
+          ? ["var(--reg-internal)", "var(--reg-internal-soft)", "var(--reg-internal-line)"]
+          : p[1] === "Партнёр"
+            ? ["var(--accent)", "var(--accent-soft)", "var(--accent-line)"]
+            : p[1] === "Операционный"
+              ? ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"]
+              : ["var(--reg-supp)", "var(--reg-supp-soft)", "var(--reg-supp-line)"];
+        return {
+          num: p[0], who: p[1], title: p[2],
+          text: on ? p[3] : "Закрыто для роли «" + role.label + "». Этот шаг делает " + (p[1] === "Партнёр" ? "партнёр" : "бухгалтер") + ".",
+          locked: !on,
+          on: on ? open(p[4]) : function () {},
+          cardStyle: {
+            display: "block", width: "100%", padding: "12px 14px 13px", textAlign: "left",
+            background: on ? "var(--surface)" : "var(--surface-2)",
+            border: "1px " + (on ? "solid var(--line-strong)" : "dashed var(--line-control)"),
+            borderRadius: "var(--r-block)",
+            cursor: on ? "pointer" : "not-allowed",
+            color: on ? "var(--ink)" : "var(--ink-3)"
+          },
+          numStyle: { fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", color: "var(--ink-3)" },
+          whoStyle: {
+            display: "inline-flex", alignItems: "center", padding: "1px 7px",
+            borderRadius: "var(--r-mark)", fontSize: "10px", fontWeight: "var(--w-semibold)",
+            color: tone[0], background: tone[1], border: "1px solid " + tone[2]
+          }
+        };
+      }),
+
+      /* Список «Все экраны» подчиняется роли так же, как навигация:
+         недоступные пункты и опустевшие группы не рендерятся. */
+      groups: SECTIONS.filter(function (s) { return role.sections.indexOf(s[0]) >= 0; }).map(function (s) {
+        return { label: s[1], keys: s[2].filter(allowed) };
+      }).concat(EXTRA.map(function (e) {
+        return { label: e[0], keys: st.role === "manager" ? [] : e[1] };
+      })).filter(function (g) { return g.keys.length > 0; }).map(function (g) {
+        return {
+          label: g.label,
+          items: g.keys.map(function (k) {
+            return {
+              label: SCREENS[k][0], count: SCREENS[k][2], on: open(k),
+              style: itemStyle(k === st.screen), countStyle: countStyle(SCREENS[k][2])
+            };
+          })
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

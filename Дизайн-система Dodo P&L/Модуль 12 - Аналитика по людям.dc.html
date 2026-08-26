@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --up:#10704A; --down:#A32B1E;
+    --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 12</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Аналитика по людям: сколько стоит труд и кто уходит</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Тридцать пять человек — это не статистика. Поэтому рядом с каждым процентом написано, из скольких он посчитан, а при малой базе процент не показывается вовсе. Иначе партнёр уволит управляющего из-за двух совпадений.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isCost }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Стоимость труда</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">январь — июнь 2026 · шесть закрытых месяцев</span>
+          <div style="margin-left: auto; display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+            <sc-for list="{{ pointOpts }}" as="p" hint-placeholder-count="4">
+              <sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}">
+                <span aria-current="true" style="{{ p.selStyle }}">{{ p.label }}</span>
+              </sc-if>
+              <sc-if value="{{ p.notSel }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ p.on }}" style="{{ p.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ p.label }}</button>
+              </sc-if>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 11px 14px 12px">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">{{ k.label }}</div>
+              <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 5px">
+                <span style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ k.value }}</span>
+                <span style="{{ k.deltaStyle }}">{{ k.delta }}</span>
+              </div>
+              <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); margin-top: 3px">{{ k.base }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface); margin-bottom: 10px">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+            <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Фонд оплаты труда к выручке</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ chartNote }}</span>
+            <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--ink-3)">целевой коридор 26—29%</span>
+          </div>
+          <div style="position: relative; display: flex; align-items: flex-end; gap: 10px; padding: 18px 16px 12px; height: 208px">
+            <div style="{{ chartZoneStyle }}"></div>
+            <sc-for list="{{ bars }}" as="b" hint-placeholder-count="6">
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; height: 100%">
+                <div style="flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; position: relative">
+                  <div style="{{ b.barStyle }}">
+                    <span style="{{ b.valueStyle }}">{{ b.value }}</span>
+                  </div>
+                </div>
+                <div style="font-size: var(--fs-meta); color: var(--ink-2)">{{ b.month }}</div>
+                <div style="font-family: var(--font-num); font-size: 10px; color: var(--ink-3)">{{ b.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <sc-for list="{{ costHead }}" as="h" hint-placeholder-count="7">
+                  <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ costRows }}" as="r" hint-placeholder-count="3">
+                <tr style="background: var(--surface)" style-hover="{ background: 'var(--surface-2)' }">
+                  <td style="{{ r.nameStyle }}">{{ r.name }}</td>
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="6">
+                    <td style="{{ c.style }}">{{ c.v }}</td>
+                  </sc-for>
+                </tr>
+              </sc-for>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row" style="text-align: left; padding: 0 9px; height: 32px; background: var(--surface-2); border-top: 2px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">Три точки</th>
+                <sc-for list="{{ costTotals }}" as="t" hint-placeholder-count="6">
+                  <td style="{{ t.style }}">{{ t.v }}</td>
+                </sc-for>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isChurn }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Кто уходит</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ churnMeta }}</span>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--warn-soft); border: 1px solid var(--warn-line); margin-bottom: 10px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+          <div>
+            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Проценты здесь считаются от единиц людей</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink); margin-top: 3px">{{ churnWarning }} Один лишний уход сдвигает показатель на десять пунктов. Поэтому рядом с процентом всегда стоит база, а там, где база меньше {{ minBase }} человек, процента нет — только абсолютные числа.</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start">
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">По точкам</div>
+            <table style="width: 100%; table-layout: fixed">
+              <thead>
+                <tr>
+                  <sc-for list="{{ churnHead }}" as="h" hint-placeholder-count="5">
+                    <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ churnRows }}" as="r" hint-placeholder-count="3">
+                  <tr style="background: var(--surface)" style-hover="{ background: 'var(--surface-2)' }">
+                    <td style="{{ r.nameStyle }}">{{ r.name }}</td>
+                    <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="4">
+                      <td style="{{ c.style }}">{{ c.v }}</td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            <div style="padding: 10px 13px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); border-top: 1px solid var(--line)">Текучесть считается как ушедшие за полгода к среднему числу людей за тот же период. Переводы между точками не считаются уходом.</div>
+          </div>
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-dense); font-weight: var(--w-semibold)">По должностям</div>
+            <table style="width: 100%; table-layout: fixed">
+              <thead>
+                <tr>
+                  <sc-for list="{{ roleHead }}" as="h" hint-placeholder-count="4">
+                    <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ roleRows }}" as="r" hint-placeholder-count="4">
+                  <tr style="{{ r.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                    <td style="{{ r.nameStyle }}">{{ r.name }}</td>
+                    <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="3">
+                      <td style="{{ c.style }}">{{ c.v }}</td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            <div style="padding: 10px 13px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-3); border-top: 1px solid var(--line)">Там, где написано «мало данных», процент не посчитан намеренно: по семи курьерам нельзя судить о текучести курьеров, а по четырём смена-менеджерам — тем более.</div>
+          </div>
+
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface); margin-top: 10px">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+            <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Ушли за полгода</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-2)">поимённо — потому что шесть человек ещё можно назвать по именам</span>
+          </div>
+          <sc-for list="{{ leavers }}" as="l" hint-placeholder-count="6">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 9px 13px; border-bottom: 1px solid var(--line)">
+              <span style="flex: 0 0 176px; font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ l.name }}</span>
+              <span style="flex: 0 0 132px; font-size: var(--fs-meta); color: var(--ink-2)">{{ l.role }}</span>
+              <span style="flex: 0 0 132px; font-size: var(--fs-meta); color: var(--ink-2)">{{ l.point }}</span>
+              <span style="flex: 1; min-width: 0">
+                <span style="{{ l.barWrapStyle }}"><span style="{{ l.barStyle }}"></span></span>
+              </span>
+              <span style="flex: 0 0 92px; text-align: right; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums">{{ l.months }}</span>
+              <span style="flex: 0 0 96px; text-align: right; font-size: var(--fs-meta); color: var(--ink-3)">{{ l.left }}</span>
+            </div>
+          </sc-for>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 10px 13px; background: var(--surface-2); border-top: 2px solid var(--line-strong)">
+            <span style="flex: 1; font-size: var(--fs-dense); font-weight: var(--w-semibold)">Средний срок работы ушедших</span>
+            <span style="font-family: var(--font-num); font-size: var(--fs-lead); font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ avgTenure }}</span>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isHours }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Часы и переработки <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Июнь 2026</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">норма месяца 176 ч · переработка оплачивается с коэффициентом 1,5</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px">
+          <sc-for list="{{ hourKpis }}" as="k" hint-placeholder-count="3">
+            <div style="{{ k.cardStyle }}">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">{{ k.label }}</div>
+              <div style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); font-variant-numeric: tabular-nums; margin-top: 5px">{{ k.value }}</div>
+              <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); margin-top: 3px">{{ k.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+            <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Кто вышел за норму</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-2)">отсортировано по часам сверх нормы</span>
+          </div>
+          <sc-for list="{{ overtime }}" as="o" hint-placeholder-count="5">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 9px 13px; border-bottom: 1px solid var(--line)">
+              <span style="flex: 0 0 176px; font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ o.name }}</span>
+              <span style="flex: 0 0 148px; font-size: var(--fs-meta); color: var(--ink-2)">{{ o.point }}</span>
+              <span style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px">
+                <span style="{{ o.normStyle }}"></span>
+                <span style="{{ o.overStyle }}"></span>
+              </span>
+              <span style="flex: 0 0 88px; text-align: right; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2)">{{ o.hours }}</span>
+              <span style="flex: 0 0 88px; text-align: right; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; font-weight: var(--w-semibold); color: var(--warn-ink)">{{ o.over }}</span>
+              <span style="flex: 0 0 116px; text-align: right; font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums">{{ o.cost }}</span>
+            </div>
+          </sc-for>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 10px 13px; background: var(--surface-2); border-top: 2px solid var(--line-strong)">
+            <span style="flex: 1; font-size: var(--fs-dense); font-weight: var(--w-semibold)">Переработка обошлась в</span>
+            <span style="font-family: var(--font-num); font-size: var(--fs-lead); font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ overtimeTotal }}</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--surface); border: 1px solid var(--line-strong); margin-top: 10px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+          <div>
+            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Что с этим делать — решает не отчёт</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">Переработка на {{ overtimeTotal }} за месяц дешевле, чем нанять человека на полставки, — но только пока это не выгорание. Экран показывает деньги и часы и не предлагает вывод: у партнёра есть контекст, которого нет у системы. Единственное, что делает система сама, — помечает часы сверх нормы в табеле, чтобы они не прошли незамеченными.</div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;minBase&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:12,&quot;min&quot;:3,&quot;max&quot;:30,&quot;unit&quot;:&quot;чел.&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Правила показа&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal' | 'compact'&quot;,&quot;section&quot;:&quot;Вид&quot;}}">
+const POINTS = { vracar: "Beograd Vračar", novibg: "Novi Beograd", novisad: "Novi Sad" };
+const POINT_ORDER = ["vracar", "novibg", "novisad"];
+const MONTHS = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн"];
+
+/* точка → по месяцам: [выручка, ФОТ, часы, человек] */
+const DATA = {
+  vracar: [
+    [3980000, 1034800, 2210, 14], [3760000, 1012400, 2180, 14], [4120000, 1072000, 2240, 14],
+    [4340000, 1128400, 2320, 15], [4180000, 1108000, 2290, 14], [4460000, 1204200, 2380, 14]
+  ],
+  novibg: [
+    [3240000, 907200, 1940, 12], [3120000, 889200, 1900, 12], [3380000, 946400, 1980, 12],
+    [3520000, 985600, 2020, 12], [3460000, 1003400, 2040, 13], [3640000, 1055600, 2090, 12]
+  ],
+  novisad: [
+    [2480000, 719200, 1520, 9], [2390000, 705000, 1500, 9], [2620000, 759800, 1560, 9],
+    [2740000, 794600, 1600, 10], [2680000, 803200, 1610, 9], [2860000, 872300, 1680, 9]
+  ]
+};
+
+/* принято, уволено, среднее число людей за полгода */
+const CHURN = { vracar: [4, 3, 14], novibg: [3, 2, 12], novisad: [2, 1, 9] };
+
+/* имя, должность, точка, месяцев отработал, месяц ухода */
+const LEAVERS = [
+  ["Vladimir Tasić",   "Пиццамейкер", "vracar",  3,  "март"],
+  ["Marko Đukić",      "Курьер",      "vracar",  5,  "апрель"],
+  ["Lenka Zdravković", "Пиццамейкер", "vracar",  4,  "июнь"],
+  ["Teodora Pavić",    "Кассир",      "novibg",  9,  "февраль"],
+  ["Filip Ristić",     "Пиццамейкер", "novibg",  7,  "май"],
+  ["Uroš Simić",       "Курьер",      "novisad", 11, "апрель"]
+];
+
+/* должность: [сейчас работает, ушло за полгода] */
+const BY_ROLE = [
+  ["Пиццамейкер", 13, 3],
+  ["Курьер", 7, 2],
+  ["Кассир", 8, 1],
+  ["Смена-менеджер", 4, 0]
+];
+
+/* имя, точка, часы, ставка */
+const OVERTIME = [
+  ["Stefan Nikolić",  "novisad", 184, 415],
+  ["Bojan Lukić",     "novisad", 180, 375],
+  ["Vuk Pavlović",    "novibg",  172, 380],
+  ["Dragan Simić",    "vracar",  196, 400],
+  ["Nemanja Ilić",    "vracar",  188, 390]
+];
+
+const NORM = 176;
+
+function fmt(n, d) {
+  return Math.abs(n).toLocaleString("ru-RU", { minimumFractionDigits: d === undefined ? 2 : d, maximumFractionDigits: d === undefined ? 2 : d });
+}
+function pct(n) {
+  return n.toLocaleString("ru-RU", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+}
+
+class Component extends DCLogic {
+  state = { tab: "cost", point: "all" };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const minBase = this.props.minBase ?? 12;
+    const rowH = this.props.density === "compact" ? "26px" : "30px";
+
+    const keys = st.point === "all" ? POINT_ORDER : [st.point];
+    const monthSum = function (i, field) {
+      return keys.reduce(function (s, k) { return s + DATA[k][i][field]; }, 0);
+    };
+
+    const ratios = MONTHS.map(function (m, i) {
+      const rev = monthSum(i, 0), pay = monthSum(i, 1);
+      return { month: m, rev: rev, pay: pay, hours: monthSum(i, 2), heads: monthSum(i, 3), ratio: (pay / rev) * 100 };
+    });
+
+    const last = ratios[5], prev = ratios[4];
+    const totalRev = ratios.reduce(function (s, r) { return s + r.rev; }, 0);
+    const totalPay = ratios.reduce(function (s, r) { return s + r.pay; }, 0);
+    const totalHours = ratios.reduce(function (s, r) { return s + r.hours; }, 0);
+
+    const th = function (label, w, align, last2) {
+      return {
+        label: label,
+        style: {
+          background: "var(--surface-head)", padding: "6px 9px", fontSize: "var(--fs-micro)",
+          fontWeight: "var(--w-semibold)", color: "var(--ink-2)", textAlign: align || "left", width: w || "auto",
+          borderBottom: "1px solid var(--line-strong)", borderRight: last2 ? 0 : "1px solid var(--line-2)"
+        }
+      };
+    };
+    const numCell = function (last2, tone) {
+      return {
+        textAlign: "right", padding: "0 9px", height: rowH,
+        fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums",
+        color: tone || "var(--ink)", whiteSpace: "nowrap",
+        borderBottom: "1px solid var(--line)", borderRight: last2 ? 0 : "1px solid var(--line-2)"
+      };
+    };
+    const nameCell = { padding: "0 9px", height: rowH, fontSize: "var(--fs-dense)", fontWeight: "var(--w-medium)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" };
+    const footCell = function (last2) {
+      return {
+        background: last2 ? "#E8EDF3" : "var(--surface-2)", borderTop: "2px solid var(--line-strong)",
+        textAlign: "right", padding: "0 9px", height: "32px",
+        fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontWeight: "var(--w-bold)",
+        fontVariantNumeric: "tabular-nums"
+      };
+    };
+
+    /* ── текучесть ── */
+    const churnKeys = POINT_ORDER;
+    const totalLeft = churnKeys.reduce(function (s, k) { return s + CHURN[k][1]; }, 0);
+    const totalAvg = churnKeys.reduce(function (s, k) { return s + CHURN[k][2]; }, 0);
+    const tenureSum = LEAVERS.reduce(function (s, l) { return s + l[3]; }, 0);
+    const maxTenure = Math.max.apply(null, LEAVERS.map(function (l) { return l[3]; }));
+
+    /* ── переработки ── */
+    const over = OVERTIME.map(function (o) {
+      const extra = o[2] - NORM;
+      return { name: o[0], point: POINTS[o[1]], hours: o[2], extra: extra, cost: extra * o[3] * 1.5 };
+    }).sort(function (a, b) { return b.extra - a.extra; });
+    const overCost = over.reduce(function (s, o) { return s + o.cost; }, 0);
+    const overHours = over.reduce(function (s, o) { return s + o.extra; }, 0);
+    const maxHours = Math.max.apply(null, over.map(function (o) { return o.hours; }));
+
+    return {
+      tabs: [["cost", "Стоимость труда"], ["churn", "Кто уходит"], ["hours", "Часы и переработки"]].map(function (t) {
+        const on = st.tab === t[0];
+        const base = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+        return {
+          label: t[1], sel: on, notSel: !on,
+          on: function () { self.setState({ tab: t[0] }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isCost: st.tab === "cost",
+      isChurn: st.tab === "churn",
+      isHours: st.tab === "hours",
+      minBase: String(minBase),
+
+      /* ── стоимость труда ── */
+      pointOpts: [["all", "Все три"]].concat(POINT_ORDER.map(function (k) { return [k, POINTS[k]]; })).map(function (p) {
+        const on = st.point === p[0];
+        const base = { display: "inline-flex", alignItems: "center", height: "24px", padding: "0 10px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+        return {
+          label: p[1], sel: on, notSel: !on,
+          on: function () { self.setState({ point: p[0] }); },
+          selStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink)", fontWeight: "var(--w-semibold)", boxShadow: "var(--sh-xs)" }),
+          btnStyle: Object.assign({}, base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" })
+        };
+      }),
+
+      kpis: [
+        ["ФОТ к выручке, июнь", pct(last.ratio), last.ratio - prev.ratio, "против " + pct(prev.ratio) + " в мае", true, true],
+        ["Стоимость часа", fmt(last.pay / last.hours), (last.pay / last.hours) - (prev.pay / prev.hours), "RSD за отработанный час", true, false],
+        ["Выручка на человека", fmt(last.rev / last.heads, 0), (last.rev / last.heads) - (prev.rev / prev.heads), "RSD в месяц · " + last.heads + " человек", false, false],
+        ["ФОТ за полгода", fmt(totalPay, 0), null, pct((totalPay / totalRev) * 100) + " от выручки " + fmt(totalRev, 0), true, false]
+      ].map(function (k) {
+        const d = k[2];
+        const worseWhenUp = k[4];
+        const isPP = k[5];
+        const worse = worseWhenUp ? d > 0 : d < 0;
+        return {
+          label: k[0], value: k[1], base: k[3],
+          delta: d === null ? "" : (d > 0 ? "+" : "\u2212") + (isPP ? fmt(Math.abs(d), 1) + " п.п." : fmt(Math.abs(d), 0)),
+          deltaStyle: d === null
+            ? { display: "none" }
+            : {
+                fontFamily: "var(--font-num)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+                color: worse ? "var(--down)" : "var(--up)", whiteSpace: "nowrap"
+              }
+        };
+      }),
+
+      chartNote: st.point === "all" ? "три точки вместе" : POINTS[st.point],
+      chartZoneStyle: {
+        position: "absolute", left: "16px", right: "16px",
+        bottom: "113px", height: "29px",
+        background: "var(--ok-soft)",
+        borderTop: "1px dashed var(--ok-line)", borderBottom: "1px dashed var(--ok-line)",
+        pointerEvents: "none"
+      },
+      bars: ratios.map(function (r) {
+        const h = Math.round(((r.ratio - 20) / 14) * 100);
+        const inZone = r.ratio >= 26 && r.ratio <= 29;
+        return {
+          month: r.month, value: pct(r.ratio), sub: fmt(r.pay / 1000, 0) + " тыс.",
+          barStyle: {
+            position: "relative", width: "56%", height: Math.max(6, h) + "%",
+            borderRadius: "2px 2px 0 0",
+            background: inZone ? "var(--accent)" : "var(--warn-mark)",
+            display: "flex", alignItems: "flex-start", justifyContent: "center"
+          },
+          valueStyle: {
+            position: "absolute", top: "-17px", fontFamily: "var(--font-num)",
+            fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+            color: inZone ? "var(--ink)" : "var(--warn-ink)", whiteSpace: "nowrap"
+          }
+        };
+      }),
+
+      costHead: [th("Точка", "auto"), th("Выручка, полгода", "168px", "right"), th("ФОТ", "156px", "right"),
+                 th("ФОТ к выручке", "124px", "right"), th("Часов", "104px", "right"),
+                 th("Стоимость часа", "132px", "right"), th("Людей", "88px", "right", true)],
+      costRows: POINT_ORDER.map(function (k) {
+        const rows = DATA[k];
+        const rev = rows.reduce(function (s, r) { return s + r[0]; }, 0);
+        const pay = rows.reduce(function (s, r) { return s + r[1]; }, 0);
+        const hrs = rows.reduce(function (s, r) { return s + r[2]; }, 0);
+        const ratio = (pay / rev) * 100;
+        return {
+          name: POINTS[k],
+          nameStyle: nameCell,
+          cells: [
+            { v: fmt(rev, 0), style: numCell(false) },
+            { v: fmt(pay, 0), style: numCell(false) },
+            { v: pct(ratio), style: numCell(false, ratio > 29 ? "var(--down)" : "var(--ink)") },
+            { v: fmt(hrs, 0), style: numCell(false, "var(--ink-2)") },
+            { v: fmt(pay / hrs), style: numCell(false) },
+            { v: String(rows[5][3]), style: numCell(true, "var(--ink-2)") }
+          ]
+        };
+      }),
+      costTotals: (function () {
+        const rev = POINT_ORDER.reduce(function (s, k) { return s + DATA[k].reduce(function (a, r) { return a + r[0]; }, 0); }, 0);
+        const pay = POINT_ORDER.reduce(function (s, k) { return s + DATA[k].reduce(function (a, r) { return a + r[1]; }, 0); }, 0);
+        const hrs = POINT_ORDER.reduce(function (s, k) { return s + DATA[k].reduce(function (a, r) { return a + r[2]; }, 0); }, 0);
+        const heads = POINT_ORDER.reduce(function (s, k) { return s + DATA[k][5][3]; }, 0);
+        return [fmt(rev, 0), fmt(pay, 0), pct((pay / rev) * 100), fmt(hrs, 0), fmt(pay / hrs), String(heads)]
+          .map(function (v, i) { return { v: v, style: footCell(i === 5) }; });
+      })(),
+
+      /* ── текучесть ── */
+      churnMeta: "январь — июнь 2026 · ушло " + totalLeft + " человек из " + totalAvg + " в среднем",
+      churnWarning: "За полгода ушло " + totalLeft + " человек на " + totalAvg + " работающих.",
+      churnHead: [th("Точка", "auto"), th("Приняли", "88px", "right"), th("Ушли", "80px", "right"),
+                  th("Текучесть", "104px", "right"), th("База", "88px", "right", true)],
+      churnRows: POINT_ORDER.map(function (k) {
+        const c = CHURN[k];
+        const enough = c[2] >= minBase;
+        const rate = (c[1] / c[2]) * 100;
+        return {
+          name: POINTS[k],
+          nameStyle: nameCell,
+          cells: [
+            { v: String(c[0]), style: numCell(false, "var(--ink-2)") },
+            { v: String(c[1]), style: numCell(false) },
+            { v: enough ? pct(rate) : "мало данных", style: enough ? numCell(false, rate > 20 ? "var(--down)" : "var(--ink)") : Object.assign({}, numCell(false), { fontFamily: "var(--font-ui)", fontSize: "var(--fs-meta)", color: "var(--ink-3)" }) },
+            { v: String(c[2]) + " чел.", style: Object.assign({}, numCell(true), { fontSize: "var(--fs-meta)", color: "var(--ink-3)" }) }
+          ]
+        };
+      }),
+
+      roleHead: [th("Должность", "auto"), th("Сейчас", "88px", "right"), th("Ушли", "80px", "right"), th("Текучесть", "132px", "right", true)],
+      roleRows: BY_ROLE.map(function (r) {
+        const enough = r[1] >= minBase;
+        const rate = (r[2] / r[1]) * 100;
+        return {
+          name: r[0],
+          rowStyle: { background: enough ? "var(--surface)" : "var(--surface-2)" },
+          nameStyle: nameCell,
+          cells: [
+            { v: String(r[1]), style: numCell(false, "var(--ink-2)") },
+            { v: r[2] === 0 ? "\u2014" : String(r[2]), style: numCell(false, r[2] === 0 ? "var(--ink-empty)" : "var(--ink)") },
+            { v: enough ? pct(rate) : "мало данных · база " + r[1],
+              style: enough
+                ? numCell(true, rate > 20 ? "var(--down)" : "var(--ink)")
+                : Object.assign({}, numCell(true), { fontFamily: "var(--font-ui)", fontSize: "var(--fs-meta)", color: "var(--ink-3)" }) }
+          ]
+        };
+      }),
+
+      leavers: LEAVERS.slice().sort(function (a, b) { return a[3] - b[3]; }).map(function (l) {
+        return {
+          name: l[0], role: l[1], point: POINTS[l[2]],
+          months: l[3] + " мес.", left: "ушёл в " + l[4],
+          barWrapStyle: { display: "block", height: "6px", borderRadius: "999px", background: "var(--surface-3)", overflow: "hidden" },
+          barStyle: {
+            display: "block", height: "100%", borderRadius: "999px",
+            width: Math.round((l[3] / maxTenure) * 100) + "%",
+            background: l[3] <= 4 ? "var(--warn-mark)" : "var(--accent)"
+          }
+        };
+      }),
+      avgTenure: fmt(tenureSum / LEAVERS.length, 1) + " мес.",
+
+      /* ── часы ── */
+      hourKpis: [
+        ["Часов сверх нормы", fmt(overHours, 0), over.length + " человек из 35", "warn"],
+        ["Стоило переработок", fmt(overCost), "с коэффициентом 1,5", "plain"],
+        ["Это к ФОТ июня", pct((overCost / ratios[5].pay) * 100), "от " + fmt(ratios[5].pay, 0) + " RSD", "plain"]
+      ].map(function (k) {
+        return {
+          label: k[0], value: k[1], note: k[2],
+          cardStyle: {
+            background: k[3] === "warn" ? "var(--warn-soft)" : "var(--surface)",
+            border: "1px solid " + (k[3] === "warn" ? "var(--warn-line)" : "var(--line-strong)"),
+            borderRadius: "var(--r-block)", padding: "11px 14px 12px"
+          }
+        };
+      }),
+      overtime: over.map(function (o) {
+        return {
+          name: o.name, point: o.point,
+          hours: o.hours + " ч", over: "+" + o.extra + " ч", cost: fmt(o.cost),
+          normStyle: { display: "block", height: "6px", borderRadius: "999px 0 0 999px", background: "var(--accent)", width: Math.round((NORM / maxHours) * 60) + "%" },
+          overStyle: { display: "block", height: "6px", borderRadius: "0 999px 999px 0", background: "var(--warn-mark)", width: Math.round((o.extra / maxHours) * 60) + "%" }
+        };
+      }),
+      overtimeTotal: fmt(overCost) + " RSD"
+    };
+  }
+}
+</script>
+</body>
+</html>

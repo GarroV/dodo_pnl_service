@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-supp:#6B4FA8; --reg-supp-soft:#F1ECF9; --reg-supp-line:#DCD0EE;
+    --reg-internal:#2E6B6B; --reg-internal-soft:#E7F1F1; --reg-internal-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, select, textarea { font:inherit; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 17</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Правила страны: реестр, а не форма настроек</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Трудовое право у каждой страны своё, и меняется оно без нашего участия. Поэтому правило — это строка реестра с кодом, типом и источником, а не поле в коде. Страна задаёт значение и рамку, юрлицо доопределяет внутри рамки. Новая страна — новая колонка значений, а не новая ветка продукта.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isCountry }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Сербия <span style="color: var(--ink-3); font-weight: var(--w-regular)">· {{ ruleCount }}</span></h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ lockedLine }}</span>
+          <div style="margin-left: auto; display: flex; align-items: center; gap: 6px">
+            <input value="{{ q }}" onChange="{{ setQ }}" placeholder="Код или название" style="width: 188px; height: var(--control-h-sm); padding: 0 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); font-size: var(--fs-dense); background: var(--surface)" />
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap">
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="6">
+            <button onClick="{{ g.on }}" style="{{ g.style }}">{{ g.label }} <span style="{{ g.countStyle }}">{{ g.count }}</span></button>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 424px; gap: 14px; align-items: start">
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <table style="width: 100%; table-layout: fixed">
+              <thead>
+                <tr>
+                  <sc-for list="{{ ruleHead }}" as="h" hint-placeholder-count="4">
+                    <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ rules }}" as="r" hint-placeholder-count="12">
+                  <tr onClick="{{ r.on }}" tabIndex="0" style="{{ r.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                    <td style="{{ r.codeStyle }}">{{ r.code }}</td>
+                    <td style="{{ r.nameStyle }}">{{ r.name }}</td>
+                    <td style="{{ r.valStyle }}">{{ r.value }}</td>
+                    <td style="{{ r.ownerCellStyle }}"><span style="{{ r.ownerStyle }}">{{ r.owner }}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 22px; text-align: center; font-size: var(--fs-dense); color: var(--ink-3)">Ничего не нашлось. Реестр ищет по коду и по названию.</div>
+            </sc-if>
+          </div>
+
+          <div style="position: sticky; top: 14px; border: 1px solid var(--line-strong); border-radius: var(--r-block); background: var(--surface); overflow: hidden">
+            <div style="padding: 12px 15px 11px; border-bottom: 1px solid var(--line-strong); background: var(--surface-3)">
+              <div style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2); letter-spacing: .02em">{{ d.code }}</div>
+              <div style="font-size: var(--fs-lead); line-height: var(--lh-lead); font-weight: var(--w-semibold); margin-top: 3px">{{ d.name }}</div>
+            </div>
+
+            <div style="padding: 13px 15px 15px">
+              <div style="display: grid; grid-template-columns: 104px 1fr; gap: 7px 12px; font-size: var(--fs-dense)">
+                <span style="color: var(--ink-3)">Тип</span><span>{{ d.type }}</span>
+                <span style="color: var(--ink-3)">В Сербии</span><span style="font-family: var(--font-num); font-weight: var(--w-semibold)">{{ d.value }}</span>
+                <span style="color: var(--ink-3)">Действует с</span><span style="font-family: var(--font-num)">{{ d.since }}</span>
+                <span style="color: var(--ink-3)">Источник</span><span>{{ d.source }}</span>
+              </div>
+
+              <div style="{{ d.frameStyle }}">
+                <div style="display: flex; align-items: center; gap: 7px">
+                  <span style="{{ d.ownerStyle }}">{{ d.owner }}</span>
+                  <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ d.frameShort }}</span>
+                </div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 6px">{{ d.frameText }}</div>
+              </div>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin: 14px 0 6px">Что читает это правило</div>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap">
+                <sc-for list="{{ d.uses }}" as="u" hint-placeholder-count="3">
+                  <span style="{{ u.style }}">{{ u.label }}</span>
+                </sc-for>
+              </div>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin: 14px 0 6px">Если поменять</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ d.effect }}</div>
+
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin: 14px 0 6px">История значения</div>
+              <div style="border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+                <sc-for list="{{ d.history }}" as="h" hint-placeholder-count="2">
+                  <div style="{{ h.style }}">
+                    <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-2); flex: 0 0 74px">{{ h.date }}</span>
+                    <span style="font-family: var(--font-num); font-size: var(--fs-dense); font-weight: var(--w-semibold); flex: 0 0 96px">{{ h.value }}</span>
+                    <span style="font-size: var(--fs-meta); color: var(--ink-2); flex: 1; min-width: 0">{{ h.why }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isEntity }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Dodo Pizza Srbija d.o.o. <span style="color: var(--ink-3); font-weight: var(--w-regular)">· Сербия</span></h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ entityLine }}</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px">
+          <sc-for list="{{ entityKpis }}" as="k" hint-placeholder-count="4">
+            <div style="{{ k.cardStyle }}">
+              <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">{{ k.label }}</div>
+              <div style="{{ k.valueStyle }}">{{ k.value }}</div>
+              <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); margin-top: 3px">{{ k.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+            <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Значения юрлица</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-2)">пусто — значит наследуется из страны; переопределение всегда с датой и причиной</span>
+          </div>
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <sc-for list="{{ entHead }}" as="h" hint-placeholder-count="5">
+                  <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ entRules }}" as="r" hint-placeholder-count="12">
+                <tr style="{{ r.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <td style="{{ r.codeStyle }}">{{ r.code }}</td>
+                  <td style="{{ r.nameStyle }}">{{ r.name }}</td>
+                  <td style="{{ r.countryStyle }}">{{ r.country }}</td>
+                  <td style="{{ r.ownStyle }}">{{ r.own }}</td>
+                  <td style="{{ r.stateCellStyle }}"><span style="{{ r.stateStyle }}">{{ r.state }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px">
+          <div style="border: 1px solid var(--err-line); background: var(--err-soft); border-radius: var(--r-block); padding: 12px 14px 13px">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--err)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6"></path><path d="M9 9l6 6"></path></svg>
+              <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--err)">Попытка выйти за рамку — 24.07, Nikola Perić</span>
+            </div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 7px">Ставили <span style="font-family: var(--font-num)">ot.k.holiday = 1,50</span>. Рамка Сербии — не ниже <span style="font-family: var(--font-num)">2,10</span>, это Закон о раду, чл. 108. Не сохранили и записали попытку: рамку страны юрлицо не двигает даже администратором сети — иначе смысл рамки теряется.</div>
+          </div>
+          <div style="border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--r-block); padding: 12px 14px 13px">
+            <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Почему юрлицо вообще что-то определяет</div>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 7px">Закон задаёт потолок и пол, но внутри них у сети есть своя политика: где-то переработку ограничивают жёстче закона, где-то округляют часы иначе. Если бы правило было одно на страну, такую политику пришлось бы держать в голове у бухгалтера. Юрлицо может стать строже рамки, но никогда — мягче.</div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCompare }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Четыре страны в одном реестре</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Новая страна — колонка значений. Строки те же, код тот же, модули не переписываются. Серая клетка — правило заведено, но значение ещё не подтверждено юристом страны. Выделены значения, отличающиеся от сербских.</span>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface); margin-bottom: 12px">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <sc-for list="{{ cmpHead }}" as="h" hint-placeholder-count="6">
+                  <th scope="col" style="{{ h.style }}">{{ h.label }}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ cmpRows }}" as="r" hint-placeholder-count="10">
+                <tr style="{{ r.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <td style="{{ r.codeStyle }}">{{ r.code }}</td>
+                  <td style="{{ r.nameStyle }}">{{ r.name }}</td>
+                  <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="4">
+                    <td style="{{ c.style }}">{{ c.v }}</td>
+                  </sc-for>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px">
+          <sc-for list="{{ addSteps }}" as="s" hint-placeholder-count="3">
+            <div style="border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--r-block); padding: 12px 14px 13px">
+              <div style="display: flex; align-items: baseline; gap: 8px">
+                <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ s.num }}</span>
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ s.title }}</span>
+              </div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 6px">{{ s.text }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isLaws }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Как правило попадает в продукт</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Требование заказчика: настраивать, а не перекраивать. Четыре решения, которые это обеспечивают.</span>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface); margin-bottom: 14px">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 13px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+            <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Анатомия строки реестра</span>
+            <span style="font-size: var(--fs-meta); color: var(--ink-2)">завести новое правило — значит заполнить эти семь полей, а не тронуть код расчёта</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr)">
+            <sc-for list="{{ anatomy }}" as="a" hint-placeholder-count="7">
+              <div style="{{ a.style }}">
+                <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">{{ a.label }}</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 5px">{{ a.text }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <sc-for list="{{ laws }}" as="l" hint-placeholder-count="4">
+            <div style="{{ l.style }}">
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: {{ l.color }}">{{ l.title }}</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 6px">{{ l.text }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Плотность&quot;}}">
+/* Правило реестра:
+   0 код · 1 группа · 2 название · 3 тип · 4 значение Сербии · 5 режим рамки
+   6 текст рамки · 7 источник · 8 действует с · 9 что читает · 10 если поменять
+   11 история · 12 значение юрлица (null = наследует) · 13 значения других стран
+   Режим: lock — рамку задаёт закон, юрлицо не трогает;
+          frame — юрлицо двигает внутри рамки, обычно только в строгую сторону;
+          free — закон молчит, значение целиком на сети. */
+const RULES = [
+  ["norm.source", "norm", "Источник нормы часов", "Выбор из списка", "Производственный календарь страны", "lock",
+   "Норма месяца не может быть константой: её задаёт календарь, который правится при переносе выходных.",
+   "Закон о раду, чл. 51", "01.01.2020", ["Табель", "Ведомость", "Должности"],
+   "Смена источника пересчитает переработку во всех незакрытых периодах страны.",
+   [["01.01.2020", "Календарь", "Первичная настройка страны"]], null,
+   ["Календарь", "Календарь", "Календарь"]],
+
+  ["contract.guarantee", "norm", "Гарантия часов по договору", "Переключатель", "Включена", "lock",
+   "В Сербии оклад по договору предполагает согласованный фонд часов. Выключить нельзя.",
+   "Закон о раду, чл. 30", "01.01.2020", ["Должности", "Табель", "Ведомость"],
+   "Выключение убрало бы колонку «Δ к договору» из табеля и базу для сверхурочных у окладных.",
+   [["01.01.2020", "Включена", "Первичная настройка страны"]], null,
+   ["Включена", "Включена", "Выключена"]],
+
+  ["under.pay", "norm", "Недоработка при окладе", "Выбор из списка", "Оклад платится полностью", "lock",
+   "Удержать за недоработку по вине работодателя нельзя. Причина недоработки на выплату не влияет.",
+   "Закон о раду, чл. 116", "01.01.2020", ["Ведомость", "Закрытие месяца"],
+   "Изменение затронуло бы расчёт всех окладных за незакрытые месяцы.",
+   [["01.01.2020", "Полностью", "Первичная настройка страны"]], null,
+   ["Полностью", "Полностью", "Пропорционально"]],
+
+  ["under.explain", "norm", "Порог «требует объяснения»", "Часы", "8 ч", "frame",
+   "Закон молчит, но сеть хочет видеть недоработку до закрытия. Юрлицо ставит от 4 до 16 часов.",
+   "Решение сети, 12.02.2026", "01.03.2026", ["Табель", "Закрытие месяца"],
+   "Порог ниже — больше строк с пометкой; выше — риск закрыть месяц с незамеченной недоработкой.",
+   [["01.03.2026", "8 ч", "Первая настройка после пилота"], ["01.06.2026", "8 ч", "Пересмотр после мая, оставили"]], "4 ч",
+   ["8 ч", "8 ч", "—"]],
+
+  ["under.block", "norm", "Порог блокировки закрытия", "Часы", "24 ч", "frame",
+   "Крупная недоработка блокирует утверждение периода. Юрлицо ставит от 16 до 40 часов, ниже 16 нельзя — бухгалтер утонет.",
+   "Решение сети, 12.02.2026", "01.03.2026", ["Закрытие месяца"],
+   "Пока порог не пройден, кнопка «Утвердить период» не работает и показывает список людей.",
+   [["01.03.2026", "40 ч", "Осторожный старт"], ["01.06.2026", "24 ч", "Ужесточили после трёх случаев в мае"]], null,
+   ["24 ч", "24 ч", "—"]],
+
+  ["holiday.in.norm", "norm", "Праздники входят в норму", "Переключатель", "Да, оплачиваются", "lock",
+   "Праздничный день уменьшает норму месяца и оплачивается как отработанный.",
+   "Закон о раду, чл. 114", "01.01.2020", ["Календарь", "Табель", "Ведомость"],
+   "Выключение подняло бы норму июня со 176 до 176 без изменений, а января — со 152 до 176.",
+   [["01.01.2020", "Да", "Первичная настройка страны"]], null,
+   ["Да", "Да", "Да"]],
+
+  ["leave.closes.norm", "norm", "Отпуск закрывает норму", "Переключатель", "Да", "lock",
+   "Часы отпуска считаются отработанными для гарантии по договору.",
+   "Закон о раду, чл. 68", "01.01.2020", ["Табель", "Ведомость"],
+   "Без этого человек в отпуске каждый месяц попадал бы в список недоработки.",
+   [["01.01.2020", "Да", "Первичная настройка страны"]], null,
+   ["Да", "Да", "Да"]],
+
+  ["sick.closes.norm", "norm", "Больничный закрывает норму", "Переключатель", "Да, с первого дня", "lock",
+   "Часы больничного закрывают норму, хотя оплачиваются по своей ставке.",
+   "Закон о раду, чл. 115", "01.01.2020", ["Табель", "Ведомость"],
+   "Если выключить, длинный больничный уводил бы человека в блокирующую недоработку.",
+   [["01.01.2020", "Да", "Первичная настройка страны"]], null,
+   ["Да", "Первые 30 дней", "Да"]],
+
+  ["ot.base", "ot", "База для сверхурочных", "Выбор из списка", "Гарантия по договору", "lock",
+   "Переработка окладного считается от его договорных часов, а не от нормы календаря.",
+   "Закон о раду, чл. 53", "01.01.2020", ["Табель", "Ведомость"],
+   "При базе «календарь» человек с договором на 160 ч не получил бы 16 часов сверхурочных в июне.",
+   [["01.01.2020", "Договор", "Первичная настройка страны"]], null,
+   ["Договор", "Договор", "Календарь"]],
+
+  ["ot.limit.week", "ot", "Лимит переработки в неделю", "Часы", "8 ч", "frame",
+   "Потолок закона. Юрлицо может опустить до нуля, поднять — нет.",
+   "Закон о раду, чл. 53", "01.01.2020", ["Табель", "Закрытие месяца"],
+   "Превышение не блокирует расчёт, но поднимает замечание перед утверждением.",
+   [["01.01.2020", "8 ч", "Первичная настройка страны"]], null,
+   ["8 ч", "10 ч", "8 ч"]],
+
+  ["ot.limit.month", "ot", "Лимит переработки в месяц", "Часы", "32 ч", "frame",
+   "Потолок закона. Юрлицо опускает до нуля, поднять нельзя.",
+   "Закон о раду, чл. 53", "01.01.2020", ["Табель", "Аналитика по людям"],
+   "Ниже — больше замечаний в табеле; на выплату лимит не влияет, переработка платится в любом случае.",
+   [["01.01.2020", "32 ч", "Первичная настройка страны"], ["01.05.2026", "32 ч", "Проверено при пилоте"]], "24 ч",
+   ["32 ч", "40 ч", "32 ч"]],
+
+  ["ot.k.workday", "ot", "Коэффициент сверхурочных, будни", "Коэффициент", "1,26", "frame",
+   "Минимум закона. Юрлицо платит столько же или больше.",
+   "Закон о раду, чл. 108", "01.01.2024", ["Ведомость", "Правила расчёта"],
+   "Меняет сумму начисления по компоненту «Переработка» во всех незакрытых периодах.",
+   [["01.01.2020", "1,26", "Первичная настройка страны"], ["01.01.2024", "1,26", "Проверено при пересмотре закона"]], null,
+   ["1,26", "1,40", "1,50"]],
+
+  ["ot.k.weekend", "ot", "Коэффициент сверхурочных, выходные", "Коэффициент", "1,26", "frame",
+   "Отдельный коэффициент: в части стран выходной дороже будней.",
+   "Закон о раду, чл. 108", "01.01.2024", ["Ведомость", "Правила расчёта"],
+   "Если сравнять с буднями, выходная переработка подешевеет — заметно на точках с плавающим графиком.",
+   [["01.01.2024", "1,26", "Первичная настройка страны"]], null,
+   ["1,26", "1,40", "1,50"]],
+
+  ["ot.k.holiday", "ot", "Коэффициент сверхурочных, праздники", "Коэффициент", "2,10", "frame",
+   "Минимум закона. Пробовали поставить 1,50 — рамка не пустила.",
+   "Закон о раду, чл. 108", "01.01.2024", ["Ведомость", "Правила расчёта"],
+   "Самый дорогой час в году. В январе и апреле разница видна в ФОТ точки.",
+   [["01.01.2024", "2,10", "Первичная настройка страны"]], null,
+   ["2,10", "1,50", "2,00"]],
+
+  ["night.interval", "night", "Ночные часы, интервал", "Интервал", "22:00—06:00", "lock",
+   "Границы ночи задаёт закон, сеть их не двигает.",
+   "Закон о раду, чл. 62", "01.01.2020", ["Табель", "Ведомость"],
+   "Сдвиг границы меняет разбивку часов, приезжающих из Dodo IS.",
+   [["01.01.2020", "22:00—06:00", "Первичная настройка страны"]], null,
+   ["22:00—06:00", "22:00—06:00", "22:00—05:00"]],
+
+  ["night.k", "night", "Коэффициент ночных", "Коэффициент", "1,26", "frame",
+   "Минимум закона. Юрлицо может платить больше.",
+   "Закон о раду, чл. 108", "01.01.2024", ["Ведомость", "Правила расчёта"],
+   "Затрагивает всех почасовых с ночными сменами — в июне это 11 человек.",
+   [["01.01.2024", "1,26", "Первичная настройка страны"]], null,
+   ["1,26", "1,40", "1,25"]],
+
+  ["round.hours", "acct", "Округление часов", "Выбор из списка", "До 15 минут вниз", "free",
+   "Закон молчит. Значение целиком на решении сети, лишь бы правило было одинаковым весь период.",
+   "Решение сети, 20.01.2026", "01.02.2026", ["Табель", "Сверка с таблицей"],
+   "Смена округления внутри периода дала бы расхождение с уже сверенными часами.",
+   [["01.02.2026", "15 мин вниз", "Договорились с точками"]], "До 30 минут вниз",
+   ["15 мин вниз", "15 мин вниз", "1 мин"]],
+
+  ["period.type", "acct", "Учётный период", "Выбор из списка", "Месяц", "frame",
+   "Суммированный учёт кварталом разрешён, но требует отдельного согласия работника.",
+   "Закон о раду, чл. 57", "01.01.2020", ["Закрытие месяца", "Табель"],
+   "При квартале переработка считается один раз за три месяца, а не каждый месяц.",
+   [["01.01.2020", "Месяц", "Первичная настройка страны"]], null,
+   ["Месяц", "Месяц", "Квартал"]],
+
+  ["wage.min", "money", "Минимальная зарплата", "Деньги за месяц", "53 592,00 RSD", "lock",
+   "Пол для всех вилок должностей. Ниже вилку не завести — форма не сохранит.",
+   "Одлука о минималној цени рада", "01.01.2026", ["Должности", "Ведомость"],
+   "Индексация минималки поднимает пол вилок и подсвечивает должности, оказавшиеся ниже.",
+   [["01.01.2025", "47 154,00 RSD", "Одлука 2025"], ["01.01.2026", "53 592,00 RSD", "Одлука 2026, рост 13,7%"]], null]
+];
+
+const GROUPS = [
+  ["all", "Все"],
+  ["norm", "Норма и договор"],
+  ["ot", "Сверхурочные"],
+  ["night", "Ночные"],
+  ["acct", "Учёт"],
+  ["money", "Деньги"]
+];
+
+const COUNTRIES = ["Сербия", "Черногория", "Хорватия", "Румыния"];
+
+/* Словарь сравнения. Значение страны в RULES[4] написано прозой для панели
+   детали — сравнивать страны по этому тексту нельзя: «Оклад платится полностью»
+   и «Полностью» одно и то же. Здесь у всех стран, включая Сербию, одна короткая
+   форма, и сравнение идёт только по ней. Пустая строка — значение не подтверждено. */
+const CMP = {
+  "norm.source":        ["Календарь", "Календарь", "Календарь", "Календарь"],
+  "contract.guarantee": ["Включена", "Включена", "Включена", "Выключена"],
+  "under.pay":          ["Полностью", "Полностью", "Полностью", "Пропорционально"],
+  "under.explain":      ["8 ч", "8 ч", "8 ч", ""],
+  "under.block":        ["24 ч", "24 ч", "24 ч", ""],
+  "holiday.in.norm":    ["Да", "Да", "Да", "Да"],
+  "leave.closes.norm":  ["Да", "Да", "Да", "Да"],
+  "sick.closes.norm":   ["Да", "Первые 30 дней", "Да", "Да"],
+  "ot.base":            ["Договор", "Договор", "Договор", "Календарь"],
+  "ot.limit.week":      ["8 ч", "8 ч", "10 ч", "8 ч"],
+  "ot.limit.month":     ["32 ч", "32 ч", "40 ч", "32 ч"],
+  "ot.k.workday":       ["1,26", "1,40", "1,50", "1,75"],
+  "ot.k.weekend":       ["1,26", "1,40", "1,50", "1,75"],
+  "ot.k.holiday":       ["2,10", "1,50", "2,00", "2,00"],
+  "night.interval":     ["22:00—06:00", "22:00—06:00", "22:00—06:00", "22:00—06:00"],
+  "night.k":            ["1,26", "1,40", "1,25", "1,25"],
+  "round.hours":        ["15 мин вниз", "15 мин вниз", "15 мин вниз", "1 мин"],
+  "period.type":        ["Месяц", "Месяц", "Месяц", "Квартал"],
+  "wage.min":           ["53 592,00 RSD", "532,00 EUR", "970,00 EUR", "4 050,00 RON"]
+};
+
+const OWNER = {
+  lock: ["Закон", "var(--accent)", "var(--accent-soft)", "var(--accent-line)"],
+  frame: ["Внутри рамки", "var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"],
+  free: ["Решает сеть", "var(--ok)", "var(--ok-soft)", "var(--ok-line)"]
+};
+
+const ANATOMY = [
+  ["Код", "Не меняется никогда. По нему правило находит расчёт."],
+  ["Тип", "Часы, коэффициент, деньги, интервал, переключатель, выбор. Тип задаёт поле ввода."],
+  ["Значение", "Своё у каждой страны. Пустое — правило заведено, значение не подтверждено."],
+  ["Рамка", "Что юрлицо может поставить. Закон, коридор или полная свобода."],
+  ["Источник", "Статья закона или решение сети с датой. Без источника правило не сохранить."],
+  ["Читатели", "Модули, которые берут это значение. Список ведёт разработка."],
+  ["История", "Значения по датам. Прошлый месяц считается по своей версии."]
+];
+
+const LAWS = [
+  ["Правило — строка, а не поле", "Девятнадцать правил живут в одной таблице с одинаковой анатомией. Двадцатое заводится заполнением семи полей и появляется во всех странах со значением «не задано». Ни один модуль при этом не переписывается — он спрашивает значение по коду.", "plain"],
+  ["Рамку двигает закон, не администратор", "Юрлицо становится строже рамки, но никогда мягче. Попытка выйти записывается в историю с автором и временем: это не защита от дурака, а след для аудита.", "warn"],
+  ["Значение всегда с датой", "У правила нет «текущего значения» — есть значение на дату. Поэтому закрытый март считается по мартовской минималке, даже если январская одлука уже поднялась.", "ok"],
+  ["Пустое значение честнее выдуманного", "Заводя страну, мы не переносим сербские числа по умолчанию. Пока юрист страны не подтвердил, клетка пустая, а модули, которым правило нужно, говорят об этом прямо, а не считают по чужому закону.", "plain"]
+];
+
+const ADD_STEPS = [
+  ["01", "Правило заводит разработка", "Код, тип и список читателей — часть кода, потому что от них зависит расчёт. Это единственный шаг, где нужен релиз."],
+  ["02", "Значение вносит юрист страны", "Каждой стране приходит задача: подтвердить значение и указать статью закона. До подтверждения клетка пустая."],
+  ["03", "Рамку доопределяет сеть", "Администратор ставит коридор для юрлиц. Дальше бухгалтер страны живёт внутри коридора без обращений к разработке."]
+];
+
+function ownerChip(mode, small) {
+  const o = OWNER[mode];
+  return {
+    display: "inline-flex", alignItems: "center", height: small ? "17px" : "19px", padding: small ? "0 6px" : "0 7px",
+    borderRadius: "var(--r-mark)", fontSize: small ? "10px" : "10.5px", fontWeight: "var(--w-semibold)",
+    whiteSpace: "nowrap", color: o[1], background: o[2], border: "1px solid " + o[3]
+  };
+}
+
+class Component extends DCLogic {
+  state = { tab: "country", sel: 3, group: "all", q: "" };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const rowH = this.props.density === "compact" ? "26px" : "30px";
+
+    const th = function (label, w, align, last) {
+      return {
+        label: label,
+        style: {
+          background: "var(--surface-head)", padding: "6px 9px", fontSize: "var(--fs-micro)",
+          fontWeight: "var(--w-semibold)", color: "var(--ink-2)", textAlign: align || "left", width: w || "auto",
+          borderBottom: "1px solid var(--line-strong)", borderRight: last ? 0 : "1px solid var(--line-2)"
+        }
+      };
+    };
+    const cell = { padding: "0 9px", height: rowH, fontSize: "var(--fs-dense)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" };
+    const mono = function (extra) {
+      return Object.assign({}, cell, { fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", color: "var(--ink-2)" }, extra || {});
+    };
+
+    const q = st.q.trim().toLowerCase();
+    const match = function (r) {
+      const inGroup = st.group === "all" || r[1] === st.group;
+      const inQ = !q || r[0].toLowerCase().indexOf(q) >= 0 || r[2].toLowerCase().indexOf(q) >= 0;
+      return inGroup && inQ;
+    };
+    const visible = RULES.filter(match);
+    const d = RULES[st.sel] || RULES[0];
+    const overridden = RULES.filter(function (r) { return r[12] !== null; });
+    const locked = RULES.filter(function (r) { return r[5] === "lock"; });
+
+    return {
+      tabs: [["country", "Профиль страны"], ["entity", "Юрлицо"], ["compare", "Страны"], ["laws", "Как устроено"]].map(function (t) {
+        const on = st.tab === t[0];
+        const base = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+        return {
+          label: t[1], sel: on, notSel: !on,
+          on: function () { self.setState({ tab: t[0] }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isCountry: st.tab === "country",
+      isEntity: st.tab === "entity",
+      isCompare: st.tab === "compare",
+      isLaws: st.tab === "laws",
+
+      /* ── профиль страны ── */
+      ruleCount: RULES.length + " правил",
+      lockedLine: locked.length + " заданы законом и не редактируются · " + (RULES.length - locked.length) + " юрлицо может ужесточить",
+      q: st.q,
+      setQ: function (e) { self.setState({ q: e.target.value }); },
+      groups: GROUPS.map(function (g) {
+        const on = st.group === g[0];
+        const n = g[0] === "all" ? RULES.length : RULES.filter(function (r) { return r[1] === g[0]; }).length;
+        return {
+          label: g[1], count: n,
+          on: function () { self.setState({ group: g[0] }); },
+          style: {
+            height: "var(--control-h-sm)", padding: "0 10px", borderRadius: "var(--r-control)",
+            fontSize: "var(--fs-dense)", display: "inline-flex", alignItems: "center", gap: "6px",
+            border: "1px solid " + (on ? "var(--accent)" : "var(--line-control)"),
+            background: on ? "var(--accent-soft)" : "var(--surface)",
+            color: on ? "var(--accent)" : "var(--ink-2)",
+            fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)"
+          },
+          countStyle: { fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", color: on ? "var(--accent)" : "var(--ink-3)" }
+        };
+      }),
+      ruleHead: [th("Код", "152px"), th("Правило", "auto"), th("В Сербии", "150px"), th("Кто меняет", "126px", "left", true)],
+      empty: visible.length === 0,
+      rules: visible.map(function (r) {
+        const idx = RULES.indexOf(r);
+        const on = idx === st.sel;
+        return {
+          code: r[0], name: r[2], value: (CMP[r[0]] || [])[0] || r[4], owner: OWNER[r[5]][0],
+          on: function () { self.setState({ sel: idx }); },
+          rowStyle: { background: on ? "var(--accent-soft)" : "var(--surface)", cursor: "pointer" },
+          codeStyle: mono(on ? { color: "var(--accent)" } : null),
+          nameStyle: Object.assign({}, cell, { fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)" }),
+          valStyle: Object.assign({}, cell, { fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)" }),
+          ownerCellStyle: { padding: "0 9px", height: rowH, borderBottom: "1px solid var(--line)" },
+          ownerStyle: ownerChip(r[5], true)
+        };
+      }),
+      d: {
+        code: d[0], name: d[2], type: d[3], value: d[4], source: d[7], since: d[8],
+        owner: OWNER[d[5]][0],
+        ownerStyle: ownerChip(d[5]),
+        frameShort: d[5] === "lock" ? "значение не редактируется" : (d[5] === "frame" ? "юрлицо может ужесточить" : "юрлицо ставит любое"),
+        frameText: d[6],
+        frameStyle: {
+          marginTop: "13px", padding: "10px 12px 11px", borderRadius: "var(--r-block)",
+          background: d[5] === "lock" ? "var(--accent-soft)" : (d[5] === "frame" ? "var(--warn-soft)" : "var(--ok-soft)"),
+          border: "1px solid " + (d[5] === "lock" ? "var(--accent-line)" : (d[5] === "frame" ? "var(--warn-line)" : "var(--ok-line)"))
+        },
+        uses: d[9].map(function (u) {
+          return { label: u, style: { display: "inline-flex", alignItems: "center", height: "20px", padding: "0 8px", borderRadius: "var(--r-mark)", fontSize: "var(--fs-meta)", color: "var(--ink-2)", background: "var(--surface-3)", border: "1px solid var(--line)" } };
+        }),
+        effect: d[10],
+        history: d[11].map(function (h, i) {
+          return {
+            date: h[0], value: h[1], why: h[2],
+            style: { display: "flex", alignItems: "center", gap: "10px", padding: "7px 10px", borderTop: i === 0 ? 0 : "1px solid var(--line)", background: i === d[11].length - 1 ? "var(--surface-2)" : "var(--surface)" }
+          };
+        })
+      },
+
+      /* ── юрлицо ── */
+      entityLine: "Наследует профиль Сербии · переопределено " + overridden.length + " из " + RULES.length,
+      entityKpis: [
+        ["Наследовано", String(RULES.length - overridden.length), "меняется вместе со страной", false],
+        ["Переопределено", String(overridden.length), "все три — в строгую сторону", false],
+        ["Задано законом", String(locked.length), "недоступно для правки", false],
+        ["Отклонено рамкой", "1", "24.07 · ot.k.holiday", true]
+      ].map(function (k) {
+        return {
+          label: k[0], value: k[1], note: k[2],
+          cardStyle: {
+            background: k[3] ? "var(--err-soft)" : "var(--surface)",
+            border: "1px solid " + (k[3] ? "var(--err-line)" : "var(--line-strong)"),
+            borderRadius: "var(--r-block)", padding: "11px 14px 12px"
+          },
+          valueStyle: {
+            fontFamily: "var(--font-num)", fontSize: "var(--fs-num-hero)", fontWeight: "var(--w-bold)",
+            fontVariantNumeric: "tabular-nums", marginTop: "5px", color: k[3] ? "var(--err)" : "var(--ink)"
+          }
+        };
+      }),
+      entHead: [th("Код", "152px"), th("Правило", "auto"), th("В стране", "132px"), th("У юрлица", "132px"), th("Состояние", "148px", "left", true)],
+      entRules: RULES.map(function (r) {
+        const own = r[12];
+        const isOwn = own !== null;
+        const state = isOwn ? "Переопределено" : (r[5] === "lock" ? "Задано законом" : "Наследуется");
+        const tone = isOwn ? "frame" : (r[5] === "lock" ? "lock" : "free");
+        return {
+          code: r[0], name: r[2], country: (CMP[r[0]] || [])[0] || r[4], own: isOwn ? own : "как в стране", state: state,
+          rowStyle: { background: isOwn ? "var(--warn-soft)" : "var(--surface)" },
+          codeStyle: mono(),
+          nameStyle: Object.assign({}, cell, { fontWeight: isOwn ? "var(--w-medium)" : "var(--w-regular)" }),
+          countryStyle: Object.assign({}, cell, { fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", color: isOwn ? "var(--ink-3)" : "var(--ink-2)", textDecoration: isOwn ? "line-through" : "none" }),
+          ownStyle: Object.assign({}, cell, { fontFamily: isOwn ? "var(--font-num)" : "var(--font-ui)", fontSize: isOwn ? "var(--fs-num-sm)" : "var(--fs-meta)", fontWeight: isOwn ? "var(--w-semibold)" : "var(--w-regular)", color: isOwn ? "var(--warn-ink)" : "var(--ink-3)" }),
+          stateCellStyle: { padding: "0 9px", height: rowH, borderBottom: "1px solid var(--line)" },
+          stateStyle: ownerChip(tone, true)
+        };
+      }),
+
+      /* ── страны ── */
+      cmpHead: [th("Код", "152px"), th("Правило", "auto")].concat(COUNTRIES.map(function (c, i) {
+        return th(c, "128px", "left", i === COUNTRIES.length - 1);
+      })),
+      cmpRows: RULES.filter(function (r) { return CMP[r[0]]; }).map(function (r) {
+        const vals = CMP[r[0]];
+        const differs = vals.some(function (v) { return v !== vals[0]; });
+        return {
+          code: r[0], name: r[2],
+          rowStyle: { background: "var(--surface)" },
+          codeStyle: mono(),
+          nameStyle: Object.assign({}, cell, { fontWeight: differs ? "var(--w-medium)" : "var(--w-regular)" }),
+          cells: vals.map(function (v, i) {
+            const same = i > 0 && v === vals[0];
+            const blank = v === "";
+            return {
+              v: v,
+              style: Object.assign({}, cell, {
+                fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)",
+                color: same ? "var(--ink-3)" : "var(--ink)",
+                fontWeight: !same && !blank && i > 0 ? "var(--w-semibold)" : "var(--w-regular)",
+                background: blank ? "var(--surface-3)" : (!same && i > 0 ? "var(--surface-2)" : "transparent")
+              })
+            };
+          })
+        };
+      }),
+      addSteps: ADD_STEPS.map(function (s) { return { num: s[0], title: s[1], text: s[2] }; }),
+
+      /* ── как устроено ── */
+      anatomy: ANATOMY.map(function (a, i) {
+        return {
+          label: a[0], text: a[1],
+          style: { padding: "11px 13px 13px", borderRight: i === ANATOMY.length - 1 ? 0 : "1px solid var(--line)" }
+        };
+      }),
+      laws: LAWS.map(function (l) {
+        const tone = { plain: ["var(--surface)", "var(--line-strong)", "var(--ink)"], warn: ["var(--warn-soft)", "var(--warn-line)", "var(--warn-ink)"], ok: ["var(--ok-soft)", "var(--ok-line)", "var(--ok)"] }[l[2]];
+        return {
+          title: l[0], text: l[1], color: tone[2],
+          style: { background: tone[0], border: "1px solid " + tone[1], borderRadius: "var(--r-block)", padding: "13px 15px 14px" }
+        };
+      })
+    };
+  }
+}
+
+</script>
+</body>
+</html>

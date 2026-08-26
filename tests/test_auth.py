@@ -317,11 +317,18 @@ def test_principal_carries_role_units_and_ledgers(client, seed_password, code):
     assert bool(who.unit_ids) is (code == "manager")
 
 
-def test_network_admin_does_not_write_payroll_data(client, seed_password, web_env):
-    """Администратор сети ведёт справочники, но не правит данные расчёта.
+def test_a_role_without_the_right_does_not_write_payroll_data(
+    client, seed_password, web_env, admin_without_month_rights
+):
+    """Роль без права на расчёт не пишет данные расчёта — и это не интерфейс.
 
-    Отказ даёт не интерфейс: расчёт пишет строки во все регистры, а роль,
-    которая их не видит, записать их не может — база отвергнет вставку.
+    Отказ даёт право, а не экран: настоящим входом (паролем, не ярлыком) роль
+    без `payrun.calculate` получает 403, и ни одной строки ведомости в базе не
+    появляется.
+
+    Роль сужается фикстурой: администратор сети с D052 может всё, и брать его
+    как «роль без права» больше нельзя — это ровно тот случай, ради которого
+    `narrowed_permissions` и заведён.
     """
     import psycopg
 

@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --api:#2E6B6B; --api-soft:#E7F1F1; --api-line:#C6DDDD;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px; --fs-num-hero:22px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px; --tap-min:44px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-pop:0 18px 44px -16px rgba(20,26,34,.5);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  input, select, textarea { font:inherit; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 7</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Банковская выписка: загрузка, сопоставление, правила</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Платёж и документ — не одно и то же. Один платёж закрывает три накладные, одну накладную гасят двумя переводами. Экран сопоставления работает с этим напрямую, а не притворяется, что связь один к одному.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isUpload }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: grid; grid-template-columns: 380px 1fr; gap: 10px; align-items: start">
+
+          <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 14px">
+            <h2 style="margin: 0 0 4px; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Загрузка выписки</h2>
+            <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-bottom: 12px">Banca Intesa · счёт 160-0000123456-78 · RSD</div>
+            <div style="border: 1px dashed var(--line-control-2); border-radius: var(--r-block); background: #FBFCFD; padding: 22px 16px; text-align: center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Перетащите файл выписки</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 4px">Форматы банка: xml, csv, xlsx. Колонки узнаются по заголовкам, а не по номеру — банк меняет порядок.</div>
+              <button style="height: var(--control-h-sm); padding: 0 12px; margin-top: 10px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-dense)" style-hover="{ background: 'var(--surface-3)' }">Выбрать файл</button>
+            </div>
+            <div style="margin-top: 12px; border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+              <div style="padding: 7px 11px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--ink-2)">Как разобраны колонки</div>
+              <sc-for list="{{ mapping }}" as="m" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 6px 11px; border-bottom: 1px solid var(--line); font-size: var(--fs-meta)">
+                  <span style="font-family: var(--font-num); color: var(--ink-2); flex: 0 0 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ m.from }}</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+                  <span style="font-weight: var(--w-medium)">{{ m.to }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div>
+            <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); padding: 13px 15px 14px; margin-bottom: 10px">
+              <div style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap">
+                <span style="font-size: var(--fs-lead); font-weight: var(--w-semibold)">izvod-2026-06.xml</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">01.06 — 30.06.2026 · {{ lineCount }} строк · разобрано за 1,4 с</span>
+                <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 8px; border-radius: var(--r-control); background: var(--ok-soft); border: 1px solid var(--ok-line); font-size: var(--fs-meta); font-weight: var(--w-semibold); color: var(--ok)"><span style="width: 5px; height: 5px; border-radius: 50%; background: currentColor"></span>Файл принят</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 13px">
+                <sc-for list="{{ uploadStats }}" as="s" hint-placeholder-count="5">
+                  <div style="{{ s.style }}">
+                    <div style="font-family: var(--font-num); font-size: var(--fs-num-hero); font-weight: var(--w-bold); line-height: 1">{{ s.n }}</div>
+                    <div style="font-size: var(--fs-meta); font-weight: var(--w-semibold); margin-top: 5px">{{ s.label }}</div>
+                    <div style="font-size: 10px; line-height: 14px; color: var(--ink-3); margin-top: 2px">{{ s.note }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--accent-soft); border: 1px solid var(--accent-line); margin-bottom: 10px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M20 6 9 17l-5-5"></path></svg>
+              <div>
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--accent)">Повторная загрузка не удваивает платежи</div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">Строка от 03.06 на 74 200,00 уже есть в выписке, загруженной 05.06 — тот же банковский идентификатор операции. Она помечена дублем и в учёт не пойдёт. Выписку можно грузить хоть каждый день, не боясь испортить месяц.</div>
+              </div>
+            </div>
+
+            <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong)">
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Что дальше</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">по убыванию срочности</span>
+                <button onClick="{{ goMatch }}" style="margin-left: auto; height: var(--control-h-sm); padding: 0 11px; border: 1px solid var(--accent); border-radius: var(--r-control); background: var(--accent); color: var(--ink-inverse); font-size: var(--fs-dense); font-weight: var(--w-semibold)" style-hover="{ background: '#24589F' }">Перейти к сопоставлению</button>
+              </div>
+              <sc-for list="{{ todo }}" as="t" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-bottom: 1px solid var(--line)">
+                  <span style="{{ t.chipStyle }}">{{ t.n }}</span>
+                  <div style="flex: 1; min-width: 0">
+                    <div style="font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ t.title }}</div>
+                    <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 1px">{{ t.note }}</div>
+                  </div>
+                  <span style="font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums; color: var(--ink-2)">{{ t.sum }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isMatch }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Сопоставление <span style="color: var(--ink-3); font-weight: var(--w-regular)">·</span> Июнь 2026</h2>
+          <div style="display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap">
+            <sc-for list="{{ stateFilters }}" as="f" hint-placeholder-count="4">
+              <button onClick="{{ f.on }}" style="{{ f.style }}">{{ f.label }}<span style="{{ f.countStyle }}">{{ f.count }}</span></button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 470px 1fr; gap: 10px; align-items: start">
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 7px 11px; background: var(--surface-3); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-meta); color: var(--ink-2)">
+              <span style="font-weight: var(--w-semibold)">{{ shownCount }}</span>
+              <span style="margin-left: auto; font-family: var(--font-num)">оборот {{ shownTurnover }}</span>
+            </div>
+            <div style="max-height: 520px; overflow: auto">
+              <sc-for list="{{ lines }}" as="l" hint-placeholder-count="15">
+                <button onClick="{{ l.on }}" style="{{ l.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <span style="{{ l.barStyle }}"></span>
+                  <span style="font-family: var(--font-num); font-size: var(--fs-meta); color: var(--ink-2); flex: 0 0 40px; text-align: left">{{ l.date }}</span>
+                  <span style="flex: 1; min-width: 0; text-align: left">
+                    <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ l.who }}</span>
+                    <span style="display: block; font-size: 10px; line-height: 14px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ l.purpose }}</span>
+                  </span>
+                  <span style="{{ l.sumStyle }}">{{ l.sum }}</span>
+                  <span style="{{ l.chipStyle }}">{{ l.stateLabel }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+
+            <div style="padding: 12px 15px 13px; border-bottom: 1px solid var(--line); background: var(--surface-2)">
+              <div style="display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap">
+                <span style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Из банка · не редактируется</span>
+                <span style="{{ selChipStyle }}">{{ selStateLabel }}</span>
+                <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--ink-3)">{{ selConfNote }}</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 78px 1fr 150px; gap: 12px; align-items: baseline; margin-top: 9px">
+                <span style="font-family: var(--font-num); font-size: var(--fs-body); color: var(--ink-2)">{{ selDate }}</span>
+                <span style="font-size: var(--fs-lead); font-weight: var(--w-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ selWho }}</span>
+                <span style="{{ selSumStyle }}">{{ selSum }}</span>
+              </div>
+              <div style="font-family: var(--font-num); font-size: var(--fs-meta); color: var(--ink-2); margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ selPurpose }}</div>
+              <div style="font-size: 10px; color: var(--ink-3); margin-top: 3px">{{ selRef }}</div>
+            </div>
+
+            <sc-if value="{{ selBlocked }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 15px">
+                <div style="{{ blockedNoteStyle }}">
+                  <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ blockedTitle }}</div>
+                  <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); margin-top: 3px">{{ blockedText }}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px">
+                  <button style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)" style-hover="{ background: 'var(--surface-3)' }">{{ blockedAction }}</button>
+                  <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ blockedHint }}</span>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ selOpen }}" hint-placeholder-val="{{ true }}">
+              <div style="padding: 13px 15px 15px">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+                  <div>
+                    <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Контрагент</div>
+                    <button onClick="{{ togglePartyPicker }}" style="{{ partyBoxStyle }}" style-hover="{ borderColor: 'var(--accent)' }">
+                      <span style="font-size: var(--fs-body); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ selParty }}</span>
+                      <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--ink-3); flex: 0 0 auto">{{ selPartySource }}</span>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="m6 9 6 6 6-6"></path></svg>
+                    </button>
+                  </div>
+                  <div>
+                    <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">Статья P&amp;L</div>
+                    <div style="{{ articleBoxStyle }}">
+                      <span style="font-size: var(--fs-body); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ selArticle }}</span>
+                      <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--ink-3); flex: 0 0 auto">{{ selArticleSource }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <sc-if value="{{ partyOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top: 8px; border: 1px solid var(--line-strong); border-radius: var(--r-block); background: var(--surface); box-shadow: var(--sh-xs); overflow: hidden">
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-bottom: 1px solid var(--line)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+                      <input value="{{ partyQuery }}" onInput="{{ setPartyQuery }}" placeholder="Название контрагента или счёт" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: var(--fs-dense); color: var(--ink)">
+                      <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3); flex: 0 0 auto">{{ partyFoundLabel }}</span>
+                    </div>
+                    <div style="max-height: 196px; overflow: auto">
+                      <sc-for list="{{ partyOptions }}" as="p" hint-placeholder-count="6">
+                        <button onClick="{{ p.on }}" style="{{ p.style }}" style-hover="{ background: 'var(--surface-2)' }">
+                          <span style="flex: 1; min-width: 0; text-align: left">
+                            <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ p.name }}</span>
+                            <span style="display: block; font-size: 10px; line-height: 14px; color: var(--ink-3)">{{ p.article }}</span>
+                          </span>
+                          <span style="{{ p.hitStyle }}">{{ p.hits }}</span>
+                        </button>
+                      </sc-for>
+                      <sc-if value="{{ partyEmpty }}" hint-placeholder-val="{{ false }}">
+                        <div style="padding: 14px 13px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Такого контрагента в справочнике нет. Заведите нового — счёт из этой строки подставится сам.</div>
+                      </sc-if>
+                    </div>
+                    <button onClick="{{ createParty }}" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 11px; border: 0; border-top: 1px solid var(--line); background: var(--surface-2); text-align: left" style-hover="{ background: 'var(--surface-3)' }">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+                      <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--accent)">{{ createPartyLabel }}</span>
+                      <span style="margin-left: auto; font-size: var(--fs-meta); color: var(--ink-3)">заведём вместе с правилом для счёта</span>
+                    </button>
+                  </div>
+                </sc-if>
+
+                <div style="display: flex; align-items: baseline; gap: 9px; margin: 15px 0 6px">
+                  <span style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Чем закрывается платёж</span>
+                  <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ docsHint }}</span>
+                </div>
+
+                <div style="border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+                  <sc-for list="{{ docs }}" as="d" hint-placeholder-count="3">
+                    <button onClick="{{ d.on }}" style="{{ d.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                      <span style="{{ d.boxStyle }}">
+                        <sc-if value="{{ d.on2 }}" hint-placeholder-val="{{ true }}">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                        </sc-if>
+                      </span>
+                      <span style="flex: 1; min-width: 0; text-align: left">
+                        <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ d.title }}</span>
+                        <span style="display: block; font-size: 10px; line-height: 14px; color: var(--ink-3)">{{ d.meta }}</span>
+                      </span>
+                      <span style="font-family: var(--font-num); font-size: var(--fs-num); font-variant-numeric: tabular-nums">{{ d.sum }}</span>
+                    </button>
+                  </sc-for>
+                  <sc-if value="{{ noDocs }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding: 14px 13px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Ни одной непогашенной накладной от этого контрагента. Либо документ ещё не пришёл, либо платёж — аванс.</div>
+                  </sc-if>
+                </div>
+
+                <div style="{{ balanceStyle }}">
+                  <div style="display: flex; align-items: baseline; gap: 10px">
+                    <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ balanceTitle }}</span>
+                    <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ balanceNote }}</span>
+                    <span style="margin-left: auto; font-family: var(--font-num); font-size: var(--fs-lead); font-weight: var(--w-bold); font-variant-numeric: tabular-nums">{{ balanceValue }}</span>
+                  </div>
+                </div>
+
+                <sc-if value="{{ showAdvance }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ toggleAdvance }}" style="{{ advanceStyle }}">
+                    <span style="{{ advanceBoxStyle }}">
+                      <sc-if value="{{ advance }}" hint-placeholder-val="{{ false }}">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                      </sc-if>
+                    </span>
+                    <span style="flex: 1; min-width: 0; text-align: left">
+                      <span style="display: block; font-size: var(--fs-dense); font-weight: var(--w-medium)">Остаток провести авансом</span>
+                      <span style="display: block; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 1px">{{ advanceNote }}</span>
+                    </span>
+                  </button>
+                </sc-if>
+
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line)">
+                  <button style="{{ acceptStyle }}" disabled="{{ acceptDisabled }}">{{ acceptLabel }}</button>
+                  <button style="height: var(--control-h); padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body); color: var(--ink-2)" style-hover="{ background: 'var(--surface-3)', color: 'var(--ink)' }">Не наш платёж</button>
+                  <span style="flex: 1; min-width: 0; font-size: var(--fs-meta); color: var(--ink-3); text-align: right">{{ ruleHint }}</span>
+                </div>
+
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isRules }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Правила сопоставления</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Отдельного экрана «создать правило» нет. Правило появляется из решения по строке — иначе его никто никогда не заведёт.</span>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 9px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 252px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Признак в выписке</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 9px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 196px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Контрагент</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 9px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: auto; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Статья P&amp;L</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 9px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: right; width: 96px; border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2)">Сработало</th>
+                <th scope="col" style="background: var(--surface-head); padding: 6px 9px; font-size: var(--fs-micro); font-weight: var(--w-semibold); color: var(--ink-2); text-align: left; width: 216px; border-bottom: 1px solid var(--line-strong)">Откуда взялось</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ rules }}" as="r" hint-placeholder-count="7">
+                <tr style="{{ r.rowStyle }}" style-hover="{ background: 'var(--surface-2)' }">
+                  <td style="{{ r.keyStyle }}">{{ r.key }}</td>
+                  <td style="{{ r.textStyle }}">{{ r.party }}</td>
+                  <td style="{{ r.textStyle }}">{{ r.article }}</td>
+                  <td style="{{ r.numStyle }}">{{ r.hits }}</td>
+                  <td style="{{ r.originStyle }}">{{ r.origin }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px">
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--surface); border: 1px solid var(--line-strong)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+            <div>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">Правило не трогает уже закрытые месяцы</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2); margin-top: 3px">Новое правило применяется к строкам, которые ещё не разнесены. Если бухгалтер хочет переразнести март, он открывает март — и это отдельное осознанное действие с причиной в истории.</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border-radius: var(--r-block); background: var(--warn-soft); border: 1px solid var(--warn-line)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 auto; margin-top: 1px"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+            <div>
+              <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">Порог автосопоставления — решение, а не настройка</div>
+              <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink); margin-top: 3px">Сейчас {{ threshold }}. Ниже порога строка ждёт человека, выше — разносится сама. Подвиньте порог в панели настроек и посмотрите на вкладке «Сопоставление», сколько строк перейдёт из «нужно решить» в «сопоставлено». Ошибка автосопоставления дороже лишней минуты бухгалтера.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;autoThreshold&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:90,&quot;min&quot;:50,&quot;max&quot;:100,&quot;step&quot;:1,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Правила сопоставления&quot;},&quot;allowAdvance&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Правила сопоставления&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal' | 'compact'&quot;,&quot;section&quot;:&quot;Вид&quot;}}">
+const PARTIES = {
+  dodo:     ["Dodo Serbia doo",        "Выручка · эквайринг"],
+  poreska:  ["Poreska uprava",         "Налоги и взносы"],
+  elektro:  ["Elektrodistribucija",    "Коммунальные услуги"],
+  infostan: ["Infostan tehnologije",   "Коммунальные услуги"],
+  telekom:  ["Telekom Srbija",         "Связь и интернет"],
+  komerc:   ["Komerc Promet doo",      "Сырьё и упаковка"],
+  frigo:    ["Master Frigo doo",       "Ремонт и обслуживание"],
+  milan:    ["Milan Ilić",             "Аренда помещения"],
+  intesa:   ["Banca Intesa",           "Банковские услуги"]
+};
+
+/* id, дата, направление, контрагент, назначение из банка, сумма, уверенность, вид */
+const STMT = [
+  ["l1",  "01.06", "in",  "dodo",     "DODO SERBIA DOO / prihod maj, ekvajring",   1840000, 99, "normal"],
+  ["l2",  "02.06", "out", "poreska",  "PORESKA UPRAVA / porez na zarade 05/2026",   412600, 98, "normal"],
+  ["l3",  "03.06", "out", "elektro",  "ELEKTRODISTRIBUCIJA / struja 05/2026",        74200, 97, "normal"],
+  ["l4",  "05.06", "out", "infostan", "INFOSTAN / komunalije 05/2026",               31800, 96, "normal"],
+  ["l5",  "08.06", "out", "telekom",  "TELEKOM SRBIJA / internet i telefon",          5900, 99, "normal"],
+  ["l6",  "09.06", "out", null,       "NIKOLA JOVIĆ PR / usluge po ugovoru",         58000, 24, "normal"],
+  ["l7",  "11.06", "out", "komerc",   "KOMERC PROMET DOO / avans po ugovoru",       186400, 93, "normal"],
+  ["l8",  "12.06", "out", "frigo",    "MASTER FRIGO / servis rashladne komore",      24500, 88, "normal"],
+  ["l9",  "15.06", "out", "milan",    "MILAN ILIĆ / zakup 06/2026",                 240000, 95, "normal"],
+  ["l10", "17.06", "in",  null,       "POVRAĆAJ SREDSTAVA / storno transakcije",     12000, 31, "normal"],
+  ["l11", "19.06", "out", null,       "AIR SERBIA / avio karta BEG-VIE",             68400, 40, "foreign"],
+  ["l12", "22.06", "out", "komerc",   "KOMERC PROMET DOO / faktura 2026-1245",       94800, 94, "normal"],
+  ["l13", "24.06", "out", "intesa",   "BANCA INTESA / naknada za vođenje računa",     1840, 99, "normal"],
+  ["l14", "26.06", "out", "elektro",  "ELEKTRODISTRIBUCIJA / struja 05/2026",        74200, 97, "duplicate"],
+  ["l15", "29.06", "out", "poreska",  "PORESKA UPRAVA / PDV 05/2026",               318900, 98, "normal"]
+];
+
+/* Непогашенные документы, доступные к платежу. [id, название, дата, сумма] */
+const DOCS = {
+  l1:  [["d1",  "Отчёт эквайринга 05/2026", "31.05", 1840000]],
+  l2:  [["d2",  "Расчёт по зарплате 05/2026", "31.05", 412600]],
+  l3:  [["d3",  "Račun 05/2026 · EDB", "02.06", 74200]],
+  l4:  [["d4",  "Račun 05/2026 · Infostan", "04.06", 31800]],
+  l5:  [["d5",  "Račun 05/2026 · Telekom", "10.06", 5900]],
+  l6:  [],
+  l7:  [["d7a", "Накладная 2026-1188", "28.05", 84200],
+        ["d7b", "Накладная 2026-1201", "04.06", 62700],
+        ["d7c", "Накладная 2026-1216", "09.06", 39500]],
+  l8:  [],
+  l9:  [["d9",  "Договор аренды · июнь", "01.06", 240000]],
+  l10: [],
+  l12: [["d12", "Накладная 2026-1245", "18.06", 82500]],
+  l13: [["d13", "Тариф банка · июнь", "24.06", 1840]],
+  l15: [["d15", "Декларация PDV 05/2026", "10.06", 318900]]
+};
+
+/* Что отмечено при первом открытии: правило подставляет очевидное, остальное — руками. */
+const PRESELECT = {
+  l1: ["d1"], l2: ["d2"], l3: ["d3"], l4: ["d4"], l5: ["d5"],
+  l7: ["d7a", "d7b"], l9: ["d9"], l12: ["d12"], l13: ["d13"], l15: ["d15"]
+};
+
+const RULES = [
+  ["счёт 840-0000000011-22",            "poreska",  47, "из строки от 08.03 · Ana Marić"],
+  ["назначение содержит «EDB»",         "elektro",  12, "из строки от 05.02 · Ana Marić"],
+  ["счёт 265-0000000345-11",            "komerc",   31, "из строки от 14.01 · Ana Marić"],
+  ["назначение содержит «INFOSTAN»",    "infostan", 11, "из строки от 05.02 · Ana Marić"],
+  ["счёт 160-0000000998-04",            "milan",     6, "из строки от 01.02 · Nikola Perić"],
+  ["назначение содержит «TELEKOM»",     "telekom",  12, "из строки от 12.01 · Ana Marić"],
+  ["назначение содержит «naknada»",     "intesa",   18, "из строки от 24.01 · Ana Marić"]
+];
+
+const MAPPING = [
+  ["Datum valute", "Дата"],
+  ["Iznos na teret", "Сумма, расход"],
+  ["Iznos u korist", "Сумма, приход"],
+  ["Naziv primaoca", "Контрагент"],
+  ["Svrha plaćanja", "Назначение"]
+];
+
+function fmt(n) {
+  return Math.abs(n).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+class Component extends DCLogic {
+  state = { tab: "match", filter: "all", sel: "l7", picked: null, advance: false, parties: {}, partyOpen: false, partyQuery: "" };
+
+  renderVals() {
+    const self = this;
+    const st = this.state;
+    const threshold = this.props.autoThreshold ?? 90;
+    const advanceAllowed = this.props.allowAdvance !== false;
+    const rowH = this.props.density === "compact" ? "26px" : "30px";
+
+    const picked = st.picked || PRESELECT;
+    const chosenOf = function (id) { return picked[id] || []; };
+    const docsOf = function (id) { return DOCS[id] || []; };
+    const matchedSum = function (id) {
+      const on = chosenOf(id);
+      return docsOf(id).reduce(function (s, d) { return s + (on.indexOf(d[0]) >= 0 ? d[3] : 0); }, 0);
+    };
+
+    /* Контрагент: из правила или выбранный человеком. Ручной выбор сильнее порога. */
+    const manualOf = function (l) { return st.parties[l[0]] || null; };
+    const partyOf = function (l) { return manualOf(l) || l[3]; };
+
+    /* Состояние строки выводится, а не хранится. */
+    const stateOf = function (l) {
+      if (l[7] === "foreign") return "foreign";
+      if (l[7] === "duplicate") return "duplicate";
+      if (!partyOf(l)) return "decide";
+      if (!manualOf(l) && l[6] < threshold) return "decide";
+      return matchedSum(l[0]) === l[5] ? "done" : "short";
+    };
+
+    const STATES = {
+      done:      ["Сопоставлено",  "var(--ok)",       "var(--ok-soft)",   "var(--ok-line)",      "solid"],
+      short:     ["Не хватает",    "var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)",    "solid"],
+      decide:    ["Нужно решить",  "var(--accent)",   "var(--accent-soft)", "var(--accent-line)", "solid"],
+      duplicate: ["Дубль",         "var(--ink-2)",    "var(--surface-3)", "var(--line-control)", "dashed"],
+      foreign:   ["Не наш",        "var(--ink-2)",    "var(--surface)",   "var(--line-control)", "dashed"]
+    };
+    const chip = function (k, extra) {
+      const s = STATES[k];
+      return Object.assign({
+        display: "inline-flex", alignItems: "center", height: "19px", padding: "0 7px",
+        borderRadius: "var(--r-mark)", fontSize: "var(--fs-meta)", fontWeight: "var(--w-semibold)",
+        whiteSpace: "nowrap", flex: "0 0 auto",
+        color: s[1], background: s[2], border: "1px " + s[4] + " " + s[3]
+      }, extra || {});
+    };
+
+    const countBy = function (k) { return STMT.filter(function (l) { return stateOf(l) === k; }).length; };
+
+    const filters = [
+      ["all", "Все", STMT.length],
+      ["decide", "Нужно решить", countBy("decide")],
+      ["short", "Не хватает документа", countBy("short")],
+      ["done", "Сопоставлено", countBy("done")],
+      ["aside", "Дубли и чужое", countBy("duplicate") + countBy("foreign")]
+    ];
+
+    const visible = STMT.filter(function (l) {
+      const s = stateOf(l);
+      if (st.filter === "all") return true;
+      if (st.filter === "aside") return s === "duplicate" || s === "foreign";
+      return s === st.filter;
+    });
+
+    const sel = STMT.filter(function (l) { return l[0] === st.sel; })[0] || STMT[6];
+    const selState = stateOf(sel);
+    const selDocs = docsOf(sel[0]);
+    const selChosen = chosenOf(sel[0]);
+    const selMatched = matchedSum(sel[0]);
+    const selParty = partyOf(sel);
+    const selManual = !!manualOf(sel);
+    const rest = sel[5] - selMatched;
+    const balanced = rest === 0;
+    const canAdvance = advanceAllowed && rest > 0;
+    const amountSettled = balanced || (st.advance && canAdvance);
+    const settled = !!selParty && amountSettled;
+
+    const q = st.partyQuery.trim().toLowerCase();
+    const partyKeys = Object.keys(PARTIES).filter(function (k) {
+      if (!q) return true;
+      return (PARTIES[k][0] + " " + PARTIES[k][1]).toLowerCase().indexOf(q) >= 0;
+    });
+    const hitsOf = function (k) {
+      const r = RULES.filter(function (x) { return x[1] === k; })[0];
+      return r ? r[2] : 0;
+    };
+    const guessedName = sel[4].split(" / ")[0];
+
+    const tabDefs = [["upload", "Загрузка"], ["match", "Сопоставление"], ["rules", "Правила"]];
+    const tabBase = { height: "var(--control-h-sm)", padding: "0 12px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center" };
+
+    const statBox = function (tone) {
+      const map = {
+        ok: ["var(--ok-soft)", "var(--ok-line)"],
+        warn: ["var(--warn-soft)", "var(--warn-line)"],
+        accent: ["var(--accent-soft)", "var(--accent-line)"],
+        plain: ["var(--surface-2)", "var(--line)"]
+      }[tone];
+      return { padding: "10px 12px 11px", borderRadius: "var(--r-block)", background: map[0], border: "1px solid " + map[1] };
+    };
+
+    const cell = { padding: "0 9px", height: rowH, fontSize: "var(--fs-dense)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" };
+
+    return {
+      tabs: tabDefs.map(function (t) {
+        const on = st.tab === t[0];
+        return {
+          label: t[1], sel: on, notSel: !on,
+          on: function () { self.setState({ tab: t[0] }); },
+          selStyle: Object.assign({}, tabBase, { background: "var(--accent-soft)", color: "var(--accent)", fontWeight: "var(--w-semibold)", border: "1px solid var(--accent-line)" }),
+          btnStyle: Object.assign({}, tabBase, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isUpload: st.tab === "upload",
+      isMatch: st.tab === "match",
+      isRules: st.tab === "rules",
+      goMatch: function () { self.setState({ tab: "match" }); },
+
+      /* ── загрузка ── */
+      lineCount: String(STMT.length),
+      mapping: MAPPING.map(function (m) { return { from: m[0], to: m[1] }; }),
+      uploadStats: [
+        [countBy("done"), "Разнесено правилами", "человек не нужен", "ok"],
+        [countBy("short"), "Не хватает документа", "платёж больше накладной", "warn"],
+        [countBy("decide"), "Нужно решить", "нет правила для этого счёта", "accent"],
+        [countBy("duplicate"), "Дубль", "уже был в прошлой выписке", "plain"],
+        [countBy("foreign"), "Не наш платёж", "личная трата с этого счёта", "plain"]
+      ].map(function (s) {
+        return { n: String(s[0]), label: s[1], note: s[2], style: statBox(s[3]) };
+      }),
+      todo: [
+        ["decide", "Нужно решить", "новый контрагент или возврат без основания"],
+        ["short", "Не хватает документа", "платёж не раскладывается на накладные до конца"],
+        ["duplicate", "Дубль и чужое", "в учёт не идут, но остаются видимыми"]
+      ].map(function (t) {
+        const list = t[0] === "duplicate"
+          ? STMT.filter(function (l) { const s = stateOf(l); return s === "duplicate" || s === "foreign"; })
+          : STMT.filter(function (l) { return stateOf(l) === t[0]; });
+        return {
+          n: String(list.length), title: t[1], note: t[2],
+          sum: fmt(list.reduce(function (s, l) { return s + l[5]; }, 0)),
+          chipStyle: chip(t[0] === "duplicate" ? "duplicate" : t[0], { height: "22px", minWidth: "22px", justifyContent: "center", fontFamily: "var(--font-num)" })
+        };
+      }),
+
+      /* ── сопоставление ── */
+      stateFilters: filters.map(function (f) {
+        const on = st.filter === f[0];
+        return {
+          label: f[1], count: String(f[2]),
+          on: function () { self.setState({ filter: f[0] }); },
+          style: {
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            height: "var(--control-h-sm)", padding: "0 10px", borderRadius: "var(--r-control)",
+            fontSize: "var(--fs-dense)", whiteSpace: "nowrap",
+            border: "1px solid " + (on ? "var(--accent)" : "var(--line-control)"),
+            background: on ? "var(--accent-soft)" : "var(--surface)",
+            color: on ? "var(--accent)" : "var(--ink-2)",
+            fontWeight: on ? "var(--w-semibold)" : "var(--w-regular)"
+          },
+          countStyle: { fontFamily: "var(--font-num)", fontSize: "9.5px", opacity: .7 }
+        };
+      }),
+      shownCount: visible.length === STMT.length ? STMT.length + " строк" : visible.length + " из " + STMT.length + " строк",
+      shownTurnover: fmt(visible.reduce(function (s, l) { return s + l[5]; }, 0)),
+
+      lines: visible.map(function (l) {
+        const s = stateOf(l);
+        const on = l[0] === st.sel;
+        const muted = s === "duplicate" || s === "foreign";
+        return {
+          date: l[1],
+          who: partyOf(l) ? PARTIES[partyOf(l)][0] : l[4].split(" / ")[0],
+          purpose: l[4],
+          sum: (l[2] === "in" ? "+" : "\u2212") + fmt(l[5]),
+          stateLabel: STATES[s][0],
+          on: function () { self.setState({ sel: l[0], advance: false, partyOpen: false, partyQuery: "" }); },
+          rowStyle: {
+            display: "flex", alignItems: "center", gap: "9px", width: "100%",
+            padding: "6px 11px 6px 0", border: 0, borderBottom: "1px solid var(--line)",
+            background: on ? "#F0F5FC" : "var(--surface)", textAlign: "left",
+            opacity: muted ? .62 : 1
+          },
+          barStyle: { width: "3px", alignSelf: "stretch", flex: "0 0 auto", background: on ? "var(--accent)" : "transparent" },
+          sumStyle: {
+            fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums",
+            textAlign: "right", flex: "0 0 96px", whiteSpace: "nowrap",
+            color: l[2] === "in" ? "var(--ok)" : "var(--ink)",
+            fontWeight: "var(--w-medium)"
+          },
+          chipStyle: chip(s, { width: "104px", justifyContent: "center" })
+        };
+      }),
+
+      selDate: sel[1],
+      selWho: sel[3] ? PARTIES[sel[3]][0] : sel[4].split(" / ")[0],
+      selPurpose: sel[4],
+      selRef: "Идентификатор операции 2026-06-" + sel[0].replace("l", "") + "84120 · Banca Intesa",
+      selSum: (sel[2] === "in" ? "+" : "\u2212") + fmt(sel[5]),
+      selSumStyle: {
+        fontFamily: "var(--font-num)", fontSize: "var(--fs-num-hero)", fontWeight: "var(--w-bold)",
+        fontVariantNumeric: "tabular-nums", textAlign: "right",
+        color: sel[2] === "in" ? "var(--ok)" : "var(--ink)"
+      },
+      selStateLabel: STATES[selState][0],
+      selChipStyle: chip(selState),
+      selConfNote: "совпадение по правилу " + sel[6] + "% · порог " + threshold + "%",
+
+      selBlocked: selState === "duplicate" || selState === "foreign",
+      selOpen: !(selState === "duplicate" || selState === "foreign"),
+      blockedNoteStyle: {
+        padding: "12px 14px", borderRadius: "var(--r-block)",
+        background: selState === "duplicate" ? "var(--surface-2)" : "var(--surface-2)",
+        border: "1px solid var(--line-strong)", color: "var(--ink)"
+      },
+      blockedTitle: selState === "duplicate"
+        ? "Эта операция уже загружена"
+        : "Платёж помечен как не относящийся к бизнесу",
+      blockedText: selState === "duplicate"
+        ? "Идентификатор операции совпал со строкой из выписки от 05.06. Второй раз в учёт она не пойдёт и в P&L не попадёт. Строку не удаляем — иначе при следующей загрузке она вернётся как новая."
+        : "Личная трата партнёра с расчётного счёта. В P&L не идёт, но остаётся в выписке: остаток по счёту должен сходиться с банком до копейки, а не только по деловым операциям.",
+      blockedAction: selState === "duplicate" ? "Показать исходную строку" : "Вернуть в работу",
+      blockedHint: selState === "duplicate" ? "выписка от 05.06, строка 9" : "если это всё-таки расход бизнеса",
+
+      selParty: selParty ? PARTIES[selParty][0] : "Не определён",
+      selPartySource: selParty ? (selManual ? "выбран вручную" : "по правилу") : "нужно выбрать",
+      selArticle: selParty ? PARTIES[selParty][1] : "—",
+      selArticleSource: selParty ? "из контрагента" : "после контрагента",
+      partyBoxStyle: {
+        display: "flex", alignItems: "center", gap: "8px", width: "100%",
+        height: "var(--control-h)", padding: "0 10px", borderRadius: "var(--r-control)",
+        border: "1px solid " + (selParty ? "var(--line-control)" : "var(--accent)"),
+        background: selParty ? "var(--surface)" : "var(--accent-soft)",
+        textAlign: "left"
+      },
+      articleBoxStyle: {
+        display: "flex", alignItems: "center", gap: "8px",
+        height: "var(--control-h)", padding: "0 10px", borderRadius: "var(--r-control)",
+        border: "1px solid var(--line-control)",
+        background: selParty ? "var(--surface)" : "var(--surface-2)",
+        color: selParty ? "var(--ink)" : "var(--ink-3)"
+      },
+
+      partyOpen: st.partyOpen,
+      partyQuery: st.partyQuery,
+      togglePartyPicker: function () { self.setState({ partyOpen: !st.partyOpen, partyQuery: "" }); },
+      setPartyQuery: function (e) { self.setState({ partyQuery: e.target.value }); },
+      partyFoundLabel: partyKeys.length + " из " + Object.keys(PARTIES).length,
+      partyEmpty: partyKeys.length === 0,
+      createPartyLabel: "Завести «" + guessedName + "»",
+      createParty: function () { self.setState({ partyOpen: false }); },
+      partyOptions: partyKeys.map(function (k) {
+        const on = selParty === k;
+        return {
+          name: PARTIES[k][0], article: PARTIES[k][1], hits: hitsOf(k) > 0 ? hitsOf(k) + " платежей" : "новый",
+          on: function () {
+            const next = Object.assign({}, st.parties);
+            next[sel[0]] = k;
+            self.setState({ parties: next, partyOpen: false, partyQuery: "" });
+          },
+          style: {
+            display: "flex", alignItems: "center", gap: "10px", width: "100%",
+            padding: "8px 11px", border: 0, borderBottom: "1px solid var(--line)",
+            background: on ? "var(--accent-soft)" : "var(--surface)", textAlign: "left"
+          },
+          hitStyle: { fontFamily: "var(--font-num)", fontSize: "var(--fs-num-sm)", color: "var(--ink-3)", flex: "0 0 auto" }
+        };
+      }),
+
+      docsHint: selDocs.length === 0
+        ? "непогашенных документов нет"
+        : "отмечено " + selChosen.length + " из " + selDocs.length,
+      noDocs: selDocs.length === 0,
+      docs: selDocs.map(function (d) {
+        const on = selChosen.indexOf(d[0]) >= 0;
+        return {
+          title: d[1], meta: "от " + d[2] + " · " + (selParty ? PARTIES[selParty][0] : "контрагент не выбран"), sum: fmt(d[3]),
+          on2: on,
+          on: function () {
+            const next = Object.assign({}, picked);
+            const cur = (next[sel[0]] || []).slice();
+            const i = cur.indexOf(d[0]);
+            if (i >= 0) cur.splice(i, 1); else cur.push(d[0]);
+            next[sel[0]] = cur;
+            self.setState({ picked: next });
+          },
+          rowStyle: {
+            display: "flex", alignItems: "center", gap: "10px", width: "100%",
+            padding: "9px 11px", border: 0, borderBottom: "1px solid var(--line)",
+            background: on ? "#F5F9FF" : "var(--surface)", textAlign: "left"
+          },
+          boxStyle: {
+            width: "15px", height: "15px", flex: "0 0 auto", display: "grid", placeItems: "center",
+            borderRadius: "var(--r-mark)", border: "1px solid " + (on ? "var(--accent)" : "var(--line-control-2)"),
+            background: on ? "var(--accent)" : "var(--surface)", color: "var(--ink-inverse)"
+          }
+        };
+      }),
+
+      balanceStyle: {
+        marginTop: "10px", padding: "10px 13px", borderRadius: "var(--r-block)",
+        background: balanced ? "var(--ok-soft)" : "var(--warn-soft)",
+        border: "1px solid " + (balanced ? "var(--ok-line)" : "var(--warn-line)"),
+        color: balanced ? "var(--ok)" : "var(--warn-ink)"
+      },
+      balanceTitle: balanced ? "Платёж разложен полностью" : "Не разложено",
+      balanceNote: balanced
+        ? "документы на " + fmt(selMatched) + " против платежа " + fmt(sel[5])
+        : fmt(selMatched) + " из " + fmt(sel[5]) + " · итог считается из отмеченных строк",
+      balanceValue: balanced ? fmt(0) : "\u2212" + fmt(rest),
+
+      showAdvance: canAdvance,
+      advance: st.advance,
+      toggleAdvance: function () { self.setState({ advance: !st.advance }); },
+      advanceNote: selParty
+        ? "Остаток " + fmt(rest) + " повиснет авансом за «" + PARTIES[selParty][0] + "» и закроется накладной следующего месяца. Без этого платёж не принять."
+        : "Остаток " + fmt(rest) + " повиснет авансом за контрагентом — сначала выберите, за каким именно.",
+      advanceStyle: {
+        display: "flex", alignItems: "flex-start", gap: "10px", width: "100%",
+        marginTop: "10px", padding: "10px 12px", textAlign: "left",
+        borderRadius: "var(--r-block)", background: st.advance ? "var(--accent-soft)" : "var(--surface)",
+        border: "1px " + (st.advance ? "solid var(--accent-line)" : "dashed var(--line-control-2)")
+      },
+      advanceBoxStyle: {
+        width: "15px", height: "15px", flex: "0 0 auto", display: "grid", placeItems: "center", marginTop: "1px",
+        borderRadius: "var(--r-mark)", border: "1px solid " + (st.advance ? "var(--accent)" : "var(--line-control-2)"),
+        background: st.advance ? "var(--accent)" : "var(--surface)", color: "var(--ink-inverse)"
+      },
+
+      acceptDisabled: !settled,
+      acceptLabel: settled
+        ? "Принять и разнести"
+        : (!selParty ? "Сначала выберите контрагента" : "Разложите платёж до конца"),
+      acceptStyle: {
+        height: "var(--control-h)", padding: "0 15px", borderRadius: "var(--r-control)",
+        border: "1px solid " + (settled ? "var(--accent)" : "var(--line-control)"),
+        background: settled ? "var(--accent)" : "var(--surface-3)",
+        color: settled ? "var(--ink-inverse)" : "var(--ink-3)",
+        fontSize: "var(--fs-body)", fontWeight: "var(--w-semibold)",
+        cursor: settled ? "pointer" : "not-allowed"
+      },
+      ruleHint: sel[3]
+        ? "правило для этого счёта уже есть"
+        : (selManual
+            ? "при сохранении заведём правило: этот счёт → " + PARTIES[selParty][0]
+            : "после выбора контрагента предложим создать правило для этого счёта"),
+
+      /* ── правила ── */
+      threshold: threshold + "%",
+      rules: RULES.map(function (r) {
+        return {
+          key: r[0], party: PARTIES[r[1]][0], article: PARTIES[r[1]][1],
+          hits: String(r[2]), origin: r[3],
+          rowStyle: { background: "var(--surface)" },
+          keyStyle: Object.assign({}, cell, { fontFamily: "var(--font-num)", fontSize: "var(--fs-meta)", color: "var(--ink-2)" }),
+          textStyle: Object.assign({}, cell, { fontWeight: "var(--w-medium)" }),
+          numStyle: Object.assign({}, cell, { fontFamily: "var(--font-num)", fontSize: "var(--fs-num)", textAlign: "right", fontVariantNumeric: "tabular-nums" }),
+          originStyle: Object.assign({}, cell, { fontSize: "var(--fs-meta)", color: "var(--ink-3)", borderRight: 0 })
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

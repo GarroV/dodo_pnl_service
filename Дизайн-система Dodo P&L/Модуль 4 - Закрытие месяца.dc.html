@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --canvas:#EDEFF2; --surface:#FFFFFF; --surface-2:#F7F9FB; --surface-3:#F2F4F7; --surface-head:#EDEFF2;
+    --ink:#1B2028; --ink-2:#5C6672; --ink-3:#98A1AC; --ink-empty:#B8C0C9; --ink-inverse:#FFFFFF;
+    --line:#E9ECEF; --line-2:#E4E8EC; --line-strong:#CFD5DC; --line-control:#D7DBE0; --line-control-2:#B9C1CA;
+    --accent:#1F4E9C; --accent-press:#16386F; --accent-soft:#E8EEF8; --accent-line:#C9D9F0;
+    --warn:#B26B00; --warn-ink:#7A4A00; --warn-mark:#E0A03A; --warn-soft:#FFF9EC; --warn-line:#EBD9B4;
+    --ok:#10704A; --ok-soft:#E7F2EC; --ok-line:#C9E2D5;
+    --err:#A32B1E; --err-soft:#FBEDEB; --err-line:#F0CFCA;
+    --reg-official:#1F4E9C; --reg-supp:#6B4FA8; --reg-internal:#2E6B6B;
+    --font-ui:'Golos Text','Segoe UI',system-ui,sans-serif;
+    --font-num:'IBM Plex Mono',ui-monospace,monospace;
+    --fs-display:20px; --lh-display:26px; --fs-title:16px; --lh-title:22px; --fs-lead:14px; --lh-lead:20px;
+    --fs-body:13px; --lh-body:18px; --fs-dense:12.5px; --lh-dense:17px; --fs-meta:11.5px; --lh-meta:16px;
+    --fs-micro:10.5px; --lh-micro:14px; --fs-num:12.5px; --fs-num-sm:10.5px;
+    --tracking-micro:.1em; --w-regular:400; --w-medium:500; --w-semibold:600; --w-bold:700;
+    --row:30px; --row-loose:34px; --control-h:32px; --control-h-sm:27px;
+    --r-mark:2px; --r-control:3px; --r-block:4px;
+    --sh-xs:0 1px 2px rgba(20,26,34,.08); --sh-modal:0 30px 80px -20px rgba(10,13,17,.6);
+    --t-state:90ms; --ease:cubic-bezier(.2,.6,.2,1);
+  }
+  html, body { margin:0; padding:0; background:var(--canvas); }
+  * { box-sizing:border-box; }
+  button { font:inherit; cursor:pointer; }
+  textarea { font:inherit; }
+  table { border-collapse:separate; border-spacing:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-press); text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: var(--canvas); font-family: var(--font-ui); color: var(--ink)">
+  <div style="width: 1264px; margin: 0 auto; padding: 0 0 60px">
+
+    <header style="background: var(--surface); border-bottom: 1px solid var(--line-strong); padding: 14px 22px 13px; display: flex; align-items: flex-end; gap: 16px">
+      <div style="flex: 1">
+        <div style="font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Этап 3 · модуль 12</div>
+        <h1 style="margin: 4px 0 0; font-size: var(--fs-display); line-height: var(--lh-display); font-weight: var(--w-semibold); letter-spacing: -.015em">Закрытие месяца и полнота данных</h1>
+        <div style="font-size: var(--fs-dense); color: var(--ink-2); margin-top: 4px">Система сама говорит, чего не хватает, что не сходится и что подозрительно. Список «прежде чем закрыть» — не отчёт, который надо открыть, а условие, без которого кнопка не нажимается.</div>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2">
+          <sc-if value="{{ t.sel }}" hint-placeholder-val="{{ false }}">
+            <span aria-current="true" style="{{ t.selStyle }}">{{ t.label }}</span>
+          </sc-if>
+          <sc-if value="{{ t.notSel }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ t.on }}" style="{{ t.btnStyle }}" style-hover="{ borderColor: 'var(--line-control-2)', color: 'var(--ink)' }">{{ t.label }}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </header>
+
+    <sc-if value="{{ isClose }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 16px 22px 0">
+
+        <div style="background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; margin-bottom: 10px">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px">
+            <div>
+              <div style="display: flex; align-items: baseline; gap: 9px">
+                <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Июнь 2026</h2>
+                <span style="{{ statusStyle }}"><span style="{{ statusDotStyle }}"></span>{{ statusLabel }}</span>
+              </div>
+              <div style="font-size: var(--fs-meta); color: var(--ink-2); margin-top: 3px">Balkan Pizza d.o.o. · 3 точки · 35 сотрудников · RSD</div>
+            </div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 12px">
+              <div style="text-align: right">
+                <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold)">Готовность</div>
+                <div style="display: flex; align-items: baseline; gap: 6px; justify-content: flex-end; margin-top: 2px">
+                  <span style="{{ readyStyle }}">{{ readyPct }}</span>
+                  <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ readyNote }}</span>
+                </div>
+              </div>
+              <button onClick="{{ openDialog }}" style="{{ closeBtnStyle }}" disabled="{{ closeOff }}">Закрыть июнь</button>
+            </div>
+          </div>
+          <div style="height: 5px; background: var(--surface-3)">
+            <div style="{{ readyBarStyle }}"></div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line)">
+            <sc-for list="{{ counters }}" as="c" hint-placeholder-count="4">
+              <button onClick="{{ c.on }}" style="{{ c.cellStyle }}" style-hover="{{ c.cellHover }}">
+                <div style="display: flex; align-items: baseline; gap: 7px">
+                  <span style="{{ c.numStyle }}">{{ c.n }}</span>
+                  <span style="font-size: var(--fs-meta); color: var(--ink-3)">{{ c.unit }}</span>
+                </div>
+                <div style="font-size: var(--fs-dense); font-weight: var(--w-semibold); margin-top: 3px; text-align: left">{{ c.label }}</div>
+                <div style="font-size: 10px; line-height: 13px; color: var(--ink-3); margin-top: 3px; text-align: left">{{ c.note }}</div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-end; gap: 12px; margin-bottom: 8px; flex-wrap: wrap">
+          <div>
+            <div style="font-size: 10px; letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-semibold); margin-bottom: 4px">Показать</div>
+            <div style="display: flex; background: #E3E7EC; border-radius: var(--r-control); padding: 2px; gap: 2px">
+              <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+                <sc-if value="{{ f.sel }}" hint-placeholder-val="{{ false }}">
+                  <span aria-current="true" style="{{ f.selStyle }}">{{ f.label }}<span style="{{ f.cntStyle }}">{{ f.cnt }}</span></span>
+                </sc-if>
+                <sc-if value="{{ f.notSel }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ f.on }}" style="{{ f.btnStyle }}" style-hover="{ color: 'var(--ink)' }">{{ f.label }}<span style="{{ f.cntStyle }}">{{ f.cnt }}</span></button>
+                </sc-if>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex: 1"></div>
+          <div style="font-size: var(--fs-meta); color: var(--ink-3)">Блокирующее нужно устранить или отложить с причиной. Предупреждения закрыть не мешают</div>
+        </div>
+
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <sc-for list="{{ checks }}" as="c" hint-placeholder-count="10">
+            <sc-if value="{{ c.isHead }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ c.headStyle }}">
+                <span style="{{ c.headDot }}"></span>
+                <span style="font-size: var(--fs-dense); font-weight: var(--w-semibold)">{{ c.title }}</span>
+                <span style="font-family: var(--font-num); font-size: var(--fs-num-sm); color: var(--ink-3)">{{ c.count }}</span>
+                <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ c.note }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ c.isRow }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ c.rowStyle }}" style-hover="{{ c.rowHover }}">
+                <span style="{{ c.iconStyle }}">
+                  <sc-if value="{{ c.resolved }}" hint-placeholder-val="{{ false }}">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"></path></svg>
+                  </sc-if>
+                  <sc-if value="{{ c.pending }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold)">{{ c.mark }}</span>
+                  </sc-if>
+                </span>
+                <div style="width: 306px; flex: 0 0 auto; min-width: 0">
+                  <div style="{{ c.titleStyle }}">{{ c.title }}</div>
+                  <div style="font-size: 10px; color: var(--ink-3); line-height: 13px; margin-top: 1px">{{ c.where }}</div>
+                </div>
+                <div style="flex: 1 1 auto; min-width: 0; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">{{ c.detail }}</div>
+                <span style="{{ c.amountStyle }}">{{ c.amount }}</span>
+                <span style="width: 196px; flex: 0 0 auto; display: flex; justify-content: flex-end; gap: 5px">
+                  <sc-if value="{{ c.canDefer }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ c.onDefer }}" style="{{ c.deferStyle }}" style-hover="{ background: 'var(--surface-3)' }">Отложить</button>
+                  </sc-if>
+                  <button onClick="{{ c.onFix }}" style="{{ c.fixStyle }}" style-hover="{{ c.fixHover }}">{{ c.fix }}</button>
+                </span>
+              </div>
+            </sc-if>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px">
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--err-line); border-radius: var(--r-block)">
+            <span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--err-soft); border: 1px solid var(--err-line); color: var(--err); font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold); flex: 0 0 auto; margin-top: 1px">!</span>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)"><b style="color: var(--ink)">Блокирующее</b> — это то, из-за чего P&amp;L будет неверным: незакрытые часы, неразобранные документы, несведённая выписка. Либо устраните, либо отложите с причиной — причина попадёт в протокол закрытия.</div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--warn-line); border-radius: var(--r-block)">
+            <span style="display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--warn-soft); border: 1px solid var(--warn-line); color: var(--warn-ink); font-family: var(--font-num); font-size: 9.5px; font-weight: var(--w-bold); flex: 0 0 auto; margin-top: 1px">?</span>
+            <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)"><b style="color: var(--ink)">Подозрительное</b> — то, что может быть правдой: рост расхода вдвое, ноль там, где обычно не ноль. Система не знает, ошибка это или жизнь, поэтому предупреждает и не мешает.</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPeriods }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 16px 22px 0">
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold)">Периоды</h2>
+          <span style="font-size: var(--fs-meta); color: var(--ink-2)">Четыре месяца с данными. Состояние периода определяет, что вообще можно делать на его экранах</span>
+        </div>
+        <div style="border: 1px solid var(--line-strong); border-radius: var(--r-block); overflow: hidden; background: var(--surface)">
+          <table style="width: 100%; table-layout: fixed">
+            <thead>
+              <tr>
+                <th style="width: 148px; text-align: left; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Период</th>
+                <th style="width: 152px; text-align: left; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Состояние</th>
+                <th style="width: 96px; text-align: right; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Часы</th>
+                <th style="width: 138px; text-align: right; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-2); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">ФОТ</th>
+                <th style="width: 118px; text-align: right; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); border-right: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Доля от выручки</th>
+                <th style="text-align: left; padding: 7px 11px; background: var(--surface-head); border-bottom: 1px solid var(--line-strong); font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold)">Что можно делать</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ periods }}" as="p" hint-placeholder-count="4">
+                <tr style-hover="{ background: '#F6F8FA' }">
+                  <th scope="row" style="{{ p.nameStyle }}">
+                    <div style="font-size: var(--fs-dense); font-weight: var(--w-medium)">{{ p.name }}</div>
+                    <div style="font-size: 10px; color: var(--ink-3); line-height: 12px">{{ p.when }}</div>
+                  </th>
+                  <td style="{{ p.tdStyle }}"><span style="{{ p.stStyle }}"><span style="{{ p.stDot }}"></span>{{ p.state }}</span></td>
+                  <td style="{{ p.numStyle }}">{{ p.hours }}</td>
+                  <td style="{{ p.numStyle }}">{{ p.payroll }}</td>
+                  <td style="{{ p.shareStyle }}">{{ p.share }}</td>
+                  <td style="{{ p.tdStyle }}"><span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ p.can }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 10px; margin-top: 10px; padding: 11px 13px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-block)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 1px; flex: 0 0 auto"><path d="M6 11h12v9H6z"></path><path d="M9 11V8a3 3 0 0 1 6 0v3"></path></svg>
+          <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--ink-2)">Март переоткрывали: 12.05.2026 бухгалтер откатил утверждение с причиной «неверная ставка Marija Obradović с 01.03». Откат оставил след — период помечен как переоткрытый навсегда, а не вернулся в «посчитан». Это сделано специально: тот, кто через год увидит расхождение в отчётности, должен знать, что месяц пересчитывали.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ dialogOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeDialogFn }}" style="position: fixed; inset: 0; z-index: 80; background: rgba(10,13,17,.5); display: grid; place-items: center">
+        <div onClick="{{ stopProp }}" style="width: 520px; background: var(--surface); border-radius: var(--r-block); box-shadow: var(--sh-modal); overflow: hidden">
+          <div style="display: flex; align-items: center; gap: 9px; padding: 13px 15px; background: var(--surface-3); border-bottom: 1px solid var(--line)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h12v9H6z"></path><path d="M9 11V8a3 3 0 0 1 6 0v3"></path></svg>
+            <div style="font-size: var(--fs-title); font-weight: var(--w-semibold)">Закрыть июнь 2026?</div>
+          </div>
+          <div style="padding: 13px 15px">
+            <div style="font-size: var(--fs-body); line-height: var(--lh-body)">Период станет закрытым: часы, документы и расходы за июнь больше не меняются. Правки задним числом — только переносом разницы в июль.</div>
+            <div style="margin-top: 11px; border: 1px solid var(--line); border-radius: var(--r-block); overflow: hidden">
+              <sc-for list="{{ dialogFacts }}" as="f" hint-placeholder-count="4">
+                <div style="{{ f.rowStyle }}">
+                  <span style="font-size: var(--fs-meta); color: var(--ink-2)">{{ f.k }}</span>
+                  <span style="{{ f.vStyle }}">{{ f.v }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ hasDeferred }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 11px; padding: 10px 12px; background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: var(--r-block)">
+                <div style="display: flex; align-items: center; gap: 7px; font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--warn-ink)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 3 20h18L12 4z"></path><path d="M12 10v4"></path><path d="M12 17h.01"></path></svg>
+                  {{ deferredTitle }}
+                </div>
+                <div style="font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--warn-ink); margin-top: 3px">{{ deferredText }}</div>
+              </div>
+            </sc-if>
+            <div style="margin-top: 12px">
+              <label style="display: block; font-size: var(--fs-micro); letter-spacing: var(--tracking-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-semibold); margin-bottom: 4px">{{ reasonLabel }}</label>
+              <textarea value="{{ reason }}" onInput="{{ onReason }}" placeholder="Например: выписка за 30.06 придёт 3 июля, сумма известна и сходится" style="width: 100%; height: 58px; padding: 8px 9px; border: 1px solid var(--line-control); border-radius: var(--r-control); font-size: var(--fs-body); line-height: var(--lh-body); resize: vertical; color: var(--ink)" style-focus="{ borderColor: 'var(--accent)', outline: 'none', boxShadow: '0 0 0 3px rgba(31,78,156,.14)' }"></textarea>
+              <div style="{{ reasonHintStyle }}">{{ reasonHint }}</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 9px; padding: 11px 15px; background: var(--surface-2); border-top: 1px solid var(--line)">
+            <span style="font-size: var(--fs-meta); color: var(--ink-3)">Esc — отмена</span>
+            <div style="flex: 1"></div>
+            <button onClick="{{ closeDialogFn }}" style="flex: 0 0 auto; white-space: nowrap; height: var(--control-h); padding: 0 13px; border: 1px solid var(--line-control); border-radius: var(--r-control); background: var(--surface); font-size: var(--fs-body)" style-hover="{ background: 'var(--surface-3)' }">Отмена</button>
+            <button style="{{ dialogOkStyle }}" disabled="{{ okOff }}">Закрыть период</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1264,&quot;height&quot;:900},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;close&quot;,&quot;periods&quot;],&quot;default&quot;:&quot;close&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Закрытие&quot;}}">
+const CHECKS = [
+  ["block", "Часы не закрыты", "Табель → Novi Sad", "12 сотрудников, 2 118 ч внесено, точка не закрыта. Расчёт по ней запускать нельзя.", null, "Закрыть часы", true],
+  ["block", "Документы не разобраны", "Инбокс → вложения", "9 необработанных вложений и 31 платёж без статьи. В P&L они не попадут вообще.", 402180, "Разобрать", true],
+  ["block", "Выписка не сведена", "Банк → сопоставление", "4 платежа из выписки за 28–30.06 не сопоставлены с контрагентами.", 118940, "Сопоставить", true],
+  ["block", "Инвентаризация не проведена", "Сверки → инвентаризация", "Цикл за июнь: срок был 30.06, отметки нет. Списания считаются по нормативу.", null, "Провести", true],
+  ["warn", "Расход вырос вдвое", "P&L → Ремонт → Novi Beograd", "47 800 против 21 400 в мае. Один платёж Delta Sport, статья присвоена вручную.", 47800, "Проверить", false],
+  ["warn", "Сотрудник без часов", "Табель → Novi Beograd", "Nikola Ilić: условия найма действуют, часов за июнь нет ни в IS, ни руками.", null, "Открыть табель", false],
+  ["warn", "Нераспределённое не разнесено", "Наличные → нераспределённое", "Аренда 186 000 и реклама 42 000 висят на юрлице без разнесения по точкам.", 228000, "Разнести", false],
+  ["warn", "Ноль там, где обычно не ноль", "P&L → Топливо → Vračar", "В июне 0, в марте–мае в среднем 34 200. Возможно, документы ещё не пришли.", null, "Проверить", false],
+  ["ok", "Часы закрыты", "Табель → Vračar, Novi Beograd", "2 точки из 3 закрыты 01.07 в 09:02 и 08:41.", null, "Открыть", false],
+  ["ok", "Ведомость посчитана", "Зарплата → июнь", "35 сотрудников, ФОТ 2 769 453. Расчёт от 01.07.2026, 09:14.", 2769453, "Открыть", false],
+  ["ok", "Выручка приехала из Dodo IS", "Коннектор → синхронизация", "3 точки, последняя синхронизация 30.06 в 23:50.", 8420600, "Открыть", false],
+  ["ok", "Сверка с таблицей бухгалтера", "Зарплата → сверка", "Май сошёлся, пять расхождений разобраны и объяснены.", null, "Открыть", false]
+];
+
+const PERIODS = [
+  ["Июнь 2026", "текущий", "calculated", "Посчитан", 6842, 2769453, 32.9, "Считать, править, закрыть"],
+  ["Май 2026", "закрыт 01.06", "approved", "Утверждён", 6710, 2712480, 33.4, "Только смотреть и выгружать"],
+  ["Апрель 2026", "закрыт 04.05", "approved", "Утверждён", 6480, 2648120, 34.1, "Только смотреть и выгружать"],
+  ["Март 2026", "переоткрыт 12.05", "reopened", "Переоткрыт", 6392, 2601840, 35.2, "Пересчитать и утвердить заново"]
+];
+
+const ST = {
+  calculated: ["var(--st-calculated, #1F4E9C)", "var(--accent-soft)", "var(--accent-line)"],
+  approved: ["var(--ok)", "var(--ok-soft)", "var(--ok-line)"],
+  reopened: ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)"]
+};
+
+function fmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0"); }
+
+class Component extends DCLogic {
+  state = { tab: null, filter: "all", deferred: {}, dialog: false, reason: "" };
+
+  get tab() { return this.state.tab || this.props.view || "close"; }
+
+  componentDidMount() { document.addEventListener("keydown", this.onEsc); }
+  componentWillUnmount() { document.removeEventListener("keydown", this.onEsc); }
+  onEsc = (e) => { if (e.key === "Escape" && this.state.dialog) this.setState({ dialog: false }); };
+
+  renderVals() {
+    const self = this;
+    const tab = this.tab;
+    const filter = this.state.filter;
+    const deferred = this.state.deferred;
+
+    const chip = function (sel) {
+      const base = { display: "inline-flex", alignItems: "center", gap: "6px", height: "22px", padding: "0 9px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap", border: 0 };
+      if (sel) return Object.assign(base, { background: "var(--surface)", color: "var(--ink)", fontWeight: 600, boxShadow: "var(--sh-xs)" });
+      return Object.assign(base, { background: "transparent", color: "var(--ink-2)", cursor: "pointer" });
+    };
+
+    const blockAll = CHECKS.filter(function (c) { return c[0] === "block"; });
+    const blockLeft = blockAll.filter(function (c, i) { return !deferred[CHECKS.indexOf(c)]; });
+    const warnAll = CHECKS.filter(function (c) { return c[0] === "warn"; });
+    const okAll = CHECKS.filter(function (c) { return c[0] === "ok"; });
+    const deferredCount = blockAll.length - blockLeft.length;
+    const canClose = blockLeft.length === 0;
+
+    const doneCount = okAll.length + deferredCount;
+    const totalCount = CHECKS.length;
+    const pct = Math.round((doneCount + warnAll.length * 0.5) / totalCount * 100);
+
+    const TONE = {
+      block: ["var(--err)", "var(--err-soft)", "var(--err-line)", "!"],
+      warn: ["var(--warn-ink)", "var(--warn-soft)", "var(--warn-line)", "?"],
+      ok: ["var(--ok)", "var(--ok-soft)", "var(--ok-line)", ""]
+    };
+
+    const rows = [];
+    const pushGroup = function (kind, title, note, arr) {
+      if (!arr.length) return;
+      const t = TONE[kind];
+      rows.push({
+        isHead: true, isRow: false, title: title, count: String(arr.length), note: note,
+        headStyle: {
+          display: "flex", alignItems: "center", gap: "9px", padding: "7px 12px",
+          background: t[1], borderTop: "1px solid " + t[2], borderBottom: "1px solid " + t[2]
+        },
+        headDot: { width: "8px", height: "8px", borderRadius: "50%", background: t[0], flex: "0 0 auto" }
+      });
+      arr.forEach(function (c) {
+        const i = CHECKS.indexOf(c);
+        const isDeferred = !!deferred[i];
+        const resolved = kind === "ok" || isDeferred;
+        const tone = isDeferred ? TONE.warn : t;
+        rows.push({
+          isHead: false, isRow: true,
+          resolved: resolved, pending: !resolved, mark: tone[3],
+          title: isDeferred ? c[1] + " · отложено" : c[1],
+          titleStyle: {
+            fontSize: "var(--fs-dense)", fontWeight: 500,
+            color: resolved ? "var(--ink-2)" : "var(--ink)",
+            textDecoration: isDeferred ? "line-through" : "none",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
+          },
+          where: c[2], detail: c[3],
+          amount: c[4] === null ? "\u2013" : fmt(c[4]),
+          amountStyle: {
+            width: "112px", flex: "0 0 auto", textAlign: "right", paddingRight: "4px", fontFamily: "var(--font-num)",
+            fontSize: "var(--fs-num)", fontVariantNumeric: "tabular-nums",
+            fontWeight: c[4] === null ? 400 : 600,
+            color: c[4] === null ? "var(--ink-empty)" : "var(--ink)"
+          },
+          iconStyle: {
+            display: "inline-grid", placeItems: "center", width: "17px", height: "17px", borderRadius: "50%",
+            flex: "0 0 auto", background: resolved && kind === "ok" ? "var(--ok-soft)" : tone[1],
+            border: "1px solid " + (resolved && kind === "ok" ? "var(--ok-line)" : tone[2]),
+            color: resolved && kind === "ok" ? "var(--ok)" : tone[0]
+          },
+          canDefer: c[6] && !isDeferred,
+          onDefer: function () {
+            const d = Object.assign({}, deferred);
+            d[i] = true;
+            self.setState({ deferred: d });
+          },
+          deferStyle: {
+            height: "24px", padding: "0 8px", borderRadius: "var(--r-control)", flex: "0 0 auto",
+            border: "1px solid var(--line-control)", background: "var(--surface)",
+            fontSize: "var(--fs-meta)", color: "var(--ink-2)", whiteSpace: "nowrap"
+          },
+          fix: isDeferred ? "Вернуть" : c[5],
+          onFix: function () {
+            if (!isDeferred) return;
+            const d = Object.assign({}, deferred);
+            delete d[i];
+            self.setState({ deferred: d });
+          },
+          fixStyle: {
+            height: "24px", padding: "0 9px", borderRadius: "var(--r-control)", flex: "0 0 auto", whiteSpace: "nowrap",
+            fontSize: "var(--fs-meta)", fontWeight: kind === "block" && !isDeferred ? 600 : 400,
+            border: "1px solid " + (kind === "block" && !isDeferred ? "var(--accent)" : "var(--line-control)"),
+            background: kind === "block" && !isDeferred ? "var(--accent)" : "var(--surface)",
+            color: kind === "block" && !isDeferred ? "#fff" : "var(--ink-2)"
+          },
+          fixHover: kind === "block" && !isDeferred ? { background: "var(--accent-press)" } : { borderColor: "var(--accent)", color: "var(--accent)" },
+          rowStyle: {
+            display: "flex", alignItems: "center", gap: "11px", padding: "0 12px", height: "var(--row-loose)",
+            borderBottom: "1px solid var(--line)",
+            borderLeft: "3px solid " + (resolved ? "transparent" : tone[0]),
+            background: isDeferred ? "var(--warn-soft)" : "var(--surface)",
+            opacity: kind === "ok" ? .82 : 1
+          },
+          rowHover: { background: isDeferred ? "#FFF4DE" : "#F6F8FA" }
+        });
+      });
+    };
+
+    if (filter === "all" || filter === "block") pushGroup("block", "Блокирует закрытие", "устраните или отложите с причиной", blockAll);
+    if (filter === "all" || filter === "warn") pushGroup("warn", "Подозрительное", "закрыть не мешает, но посмотреть стоит", warnAll);
+    if (filter === "all" || filter === "ok") pushGroup("ok", "В порядке", "проверено системой", okAll);
+
+    const reasonOk = this.state.reason.trim().length > 0;
+    const needReason = deferredCount > 0;
+    const okDisabled = needReason && !reasonOk;
+
+    return {
+      tabs: [
+        { k: "close", label: "Прежде чем закрыть" },
+        { k: "periods", label: "Периоды" }
+      ].map(function (t) {
+        const sel = t.k === tab;
+        const base = { display: "inline-flex", alignItems: "center", height: "var(--control-h-sm)", padding: "0 11px", borderRadius: "var(--r-control)", fontSize: "var(--fs-dense)", whiteSpace: "nowrap" };
+        return {
+          label: t.label, sel: sel, notSel: !sel,
+          on: function () { self.setState({ tab: t.k }); },
+          selStyle: Object.assign({}, base, { background: "var(--accent)", color: "#fff", fontWeight: 600, border: "1px solid var(--accent)" }),
+          btnStyle: Object.assign({}, base, { background: "var(--surface)", color: "var(--ink-2)", border: "1px solid var(--line-control)" })
+        };
+      }),
+      isClose: tab === "close", isPeriods: tab === "periods",
+
+      statusLabel: "Посчитан",
+      statusStyle: {
+        display: "inline-flex", alignItems: "center", gap: "5px", height: "21px", padding: "0 8px",
+        borderRadius: "var(--r-control)", background: "var(--accent-soft)", border: "1px solid var(--accent-line)",
+        fontSize: "var(--fs-meta)", fontWeight: 600, color: "var(--accent)"
+      },
+      statusDotStyle: { width: "5px", height: "5px", borderRadius: "50%", background: "var(--accent)" },
+
+      readyPct: pct + " %",
+      readyStyle: {
+        fontFamily: "var(--font-num)", fontSize: "18px", fontWeight: 700, fontVariantNumeric: "tabular-nums",
+        color: canClose ? "var(--ok)" : "var(--warn-ink)"
+      },
+      readyNote: canClose ? "можно закрывать" : blockLeft.length + " блокирует",
+      readyBarStyle: {
+        height: "100%", width: pct + "%",
+        background: canClose ? "var(--ok)" : "var(--warn-mark)",
+        transition: "width 220ms var(--ease)"
+      },
+
+      closeOff: canClose ? null : true,
+      closeBtnStyle: {
+        flex: "0 0 auto", whiteSpace: "nowrap",
+        height: "var(--control-h)", padding: "0 14px", borderRadius: "var(--r-control)",
+        border: "1px solid var(--accent)", background: "var(--accent)", color: "#fff",
+        fontSize: "var(--fs-body)", fontWeight: 600,
+        opacity: canClose ? 1 : .45, cursor: canClose ? "pointer" : "not-allowed"
+      },
+      openDialog: function () { if (canClose) self.setState({ dialog: true }); },
+
+      counters: [
+        { n: String(blockLeft.length), unit: "пунктов", label: "Блокирует закрытие", note: deferredCount > 0 ? deferredCount + " отложено с причиной" : "часы, документы, выписка, инвентаризация", k: "block", tone: blockLeft.length > 0 ? "err" : "ok" },
+        { n: String(warnAll.length), unit: "пункта", label: "Подозрительное", note: "рост вдвое, ноль вместо суммы, человек без часов", k: "warn", tone: "warn" },
+        { n: String(okAll.length), unit: "пунктов", label: "В порядке", note: "ведомость, выручка, сверка, две точки закрыты", k: "ok", tone: "ok" },
+        { n: fmt(402180 + 118940), unit: "RSD", label: "Не в P&L", note: "документы и платежи, которые не попадут в отчёт", k: "block", tone: "err" }
+      ].map(function (c) {
+        const col = c.tone === "err" ? "var(--err)" : c.tone === "warn" ? "var(--warn-ink)" : "var(--ok)";
+        const active = filter === c.k;
+        return {
+          n: c.n, unit: c.unit, label: c.label, note: c.note,
+          on: function () { self.setState({ filter: c.k }); },
+          numStyle: { fontFamily: "var(--font-num)", fontSize: "24px", fontWeight: 700, fontVariantNumeric: "tabular-nums", color: col },
+          cellStyle: {
+            display: "block", width: "100%", padding: "11px 13px 12px", border: 0,
+            borderRight: "1px solid var(--line)",
+            borderTop: active ? "2px solid var(--accent)" : "2px solid transparent",
+            background: active ? "var(--accent-soft)" : "var(--surface)", textAlign: "left",
+            transition: "background var(--t-state) var(--ease)"
+          },
+          cellHover: { background: active ? "var(--accent-soft)" : "var(--surface-2)" }
+        };
+      }),
+
+      filters: [
+        { k: "all", label: "Всё", cnt: String(CHECKS.length) },
+        { k: "block", label: "Блокирует", cnt: String(blockLeft.length) },
+        { k: "warn", label: "Подозрительное", cnt: String(warnAll.length) },
+        { k: "ok", label: "В порядке", cnt: String(okAll.length) }
+      ].map(function (f) {
+        const sel = f.k === filter;
+        return {
+          label: f.label, cnt: f.cnt, sel: sel, notSel: !sel,
+          on: function () { self.setState({ filter: f.k }); },
+          selStyle: chip(true), btnStyle: chip(false),
+          cntStyle: { fontFamily: "var(--font-num)", fontSize: "9.5px", color: "var(--ink-3)" }
+        };
+      }),
+
+      checks: rows,
+
+      periods: PERIODS.map(function (p) {
+        const s = ST[p[2]];
+        return {
+          name: p[0], when: p[1], state: p[3],
+          hours: fmt(p[4]), payroll: fmt(p[5]), share: String(p[6]).replace(".", ",") + " %", can: p[7],
+          nameStyle: {
+            textAlign: "left", padding: "1px 11px", height: "var(--row-loose)", borderBottom: "1px solid var(--line)",
+            borderRight: "1px solid var(--line-2)", fontWeight: 400, lineHeight: "15px"
+          },
+          tdStyle: { padding: "0 11px", height: "var(--row-loose)", borderBottom: "1px solid var(--line)", borderRight: "1px solid var(--line-2)" },
+          stStyle: {
+            display: "inline-flex", alignItems: "center", gap: "5px", height: "21px", padding: "0 8px",
+            borderRadius: "var(--r-control)", background: s[1], border: "1px solid " + s[2],
+            fontSize: "var(--fs-meta)", fontWeight: 600, color: s[0], whiteSpace: "nowrap"
+          },
+          stDot: { width: "5px", height: "5px", borderRadius: "50%", background: s[0] },
+          numStyle: {
+            textAlign: "right", padding: "0 11px", height: "var(--row-loose)", borderBottom: "1px solid var(--line)",
+            borderRight: "1px solid var(--line-2)", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)",
+            fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap"
+          },
+          shareStyle: {
+            textAlign: "right", padding: "0 11px", height: "var(--row-loose)", borderBottom: "1px solid var(--line)",
+            borderRight: "1px solid var(--line-strong)", fontFamily: "var(--font-num)", fontSize: "var(--fs-num)",
+            fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", color: "var(--ink-2)"
+          }
+        };
+      }),
+
+      dialogOpen: this.state.dialog,
+      closeDialogFn: function () { self.setState({ dialog: false }); },
+      stopProp: function (ev) { ev.stopPropagation(); },
+      dialogFacts: [
+        ["Период", "Июнь 2026 · 35 сотрудников, 3 точки"],
+        ["ФОТ к выплате", fmt(2769453) + " RSD"],
+        ["Доля ФОТ от выручки", "32,9 %"],
+        ["Подозрительного", warnAll.length + " пункта, закрытию не мешают"]
+      ].map(function (f) {
+        const money = f[1].indexOf("RSD") >= 0;
+        return {
+          k: f[0], v: f[1],
+          rowStyle: { display: "flex", alignItems: "baseline", gap: "10px", padding: "7px 11px", borderBottom: "1px solid var(--line)", background: "var(--surface-2)" },
+          vStyle: {
+            marginLeft: "auto", fontSize: money ? "var(--fs-body)" : "var(--fs-dense)",
+            fontFamily: money ? "var(--font-num)" : "var(--font-ui)",
+            fontWeight: money ? 700 : 500, fontVariantNumeric: "tabular-nums", color: "var(--ink)"
+          }
+        };
+      }),
+
+      hasDeferred: deferredCount > 0,
+      deferredTitle: "Отложено с причиной: " + deferredCount,
+      deferredText: blockAll.filter(function (c) { return deferred[CHECKS.indexOf(c)]; }).map(function (c) { return c[1]; }).join(" · ") + ". Эти пункты попадут в протокол закрытия и останутся видны в истории периода.",
+
+      reason: this.state.reason,
+      onReason: function (ev) { self.setState({ reason: ev.target.value }); },
+      reasonLabel: needReason ? "Причина, почему закрываем с отложенным · обязательно" : "Комментарий к закрытию · необязательно",
+      reasonHint: needReason
+        ? (reasonOk ? "Причина попадёт в протокол рядом с вашим именем" : "Без причины закрыть с отложенными пунктами нельзя")
+        : "Всё в порядке — комментарий нужен только если хотите оставить пометку",
+      reasonHintStyle: {
+        fontSize: "var(--fs-meta)", marginTop: "4px",
+        color: needReason && !reasonOk ? "var(--warn)" : "var(--ink-3)"
+      },
+      okOff: okDisabled ? true : null,
+      dialogOkStyle: {
+        flex: "0 0 auto", whiteSpace: "nowrap",
+        height: "var(--control-h)", padding: "0 14px", borderRadius: "var(--r-control)",
+        border: "1px solid var(--accent)", background: "var(--accent)", color: "#fff",
+        fontSize: "var(--fs-body)", fontWeight: 600,
+        opacity: okDisabled ? .45 : 1, cursor: okDisabled ? "not-allowed" : "pointer"
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
