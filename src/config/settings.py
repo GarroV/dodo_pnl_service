@@ -145,6 +145,11 @@ DEMO_KEY = os.environ.get("DEMO_KEY", "")
 # Пароль демо-учёток. Той же природы, что пароль базы в .env.example: нужен не
 # для тайны, а чтобы его можно было сменить, не пересобирая образ.
 DEMO_USER_PASSWORD = os.environ.get("DEMO_USER_PASSWORD", "demo-only-not-a-secret")
+# Учётка осмотра демо (`admin`/`admin`) и простая учётка гостя (`demodemo`).
+# Обе читаются сидом через `settings`, и без этих двух строк переменные из
+# окружения до него не доезжали вовсе: сид брал запасное значение и молчал.
+DEMO_ADMIN_PASSWORD = os.environ.get("DEMO_ADMIN_PASSWORD", "admin")
+DEMO_GUEST_PASSWORD = os.environ.get("DEMO_GUEST_PASSWORD", "password")
 
 if DEMO_MODE:
     # Гостя, не вошедшего в демо, отправляем к двери с кнопками ролей, а не к

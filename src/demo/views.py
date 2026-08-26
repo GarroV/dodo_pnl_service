@@ -33,7 +33,7 @@ from web.permissions import DIRECTORY_MANAGE, PAYRUN_CALCULATE
 
 from . import access
 from .accountant_table import build_accountant_table
-from .seed import ROLES, demo_password
+from .seed import ROLES, demo_password, role_login
 from .switching import safe_next
 from .table import accountant_rows, full_slice
 
@@ -121,7 +121,9 @@ def enter(request, role: str = DEFAULT_ROLE):
     if role not in known:
         raise Http404("no such demo role")
 
-    user = login_with_password(request, role, demo_password())
+    # Логин учётки роли — не всегда её код: `admin` носит учётка осмотра
+    # (`demo.seed`), и роль администратора сети входит под своим логином.
+    user = login_with_password(request, role_login(role), demo_password())
     if user is None:
         # Молчаливого «не пустило» быть не должно: это не ошибка посетителя, а
         # незаполненная демо-база, и человеку надо сказать именно это.
@@ -188,7 +190,7 @@ def accountant_file(request):
     # и по кнопке: демо и так открыто одним кликом, отдельного смысла держать
     # эту ссылку закрытой нет.
     if not request.user.is_authenticated:
-        if login_with_password(request, DEFAULT_ROLE, demo_password()) is None:
+        if login_with_password(request, role_login(DEFAULT_ROLE), demo_password()) is None:
             return render(request, "demo/unavailable.html", {"role": DEFAULT_ROLE},
                           status=503)
 

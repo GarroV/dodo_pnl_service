@@ -129,10 +129,47 @@ GUEST_LOGIN = "demodemo"
 # паролем в одну роль, а кнопкой в другую.
 GUEST_ROLE = "director"
 
+# Учётка осмотра: логин и пароль `admin` (запрос владельца 2026-08-26, «для
+# теста и отсмотра»). Кнопки титульной показывают роли по одной — это и есть
+# демонстрация разграничения; тому же, кто обходит продукт целиком, четыре
+# переключения ради одного обхода мешают. Ему нужен один вход, из которого
+# видно всё.
+ADMIN_LOGIN = "admin"
+# Права набираются **двумя ролями на одном человеке** — продуктовым способом
+# (D047, T170: права и регистры складываются по всем членствам). Не выдуманной
+# пятой ролью «может всё»: такой роли в продукте нет, и демо, показывающее её,
+# врало бы ровно про то, ради чего его показывают. Директор даёт весь цикл
+# месяца, администратор сети — справочники, правила и роли; вместе это все
+# права продукта, и тест сверяет это с их полным списком, а не с копией здесь.
+ADMIN_ROLES = ("director", "admin")
+
+# Логин учётки роли. Обычно это сам код роли — так его не надо нигде искать, — и
+# исключение ровно одно: логин `admin` отдан учётке осмотра, поэтому роль
+# «администратор сети» входит под `netadmin`. Один словарь, а не правка по месту:
+# логин роли спрашивают двое (сид и вход по кнопке демо), и разъехавшись, они
+# дали бы «кнопка не пускает» на ровном месте.
+ROLE_LOGINS = {"admin": "netadmin"}
+
+
+def role_login(code: str) -> str:
+    """Под каким логином входит учётка роли демо."""
+    return ROLE_LOGINS.get(code, code)
+
 
 def demo_guest_password() -> str:
     """Пароль простой учётки демо. Меняется переменной, как и остальные."""
     return getattr(settings, "DEMO_GUEST_PASSWORD", None) or "password"
+
+
+def demo_admin_password() -> str:
+    """Пароль учётки осмотра. Простой намеренно: его диктуют вслух.
+
+    Секретом не является ровно в той же мере, что и остальные пароли демо:
+    база отдельная, люди в ней выдуманные, а вход и так открыт одной кнопкой.
+    Переменной меняется на случай, если демо однажды покажут туда, где даже
+    выдуманное лучше прикрыть.
+    """
+    return getattr(settings, "DEMO_ADMIN_PASSWORD", None) or "admin"
 
 
 def demo_password() -> str:
@@ -364,8 +401,12 @@ def _roles_and_users(tenant) -> None:
             shipped_shape=product_shape(code),
         )
         user = models.User.objects.create_user(
-            username=code, password=password,
-            id=det_id("user", code), full_name=title,
+            # Логин роли — через `role_login`, а не код напрямую: `admin` носит
+            # учётка осмотра, и роль администратора сети входит под `netadmin`.
+            # От логина же считается и id: считай его от кода роли — учётка роли
+            # и учётка осмотра получили бы один и тот же uuid.
+            username=role_login(code), password=password,
+            id=det_id("user", role_login(code)), full_name=title,
         )
         models.Membership.objects.create(
             id=det_id("membership", code), tenant=tenant,
@@ -388,6 +429,22 @@ def _roles_and_users(tenant) -> None:
         user_id=guest.pk, role=models.Role.objects.get(tenant=tenant, code=GUEST_ROLE),
         unit_ids=None,
     )
+
+    # Учётка осмотра: один вход, из которого видно весь продукт. Роли даются
+    # набором, а не оптом (D047) — поэтому здесь два членства, а не выдуманная
+    # роль «может всё»: так же складывает права и сама база.
+    admin = models.User.objects.create_user(
+        username=ADMIN_LOGIN, password=demo_admin_password(),
+        id=det_id("user", ADMIN_LOGIN), full_name="Demo admin",
+    )
+    for code in ADMIN_ROLES:
+        models.Membership.objects.create(
+            id=det_id("membership", ADMIN_LOGIN, code), tenant=tenant,
+            user_id=admin.pk, role=models.Role.objects.get(tenant=tenant, code=code),
+            # Точка не задана — вся сеть: осмотр, которому видно одну точку из
+            # трёх, показывал бы продукт срезанным и молча.
+            unit_ids=None,
+        )
 
 
 def _calendar() -> None:

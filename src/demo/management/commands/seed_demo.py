@@ -17,7 +17,15 @@ from django.core.management.base import BaseCommand, CommandError
 
 from demo import reset as demo_reset
 from demo.guard import DemoGuardRefused, require_demo_dsn
-from demo.seed import ROLES, seed_demo
+from demo.seed import (
+    ADMIN_LOGIN,
+    GUEST_LOGIN,
+    ROLES,
+    demo_admin_password,
+    demo_guest_password,
+    role_login,
+    seed_demo,
+)
 
 
 def current_dsn() -> str:
@@ -59,12 +67,23 @@ class Command(BaseCommand):
                 f"периоды {', '.join(f'{p:%Y-%m}' for p in result['periods'])}"
             )
         )
-        self.stdout.write(f"Учётки демо (пароль у всех: {result['password']}):")
+        # Логин печатается через `role_login`, а не кодом роли: у администратора
+        # сети они разошлись (логин `admin` носит учётка осмотра), и вывод,
+        # печатающий код, диктовал бы человеку логин, которого нет.
+        self.stdout.write(f"Учётки ролей (пароль у всех: {result['password']}):")
         for code, title, ledgers, unit, _permissions in ROLES:
             self.stdout.write(
-                f"  {code:<11} {title}: регистры {','.join(ledgers)}"
+                f"  {role_login(code):<11} {title}: регистры {','.join(ledgers)}"
                 + (f", точка {unit}" if unit else ", все точки")
             )
+        self.stdout.write(
+            f"Осмотр: {ADMIN_LOGIN} / {demo_admin_password()} — все права, "
+            "все регистры, вся сеть"
+        )
+        self.stdout.write(
+            f"Гость:  {GUEST_LOGIN} / {demo_guest_password()} — для того, "
+            "кто вышел из демо и попал на форму входа"
+        )
 
     def _reset(self) -> None:
         try:
