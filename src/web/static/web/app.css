@@ -65,7 +65,10 @@ main {
   padding: 0 var(--space-10);
 }
 
-h1 { font-size: var(--fs-display); line-height: var(--lh-display); margin: 0 0 var(--space-2); }
+h1 { font-size: var(--fs-display); line-height: var(--lh-display); margin: 0 0 var(--space-2);
+  /* Вес из системы, а не браузерный bold: в макете заголовок 600. */
+  font-weight: var(--w-semibold);
+}
 h2 { font-size: var(--fs-title); line-height: var(--lh-title); margin: var(--space-10) 0 var(--space-6); }
 .sub { color: var(--ink-2); margin: 0 0 var(--space-9); }
 
@@ -811,7 +814,15 @@ form.search.row input, form.search.row select {
 /* ── Таблицы ─────────────────────────────────────────────────── */
 
 table { border-collapse: collapse; width: 100%; background: var(--surface); }
-th, td { text-align: left; padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--line); }
+/* Плотность обычных списков — `--row-loose` эталона (34), а не 40, которые
+   набирались отбивками. Сетки данных плотнее (30, см. table.sheet ниже): в
+   системе это два разных шага, и списки справочников — просторный. */
+th, td {
+  text-align: left;
+  height: var(--row-loose);
+  padding: 0 var(--space-6);
+  border-bottom: 1px solid var(--line);
+}
 th {
   font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: var(--tracking-micro);
   color: var(--ink-2); font-weight: var(--w-semibold);
@@ -836,7 +847,28 @@ tfoot td { font-weight: var(--w-semibold); border-top: 2px solid var(--line-stro
 }
 
 table.sheet { font-size: var(--fs-dense); }
-table.sheet th, table.sheet td { padding: var(--space-3) var(--space-4); white-space: nowrap; }
+/* Плотность строки — `--row` эталона, 30 пикселей. Замер показал 45: высота
+   набиралась отбивками сверху и снизу, и ведомость выходила в полтора раза
+   разреженнее макета. На экране это видно не как «чуть больше воздуха», а как
+   другой продукт: в макете 35 человек помещаются в один экран, у нас — нет. */
+table.sheet th, table.sheet td {
+  height: var(--row);
+  padding: 0 var(--space-4);
+  white-space: nowrap;
+}
+/* Контролы внутри таблицы ниже обычных — `.table .btn--sm` эталона, 24 пикселя.
+   Кнопка нормальной высоты (32) распирает строку до 34 и ломает ровный шаг
+   ведомости: замер показал 60 строк по 30 и несколько по 34 — именно там, где
+   в ячейке стоит форма заморозки. */
+table.sheet button, table.sheet .btn, table.sheet input {
+  height: 24px;
+  padding: 0 var(--space-4);
+  font-size: var(--fs-meta);
+}
+table.sheet form { display: inline-flex; align-items: center; gap: var(--space-3); }
+
+/* Шапка остаётся выше: её подписи переносятся на две строки. */
+table.sheet thead th { height: auto; padding: var(--space-3) var(--space-4); }
 /* Заголовки колонок переносятся: названия компонентов приходят из пресета,
    они длинные, и без переноса колонка «Итого» уезжает за край экрана.
 
