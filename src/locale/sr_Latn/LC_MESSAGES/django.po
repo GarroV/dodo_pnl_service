@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-22 19:10+0000\n"
+"POT-Creation-Date: 2026-08-26 14:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3928,8 +3928,21 @@ msgstr ""
 "Fajl se poredi sa obračunom ovog perioda red po red. Nigde se ne\n"
 "  čuva — ni na disk, ni u bazu: rezultat postoji samo na ovoj stranici."
 
-msgid "Таблица бухгалтера (.xlsx)"
-msgstr "Tabela knjigovođe (.xlsx)"
+#, python-format
+msgid "Загрузите свою таблицу за %(period_title)s"
+msgstr "Učitajte svoju tabelu za %(period_title)s"
+
+msgid ""
+"Тот файл, по которому вы платили. Готовить ничего не нужно: колонки "
+"подбираются сами, лишние игнорируются. Мы посчитаем месяц своими правилами и "
+"положим два расчёта рядом."
+msgstr "Baš ona datoteka po kojoj ste isplaćivali. Ništa ne treba pripremati: kolone se prepoznaju same, suvišne se ignorišu. Mi ćemo obračunati mesec po svojim pravilima i staviti dva obračuna jedan pored drugog."
+
+msgid "Выберите таблицу .xlsx"
+msgstr "Izaberite .xlsx tabelu"
+
+msgid "один лист или несколько · до 20 МБ"
+msgstr "jedan list ili više njih · do 20 MB"
 
 msgid "Сверить"
 msgstr "Uporedi"

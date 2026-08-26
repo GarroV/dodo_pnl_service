@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-22 19:10+0000\n"
+"POT-Creation-Date: 2026-08-26 14:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4045,8 +4045,21 @@ msgstr ""
 "  saved anywhere — not to disk, not to the database: the result lives only "
 "on this page."
 
-msgid "Таблица бухгалтера (.xlsx)"
-msgstr "Accountant's table (.xlsx)"
+#, python-format
+msgid "Загрузите свою таблицу за %(period_title)s"
+msgstr "Upload your own spreadsheet for %(period_title)s"
+
+msgid ""
+"Тот файл, по которому вы платили. Готовить ничего не нужно: колонки "
+"подбираются сами, лишние игнорируются. Мы посчитаем месяц своими правилами и "
+"положим два расчёта рядом."
+msgstr "The very file you paid from. Nothing to prepare: the columns are matched automatically and extra ones are ignored. We will calculate the month by our own rules and put the two side by side."
+
+msgid "Выберите таблицу .xlsx"
+msgstr "Choose an .xlsx spreadsheet"
+
+msgid "один лист или несколько · до 20 МБ"
+msgstr "one sheet or several · up to 20 MB"
 
 msgid "Сверить"
 msgstr "Reconcile"

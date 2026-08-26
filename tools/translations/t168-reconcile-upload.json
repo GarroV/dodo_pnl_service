@@ -1,0 +1,18 @@
+{
+  "Тот файл, по которому вы платили. Готовить ничего не нужно: колонки подбираются сами, лишние игнорируются. Мы посчитаем месяц своими правилами и положим два расчёта рядом.": {
+    "en": "The very file you paid from. Nothing to prepare: the columns are matched automatically and extra ones are ignored. We will calculate the month by our own rules and put the two side by side.",
+    "sr": "Baš ona datoteka po kojoj ste isplaćivali. Ništa ne treba pripremati: kolone se prepoznaju same, suvišne se ignorišu. Mi ćemo obračunati mesec po svojim pravilima i staviti dva obračuna jedan pored drugog."
+  },
+  "один лист или несколько · до 20 МБ": {
+    "en": "one sheet or several · up to 20 MB",
+    "sr": "jedan list ili više njih · do 20 MB"
+  },
+  "Загрузите свою таблицу за %(period_title)s": {
+    "en": "Upload your own spreadsheet for %(period_title)s",
+    "sr": "Učitajte svoju tabelu za %(period_title)s"
+  },
+  "Выберите таблицу .xlsx": {
+    "en": "Choose an .xlsx spreadsheet",
+    "sr": "Izaberite .xlsx tabelu"
+  }
+}

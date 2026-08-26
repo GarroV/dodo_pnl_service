@@ -100,6 +100,11 @@
   </tbody>
 </table>{% endscroll %}
 {% else %}
-{% notice "empty" title=empty %}{{ empty_next }}{% if add_url %} <a href="{{ add_url }}">{{ add_label }}</a>{% endif %}{% endnotice %}
+{% comment %}
+Следующий шаг из пустого состояния — кнопка (класс `next`), а не ссылка в
+тексте: на пустом экране это единственное осмысленное действие, и человек
+пришёл сюда работать, а не читать объяснение.
+{% endcomment %}
+{% notice "empty" title=empty %}{{ empty_next }}{% if add_url %} <a class="next" href="{{ add_url }}">{{ add_label }}</a>{% endif %}{% endnotice %}
 {% endif %}
 {% endblock %}

@@ -214,7 +214,10 @@ p.back a:hover { color: var(--accent); }
    сообщает то же самое короче и связывает шапку с ведомостью, где у этих же
    строк те же цвета. */
 .viewer__ledgers { display: inline-flex; gap: var(--space-2); vertical-align: middle; }
-.viewer__ledgers::before { content: none !important; }
+/* Отбивка перед метками остаётся: без неё регистры слипаются с названием
+   партнёра в одно слово («Dodo Serbia (тестовые данные)Официальный»). Своя, а
+   не общая, потому что общая ставит точку вплотную к рамке первой метки. */
+.viewer__ledgers::before { content: "· " !important; color: var(--line-strong); }
 .viewer__ledgers .ledger { padding: 0 var(--space-2); }
 /* Разделитель перед ролью — раздел 08 эталона: «кто смотрит» и «чьими правами»
    это два разных ответа, и в один ряд они читаются как один. */
@@ -328,10 +331,17 @@ p.back a:hover { color: var(--accent); }
    нельзя, поэтому строку даёт само правило). Ширину задаёт `max-content`:
    кнопка ровно по подписи. `max-width` — чтобы длинная подпись на узком экране
    не вылезла за край. */
+/* Следующий шаг из пустого состояния — кнопка, а не ссылка в тексте. На пустом
+   экране это единственное осмысленное действие, и выглядеть оно должно как
+   действие: человек пришёл сюда работать, а не читать объяснение. */
 .empty .next {
-  display: block; width: max-content; max-width: 100%;
-  margin-top: var(--space-6);
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--control-h); padding: 0 var(--space-6);
+  border: 1px solid var(--accent); border-radius: var(--r-control);
+  background: var(--accent); color: var(--ink-inverse);
+  font-weight: var(--w-semibold); text-decoration: none;
 }
+.empty .next:hover { background: var(--accent-hover); text-decoration: none; }
 
 /* Примечание — абзац, а не блок: это текст рядом с данными. */
 .note { color: var(--ink-2); font-size: var(--fs-meta); margin-top: var(--space-9); }
@@ -439,6 +449,97 @@ table.sheet tbody tr.retro td:first-child {
 table.sheet tbody tr.is-frozen td:first-child {
   box-shadow: inset 3px 0 0 var(--line-control-2), 1px 0 0 var(--line-strong);
 }
+
+/* Зона загрузки файла — «Модуль 2» эталона. Пунктирная рамка тут значит то же,
+   что везде в системе: через эту границу проходит файл. */
+form.upload.card { max-width: 640px; }   /* специфичнее общего form.card, иначе карточка остаётся узкой формой ввода */
+.upload__title { margin: 0; font-size: var(--fs-title); line-height: var(--lh-title); font-weight: var(--w-semibold); }
+.upload__lead { margin: var(--space-4) 0 0; font-size: var(--fs-body); color: var(--ink-2); }
+.dropzone {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-7) 0;
+  padding: var(--space-9) var(--space-7);
+  border: 1px dashed var(--line-control-2);
+  border-radius: var(--r-block);
+  background: var(--surface-2);
+  text-align: center;
+}
+.dropzone__icon { color: var(--ink-3); }
+.dropzone__label { font-size: var(--fs-dense); font-weight: var(--w-semibold); color: var(--ink); }
+.dropzone__hint { font-size: var(--fs-meta); color: var(--ink-2); }
+/* Поле остаётся видимым: человек должен видеть, какой файл взял. */
+.dropzone__input { margin-top: var(--space-4); font-size: var(--fs-meta); color: var(--ink-2); }
+.dropzone:focus-within { border-color: var(--accent); background: var(--accent-soft); }
+
+/* ── Экраны, которых эталон не рисовал ─────────────────────────────
+   Дизайн-система покрывала семнадцать модулей продукта, но не все его экраны:
+   роли и права, жизненный цикл периода, строки перерасчёта появились позже.
+   Разметка у них была, оформления не было вовсе — «голые» классы без единого
+   правила. Ниже они дорисованы по правилам системы: те же токены, те же
+   размеры контролов, та же логика (цветом говорит смысл, а не украшение). */
+
+/* Права роли — решётка флажков. Списком в столбик двадцать прав занимают экран,
+   в строку — сливаются в кашу; решётка по ширине содержимого даёт читаемые
+   колонки на любом экране. */
+.rights {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: var(--space-3) var(--space-6);
+}
+.right {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-control);
+  font-size: var(--fs-body); color: var(--ink);
+  cursor: pointer;
+}
+.right:hover { background: var(--surface-3); }
+/* Флажок остаётся системным: своя отрисовка чекбокса ломает клавиатуру и
+   доступность ради вида. Из эталона берётся то, что и должно совпадать, —
+   размер и цвет включённого состояния. */
+.right input[type="checkbox"] {
+  width: 14px; height: 14px; flex: 0 0 auto; margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.right:has(input:checked) { color: var(--ink); font-weight: var(--w-medium); }
+.right:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Роль человека в списке. Нейтральная: здесь перечисляют выданные наборы прав,
+   и красить каждый в свой цвет значило бы спорить с плашкой в шапке, где цвет
+   означает «чьими глазами вы смотрите сейчас». */
+.chip {
+  display: inline-flex; align-items: center;
+  height: 21px; padding: 0 var(--space-4);
+  border-radius: var(--r-control);
+  background: var(--surface-3); border: 1px solid var(--line-control);
+  font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap;
+  margin-right: var(--space-3);
+}
+
+/* Замороженная строка ведомости. Читается как состояние, а не как ошибка:
+   заморозка — обычный рабочий приём, спорную строку придерживают, чтобы
+   закрыть остальные. */
+.frozen {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  height: 21px; padding: 0 var(--space-3);
+  border-radius: var(--r-mark);
+  background: var(--surface-3); border: 1px solid var(--line-control);
+  font-size: var(--fs-meta); color: var(--ink-2); white-space: nowrap;
+}
+
+/* Утверждение и откат: два действия, между которыми нельзя промахнуться. */
+.lifecycle { display: flex; flex-direction: column; gap: var(--space-6); margin: var(--space-8) 0; }
+
+/* Строки перерасчёта за прошлый месяц — плотная таблица без липкости: их
+   единицы, а не тридцать пять. */
+table.retro-lines { font-size: var(--fs-dense); }
+table.retro-lines th, table.retro-lines td { padding: var(--space-3) var(--space-5); }
+
+/* Расчёт застрял: плашка внимания, но с воздухом — под ней стоит кнопка
+   повтора, и слипшись они читаются как одно сообщение. */
+.alert.stuck { display: flex; flex-direction: column; gap: var(--space-5); align-items: flex-start; }
 
 /* Плашка состояния — раздел 08 эталона: высота 22, точка цвета слева, фон и
    рамка спокойные, цветом говорит сам текст. Состояние расчёта — то, ради чего

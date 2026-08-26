@@ -23,10 +23,30 @@
   сохраняется — ни на диск, ни в базу: ответ живёт только на этой странице.{% endblocktranslate %}
 </p>
 
-<form class="upload" method="post" enctype="multipart/form-data"
+{% comment %}
+Зона загрузки — «Модуль 2» дизайн-системы. Экран сверки по замыслу решающий:
+именно он превращает недоверие бухгалтера в доверие, потому что кладёт её
+расчёт рядом с нашим. До переноса он выглядел как системное поле выбора файла
+с подписью сбоку — то есть как техническая форма, а не как приглашение.
+
+Поле остаётся нативным и видимым: спрятать его за красивой кнопкой значит
+скрыть имя выбранного файла, а человек грузит сюда именно тот файл, по
+которому платил, и должен видеть, что взял правильный. Перетаскивание не
+делаем — оно требует JS, и это поведение, а не оформление (issue заведён).
+{% endcomment %}
+<form class="upload card" method="post" enctype="multipart/form-data"
       action="{% url 'period-reconcile' period.id %}">{% csrf_token %}
-  {% translate "Таблица бухгалтера (.xlsx)" as table_label %}
-  {% include "web/components/field.html" with id="table" name="table" type="file" label=table_label accept=".xlsx" %}
+  <h2 class="upload__title">{% blocktranslate with period_title=title %}Загрузите свою таблицу за {{ period_title }}{% endblocktranslate %}</h2>
+  <p class="upload__lead">{% blocktranslate %}Тот файл, по которому вы платили. Готовить ничего не нужно: колонки подбираются сами, лишние игнорируются. Мы посчитаем месяц своими правилами и положим два расчёта рядом.{% endblocktranslate %}</p>
+  <div class="dropzone">
+    <svg class="dropzone__icon" width="26" height="26" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 21V9"></path><path d="m7 12 5-5 5 5"></path><path d="M4 3h16"></path>
+    </svg>
+    <label class="dropzone__label" for="table">{% translate "Выберите таблицу .xlsx" %}</label>
+    <span class="dropzone__hint">{% translate "один лист или несколько · до 20 МБ" %}</span>
+    <input class="dropzone__input" type="file" id="table" name="table" accept=".xlsx">
+  </div>
   <button type="submit" class="primary">{% translate "Сверить" %}</button>
 </form>
 
