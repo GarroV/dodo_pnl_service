@@ -94,6 +94,7 @@
 | `/periods/<uuid:period_id>/retro/` | `period-retro` | `web.views.period_retro_post` |
 | `/periods/<uuid:period_id>/variance/` | `period-variance` | `web.views.period_variance` |
 | `/periods/open/` | `period-open` | `web.views.open_month` |
+| `/reconciliations/findings/<uuid:finding_id>/` | `reconciliation-decide` | `web.reports_views.reconciliation_decide` |
 | `/roles/` | `roles` | `web.roles_views.index` |
 | `/roles/<uuid:role_id>/rights/` | `role-rights` | `web.roles_views.role_rights` |
 | `/roles/people/<uuid:user_id>/` | `person-roles` | `web.roles_views.person_roles` |

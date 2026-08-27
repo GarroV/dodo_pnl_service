@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 21:22+0000\n"
+"POT-Creation-Date: 2026-08-27 21:39+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -257,7 +257,9 @@ msgstr "Sati objekta nisu zatvoreni: %(units)s"
 msgid ""
 "Пока часы открыты, их могут поправить после утверждения — и ведомость "
 "разойдётся с табелем."
-msgstr "Dok su sati otvoreni, mogu se menjati posle odobravanja — i obračun će se razići sa evidencijom."
+msgstr ""
+"Dok su sati otvoreni, mogu se menjati posle odobravanja — i obračun će se "
+"razići sa evidencijom."
 
 #: src/payrun/readiness.py:133
 #, python-format
@@ -268,7 +270,9 @@ msgstr "Papira sa objekata čeka obradu: %(count)s"
 msgid ""
 "Пока бумага не разобрана, её денег в отчёте нет — не потому что "
 "отфильтровали, а потому что фактов по ней не существует."
-msgstr "Dok papir nije obrađen, njegovog novca nema u izveštaju — ne zato što je filtriran, već zato što činjenice o njemu ne postoje."
+msgstr ""
+"Dok papir nije obrađen, njegovog novca nema u izveštaju — ne zato što je "
+"filtriran, već zato što činjenice o njemu ne postoje."
 
 #: src/payrun/readiness.py:158
 #, python-format
@@ -499,7 +503,7 @@ msgstr "Porez"
 msgid "Налог на доход"
 msgstr "Porez na dohodak"
 
-#: src/reports/export.py:592 src/web/reports_views.py:46
+#: src/reports/export.py:592 src/web/reports_views.py:49
 #: src/web/templates/web/person_pay.html:77 src/web/views.py:988
 msgid "Взносы"
 msgstr "Doprinosi"
@@ -907,6 +911,7 @@ msgstr "Šta je urađeno"
 
 #: src/timesheets/templates/timesheets/import_report.html:30
 #: src/web/templates/web/reconcile.html:59
+#: src/web/templates/web/reconcile.html:296
 msgid "Строк"
 msgstr "Redova"
 
@@ -1045,17 +1050,17 @@ msgid "точка не найдена"
 msgstr "objekat nije pronađen"
 
 #: src/timesheets/views.py:491 src/web/expense_items_views.py:509
-#: src/web/reports_views.py:229
+#: src/web/reports_views.py:236
 msgid "Файл не выбран."
 msgstr "Fajl nije izabran."
 
-#: src/timesheets/views.py:495 src/web/reports_views.py:233
+#: src/timesheets/views.py:495 src/web/reports_views.py:240
 #, python-format
 msgid "Файл больше %(limit)s МБ — это не зарплатная таблица."
 msgstr "Fajl je veći od %(limit)s MB — ovo nije platna tabela."
 
 #: src/timesheets/views.py:519 src/web/expense_items_upload.py:129
-#: src/web/reports_views.py:245
+#: src/web/reports_views.py:252
 #, python-format
 msgid "Файл не удалось прочитать как книгу Excel: %(reason)s"
 msgstr "Fajl nije moguće pročitati kao Excel radnu svesku: %(reason)s"
@@ -2137,7 +2142,7 @@ msgid "Часы по договору"
 msgstr "Ugovoreni sati"
 
 #: src/web/directory_views.py:997 src/web/directory_views.py:1150
-#: src/web/directory_views.py:1250 src/web/reports_views.py:62
+#: src/web/directory_views.py:1250 src/web/reports_views.py:65
 #: src/web/templates/web/directory/employee.html:132
 msgid "Коэффициент"
 msgstr "Koeficijent"
@@ -3323,40 +3328,46 @@ msgstr ""
 msgid "Часов за этот месяц нет — начислять пока нечего."
 msgstr "Za ovaj mesec još nema sati — nema šta da se obračuna."
 
-#: src/web/reports_views.py:44
+#: src/web/reports_views.py:47
 msgid "К выплате (нето)"
 msgstr "Za isplatu (neto)"
 
-#: src/web/reports_views.py:45 src/web/templates/web/person_pay.html:75
+#: src/web/reports_views.py:48 src/web/templates/web/person_pay.html:75
 #: src/web/views.py:986
 msgid "Бруто"
 msgstr "Bruto"
 
-#: src/web/reports_views.py:47 src/web/views.py:989
+#: src/web/reports_views.py:50 src/web/views.py:989
 msgid "Полная стоимость"
 msgstr "Ukupan trošak"
 
-#: src/web/reports_views.py:54
+#: src/web/reports_views.py:57
 msgid "Часы для взносов"
 msgstr "Sati za doprinose"
 
-#: src/web/reports_views.py:61
+#: src/web/reports_views.py:64
 msgid "Базовая ставка"
 msgstr "Osnovna stopa rada"
 
-#: src/web/reports_views.py:63
+#: src/web/reports_views.py:66
 msgid "Топли оброк и регрес"
 msgstr "Топли оброк и регрес"
 
-#: src/web/reports_views.py:102
+#: src/web/reports_views.py:105
 #, python-format
 msgid "Часы · %(kind)s"
 msgstr "Sati · %(kind)s"
 
-#: src/web/reports_views.py:103 src/web/reports_views.py:110
+#: src/web/reports_views.py:106 src/web/reports_views.py:113
 #, python-format
 msgid "%(what)s: в таблице %(expected)s, в расчёте %(actual)s"
 msgstr "%(what)s: %(expected)s u tabeli, %(actual)s u obračunu"
+
+#: src/web/reports_views.py:293
+msgid ""
+"Решение записывается вместе с объяснением: без него «ошибка в файле» через "
+"полгода не отличить от «не разбирались»."
+msgstr "Odluka se beleži zajedno sa objašnjenjem: bez njega «greška u fajlu» se za pola godine ne razlikuje od «niko nije pogledao»."
 
 #: src/web/roles_views.py:162 src/web/roles_views.py:198
 msgid "Такой роли у этого партнёра нет."
@@ -5169,7 +5180,9 @@ msgstr "Sve je na mestu"
 msgid ""
 "Часы закрыты, документы разобраны, строк без статьи нет. Месяц можно "
 "утверждать."
-msgstr "Sati su zatvoreni, dokumenti obrađeni, nema stavki bez kategorije. Mesec se može odobriti."
+msgstr ""
+"Sati su zatvoreni, dokumenti obrađeni, nema stavki bez kategorije. Mesec se "
+"može odobriti."
 
 #: src/web/templates/web/period.html:301
 msgid "Это нужно устранить или отложить с причиной"
@@ -5179,7 +5192,9 @@ msgstr "Ovo treba rešiti ili odložiti uz razlog"
 msgid ""
 "Из-за этого P&L будет неверным. Отложенное попадёт в протокол закрытия "
 "вместе с причиной."
-msgstr "Zbog toga će P&L biti pogrešan. Odloženo ide u zapisnik zatvaranja zajedno sa razlogom."
+msgstr ""
+"Zbog toga će P&L biti pogrešan. Odloženo ide u zapisnik zatvaranja zajedno "
+"sa razlogom."
 
 #: src/web/templates/web/period.html:313
 msgid "Отложить, потому что"
@@ -5223,6 +5238,7 @@ msgid "История периода"
 msgstr "Istorija perioda"
 
 #: src/web/templates/web/period.html:376
+#: src/web/templates/web/reconcile.html:294
 msgid "Когда"
 msgstr "Kada"
 
@@ -5506,6 +5522,7 @@ msgstr "Odstupilo za pare (zaokruživanje)"
 
 #: src/web/templates/web/reconcile.html:64
 #: src/web/templates/web/reconcile.html:150
+#: src/web/templates/web/reconcile.html:298
 msgid "Разошлось"
 msgstr "Odstupilo"
 
@@ -5697,6 +5714,31 @@ msgstr ""
 #, python-format
 msgid "Сошлось до копейки · %(matched_count)s"
 msgstr "Poklopilo se do pare · %(matched_count)s"
+
+#: src/web/templates/web/reconcile.html:290
+msgid "Прошлые сверки"
+msgstr "Prethodna usaglašavanja"
+
+#: src/web/templates/web/reconcile.html:295
+msgid "Файл"
+msgstr "Fajl"
+
+#: src/web/templates/web/reconcile.html:297
+msgid "Сошлось"
+msgstr "Poklopilo se"
+
+#: src/web/templates/web/reconcile.html:299
+msgid "Разобрано"
+msgstr "Rešeno"
+
+#: src/web/templates/web/reconcile.html:312
+#, python-format
+msgid "ждут решения: %(left)s"
+msgstr "čeka odluku: %(left)s"
+
+#: src/web/templates/web/reconcile.html:314
+msgid "всё разобрано"
+msgstr "sve rešeno"
 
 #: src/web/templates/web/roles/denied.html:10
 #: src/web/templates/web/roles/denied.html:12
@@ -6674,7 +6716,9 @@ msgstr "Period nije odobren."
 msgid ""
 "Отложить находку можно только с причиной: напишите, почему закрываем месяц, "
 "зная о ней."
-msgstr "Nalaz se može odložiti samo uz razlog: napišite zašto zatvaramo mesec i pored njega."
+msgstr ""
+"Nalaz se može odložiti samo uz razlog: napišite zašto zatvaramo mesec i "
+"pored njega."
 
 #: src/web/views.py:827
 msgid "Период не открыт."

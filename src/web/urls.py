@@ -80,6 +80,13 @@ urlpatterns = [
         reports_views.period_reconcile,
         name="period-reconcile",
     ),
+    # Решение по расхождению сверки (#172): протокол без решений отвечает
+    # «разошлось» и молчит о том, что с этим сделали.
+    path(
+        "reconciliations/findings/<uuid:finding_id>/",
+        reports_views.reconciliation_decide,
+        name="reconciliation-decide",
+    ),
     # Выгрузки (T032). Один маршрут на три вида, а не три почти одинаковых:
     # адреса из контракта блока (`/export/payout`, `/export/pnl`,
     # `/export/partner`) получаются те же, а неизвестный вид отвечает 404.

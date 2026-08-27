@@ -243,6 +243,82 @@ class Membership(models.Model):
         ]
 
 
+class Reconciliation(models.Model):
+    """Протокол сверки с таблицей бухгалтера (#172).
+
+    Эталон: «остаётся в системе: файл, дата, кто сверял, каждое расхождение и
+    решение по нему. Через полгода на вопрос „почему в мае было так“ отвечает
+    протокол, а не память». До этого сверка жила до перезагрузки страницы —
+    доказать через месяц, что расхождения разобрали, было нечем.
+
+    **Самого файла здесь нет, и это не забывчивость, а D028.** В таблице
+    партнёра ФИО и суммы живых людей; сверка не повод заводить им ещё одно
+    место жительства. Хранится результат сравнения: имя файла, счётчики и
+    расхождения со ссылкой на наших же сотрудников. Новых персональных данных
+    не появляется.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    period = models.DateField()
+    # Имя файла — чтобы человек узнал свою сверку в списке. Содержимого нет.
+    file_name = models.TextField()
+    lines = models.IntegerField(db_default=0)
+    matched = models.IntegerField(db_default=0)
+    rounding = models.IntegerField(db_default=0)
+    differing = models.IntegerField(db_default=0)
+    created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "reconciliations"
+        indexes = [
+            models.Index("tenant", "period", models.F("created_at").desc(),
+                         name="reconciliations_period_idx"),
+        ]
+
+
+class ReconciliationFinding(models.Model):
+    """Одно расхождение сверки и решение человека по нему.
+
+    Решение — половина смысла протокола: без него он отвечает «разошлось», а
+    вопрос через полгода звучит «и что вы с этим сделали».
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    record = models.ForeignKey(
+        Reconciliation, on_delete=models.CASCADE, db_column="reconciliation_id",
+        related_name="findings",
+    )
+    # Наш сотрудник, а не имя из файла: ФИО в протокол не переезжают.
+    employee = models.ForeignKey(
+        "Employee", on_delete=models.CASCADE, db_column="employee_id",
+    )
+    # Что сравнивали: код компонента или итог.
+    component = models.TextField()
+    ours = models.DecimalField(max_digits=14, decimal_places=2)
+    theirs = models.DecimalField(max_digits=14, decimal_places=2)
+    # Решение человека: `ours` — наша сторона неправа, `theirs` — ошибка в
+    # файле, `rule` — разная трактовка правила. Пусто — ещё не разобрано.
+    decision = models.TextField(null=True, blank=True)
+    note = models.TextField(db_default="")
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "reconciliation_findings"
+        constraints = [
+            # Решение без объяснения — половина ответа: «ошибка в файле» без
+            # слов через полгода не отличить от «не разбирались».
+            models.CheckConstraint(
+                condition=models.Q(decision__isnull=True)
+                | models.Q(note__regex=r"\S"),
+                name="reconciliation_findings_note_with_decision",
+            ),
+        ]
+
+
 class ClosingWaiver(models.Model):
     """Отложенная находка проверки полноты: что закрыли, зная о дыре (#175).
 

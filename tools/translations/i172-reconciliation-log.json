@@ -1,0 +1,30 @@
+{
+  "Решение записывается вместе с объяснением: без него «ошибка в файле» через полгода не отличить от «не разбирались».": {
+    "en": "A decision is recorded together with an explanation: without one, «a mistake in the file» is indistinguishable from «nobody looked» half a year later.",
+    "sr": "Odluka se beleži zajedno sa objašnjenjem: bez njega «greška u fajlu» se za pola godine ne razlikuje od «niko nije pogledao»."
+  },
+  "Прошлые сверки": {
+    "en": "Past reconciliations",
+    "sr": "Prethodna usaglašavanja"
+  },
+  "Файл": {
+    "en": "File",
+    "sr": "Fajl"
+  },
+  "Сошлось": {
+    "en": "Matched",
+    "sr": "Poklopilo se"
+  },
+  "Разобрано": {
+    "en": "Sorted out",
+    "sr": "Rešeno"
+  },
+  "ждут решения: %(left)s": {
+    "en": "awaiting a decision: %(left)s",
+    "sr": "čeka odluku: %(left)s"
+  },
+  "всё разобрано": {
+    "en": "all sorted out",
+    "sr": "sve rešeno"
+  }
+}

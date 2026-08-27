@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 21:22+0000\n"
+"POT-Creation-Date: 2026-08-27 21:39+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -251,7 +251,8 @@ msgstr ""
 #: src/payrun/lifecycle.py:200
 #, python-format
 msgid "Месяц не закрыт: %(what)s. Устраните или отложите с причиной."
-msgstr "The month was not closed: %(what)s. Fix it or postpone it with a reason."
+msgstr ""
+"The month was not closed: %(what)s. Fix it or postpone it with a reason."
 
 #: src/payrun/readiness.py:109
 #, python-format
@@ -262,7 +263,9 @@ msgstr "Unit hours are not closed: %(units)s"
 msgid ""
 "Пока часы открыты, их могут поправить после утверждения — и ведомость "
 "разойдётся с табелем."
-msgstr "While hours are open they can be edited after approval — and the payroll sheet will drift apart from the timesheet."
+msgstr ""
+"While hours are open they can be edited after approval — and the payroll "
+"sheet will drift apart from the timesheet."
 
 #: src/payrun/readiness.py:133
 #, python-format
@@ -273,7 +276,9 @@ msgstr "Papers from units awaiting sorting: %(count)s"
 msgid ""
 "Пока бумага не разобрана, её денег в отчёте нет — не потому что "
 "отфильтровали, а потому что фактов по ней не существует."
-msgstr "Until a paper is sorted, its money is not in the report — not because it was filtered out, but because no facts about it exist."
+msgstr ""
+"Until a paper is sorted, its money is not in the report — not because it was "
+"filtered out, but because no facts about it exist."
 
 #: src/payrun/readiness.py:158
 #, python-format
@@ -282,7 +287,9 @@ msgstr "Lines without an expense item: %(count)s"
 
 #: src/payrun/readiness.py:159
 msgid "Деньги в отчёте есть, но лежат не в той строке, где их будут искать."
-msgstr "The money is in the report, but not in the line where people will look for it."
+msgstr ""
+"The money is in the report, but not in the line where people will look for "
+"it."
 
 #: src/payrun/readiness.py:184
 #, python-format
@@ -507,7 +514,7 @@ msgstr "Tax"
 msgid "Налог на доход"
 msgstr "Income tax"
 
-#: src/reports/export.py:592 src/web/reports_views.py:46
+#: src/reports/export.py:592 src/web/reports_views.py:49
 #: src/web/templates/web/person_pay.html:77 src/web/views.py:988
 msgid "Взносы"
 msgstr "Contributions"
@@ -923,6 +930,7 @@ msgstr "What was done"
 
 #: src/timesheets/templates/timesheets/import_report.html:30
 #: src/web/templates/web/reconcile.html:59
+#: src/web/templates/web/reconcile.html:296
 msgid "Строк"
 msgstr "Rows"
 
@@ -1063,17 +1071,17 @@ msgid "точка не найдена"
 msgstr "unit not found"
 
 #: src/timesheets/views.py:491 src/web/expense_items_views.py:509
-#: src/web/reports_views.py:229
+#: src/web/reports_views.py:236
 msgid "Файл не выбран."
 msgstr "No file selected."
 
-#: src/timesheets/views.py:495 src/web/reports_views.py:233
+#: src/timesheets/views.py:495 src/web/reports_views.py:240
 #, python-format
 msgid "Файл больше %(limit)s МБ — это не зарплатная таблица."
 msgstr "File is larger than %(limit)s MB — this is not a payroll table."
 
 #: src/timesheets/views.py:519 src/web/expense_items_upload.py:129
-#: src/web/reports_views.py:245
+#: src/web/reports_views.py:252
 #, python-format
 msgid "Файл не удалось прочитать как книгу Excel: %(reason)s"
 msgstr "Could not read the file as an Excel workbook: %(reason)s"
@@ -2166,7 +2174,7 @@ msgid "Часы по договору"
 msgstr "Contract hours"
 
 #: src/web/directory_views.py:997 src/web/directory_views.py:1150
-#: src/web/directory_views.py:1250 src/web/reports_views.py:62
+#: src/web/directory_views.py:1250 src/web/reports_views.py:65
 #: src/web/templates/web/directory/employee.html:132
 msgid "Коэффициент"
 msgstr "Coefficient"
@@ -3373,40 +3381,46 @@ msgstr ""
 msgid "Часов за этот месяц нет — начислять пока нечего."
 msgstr "There are no hours for this month yet — nothing to accrue."
 
-#: src/web/reports_views.py:44
+#: src/web/reports_views.py:47
 msgid "К выплате (нето)"
 msgstr "Payable (net)"
 
-#: src/web/reports_views.py:45 src/web/templates/web/person_pay.html:75
+#: src/web/reports_views.py:48 src/web/templates/web/person_pay.html:75
 #: src/web/views.py:986
 msgid "Бруто"
 msgstr "Gross"
 
-#: src/web/reports_views.py:47 src/web/views.py:989
+#: src/web/reports_views.py:50 src/web/views.py:989
 msgid "Полная стоимость"
 msgstr "Total cost"
 
-#: src/web/reports_views.py:54
+#: src/web/reports_views.py:57
 msgid "Часы для взносов"
 msgstr "Hours for contributions"
 
-#: src/web/reports_views.py:61
+#: src/web/reports_views.py:64
 msgid "Базовая ставка"
 msgstr "Base rate"
 
-#: src/web/reports_views.py:63
+#: src/web/reports_views.py:66
 msgid "Топли оброк и регрес"
 msgstr "Топли оброк и регрес"
 
-#: src/web/reports_views.py:102
+#: src/web/reports_views.py:105
 #, python-format
 msgid "Часы · %(kind)s"
 msgstr "Hours · %(kind)s"
 
-#: src/web/reports_views.py:103 src/web/reports_views.py:110
+#: src/web/reports_views.py:106 src/web/reports_views.py:113
 #, python-format
 msgid "%(what)s: в таблице %(expected)s, в расчёте %(actual)s"
 msgstr "%(what)s: %(expected)s in the table, %(actual)s in the calculation"
+
+#: src/web/reports_views.py:293
+msgid ""
+"Решение записывается вместе с объяснением: без него «ошибка в файле» через "
+"полгода не отличить от «не разбирались»."
+msgstr "A decision is recorded together with an explanation: without one, «a mistake in the file» is indistinguishable from «nobody looked» half a year later."
 
 #: src/web/roles_views.py:162 src/web/roles_views.py:198
 msgid "Такой роли у этого партнёра нет."
@@ -5287,7 +5301,9 @@ msgstr "Everything is in place"
 msgid ""
 "Часы закрыты, документы разобраны, строк без статьи нет. Месяц можно "
 "утверждать."
-msgstr "Hours are closed, documents are sorted, there are no lines without an item. The month can be approved."
+msgstr ""
+"Hours are closed, documents are sorted, there are no lines without an item. "
+"The month can be approved."
 
 #: src/web/templates/web/period.html:301
 msgid "Это нужно устранить или отложить с причиной"
@@ -5297,7 +5313,9 @@ msgstr "This must be fixed or postponed with a reason"
 msgid ""
 "Из-за этого P&L будет неверным. Отложенное попадёт в протокол закрытия "
 "вместе с причиной."
-msgstr "Because of this the P&L will be wrong. What you postpone goes into the closing record together with the reason."
+msgstr ""
+"Because of this the P&L will be wrong. What you postpone goes into the "
+"closing record together with the reason."
 
 #: src/web/templates/web/period.html:313
 msgid "Отложить, потому что"
@@ -5341,6 +5359,7 @@ msgid "История периода"
 msgstr "Period history"
 
 #: src/web/templates/web/period.html:376
+#: src/web/templates/web/reconcile.html:294
 msgid "Когда"
 msgstr "When"
 
@@ -5625,6 +5644,7 @@ msgstr "Off by cents (rounding)"
 
 #: src/web/templates/web/reconcile.html:64
 #: src/web/templates/web/reconcile.html:150
+#: src/web/templates/web/reconcile.html:298
 msgid "Разошлось"
 msgstr "Off"
 
@@ -5826,6 +5846,31 @@ msgstr ""
 #, python-format
 msgid "Сошлось до копейки · %(matched_count)s"
 msgstr "Matched to the cent · %(matched_count)s"
+
+#: src/web/templates/web/reconcile.html:290
+msgid "Прошлые сверки"
+msgstr "Past reconciliations"
+
+#: src/web/templates/web/reconcile.html:295
+msgid "Файл"
+msgstr "File"
+
+#: src/web/templates/web/reconcile.html:297
+msgid "Сошлось"
+msgstr "Matched"
+
+#: src/web/templates/web/reconcile.html:299
+msgid "Разобрано"
+msgstr "Sorted out"
+
+#: src/web/templates/web/reconcile.html:312
+#, python-format
+msgid "ждут решения: %(left)s"
+msgstr "awaiting a decision: %(left)s"
+
+#: src/web/templates/web/reconcile.html:314
+msgid "всё разобрано"
+msgstr "all sorted out"
 
 #: src/web/templates/web/roles/denied.html:10
 #: src/web/templates/web/roles/denied.html:12
@@ -6818,7 +6863,9 @@ msgstr "Period not approved."
 msgid ""
 "Отложить находку можно только с причиной: напишите, почему закрываем месяц, "
 "зная о ней."
-msgstr "A finding can only be postponed with a reason: write why the month is being closed despite it."
+msgstr ""
+"A finding can only be postponed with a reason: write why the month is being "
+"closed despite it."
 
 #: src/web/views.py:827
 msgid "Период не открыт."

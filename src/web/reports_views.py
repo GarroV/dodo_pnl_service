@@ -14,18 +14,21 @@ from __future__ import annotations
 
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_noop
+from django.views.decorators.http import require_POST
 
 from reports import export as exports
 from reports.reconcile import reconcile
 from reports.sheet import build_slice
 
-from . import runslice
+from . import reconciliation_log, runslice
 from .cash import item_title
 from .format import ledger_title, money
 from .labels import labeller
+from .principal import get_current_principal
 from .views import find_period, month_title
 
 __all__ = ["period_export", "period_reconcile"]
@@ -174,6 +177,10 @@ def _report(request, period, *, result=None, error=None, status=200):
             "title": month_title(period.period),
             "error": error,
             "result": result,
+            # Прошлые сверки (#172): без них через месяц нечем доказать, что
+            # расхождения разбирали — у бухгалтера остаётся её файл, у нас
+            # ничего.
+            "past": reconciliation_log.history(period.tenant_id, period.period),
             # Разделено на четыре списка здесь, а не условиями в разметке: у
             # разошедшегося, копеечного, несравнённого и сошедшегося разный
             # вес, и читают их в разном порядке. Смешанная таблица заставляла
@@ -246,7 +253,58 @@ def period_reconcile(request, period_id):
                   % {"reason": broken},
         )
 
+    # Протокол сверки (#172): результат остаётся в системе, файл — нет (D028).
+    # Пишется после показа: отказ политики на записи не должен лишать человека
+    # ответа, за которым он и пришёл.
+    who = get_current_principal(request)
+    reconciliation_log.record(
+        tenant_id=period.tenant_id, period=period.period,
+        file_name=upload.name, result=result,
+        actor_id=getattr(who, "user_id", None),
+    )
     return _report(request, period, result=result)
+
+
+@login_required
+@require_POST
+def reconciliation_decide(request, finding_id):
+    """Записать решение по расхождению сверки (#172).
+
+    Решение — половина смысла протокола: без него он отвечает «разошлось», а
+    вопрос через полгода звучит «и что вы с этим сделали». Объяснение
+    обязательно и здесь, и в базе.
+    """
+    from core.models import ReconciliationFinding
+
+    found = ReconciliationFinding.objects.filter(pk=finding_id).first()
+    if found is None:
+        # Чужое расхождение и несуществующее отвечают одинаково (D023).
+        raise Http404("расхождение не найдено")
+
+    who = get_current_principal(request)
+    ok = reconciliation_log.decide(
+        found,
+        decision=(request.POST.get("decision") or "").strip(),
+        note=request.POST.get("note") or "",
+        actor_id=getattr(who, "user_id", None),
+    )
+    if not ok:
+        return HttpResponse(
+            _("Решение записывается вместе с объяснением: без него «ошибка в "
+              "файле» через полгода не отличить от «не разбирались»."),
+            status=400, content_type="text/plain; charset=utf-8",
+        )
+    return redirect(reverse("period-reconcile", args=[_period_of(found)]))
+
+
+def _period_of(found) -> str:
+    """Период расхождения — чтобы вернуть человека туда, откуда он пришёл."""
+    from core.models import Period
+
+    period = Period.objects.filter(
+        tenant_id=found.tenant_id, period=found.record.period,
+    ).first()
+    return str(period.id) if period else ""
 
 
 @login_required

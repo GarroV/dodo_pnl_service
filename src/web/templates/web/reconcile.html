@@ -275,4 +275,44 @@
   <a href="{% url 'period' period.id %}">{% translate "К периоду" %}</a>
 </p>
 </div>
+
+{% if past %}
+{% comment %}
+Прошлые сверки (#172). Эталон называет этот блок так же: без него через месяц
+нечем доказать, что расхождения разбирали, — у бухгалтера остаётся её файл, у
+нас ничего. Самого файла в системе нет (D028), поэтому в списке имя, счётчики и
+сколько расхождений ещё не разобрано.
+{% endcomment %}
+<h2>{% translate "Прошлые сверки" %}</h2>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Когда" %}</th>
+      <th>{% translate "Файл" %}</th>
+      <th class="num">{% translate "Строк" %}</th>
+      <th class="num">{% translate "Сошлось" %}</th>
+      <th class="num">{% translate "Разошлось" %}</th>
+      <th>{% translate "Разобрано" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in past %}
+    <tr>
+      <td>{{ entry.when }}</td>
+      <td>{{ entry.file_name }}</td>
+      <td class="{{ entry.lines|numclass }}">{{ entry.lines }}</td>
+      <td class="{{ entry.matched|numclass }}">{{ entry.matched }}</td>
+      <td class="{{ entry.differing|numclass }}">{{ entry.differing }}</td>
+      <td>
+        {% if entry.undecided %}
+          {% blocktranslate with left=entry.undecided %}ждут решения: {{ left }}{% endblocktranslate %}
+        {% else %}
+          {% translate "всё разобрано" %}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% endif %}
 {% endblock %}
