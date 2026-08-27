@@ -455,7 +455,8 @@ def _people(tenant, groups: dict) -> int:
                 employee=employee, group=groups[person.group],
                 unit=units[person.unit],
                 base_rate=rate, coefficient=person.coefficient,
-                scheme=person.scheme, valid_from=valid_from, valid_to=valid_to,
+                scheme=person.scheme, work_measure=person.work_measure,
+                valid_from=valid_from, valid_to=valid_to,
             )
         for month in MONTHS:
             row = dataset.timesheet_for(person, month)

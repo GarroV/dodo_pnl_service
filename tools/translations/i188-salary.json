@@ -1,0 +1,13 @@
+{
+  "Ставка или оклад": {
+    "en": "Rate or salary",
+    "sr": "Cena rada ili plata"
+  },
+  "Что это за число, решает «Чем меряется работа»: по часам — цена часа, оклад — сумма за месяц, сдельно — цена единицы.": {
+    "en": "What this number means depends on «Unit of work»: by hours — the price of an hour, salary — the amount per month, piecework — the price of a unit.",
+    "sr": "Šta ovaj broj znači, određuje «Čime se meri rad»: po satima — cena sata, plata — iznos mesečno, po učinku — cena jedinice."
+  },
+  "Оклад": {"en": "Monthly salary", "sr": "Plata"},
+  "Вечерние": {"en": "Evening hours", "sr": "Popodnevni rad"},
+  "Выходные": {"en": "Weekend hours", "sr": "Rad vikendom"}
+}

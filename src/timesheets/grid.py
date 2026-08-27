@@ -98,9 +98,14 @@ class Row:
         """Все подсказки строки одной фразой — для подписи и подсказки мыши."""
         return " · ".join(hint.text for hint in self.hints)
 
+    # Оплачивается ли работа этой строки по часам. У почасовика да; у окладника
+    # тоже — его часовая ставка выводится из оклада (issue #188), поэтому часы
+    # ему оплачены и помечать их «не оплачиваются» нельзя. У сдельных нет.
+    pays_by_hours: bool = True
+
     @property
     def piecework(self) -> bool:
-        return self.measure != HOURS
+        return not self.pays_by_hours
 
     @property
     def total(self) -> Decimal:
@@ -186,6 +191,24 @@ def visible_rows(tenant_id: UUID, period: date, unit_ids=None):
     return rows
 
 
+def pays_by_hours(rules, term, measure: str) -> bool:
+    """Оплачивается ли работа по часам: почасовая мера или оклад.
+
+    Оклад отличается от сдельных мер тем, что часы у него оплачиваются —
+    выведенной ставкой. Правило одно с движком (`work_measures.*.monthly`), а
+    не список кодов здесь: заведёт партнёр вторую окладную меру — экран обязан
+    понять её без правки.
+    """
+    if measure == HOURS:
+        return True
+    if term is None:
+        return True
+    preset = rules.preset(group_id=term.group_id, employee_id=term.employee_id)
+    cfg = (preset.get("work_measures") or {}).get(measure) or {}
+    # «Сумма целиком» часами не меряется: она не зависит от табеля вовсе.
+    return bool(cfg.get("monthly")) and cfg.get("proration") != "none"
+
+
 def measure_of(rules, term) -> tuple[str, str]:
     """Мера работы строки и её подпись — по правилам, действующим на этот месяц.
 
@@ -254,6 +277,7 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                 closed=sheet.unit_id in closed,
                 measure=measure,
                 measure_title=measure_title,
+                pays_by_hours=pays_by_hours(rules, terms.get(sheet.employee_id), measure),
                 piece_value=Decimal(str(sheet.piece_value)),
                 # Подсказки считаются по тем же числам, что показаны в строке, и
                 # тем же правилом, каким их считает загрузка файла (T118).
@@ -266,7 +290,7 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                     norm_hours=sheet.norm_hours,
                     dismissed_at=sheet.employee.dismissed_at,
                     period=period,
-                    piecework=measure != HOURS,
+                    piecework=not pays_by_hours(rules, terms.get(sheet.employee_id), measure),
                 ),
                 authors={
                     code: authors[(sheet.id, code)]
@@ -340,6 +364,7 @@ def _rows_without_a_sheet(tenant_id, period, *, terms, codes, seen, unit_ids, cl
                 closed=term.unit_id in closed,
                 measure=measure,
                 measure_title=measure_title,
+                pays_by_hours=pays_by_hours(rules, term, measure),
             )
         )
     return empty

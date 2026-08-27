@@ -930,7 +930,7 @@ def _wanted_terms(request, who, current: EmploymentTerm | None) -> dict:
     return {
         "group_id": _choice(request, "group", _("Группа"), groups),
         "unit_id": _choice(request, "unit", _("Точка"), units, required=False),
-        "base_rate": _number(request, "base_rate", _("Ставка")),
+        "base_rate": _number(request, "base_rate", _("Ставка или оклад")),
         "coefficient": _number(request, "coefficient", _("Коэффициент")),
         # Схема расчёта — выбор из правил страны, а не набранный текст (T164).
         # Опечатка в ключе означала молча несчитанного человека: расчёт узнаёт о
@@ -1115,7 +1115,15 @@ def _terms_fields(who, current: EmploymentTerm | None) -> list[dict]:
             Unit.objects.order_by("code").values_list("id", "code"),
             current.unit_id if current else None, empty_label=_("не задана"),
         ),
-        {"kind": "number", "name": "base_rate", "label": _("Ставка"), "required": True,
+        # Одно поле на две формы оплаты, и подпись обязана это называть: у
+        # почасовика здесь цена часа, у окладника — сумма за месяц (issue #188).
+        # Второго поля «оклад» рядом нет намеренно: цена работы у человека одна,
+        # а два поля означали бы два ответа на вопрос, сколько он стоит, — и
+        # молчаливый выбор одного из них расчётом.
+        {"kind": "number", "name": "base_rate", "label": _("Ставка или оклад"),
+         "required": True,
+         "help": _("Что это за число, решает «Чем меряется работа»: по часам — "
+                   "цена часа, оклад — сумма за месяц, сдельно — цена единицы."),
          "value": current.base_rate if current else ""},
         {"kind": "number", "name": "coefficient", "label": _("Коэффициент"), "required": True,
          # Единица подставлена заранее: коэффициент есть у каждого, и у

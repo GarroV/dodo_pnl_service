@@ -233,6 +233,43 @@ class PayrollEngine:
     def hourly_rate(self, e: Employee) -> Decimal:
         return d(e.base_rate) * d(e.coefficient)
 
+    def monthly_measure(self, e: Employee) -> dict | None:
+        """Правило меры, если человек на окладе. Иначе None.
+
+        Окладная мера отличается от прочих одним: сумма живёт в условиях найма,
+        а не вводится в табель каждый месяц (`monthly: true`).
+        """
+        cfg = (self.p.get("work_measures") or {}).get(self.measure_of(e))
+        return cfg if cfg and cfg.get("monthly") else None
+
+    def rate_parts(self, e: Employee, ts: Timesheet) -> tuple[Decimal, Decimal]:
+        """Ставка и делитель для начислений этого месяца.
+
+        Двумя числами, а не одним, ради точности. У окладника часовой ставки
+        нет — она выводится из оклада и нормы месяца, — и деление, сделанное
+        заранее, оставляет хвост: 90 000 ÷ 176 × 176 даёт 90 000,000…01, то
+        есть человек с полной нормой получает не ровно свой оклад. Деление
+        стоит последним, и тогда норма сокращается сама.
+
+        У почасовика делитель единица, то есть поведение ровно прежнее.
+        """
+        if self.monthly_measure(e) is None:
+            return self.hourly_rate(e), D(1)
+        norm = d(ts.norm_hours)
+        if norm <= 0:
+            # Делить не на что. Молчать нельзя: нулевая ставка дала бы нулевое
+            # начисление окладнику, и в ведомости это выглядело бы как «месяц
+            # не отработан», а не как незаведённая норма месяца.
+            raise ValueError(
+                "у месяца нет нормы часов — часовую ставку оклада вывести не из чего"
+            )
+        return self.hourly_rate(e), norm
+
+    def rate_of(self, e: Employee, ts: Timesheet) -> Decimal:
+        """Часовая ставка человека этого месяца — для следа расчёта и подсказок."""
+        rate, divisor = self.rate_parts(e, ts)
+        return rate / divisor
+
     def ledger_of(self, e: Employee) -> str:
         if e.ledger:
             return e.ledger
@@ -243,7 +280,7 @@ class PayrollEngine:
     def accrue_hours(self, slip: Payslip, ts: Timesheet) -> Decimal:
         """Начисление по типам часов. Каждый тип — отдельный компонент."""
         e = slip.employee
-        rate = self.hourly_rate(e)
+        rate, divisor = self.rate_parts(e, ts)
         ledger = self.ledger_of(e)
         total = D(0)
 
@@ -252,7 +289,9 @@ class PayrollEngine:
             if hours == 0:
                 continue
             pct = d(cfg["pay_percent"])
-            amount = rate * pct * hours
+            # Деление последним: у оклада делитель — норма месяца, и сокращаться
+            # она обязана точно, иначе полная норма даёт не ровно оклад.
+            amount = rate * pct * hours / divisor
             slip.add(
                 code=f"hours.{kind}",
                 title=cfg["title"],
@@ -262,13 +301,39 @@ class PayrollEngine:
                     f"hours.{kind}", cfg["title"], amount,
                     rule_path=f"hour_types.{kind}.pay_percent",
                     inputs={
-                        "hours": hours, "rate": rate, "pay_percent": pct,
+                        "hours": hours, "rate": rate / divisor, "pay_percent": pct,
                         "base_rate": d(e.base_rate), "coefficient": d(e.coefficient),
                     },
                 ),
             )
             total += amount
         return total
+
+    def accrue_flat_salary(self, slip: Payslip, cfg: dict) -> Decimal:
+        """Оклад суммой: столько же, сколько бы часов ни стояло в табеле.
+
+        Часы при этом не пропадают из виду: они остаются в табеле, входят в
+        базу взносов и в отработанное для компенсации питания — не оплачивается
+        по ним только сам оклад, потому что он уже месячный.
+        """
+        e = slip.employee
+        amount = self.hourly_rate(e)  # оклад × коэффициент условий найма
+        title = cfg.get("title") or "Оклад"
+        slip.add(
+            code="salary",
+            title=title,
+            amount=amount,
+            ledger=self.ledger_of(e),
+            step=self.step(
+                "salary", title, amount,
+                rule_path="work_measures.salary.proration",
+                inputs={
+                    "salary": d(e.base_rate), "coefficient": d(e.coefficient),
+                    "proration": cfg.get("proration", "none"),
+                },
+            ),
+        )
+        return amount
 
     def measure_of(self, e: Employee) -> str:
         """Чем меряется работа этого человека: своя мера сильнее правила группы."""
@@ -546,8 +611,14 @@ class PayrollEngine:
         scheme = self.schemes[e.scheme]
 
         measure = self.measure_of(e)
+        monthly = self.monthly_measure(e)
 
-        if measure == HOURS:
+        if monthly is not None and monthly.get("proration") == "none":
+            # Оклад суммой: часы на него не влияют вовсе. Отдельной веткой, а не
+            # пропорцией с коэффициентом 1: у такого оклада нет часовой ставки
+            # даже выведенной, и надбавки за ночные считать не от чего.
+            earned = self.accrue_flat_salary(slip, monthly)
+        elif measure == HOURS or monthly is not None:
             # для полставки норма часов по умолчанию — половина месячной,
             # но фактически отработанное всегда важнее (увольнение, приём в середине месяца)
             if scheme.get("worked_hours_source") == "half_of_norm" and not ts.hours.get("regular"):
