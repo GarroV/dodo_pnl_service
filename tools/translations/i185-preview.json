@@ -1,0 +1,46 @@
+{
+  "Движение за месяц": {
+    "en": "Movement this month",
+    "sr": "Kretanje ovog meseca"
+  },
+  "принят %(day)s": {
+    "en": "hired %(day)s",
+    "sr": "zaposlen %(day)s"
+  },
+  "уволен %(day)s": {
+    "en": "left %(day)s",
+    "sr": "otišao %(day)s"
+  },
+  "переведён %(day)s": {
+    "en": "moved %(day)s",
+    "sr": "premešten %(day)s"
+  },
+  "Часов за этот месяц нет — начислять пока нечего.": {
+    "en": "There are no hours for this month yet — nothing to accrue.",
+    "sr": "Za ovaj mesec još nema sati — nema šta da se obračuna."
+  },
+  "Что попадёт в расчёт: %(month)s": {
+    "en": "What goes into the calculation: %(month)s",
+    "sr": "Šta ulazi u obračun: %(month)s"
+  },
+  "Предварительно, по действующей версии условий найма и часам табеля. Месяц ещё не посчитан — числа изменятся, если часы поправят.": {
+    "en": "A preview based on the effective employment terms and the hours in the timesheet. The month has not been calculated yet — the numbers will change if the hours do.",
+    "sr": "Pregled na osnovu važeće verzije uslova zaposlenja i sati iz evidencije. Mesec još nije obračunat — brojevi će se promeniti ako se sati isprave."
+  },
+  "Итого к выплате": {
+    "en": "Total to be paid",
+    "sr": "Ukupno za isplatu"
+  },
+  "Внесите часы в табеле месяца — после этого здесь появятся начисления.": {
+    "en": "Enter the hours in the month's timesheet — the accruals will show up here after that.",
+    "sr": "Unesite sate u evidenciji meseca — obračun će se pojaviti ovde nakon toga."
+  },
+  "Начислять пока нечего": {
+    "en": "Nothing to accrue yet",
+    "sr": "Još nema šta da se obračuna"
+  },
+  "Внести часы в табеле": {
+    "en": "Enter hours in the timesheet",
+    "sr": "Unesite sate u evidenciji"
+  }
+}

@@ -560,6 +560,7 @@ def employees(request):
         {"label": _("Группа")},
         {"label": _("Точка")},
         {"label": _("Ставка"), "num": True},
+        {"label": _("Движение за месяц")},
         {"label": _("Уволен")},
     ]
 
@@ -671,6 +672,10 @@ def _employee_rows(who, query: str = "", *, with_key: bool = True) -> list[dict]
             # даёт не ту сумму, что 152 × 421,085, и человек, повторяющий
             # расчёт на калькуляторе, обязан видеть настоящее основание.
             {"text": exact(term.base_rate) if term else EMPTY, "num": True},
+            # Движение за месяц (issue #185): чем этот месяц отличается от
+            # прошлого. Состав список показывал и раньше; без движения «почему
+            # фонд оплаты вырос» выясняется сравнением двух списков глазами.
+            {"text": _movement_of(person, term)},
             {"text": day(person.dismissed_at)},
         ]
         rows.append({
@@ -678,6 +683,42 @@ def _employee_rows(who, query: str = "", *, with_key: bool = True) -> list[dict]
             "cells": cells,
         })
     return rows
+
+
+def _movement_of(person: Employee, term) -> str:
+    """Что случилось с человеком в этом месяце: принят, уволен, переведён.
+
+    Месяц берётся из даты самого события, а не сравнением двух списков: список
+    и так показывает состав на период, и «кто появился» из него не выводится —
+    появиться человек мог и потому, что его просто завели позже.
+    """
+    month = _month_of_the_list()
+    if person.hired_at and _same_month(person.hired_at, month):
+        return _("принят %(day)s") % {"day": day(person.hired_at)}
+    if person.dismissed_at and _same_month(person.dismissed_at, month):
+        return _("уволен %(day)s") % {"day": day(person.dismissed_at)}
+    # Перевод — это новая версия условий, начавшаяся в этом месяце и сменившая
+    # точку. Смену ставки движением не считаем: это не про состав.
+    if term is not None and _same_month(term.valid_from, month):
+        previous = (
+            EmploymentTerm.objects.filter(
+                employee_id=person.id, valid_to=term.valid_from,
+            )
+            .select_related("unit")
+            .first()
+        )
+        if previous is not None and previous.unit_id != term.unit_id:
+            return _("переведён %(day)s") % {"day": day(term.valid_from)}
+    return EMPTY
+
+
+def _month_of_the_list() -> date:
+    """Месяц, за который смотрят список. Пока это текущий календарный."""
+    return date.today().replace(day=1)
+
+
+def _same_month(when: date, month: date) -> bool:
+    return when.year == month.year and when.month == month.month
 
 
 def _employee_or_404(who, employee_id) -> Employee:
@@ -986,6 +1027,32 @@ def _position_of(request) -> Position | None:
     return found
 
 
+def _preview_of(who, person: Employee):
+    """Предпросчёт по ближайшему открытому месяцу. Нет месяца — нет и блока.
+
+    Открытый, а не текущий календарный: работа идёт в том месяце, который ведут,
+    и показывать начисления за месяц, которого в продукте нет, значило бы
+    обещать расчёт, которого никто не запустит.
+    """
+    from core.models import Period
+
+    from .i18n import month_title
+    from .preview import preview_for
+
+    period = Period.objects.filter(status="open").order_by("-period").first()
+    if period is None:
+        return None
+    ahead = preview_for(who.tenant_id, person.id, period.period)
+    return {
+        # Название месяца словом — тем же способом, что и везде на экранах.
+        "period_title": month_title(period.period),
+        "data": ahead,
+        # Ссылка в табель этого месяца: пустой предпросчёт без неё сообщает о
+        # пустоте и молчит о том, что с ней делать.
+        "grid_url": reverse("timesheets", args=[period.id]),
+    }
+
+
 def _employee_context(
     request, who, person: Employee, *, notice: str, error: str, may_manage: bool = True
 ) -> dict:
@@ -996,11 +1063,23 @@ def _employee_context(
     ))
     current = versions[-1] if versions else None
     edge = directory.closed_through(who.tenant_id)
+    # Что человеку начислится в ближайшем открытом месяце (issue #185). Считает
+    # тот же движок, что и месяц, и ничего не записывает — см. `web/preview.py`.
+    #
+    # Только тому, кто ведёт расчёт. Управляющий точки читает карточку ради
+    # ставок и должностей своих людей, и на его экранах чтения не должно быть
+    # ни одной суммы расчёта (T173, D047) — предпросчёт был бы ровно такой
+    # суммой, только обходным путём.
+    ahead = (
+        _preview_of(who, person)
+        if permissions.has(who, permissions.PAYRUN_CALCULATE) else None
+    )
     # Правила нужны обоим режимам экрана: подписать меру работы словом («По
     # часам»), а не ключом, — иначе на карточке стоял бы `fixed_amount`.
     preset = _preset_now(who)
     shown = {
         "person": person,
+        "ahead": ahead,
         "back_url": reverse("directory-employees"),
         "notice": notice,
         "error": error,

@@ -370,7 +370,7 @@ def _calculate_all(rules, cases: list[Case], reporter) -> list:
     return result
 
 
-def compute(tenant_id: UUID, period: date, reporter=None):
+def compute(tenant_id: UUID, period: date, reporter=None, *, language: str = ""):
     """Посчитать месяц по сегодняшним данным и **ничего не записать**.
 
     Выделено из `calculate_period`, потому что один и тот же счёт нужен двум
@@ -389,10 +389,12 @@ def compute(tenant_id: UUID, period: date, reporter=None):
         raise PayrunRefused(_("партнёр недоступен"))
 
     reporter.say(_("Собираем табели и условия найма"))
-    # Язык подписей — тот, на котором написаны правила, а не язык страницы
-    # (T092): подпись компонента замерзает в ведомости, и она должна быть
-    # свойством правил, а не человека, нажавшего «посчитать».
-    rules = select_rules(tenant_id, tenant.country_code, period, language="")
+    # Язык подписей — тот, на котором написаны правила: подпись компонента
+    # замерзает в ведомости и должна быть свойством правил, а не человека,
+    # нажавшего «посчитать» (T092). Исключение — предпросмотр (`web/preview`):
+    # он ничего не замораживает, его читают здесь и сейчас, и подписи там
+    # обязаны быть на языке страницы.
+    rules = select_rules(tenant_id, tenant.country_code, period, language=language)
     cases = collect_cases(tenant_id, period)
     check_schemes(cases, rules.base)
     check_measures(cases, rules)

@@ -82,6 +82,42 @@
 {% if denied %}<p class="note">{{ denied }}</p>{% endif %}
 {% endif %}
 
+{% if ahead %}
+{% comment %}
+Предпросчёт (issue #185): что человеку начислится по действующим условиям, ещё
+до расчёта месяца. Стоит ПЕРЕД условиями найма: сначала ответ на вопрос «сколько
+он будет получать», потом основания этого ответа.
+
+Считает тот же движок, что и месяц, и ничего не записывает — иначе карточка,
+которую открывают чаще всего, засоряла бы ведомость.
+{% endcomment %}
+<h2>{% blocktranslate with month=ahead.period_title %}Что попадёт в расчёт: {{ month }}{% endblocktranslate %}</h2>
+{% if ahead.data.note %}
+  {% translate "Начислять пока нечего" as nothing_yet %}
+  {% notice "empty" title=nothing_yet %}{{ ahead.data.note }}
+    <a class="next" href="{{ ahead.grid_url }}">{% translate "Внести часы в табеле" %}</a>
+  {% endnotice %}
+{% else %}
+<p class="note">{% blocktranslate %}Предварительно, по действующей версии условий найма и часам табеля. Месяц ещё не посчитан — числа изменятся, если часы поправят.{% endblocktranslate %}</p>
+{% scroll %}<table>
+  <thead>
+    <tr><th>{% translate "Начисление" %}</th><th class="num">{% translate "Сумма" %}</th></tr>
+  </thead>
+  <tbody>
+    {% for line in ahead.data.lines %}
+    <tr><td>{{ line.title }}</td><td class="{{ line.amount|numclass }}">{{ line.amount }}</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="grand">
+      <td>{% translate "Итого к выплате" %}</td>
+      <td class="{{ ahead.data.net|numclass }} strong">{{ ahead.data.net }}</td>
+    </tr>
+  </tfoot>
+</table>{% endscroll %}
+{% endif %}
+{% endif %}
+
 <h2>{% translate "Условия найма" %}</h2>
 {% if versions %}
 <p class="note">{% translate "Расчёт берёт версию, действующую в считаемом месяце. Поэтому закрытый месяц не меняется от новой версии." %}</p>
