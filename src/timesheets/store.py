@@ -51,7 +51,8 @@ from payrun.rules import select_rules
 from .spread import calendar_working_days, spread
 
 __all__ = [
-    "CellRefused", "RowInput", "daily_totals", "hour_types", "insured_base",
+    "CellRefused", "RowInput", "daily_totals", "ensure_row", "hour_types", "insured_base",
+    "month_norm",
     "materialize", "parse_hours", "parse_insured", "parse_piece", "row_differs",
     "set_cell", "set_insured", "set_piece", "store_row", "timesheet_for",
 ]
@@ -446,6 +447,59 @@ def row_differs(row: Timesheet, want: RowInput) -> bool:
     ):
         return True
     return False
+
+
+def month_norm(tenant_id: UUID, period: date) -> Decimal:
+    """Норма часов месяца по производственному календарю страны.
+
+    Нужна строке, которую заводит экран: у загруженной строки норма приезжает
+    из файла партнёра, а у заведённой руками её взять неоткуда, кроме
+    календаря. Ноль вместо нормы был бы хуже пустоты — по нему считаются
+    пропорции, и человек получил бы компенсацию питания за «ноль рабочих
+    часов», не увидев ни одного отказа.
+    """
+    from core.models import Calendar
+
+    norm = (
+        Calendar.objects.filter(country_code=country_of(tenant_id), period=period)
+        .values_list("norm_hours", flat=True)
+        .first()
+    )
+    if norm is None:
+        raise CellRefused(
+            _("на этот месяц нет производственного календаря — норму часов взять неоткуда")
+        )
+    return Decimal(str(norm))
+
+
+def ensure_row(*, tenant_id: UUID, employee_id: UUID, period: date,
+               unit_id: UUID | None) -> Timesheet:
+    """Строка табеля человека за этот месяц; заводится, если её ещё нет.
+
+    Второй путь появления строки рядом с загрузкой таблицы (issue #152).
+    Человека можно завести с экрана (D049), а часы ему до этого вписать было
+    некуда: строку создавала только загрузка, и вышедший в середине месяца
+    сотрудник в табеле не существовал.
+
+    Заводится **правкой, а не открытием страницы**: чтение обязано оставаться
+    чтением, иначе зашедший посмотреть директор оставлял бы за собой тридцать
+    пустых строк, а закрытие месяца читало бы их как данные.
+
+    `get_or_create` по тем же полям, что и уникальный ключ таблицы: две правки
+    подряд с двух вкладок не должны спорить за вторую строку.
+    """
+    row, created = Timesheet.objects.get_or_create(
+        tenant_id=tenant_id, employee_id=employee_id, period=period, unit_id=unit_id,
+        defaults={
+            "hours": {},
+            "insured_hours": Decimal("0"),
+            "norm_hours": month_norm(tenant_id, period),
+            # Источник отличает заведённое человеком от приехавшего файлом: на
+            # закрытии месяца это разные разговоры.
+            "source": "manual",
+        },
+    )
+    return row
 
 
 @transaction.atomic

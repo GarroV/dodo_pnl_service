@@ -36,6 +36,7 @@ from .grid import build_grid, visible_rows
 from .importer import import_partner_table
 from .store import (
     CellRefused,
+    ensure_row,
     parse_hours,
     parse_insured,
     parse_piece,
@@ -150,6 +151,62 @@ def _grid_page(request, period, who, *, notice: str = "", status: int = 200):
 
 @login_required
 @require_POST
+def _row_of(request, period, who):
+    """Строка табеля, в которую пишет ячейка. Заводит её, если ещё нет.
+
+    Одно место на все три ячейки — часы, база взносов, сдельная величина, —
+    потому что правило одно: пишем в строку этого месяца, а её может не быть.
+    Три копии этого поиска разъехались бы ровно на новом пути: часы заводили бы
+    строку, а сдельная величина отвечала бы «не найдено» тому же курьеру.
+    """
+    row = (
+        visible_rows(period.tenant_id, period.period, who.unit_ids)
+        .filter(pk=request.POST.get("row") or None)
+        .first()
+    )
+    if row is not None or not request.POST.get("employee"):
+        return row
+    # Строки нет, потому что человека завели с экрана посреди месяца (issue
+    # #152). Заводим её здесь — на правке, а не на открытии страницы, чтобы
+    # чтение оставалось чтением.
+    return _new_row(request, period, who)
+
+
+def _new_row(request, period, who):
+    """Строка табеля для человека, которого в табеле ещё нет.
+
+    Заводится только тому, у кого **действуют условия найма** в этом месяце:
+    без них расчёт всё равно отвергнет строку по имени, а экран обещал бы
+    ввод, который никуда не приедет. Точка берётся оттуда же — из условий, а не
+    из запроса: иначе часы можно было бы вписать в чужую точку, назвав её в
+    форме.
+    """
+    from payrun.calc import terms_in_force
+
+    term = terms_in_force(period.tenant_id, period.period).get(
+        _uuid_or_none(request.POST.get("employee"))
+    )
+    if term is None:
+        return None
+    # Чужая точка — то же правило, что у видимых строк: заведение не должно
+    # быть обходным путём к точке, которую человеку не показывают.
+    if who.unit_ids and term.unit_id not in set(who.unit_ids):
+        return None
+    return ensure_row(
+        tenant_id=period.tenant_id, employee_id=term.employee_id,
+        period=period.period, unit_id=term.unit_id,
+    )
+
+
+def _uuid_or_none(value):
+    from uuid import UUID as _UUID
+
+    try:
+        return _UUID(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
 def cell(request, period_id):
     period = find_period(period_id)
     who = _context(request, period)
@@ -166,11 +223,14 @@ def cell(request, period_id):
             content_type="text/plain; charset=utf-8",
         )
 
-    row = (
-        visible_rows(period.tenant_id, period.period, who.unit_ids)
-        .filter(pk=request.POST.get("row") or None)
-        .first()
-    )
+    try:
+        row = _row_of(request, period, who)
+    except CellRefused as refusal:
+        # Строку завести нечем — например, на месяц нет производственного
+        # календаря, и норму часов взять неоткуда. Человек читает причину.
+        return HttpResponse(
+            str(refusal), status=422, content_type="text/plain; charset=utf-8",
+        )
     if row is None:
         # Чужая точка и несуществующая строка выглядят одинаково: по ответу
         # нельзя понять, что такой сотрудник вообще есть.
@@ -262,11 +322,12 @@ def piece(request, period_id):
             content_type="text/plain; charset=utf-8",
         )
 
-    row = (
-        visible_rows(period.tenant_id, period.period, who.unit_ids)
-        .filter(pk=request.POST.get("row") or None)
-        .first()
-    )
+    try:
+        row = _row_of(request, period, who)
+    except CellRefused as refusal:
+        return HttpResponse(
+            str(refusal), status=422, content_type="text/plain; charset=utf-8",
+        )
     if row is None:
         return HttpResponseNotFound("строка табеля не найдена")
 
@@ -314,11 +375,12 @@ def insured(request, period_id):
             content_type="text/plain; charset=utf-8",
         )
 
-    row = (
-        visible_rows(period.tenant_id, period.period, who.unit_ids)
-        .filter(pk=request.POST.get("row") or None)
-        .first()
-    )
+    try:
+        row = _row_of(request, period, who)
+    except CellRefused as refusal:
+        return HttpResponse(
+            str(refusal), status=422, content_type="text/plain; charset=utf-8",
+        )
     if row is None:
         return HttpResponseNotFound("строка табеля не найдена")
 

@@ -16,7 +16,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from core.models import Timesheet
+from core.models import Timesheet, Unit
 from payroll import HOURS, insured_base, work_measure
 from payrun.calc import terms_in_force
 from payrun.rules import select_rules
@@ -42,7 +42,10 @@ class Column:
 
 @dataclass
 class Row:
-    timesheet_id: UUID
+    # Пусто — строки табеля ещё нет: человек заведён с экрана, но часов ему
+    # никто не вписывал (issue #152). Такая строка заводится первой правкой,
+    # и до неё у неё нет ни id, ни дней, ни следа.
+    timesheet_id: UUID | None
     employee: str
     external_id: str
     unit: str
@@ -57,6 +60,9 @@ class Row:
     # идёт по точкам, и на одном экране соседствуют закрытая точка и открытая —
     # в этом весь смысл «спорная точка не держит остальные».
     unit_id: UUID | None = None
+    # Кем заводить строку, когда её ещё нет: правка ячейки приходит с этим id
+    # вместо id табеля.
+    employee_id: UUID | None = None
     closed: bool = False
     # Чем меряется работа этого человека (D032, T075). Свойство строки, а не
     # сетки: на одном экране соседствуют почасовая кухня и сдельные курьеры —
@@ -273,4 +279,83 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                 insured_at=sheet.insured_at,
             )
         )
+
+    # Люди, у которых условия найма действуют, а строки табеля ещё нет: заведён
+    # с экрана посреди месяца (D049) — и до issue #152 он в табеле не
+    # существовал, то есть часы ему вписать было некуда, а в ведомость он не
+    # приходил вовсе. Строка показывается пустой и заводится первой правкой.
+    rows.extend(
+        _rows_without_a_sheet(
+            tenant_id, period, terms=terms, codes=codes,
+            seen={sheet.employee_id for sheet in sheets},
+            unit_ids=unit_ids, closed=closed, rules=rules,
+        )
+    )
+    # Порядок общий на всю сетку, а не «сначала заведённые, потом остальные»:
+    # человек ищет фамилию, а не источник строки.
+    rows.sort(key=lambda row: row.employee.casefold())
     return Grid(columns=columns, rows=rows)
+
+
+def _rows_without_a_sheet(tenant_id, period, *, terms, codes, seen, unit_ids, closed, rules):
+    """Пустые строки тех, кого ещё нет в табеле этого месяца."""
+    from core.models import Employee
+
+    waiting = {
+        employee_id: term
+        for employee_id, term in terms.items()
+        if employee_id not in seen
+        # Точки пользователя — то же правило, что у `visible_rows`: чужую точку
+        # экран не показывает и через новый путь тоже.
+        and (not unit_ids or term.unit_id in set(unit_ids))
+    }
+    if not waiting:
+        return []
+
+    norm = _norm_or_zero(tenant_id, period)
+    people = Employee.objects.filter(tenant_id=tenant_id, id__in=list(waiting)).only(
+        "id", "first_name", "last_name", "external_id", "dismissed_at",
+    )
+    units = {
+        unit.id: unit.code
+        for unit in Unit.objects.filter(tenant_id=tenant_id).only("id", "code")
+    }
+    empty = []
+    for person in people:
+        term = waiting[person.id]
+        measure, measure_title = measure_of(rules, term)
+        name = f"{person.last_name} {person.first_name}".strip()
+        empty.append(
+            Row(
+                timesheet_id=None,
+                employee_id=person.id,
+                employee=name,
+                external_id=person.external_id,
+                unit=units.get(term.unit_id, ""),
+                norm_hours=norm,
+                insured_hours=Decimal("0"),
+                insured_declared=Decimal("0"),
+                cells={code: Decimal("0") for code in codes},
+                unit_id=term.unit_id,
+                closed=term.unit_id in closed,
+                measure=measure,
+                measure_title=measure_title,
+            )
+        )
+    return empty
+
+
+def _norm_or_zero(tenant_id, period) -> Decimal:
+    """Норма месяца для показа. Нет календаря — ноль, а не отказ строить экран.
+
+    Отказ здесь означал бы, что один незаведённый месяц календаря прячет весь
+    табель. Заведение строки норму всё равно спросит и без календаря откажет
+    словами (`store.ensure_row`) — то есть человек узнает причину в тот момент,
+    когда она мешает, а не при открытии страницы.
+    """
+    from .store import CellRefused, month_norm
+
+    try:
+        return month_norm(tenant_id, period)
+    except CellRefused:
+        return Decimal("0")

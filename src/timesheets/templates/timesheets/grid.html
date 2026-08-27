@@ -246,11 +246,18 @@
                 title="{% if row.piecework %}{% translate "Эти часы не оплачиваются: работа группы меряется сдельно" %} · {% endif %}{{ cell_author }}">
               <input class="cell" type="text" inputmode="decimal" name="hours"
                      value="{{ row.cells|get:column.code|cell_value }}"
-                     data-row="{{ row.timesheet_id }}" data-kind="{{ column.code }}"
+                     data-row="{{ row.timesheet_id|default_if_none:"" }}" data-kind="{{ column.code }}"
                      hx-post="{% url 'timesheet-cell' period.id %}"
                      hx-trigger="change"
                      hx-swap="none"
-                     hx-vals='{"row": "{{ row.timesheet_id }}", "kind": "{{ column.code }}"}'
+                     {% comment %}
+                     У строки, которой ещё нет в табеле, id взять неоткуда:
+                     человека завели с экрана, а строку заводит первая правка
+                     (issue #152). Тогда ячейка называет сотрудника, и сервер
+                     сам находит его точку в условиях найма — из формы она не
+                     берётся, иначе часы можно было бы вписать в чужую точку.
+                     {% endcomment %}
+                     hx-vals='{"row": "{{ row.timesheet_id|default_if_none:"" }}", "employee": "{{ row.employee_id|default_if_none:"" }}", "kind": "{{ column.code }}"}'
                      aria-label="{{ row.employee }} — {{ column.title }}">
             </td>
             {% else %}
@@ -280,12 +287,12 @@
             <td class="cellbox piece" title="{{ row_author }}">
               <input class="cell" type="text" inputmode="decimal" name="piece"
                      value="{{ row.piece_value|cell_value }}"
-                     data-row="{{ row.timesheet_id }}" data-field="piece"
+                     data-row="{{ row.timesheet_id|default_if_none:"" }}" data-field="piece"
                      data-url="{% url 'timesheet-piece' period.id %}"
                      hx-post="{% url 'timesheet-piece' period.id %}"
                      hx-trigger="change"
                      hx-swap="none"
-                     hx-vals='{"row": "{{ row.timesheet_id }}"}'
+                     hx-vals='{"row": "{{ row.timesheet_id|default_if_none:"" }}", "employee": "{{ row.employee_id|default_if_none:"" }}"}'
                      aria-label="{{ row.employee }} — {{ row.measure_title }}">
               <span class="hint">{{ row.measure_title }}</span>
             </td>
