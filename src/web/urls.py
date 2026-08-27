@@ -3,6 +3,7 @@ from django.urls import path
 
 from . import (
     api,
+    bulk_raise_views,
     cash_views,
     counterparties_views,
     directory_views,
@@ -200,6 +201,13 @@ urlpatterns = [
         "directory/counterparties/<uuid:counterparty_id>/",
         counterparties_views.counterparty,
         name="directory-counterparty",
+    ),
+    # Массовое изменение ставок (issue #181): индексация группе одним действием.
+    # Постоянный адрес под префиксом групп, потому что и правит он группу целиком.
+    path(
+        "directory/groups/raise/",
+        bulk_raise_views.raise_rates,
+        name="directory-groups-raise",
     ),
     # Должности (issue #181). Восьмой справочник: шаблон условий найма, чтобы
     # человека заводили выбором из списка, а не набором семи полей.

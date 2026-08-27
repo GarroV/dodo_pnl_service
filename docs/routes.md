@@ -46,6 +46,7 @@
 | `/directory/groups/` | `directory-groups` | `web.directory_views.groups` |
 | `/directory/groups/<uuid:group_id>/` | `directory-group` | `web.directory_views.group` |
 | `/directory/groups/new/` | `directory-group-new` | `web.directory_views.group` |
+| `/directory/groups/raise/` | `directory-groups-raise` | `web.bulk_raise_views.raise_rates` |
 | `/directory/legal-entities/` | `directory-legal-entities` | `web.directory_views.legal_entities` |
 | `/directory/legal-entities/<uuid:entity_id>/` | `directory-legal-entity` | `web.directory_views.legal_entity` |
 | `/directory/legal-entities/new/` | `directory-legal-entity-new` | `web.directory_views.legal_entity` |

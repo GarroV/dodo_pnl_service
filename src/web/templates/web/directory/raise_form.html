@@ -1,0 +1,33 @@
+{% load i18n %}
+{% comment %}
+Индексация ставок (issue #181). Кнопка ведёт на предпросмотр, а не сразу на
+применение: отменить массовую правку нечем — тридцать заведённых версий
+пришлось бы снимать по одной.
+{% endcomment %}
+<details class="card">
+  <summary><b>{% translate "Поднять ставки группе" %}</b></summary>
+  <p class="note">{% blocktranslate %}Каждому человеку группы будет заведена своя версия условий найма с выбранной даты. Сначала покажем, кого затронет.{% endblocktranslate %}</p>
+  <form method="post" action="{% url 'directory-groups-raise' %}" class="search row">
+    {% csrf_token %}
+    <input type="hidden" name="preview" value="1">
+    <p class="field">
+      <label for="raise-group">{% translate "Группа" %}</label>
+      <select id="raise-group" name="group" required>
+        {% for item in extra.groups %}<option value="{{ item.id }}">{{ item.title }}</option>{% endfor %}
+      </select>
+    </p>
+    <p class="field">
+      <label for="raise-from">{% translate "Действует с" %}</label>
+      <input type="date" id="raise-from" name="valid_from" required>
+    </p>
+    <p class="field">
+      <label for="raise-percent">{% translate "Проценты" %}</label>
+      <input type="text" inputmode="decimal" id="raise-percent" name="percent" placeholder="10">
+    </p>
+    <p class="field">
+      <label for="raise-amount">{% translate "или сумма" %}</label>
+      <input type="text" inputmode="decimal" id="raise-amount" name="amount" placeholder="25">
+    </p>
+    <button class="primary" type="submit">{% translate "Показать, кого затронет" %}</button>
+  </form>
+</details>

@@ -1261,6 +1261,13 @@ def groups(request):
         "rows": rows,
         "empty": _("Групп нет."),
         "empty_next": _("Без группы человека не посчитать: она задаёт схему расчёта."),
+        # Индексация ставок группе одним действием (issue #181). Форма стоит
+        # здесь, а не отдельным разделом: поднимают ставки той же группе,
+        # список которой человек и открыл.
+        "extra": {
+            "template": "web/directory/raise_form.html",
+            "groups": list(_visible_groups(who).order_by("title").values("id", "title")),
+        } if rows else None,
     })
 
 

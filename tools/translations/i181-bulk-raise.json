@@ -1,0 +1,74 @@
+{
+  "Такой группы нет.": {
+    "en": "There is no such group.",
+    "sr": "Takva grupa ne postoji."
+  },
+  "Проценты": {
+    "en": "Percent",
+    "sr": "Procenat"
+  },
+  "Выберите одно: либо проценты, либо сумму. Вместе они означали бы два разных изменения в одном действии.": {
+    "en": "Pick one: percent or amount. Together they would mean two different changes in a single action.",
+    "sr": "Izaberite jedno: procenat ili iznos. Zajedno bi značili dve različite promene u jednoj radnji."
+  },
+  "Ставки не меняются: проценты и сумма пусты или равны нулю.": {
+    "en": "Rates do not change: percent and amount are empty or zero.",
+    "sr": "Cene rada se ne menjaju: procenat i iznos su prazni ili nula."
+  },
+  "Кого затронет": {
+    "en": "Who this affects",
+    "sr": "Koga se tiče"
+  },
+  "Ставки не изменены": {
+    "en": "Rates were not changed",
+    "sr": "Cene rada nisu promenjene"
+  },
+  "Поднять ставки группе": {
+    "en": "Raise rates for a group",
+    "sr": "Podigni cene rada grupi"
+  },
+  "Каждому человеку группы будет заведена своя версия условий найма с выбранной даты. Сначала покажем, кого затронет.": {
+    "en": "Everyone in the group gets their own version of employment terms starting on the chosen date. First we will show who is affected.",
+    "sr": "Svako u grupi dobija svoju verziju uslova zaposlenja od izabranog datuma. Prvo ćemo pokazati koga se tiče."
+  },
+  "или сумма": {
+    "en": "or amount",
+    "sr": "ili iznos"
+  },
+  "Показать, кого затронет": {
+    "en": "Show who is affected",
+    "sr": "Prikaži koga se tiče"
+  },
+  "Группа «%(group)s», с %(since)s.": {
+    "en": "Group «%(group)s», from %(since)s.",
+    "sr": "Grupa «%(group)s», od %(since)s."
+  },
+  "Поднимаем на %(percent)s%%.": {
+    "en": "Raising by %(percent)s%%.",
+    "sr": "Podižemo za %(percent)s%%."
+  },
+  "Поднимаем на %(amount)s.": {
+    "en": "Raising by %(amount)s.",
+    "sr": "Podižemo za %(amount)s."
+  },
+  "Ставка сейчас": {
+    "en": "Rate now",
+    "sr": "Cena rada sada"
+  },
+  "Станет": {
+    "en": "Will become",
+    "sr": "Postaće"
+  },
+  "В этой группе некого поднимать.": {
+    "en": "There is nobody in this group to raise.",
+    "sr": "U ovoj grupi nema kome da se podigne."
+  },
+  "Каждому будет заведена своя версия условий найма с этой даты. Прошлая версия закроется, история останется.": {
+    "en": "Everyone gets their own version of employment terms starting on this date. The previous version closes and stays in the history.",
+    "sr": "Svako dobija svoju verziju uslova zaposlenja od ovog datuma. Prethodna verzija se zatvara i ostaje u istoriji."
+  },
+  "Поднять ставки": {
+    "en": "Raise the rates",
+    "sr": "Podigni cene rada"
+  }
+}

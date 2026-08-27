@@ -1,0 +1,50 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<p><a class="back" href="{{ back_url }}">{% translate "← К группам" %}</a></p>
+<h1>{{ heading }}</h1>
+
+{% comment %}
+Предпросмотр показывает людей поимённо, а не «затронет 12 человек»: отменить
+массовую правку нечем — тридцать заведённых версий пришлось бы снимать по
+одной, — и список даёт проверить себя до нажатия, чего число не даёт.
+{% endcomment %}
+<p class="note">
+  {% blocktranslate %}Группа «{{ group }}», с {{ since }}.{% endblocktranslate %}
+  {% if percent %}{% blocktranslate %}Поднимаем на {{ percent }}%.{% endblocktranslate %}{% endif %}
+  {% if amount %}{% blocktranslate %}Поднимаем на {{ amount }}.{% endblocktranslate %}{% endif %}
+</p>
+
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Сотрудник" %}</th>
+      <th class="num">{% translate "Ставка сейчас" %}</th>
+      <th class="num">{% translate "Станет" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.employee }}</td>
+      <td class="num">{{ row.was }}</td>
+      <td class="num strong">{{ row.becomes }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">{% translate "В этой группе некого поднимать." %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+
+{% if rows %}
+<form method="post" action="{% url 'directory-groups-raise' %}" class="card">
+  {% csrf_token %}
+  <input type="hidden" name="group" value="{{ group_id }}">
+  <input type="hidden" name="valid_from" value="{{ since_iso }}">
+  <input type="hidden" name="percent" value="{{ percent }}">
+  <input type="hidden" name="amount" value="{{ amount }}">
+  <p class="note">{% blocktranslate %}Каждому будет заведена своя версия условий найма с этой даты. Прошлая версия закроется, история останется.{% endblocktranslate %}</p>
+  <p><button class="primary" type="submit">{% translate "Поднять ставки" %}</button></p>
+</form>
+{% endif %}
+{% endblock %}

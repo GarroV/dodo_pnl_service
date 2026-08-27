@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 14:28+0000\n"
+"POT-Creation-Date: 2026-08-27 15:59+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -289,6 +289,7 @@ msgstr "Br."
 #: src/reports/export.py:217 src/timesheets/templates/timesheets/grid.html:184
 #: src/web/dbrefusal.py:110 src/web/directory_views.py:556
 #: src/web/templates/web/components/diff_table.html:21
+#: src/web/templates/web/directory/raise_preview.html:21
 #: src/web/templates/web/period.html:255 src/web/templates/web/period.html:372
 #: src/web/templates/web/variance.html:39
 msgid "Сотрудник"
@@ -417,12 +418,12 @@ msgstr "Tip reda"
 msgid "Компонент"
 msgstr "Komponenta"
 
-#: src/reports/export.py:556 src/web/cash_views.py:112
-#: src/web/cash_views.py:114 src/web/cash_views.py:301
-#: src/web/suppliers_views.py:419 src/web/suppliers_views.py:421
-#: src/web/suppliers_views.py:591 src/web/suppliers_views.py:820
-#: src/web/suppliers_views.py:822 src/web/suppliers_views.py:862
-#: src/web/templates/web/cash/expenses.html:57
+#: src/reports/export.py:556 src/web/bulk_raise_views.py:63
+#: src/web/cash_views.py:112 src/web/cash_views.py:114
+#: src/web/cash_views.py:301 src/web/suppliers_views.py:419
+#: src/web/suppliers_views.py:421 src/web/suppliers_views.py:591
+#: src/web/suppliers_views.py:820 src/web/suppliers_views.py:822
+#: src/web/suppliers_views.py:862 src/web/templates/web/cash/expenses.html:57
 #: src/web/templates/web/cash/unallocated.html:34
 #: src/web/templates/web/period.html:452
 #: src/web/templates/web/suppliers/inbox.html:40
@@ -1172,6 +1173,48 @@ msgstr ""
 msgid "«period»: месяц пишется как 2026-08, а не «%(value)s»."
 msgstr "„period“: mesec se piše kao 2026-08, a ne „%(value)s“."
 
+#: src/web/bulk_raise_views.py:60
+msgid "Такой группы нет."
+msgstr "Takva grupa ne postoji."
+
+#: src/web/bulk_raise_views.py:61 src/web/counterparties_views.py:87
+#: src/web/counterparties_views.py:147 src/web/counterparties_views.py:225
+#: src/web/dbrefusal.py:105 src/web/directory_views.py:899
+#: src/web/directory_views.py:1118 src/web/expense_items_views.py:225
+#: src/web/expense_items_views.py:259 src/web/expense_items_views.py:332
+#: src/web/templates/web/directory/employee.html:91
+#: src/web/templates/web/directory/raise_form.html:20
+#: src/web/templates/web/rules/index.html:55
+#: src/web/templates/web/rules/rule.html:49
+#: src/web/templates/web/rules/rule.html:82
+#: src/web/templates/web/rules/rule.html:124
+#: src/web/templates/web/rules/rule.html:182
+msgid "Действует с"
+msgstr "Od"
+
+#: src/web/bulk_raise_views.py:62
+#: src/web/templates/web/directory/raise_form.html:24
+msgid "Проценты"
+msgstr "Procenat"
+
+#: src/web/bulk_raise_views.py:66
+msgid ""
+"Выберите одно: либо проценты, либо сумму. Вместе они означали бы два разных "
+"изменения в одном действии."
+msgstr "Izaberite jedno: procenat ili iznos. Zajedno bi značili dve različite promene u jednoj radnji."
+
+#: src/web/bulk_raise_views.py:71
+msgid "Ставки не меняются: проценты и сумма пусты или равны нулю."
+msgstr "Cene rada se ne menjaju: procenat i iznos su prazni ili nula."
+
+#: src/web/bulk_raise_views.py:94
+msgid "Кого затронет"
+msgstr "Koga se tiče"
+
+#: src/web/bulk_raise_views.py:131
+msgid "Ставки не изменены"
+msgstr "Cene rada nisu promenjene"
+
 #: src/web/cash.py:145
 #, python-format
 msgid ""
@@ -1251,7 +1294,7 @@ msgstr "„%(label)s“: stopa preko 100%% nije moguća."
 #: src/web/cash_views.py:185 src/web/cash_views.py:244
 #: src/web/directory_views.py:321 src/web/directory_views.py:329
 #: src/web/directory_views.py:344 src/web/directory_views.py:372
-#: src/web/directory_views.py:1790 src/web/papers_views.py:230
+#: src/web/directory_views.py:1797 src/web/papers_views.py:230
 #: src/web/papers_views.py:253 src/web/suppliers_api.py:258
 #: src/web/suppliers_views.py:440 src/web/suppliers_views.py:473
 #: src/web/suppliers_views.py:993
@@ -1298,8 +1341,8 @@ msgstr ""
 
 #: src/web/cash_views.py:271 src/web/cash_views.py:327 src/web/dbrefusal.py:115
 #: src/web/directory_views.py:970 src/web/directory_views.py:1205
-#: src/web/directory_views.py:1258 src/web/directory_views.py:1293
-#: src/web/directory_views.py:1360 src/web/expense_items_views.py:356
+#: src/web/directory_views.py:1258 src/web/directory_views.py:1300
+#: src/web/directory_views.py:1367 src/web/expense_items_views.py:356
 #: src/web/expenses_views.py:175 src/web/suppliers_views.py:61
 #: src/web/suppliers_views.py:585 src/web/suppliers_views.py:762
 #: src/web/suppliers_views.py:857
@@ -1456,7 +1499,7 @@ msgstr ""
 "troškovi istog dobavljača rasipaju po različitim ispisima naziva."
 
 #: src/web/counterparties_views.py:77 src/web/directory_views.py:585
-#: src/web/templates/web/directory/list.html:31
+#: src/web/templates/web/directory/list.html:33
 msgid "← К справочникам"
 msgstr "← Na imenike"
 
@@ -1470,11 +1513,11 @@ msgstr "Dodaj partnera"
 
 #: src/web/counterparties_views.py:86 src/web/counterparties_views.py:146
 #: src/web/counterparties_views.py:210 src/web/dbrefusal.py:102
-#: src/web/directory_views.py:1257 src/web/directory_views.py:1285
-#: src/web/directory_views.py:1346 src/web/directory_views.py:1480
-#: src/web/directory_views.py:1504 src/web/directory_views.py:1537
-#: src/web/directory_views.py:1571 src/web/directory_views.py:1592
-#: src/web/directory_views.py:1612 src/web/expense_items_views.py:224
+#: src/web/directory_views.py:1257 src/web/directory_views.py:1292
+#: src/web/directory_views.py:1353 src/web/directory_views.py:1487
+#: src/web/directory_views.py:1511 src/web/directory_views.py:1544
+#: src/web/directory_views.py:1578 src/web/directory_views.py:1599
+#: src/web/directory_views.py:1619 src/web/expense_items_views.py:224
 #: src/web/positions_views.py:81 src/web/positions_views.py:108
 #: src/web/positions_views.py:138 src/web/tills_views.py:67
 #: src/web/tills_views.py:108 src/web/tills_views.py:146
@@ -1482,8 +1525,8 @@ msgid "Название"
 msgstr "Naziv"
 
 #: src/web/counterparties_views.py:86 src/web/counterparties_views.py:164
-#: src/web/counterparties_views.py:214 src/web/directory_views.py:1571
-#: src/web/directory_views.py:1593 src/web/directory_views.py:1614
+#: src/web/counterparties_views.py:214 src/web/directory_views.py:1578
+#: src/web/directory_views.py:1600 src/web/directory_views.py:1621
 msgid "Налоговый номер"
 msgstr "Poreski broj"
 
@@ -1491,20 +1534,6 @@ msgstr "Poreski broj"
 #: src/web/counterparties_views.py:221
 msgid "Ключ Dodo IS"
 msgstr "Dodo IS ključ"
-
-#: src/web/counterparties_views.py:87 src/web/counterparties_views.py:147
-#: src/web/counterparties_views.py:225 src/web/dbrefusal.py:105
-#: src/web/directory_views.py:899 src/web/directory_views.py:1118
-#: src/web/expense_items_views.py:225 src/web/expense_items_views.py:259
-#: src/web/expense_items_views.py:332
-#: src/web/templates/web/directory/employee.html:91
-#: src/web/templates/web/rules/index.html:55
-#: src/web/templates/web/rules/rule.html:49
-#: src/web/templates/web/rules/rule.html:82
-#: src/web/templates/web/rules/rule.html:124
-#: src/web/templates/web/rules/rule.html:182
-msgid "Действует с"
-msgstr "Od"
 
 #: src/web/counterparties_views.py:88 src/web/counterparties_views.py:148
 #: src/web/counterparties_views.py:158 src/web/counterparties_views.py:228
@@ -1545,9 +1574,9 @@ msgstr "Novi partner"
 msgid "← К контрагентам"
 msgstr "← Na partnere"
 
-#: src/web/counterparties_views.py:184 src/web/directory_views.py:1340
-#: src/web/directory_views.py:1531 src/web/directory_views.py:1610
-#: src/web/directory_views.py:1752 src/web/expense_items_views.py:309
+#: src/web/counterparties_views.py:184 src/web/directory_views.py:1347
+#: src/web/directory_views.py:1538 src/web/directory_views.py:1617
+#: src/web/directory_views.py:1759 src/web/expense_items_views.py:309
 #: src/web/positions_views.py:133
 #: src/web/templates/web/cash/expense_edit.html:44
 #: src/web/templates/web/roles/index.html:51 src/web/tills_views.py:141
@@ -1603,9 +1632,9 @@ msgid "Для человека: чем занимается, кто ведёт �
 msgstr "Za čoveka: čime se bave, ko vodi prepisku."
 
 #: src/web/dbrefusal.py:101 src/web/directory_views.py:1257
-#: src/web/directory_views.py:1284 src/web/directory_views.py:1342
-#: src/web/directory_views.py:1480 src/web/directory_views.py:1503
-#: src/web/directory_views.py:1533 src/web/expense_items_views.py:224
+#: src/web/directory_views.py:1291 src/web/directory_views.py:1349
+#: src/web/directory_views.py:1487 src/web/directory_views.py:1510
+#: src/web/directory_views.py:1540 src/web/expense_items_views.py:224
 #: src/web/expense_items_views.py:255 src/web/expense_items_views.py:311
 #: src/web/positions_views.py:81 src/web/positions_views.py:107
 #: src/web/positions_views.py:135 src/web/tills_views.py:67
@@ -1617,11 +1646,11 @@ msgstr "Šifra"
 msgid "Сквозной ключ"
 msgstr "Eksterni ID"
 
-#: src/web/dbrefusal.py:104 src/web/directory_views.py:1658
-#: src/web/directory_views.py:1754 src/web/directory_views.py:1790
-#: src/web/directory_views.py:1796
+#: src/web/dbrefusal.py:104 src/web/directory_views.py:1665
+#: src/web/directory_views.py:1761 src/web/directory_views.py:1797
+#: src/web/directory_views.py:1803
 #: src/web/templates/web/cash/unallocated.html:32
-#: src/web/templates/web/periods.html:18
+#: src/web/templates/web/periods.html:34
 #: src/web/templates/web/person_pay.html:70
 #: src/web/templates/web/person_pay.html:142
 msgid "Месяц"
@@ -1635,8 +1664,8 @@ msgstr "Datum kursa"
 msgid "Страна"
 msgstr "Zemlja"
 
-#: src/web/dbrefusal.py:108 src/web/directory_views.py:1480
-#: src/web/directory_views.py:1506 src/web/directory_views.py:1540
+#: src/web/dbrefusal.py:108 src/web/directory_views.py:1487
+#: src/web/directory_views.py:1513 src/web/directory_views.py:1547
 msgid "Юрлицо"
 msgstr "Pravno lice"
 
@@ -1645,6 +1674,7 @@ msgstr "Pravno lice"
 #: src/web/directory_views.py:1139 src/web/positions_views.py:81
 #: src/web/positions_views.py:110 src/web/positions_views.py:152
 #: src/web/templates/web/directory/employee.html:93
+#: src/web/templates/web/directory/raise_form.html:14
 msgid "Группа"
 msgstr "Grupa"
 
@@ -1834,7 +1864,7 @@ msgstr "Grupe zaposlenih"
 msgid "Схема расчёта и регистр учёта по умолчанию"
 msgstr "Podrazumevana šema obračuna i knjiga"
 
-#: src/web/directory_views.py:240 src/web/directory_views.py:1474
+#: src/web/directory_views.py:240 src/web/directory_views.py:1481
 #: src/web/templates/web/guide.html:150
 msgid "Точки"
 msgstr "Objekti"
@@ -1843,7 +1873,7 @@ msgstr "Objekti"
 msgid "Пиццерии: код, название, юрлицо, даты открытия и закрытия"
 msgstr "Picerije: šifra, naziv, pravno lice, datumi otvaranja i zatvaranja"
 
-#: src/web/directory_views.py:246 src/web/directory_views.py:1567
+#: src/web/directory_views.py:246 src/web/directory_views.py:1574
 msgid "Юрлица"
 msgstr "Pravna lica"
 
@@ -1883,7 +1913,7 @@ msgstr "Kutije iz kojih se plaća gotovinom: objekat i knjiga"
 msgid "Поставщики и получатели платежей: название, номера, ключ Dodo IS"
 msgstr "Dobavljači i primaoci uplata: naziv, brojevi, Dodo IS ključ"
 
-#: src/web/directory_views.py:285 src/web/directory_views.py:1650
+#: src/web/directory_views.py:285 src/web/directory_views.py:1657
 #: src/web/rules.py:97
 msgid "Производственный календарь"
 msgstr "Proizvodni kalendar"
@@ -2046,16 +2076,16 @@ msgid "Коэффициент"
 msgstr "Koeficijent"
 
 #: src/web/directory_views.py:961 src/web/directory_views.py:1183
-#: src/web/directory_views.py:1258 src/web/directory_views.py:1290
-#: src/web/directory_views.py:1349
+#: src/web/directory_views.py:1258 src/web/directory_views.py:1297
+#: src/web/directory_views.py:1356
 #: src/web/templates/web/directory/employee.html:97
 msgid "Схема расчёта"
 msgstr "Šema obračuna"
 
 #: src/web/directory_views.py:966 src/web/directory_views.py:1082
 #: src/web/directory_views.py:1196 src/web/directory_views.py:1259
-#: src/web/directory_views.py:1394 src/web/directory_views.py:1401
-#: src/web/directory_views.py:1408 src/web/directory_views.py:1430
+#: src/web/directory_views.py:1401 src/web/directory_views.py:1408
+#: src/web/directory_views.py:1415 src/web/directory_views.py:1437
 #: src/web/rules.py:94 src/web/templates/web/directory/employee.html:107
 msgid "Чем меряется работа"
 msgstr "Mera rada"
@@ -2119,7 +2149,7 @@ msgstr ""
 "Prazno — kao u grupi. Popunjava se tamo gde se osoba obračunava drugačije od "
 "svoje grupe."
 
-#: src/web/directory_views.py:1188 src/web/directory_views.py:1355
+#: src/web/directory_views.py:1188 src/web/directory_views.py:1362
 msgid ""
 "Правил страны в базе нет, поэтому и списка схем нет: загрузите пресет "
 "страны. Пока — ключ схемы, как он написан в правилах."
@@ -2162,30 +2192,32 @@ msgstr "Nema grupa."
 msgid "Без группы человека не посчитать: она задаёт схему расчёта."
 msgstr "Bez grupe osoba se ne može obračunati: ona određuje šemu obračuna."
 
-#: src/web/directory_views.py:1305
+#: src/web/directory_views.py:1312
 msgid "схема расчёта и регистр группы"
 msgstr "šema obračuna i knjiga grupe"
 
-#: src/web/directory_views.py:1331
+#: src/web/directory_views.py:1338
 msgid "Новая группа"
 msgstr "Nova grupa"
 
-#: src/web/directory_views.py:1333
+#: src/web/directory_views.py:1340
+#: src/web/templates/web/directory/raise_preview.html:4
+#: src/web/templates/web/directory/raise_refused.html:4
 msgid "← К группам"
 msgstr "← Na grupe"
 
-#: src/web/directory_views.py:1344
+#: src/web/directory_views.py:1351
 msgid ""
 "По нему группа названа в правилах страны. Менять — только вместе с правилами."
 msgstr ""
 "Po njemu je grupa imenovana u pravilima zemlje. Menjati — samo zajedno sa "
 "pravilima."
 
-#: src/web/directory_views.py:1351
+#: src/web/directory_views.py:1358
 msgid "выберите схему"
 msgstr "izaberite šemu"
 
-#: src/web/directory_views.py:1352
+#: src/web/directory_views.py:1359
 msgid ""
 "По ней движок считает людей группы. Список — из правил страны: отдельному "
 "человеку схема переопределяется в его условиях найма, с датой."
@@ -2194,11 +2226,11 @@ msgstr ""
 "kod pojedinačne osobe šema se preklapa u njenim uslovima zapošljavanja, sa "
 "datumom."
 
-#: src/web/directory_views.py:1395
+#: src/web/directory_views.py:1402
 msgid "Задаётся после сохранения группы: правило адресуется её кодом."
 msgstr "Postavlja se nakon čuvanja grupe: pravilo se adresira njenim kodom."
 
-#: src/web/directory_views.py:1411
+#: src/web/directory_views.py:1418
 msgid ""
 "Правило страны, а не колонка справочника: у смены способа есть дата, и "
 "закрытый месяц от неё не двигается."
@@ -2206,11 +2238,11 @@ msgstr ""
 "Pravilo zemlje, a ne kolona imenika: promena načina ima datum, i zatvoren "
 "mesec se od toga ne pomera."
 
-#: src/web/directory_views.py:1414 src/web/directory_views.py:1437
+#: src/web/directory_views.py:1421 src/web/directory_views.py:1444
 msgid "Способ действует с"
 msgstr "Način važi od"
 
-#: src/web/directory_views.py:1416
+#: src/web/directory_views.py:1423
 msgid ""
 "Нужна только при смене способа. Пусто — берётся первый день, который не "
 "задевает утверждённый месяц."
@@ -2218,7 +2250,7 @@ msgstr ""
 "Potrebno samo pri promeni načina. Prazno — koristi se prvi dan koji ne "
 "zadire u odobren mesec."
 
-#: src/web/directory_views.py:1475
+#: src/web/directory_views.py:1482
 msgid ""
 "Расходы разносятся на точку, а не на юрлицо. Закрытая точка остаётся в "
 "истории."
@@ -2226,92 +2258,92 @@ msgstr ""
 "Troškovi se raspoređuju na objekat, a ne na pravno lice. Zatvoren objekat "
 "ostaje u istoriji."
 
-#: src/web/directory_views.py:1478
+#: src/web/directory_views.py:1485
 msgid "Завести точку"
 msgstr "Dodaj objekat"
 
-#: src/web/directory_views.py:1481 src/web/directory_views.py:1507
-#: src/web/directory_views.py:1544
+#: src/web/directory_views.py:1488 src/web/directory_views.py:1514
+#: src/web/directory_views.py:1551
 msgid "Открыта"
 msgstr "Otvoren"
 
-#: src/web/directory_views.py:1481 src/web/directory_views.py:1508
-#: src/web/directory_views.py:1546 src/web/expense_items_views.py:225
+#: src/web/directory_views.py:1488 src/web/directory_views.py:1515
+#: src/web/directory_views.py:1553 src/web/expense_items_views.py:225
 #: src/web/expense_items_views.py:260 src/web/expense_items_views.py:334
 #: src/web/tills_views.py:68 src/web/tills_views.py:122
 #: src/web/tills_views.py:162
 msgid "Закрыта"
 msgstr "Zatvoren"
 
-#: src/web/directory_views.py:1484
+#: src/web/directory_views.py:1491
 msgid "Точек нет."
 msgstr "Nema objekata."
 
-#: src/web/directory_views.py:1485
+#: src/web/directory_views.py:1492
 msgid "На точку разносятся часы и расходы — с неё и начинается учёт."
 msgstr ""
 "Na objekat se raspoređuju sati i troškovi — od njega i počinje evidentiranje."
 
-#: src/web/directory_views.py:1510
+#: src/web/directory_views.py:1517
 msgid "Дата закрытия раньше даты открытия."
 msgstr "Datum zatvaranja je pre datuma otvaranja."
 
-#: src/web/directory_views.py:1527
+#: src/web/directory_views.py:1534
 msgid "Новая точка"
 msgstr "Novi objekat"
 
-#: src/web/directory_views.py:1529
+#: src/web/directory_views.py:1536
 msgid "← К точкам"
 msgstr "← Na objekte"
 
-#: src/web/directory_views.py:1535
+#: src/web/directory_views.py:1542
 msgid "Короткий код точки, например NS1. Им точка названа в таблице партнёра."
 msgstr ""
 "Kratka šifra objekta, na primer NS1. Njome je objekat imenovan u tabeli "
 "partnera."
 
-#: src/web/directory_views.py:1542
+#: src/web/directory_views.py:1549
 msgid "не задано"
 msgstr "nije podešeno"
 
-#: src/web/directory_views.py:1548
+#: src/web/directory_views.py:1555
 msgid ""
 "Точка закрывается датой, а не удалением: закрытые месяцы ссылаются на неё."
 msgstr ""
 "Objekat se zatvara datumom, a ne brisanjem: zatvoreni meseci se pozivaju na "
 "njega."
 
-#: src/web/directory_views.py:1568
+#: src/web/directory_views.py:1575
 msgid "Бухгалтерия работает с юрлицом, пиццерий для неё нет."
 msgstr "Računovodstvo radi sa pravnim licem, picerije za njega ne postoje."
 
-#: src/web/directory_views.py:1570
+#: src/web/directory_views.py:1577
 msgid "Завести юрлицо"
 msgstr "Dodaj pravno lice"
 
-#: src/web/directory_views.py:1573
+#: src/web/directory_views.py:1580
 msgid "Юрлиц нет."
 msgstr "Nema pravnih lica."
 
-#: src/web/directory_views.py:1574
+#: src/web/directory_views.py:1581
 msgid "Юрлицо нужно точке: с ним бухгалтерия работает в официальном регистре."
 msgstr ""
 "Objektu je potrebno pravno lice: sa njim računovodstvo radi u zvaničnoj "
 "knjizi."
 
-#: src/web/directory_views.py:1606
+#: src/web/directory_views.py:1613
 msgid "Новое юрлицо"
 msgstr "Novo pravno lice"
 
-#: src/web/directory_views.py:1608
+#: src/web/directory_views.py:1615
 msgid "← К юрлицам"
 msgstr "← Na pravna lica"
 
-#: src/web/directory_views.py:1644
+#: src/web/directory_views.py:1651
 msgid "закрыт"
 msgstr "zatvoren"
 
-#: src/web/directory_views.py:1652
+#: src/web/directory_views.py:1659
 msgid ""
 "Норма часов месяца берётся отсюда — её показывает страница месяца. Календаря "
 "на месяц нет — там стоит прочерк, а не правдоподобное число."
@@ -2319,29 +2351,29 @@ msgstr ""
 "Norma časova meseca se uzima odavde — prikazuje je stranica meseca. Ako za "
 "mesec nema kalendara, stoji crta, a ne broj koji samo izgleda tačno."
 
-#: src/web/directory_views.py:1656 src/web/templates/web/periods.html:47
+#: src/web/directory_views.py:1663 src/web/templates/web/periods.html:23
 msgid "Завести месяц"
 msgstr "Dodaj mesec"
 
-#: src/web/directory_views.py:1658 src/web/directory_views.py:1699
-#: src/web/directory_views.py:1757 src/web/templates/web/period.html:148
+#: src/web/directory_views.py:1665 src/web/directory_views.py:1706
+#: src/web/directory_views.py:1764 src/web/templates/web/period.html:148
 msgid "Норма часов"
 msgstr "Norma sati"
 
-#: src/web/directory_views.py:1659 src/web/directory_views.py:1700
-#: src/web/directory_views.py:1759 src/web/directory_views.py:1783
+#: src/web/directory_views.py:1666 src/web/directory_views.py:1707
+#: src/web/directory_views.py:1766 src/web/directory_views.py:1790
 msgid "Рабочих дней"
 msgstr "Radnih dana"
 
-#: src/web/directory_views.py:1659
+#: src/web/directory_views.py:1666
 msgid "Зарплата"
 msgstr "Plata"
 
-#: src/web/directory_views.py:1662
+#: src/web/directory_views.py:1669
 msgid "Календарь пуст."
 msgstr "Kalendar je prazan."
 
-#: src/web/directory_views.py:1664
+#: src/web/directory_views.py:1671
 msgid ""
 "Пока месяца нет в календаре, норма часов на его странице — прочерк, и "
 "недоработку считать не от чего."
@@ -2349,21 +2381,21 @@ msgstr ""
 "Dok mesec nije u kalendaru, norma časova na njegovoj stranici je crta, i "
 "nema od čega da se računa manjak."
 
-#: src/web/directory_views.py:1742
+#: src/web/directory_views.py:1749
 msgid "Новый месяц календаря"
 msgstr "Novi mesec kalendara"
 
-#: src/web/directory_views.py:1744
+#: src/web/directory_views.py:1751
 msgid "← К календарю"
 msgstr "← Na kalendar"
 
-#: src/web/directory_views.py:1781
+#: src/web/directory_views.py:1788
 #, python-format
 msgid ""
 "«%(label)s»: в месяце %(month)s столько дней не бывает — их всего %(limit)s."
 msgstr "„%(label)s“: mesec %(month)s nema toliko dana — ima ih %(limit)s."
 
-#: src/web/directory_views.py:1795 src/web/suppliers_views.py:464
+#: src/web/directory_views.py:1802 src/web/suppliers_views.py:464
 #, python-format
 msgid "«%(label)s»: месяц пишется как 2026-06, а не «%(value)s»."
 msgstr "„%(label)s“: mesec se piše kao 2026-06, a ne „%(value)s“."
@@ -2573,12 +2605,12 @@ msgstr ""
 "U fajlu nije pronađena nijedna stavka: ispod reda sa zaglavljima je prazno."
 
 #: src/web/expense_items_views.py:534
-#: src/web/templates/web/directory/list.html:71
+#: src/web/templates/web/directory/list.html:73
 msgid "Язык названий в файле"
 msgstr "Jezik naziva u fajlu"
 
 #: src/web/expense_items_views.py:536
-#: src/web/templates/web/directory/list.html:75
+#: src/web/templates/web/directory/list.html:77
 msgid "Статьи действуют с"
 msgstr "Stavke važe od"
 
@@ -3899,7 +3931,7 @@ msgid "НДС"
 msgstr "PDV"
 
 #: src/web/templates/web/cash/expenses.html:62
-#: src/web/templates/web/period.html:127 src/web/templates/web/periods.html:18
+#: src/web/templates/web/period.html:127 src/web/templates/web/periods.html:34
 #: src/web/templates/web/suppliers/invoices.html:53
 #: src/web/templates/web/suppliers/papers.html:43
 msgid "Состояние"
@@ -4230,25 +4262,80 @@ msgstr "Šta sadrži"
 msgid "Записей"
 msgstr "Zapisa"
 
-#: src/web/templates/web/directory/list.html:36
+#: src/web/templates/web/directory/list.html:38
 msgid "Не загружено."
 msgstr "Nije učitano."
 
-#: src/web/templates/web/directory/list.html:44
+#: src/web/templates/web/directory/list.html:46
 msgid "Найти"
 msgstr "Pretraga"
 
-#: src/web/templates/web/directory/list.html:64
+#: src/web/templates/web/directory/list.html:66
 msgid "Файл бухгалтера (.xlsx)"
 msgstr "Fajl knjigovođe (.xlsx)"
 
-#: src/web/templates/web/directory/list.html:66
+#: src/web/templates/web/directory/list.html:68
 msgid "Строка P&L для статей, где её нет в файле"
 msgstr "P&L red za stavke kod kojih ga nema u fajlu"
 
-#: src/web/templates/web/directory/list.html:68
+#: src/web/templates/web/directory/list.html:70
 msgid "Не задана — такие строки будут пропущены"
 msgstr "Nije podešeno — takvi redovi će biti preskočeni"
+
+#: src/web/templates/web/directory/raise_form.html:8
+msgid "Поднять ставки группе"
+msgstr "Podigni cene rada grupi"
+
+#: src/web/templates/web/directory/raise_form.html:9
+msgid ""
+"Каждому человеку группы будет заведена своя версия условий найма с выбранной "
+"даты. Сначала покажем, кого затронет."
+msgstr "Svako u grupi dobija svoju verziju uslova zaposlenja od izabranog datuma. Prvo ćemo pokazati koga se tiče."
+
+#: src/web/templates/web/directory/raise_form.html:28
+msgid "или сумма"
+msgstr "ili iznos"
+
+#: src/web/templates/web/directory/raise_form.html:31
+msgid "Показать, кого затронет"
+msgstr "Prikaži koga se tiče"
+
+#: src/web/templates/web/directory/raise_preview.html:13
+#, python-format
+msgid "Группа «%(group)s», с %(since)s."
+msgstr "Grupa «%(group)s», od %(since)s."
+
+#: src/web/templates/web/directory/raise_preview.html:14
+#, python-format
+msgid "Поднимаем на %(percent)s%%."
+msgstr "Podižemo za %(percent)s%%."
+
+#: src/web/templates/web/directory/raise_preview.html:15
+#, python-format
+msgid "Поднимаем на %(amount)s."
+msgstr "Podižemo za %(amount)s."
+
+#: src/web/templates/web/directory/raise_preview.html:22
+msgid "Ставка сейчас"
+msgstr "Cena rada sada"
+
+#: src/web/templates/web/directory/raise_preview.html:23
+msgid "Станет"
+msgstr "Postaće"
+
+#: src/web/templates/web/directory/raise_preview.html:34
+msgid "В этой группе некого поднимать."
+msgstr "U ovoj grupi nema kome da se podigne."
+
+#: src/web/templates/web/directory/raise_preview.html:46
+msgid ""
+"Каждому будет заведена своя версия условий найма с этой даты. Прошлая версия "
+"закроется, история останется."
+msgstr "Svako dobija svoju verziju uslova zaposlenja od ovog datuma. Prethodna verzija se zatvara i ostaje u istoriji."
+
+#: src/web/templates/web/directory/raise_preview.html:47
+msgid "Поднять ставки"
+msgstr "Podigni cene rada"
 
 #: src/web/templates/web/errors/403.html:14
 #: src/web/templates/web/errors/403.html:16
@@ -4736,7 +4823,7 @@ msgstr ""
 "administrator mreže — s njima ćete videti tačno ono što pripada vašoj ulozi."
 
 #: src/web/templates/web/guide.html:237 src/web/templates/web/login.html:34
-#: src/web/templates/web/periods.html:72
+#: src/web/templates/web/periods.html:73
 msgid "Войти"
 msgstr "Prijavi se"
 
@@ -5103,23 +5190,23 @@ msgstr ""
 "    ovde: red za svakog zaposlenog u svakoj knjizi koja je vidljiva\n"
 "    vašoj ulozi."
 
-#: src/web/templates/web/periods.html:15
-msgid "Откройте месяц — работа идёт внутри него."
-msgstr "Otvorite mesec — rad se odvija unutar njega."
-
-#: src/web/templates/web/periods.html:18
-msgid "Партнёр"
-msgstr "Partner"
-
-#: src/web/templates/web/periods.html:50
+#: src/web/templates/web/periods.html:26
 msgid "Завести"
 msgstr "Dodaj"
 
-#: src/web/templates/web/periods.html:55
+#: src/web/templates/web/periods.html:31
+msgid "Откройте месяц — работа идёт внутри него."
+msgstr "Otvorite mesec — rad se odvija unutar njega."
+
+#: src/web/templates/web/periods.html:34
+msgid "Партнёр"
+msgstr "Partner"
+
+#: src/web/templates/web/periods.html:56
 msgid "Учётных месяцев пока не видно"
 msgstr "Obračunski meseci se još ne vide"
 
-#: src/web/templates/web/periods.html:58
+#: src/web/templates/web/periods.html:59
 msgid ""
 "Заведите месяц — с него начинается работа: в нём табель, расчёт и\n"
 "    утверждение. Если месяцы уже заведены, а вы их не видите, значит их не "
@@ -5130,7 +5217,7 @@ msgstr ""
 "odobravanje. Ako meseci već postoje, a vi ih ne vidite, ne vidi ih vaša "
 "uloga — pitajte onoga ko dodeljuje pristup."
 
-#: src/web/templates/web/periods.html:62
+#: src/web/templates/web/periods.html:63
 msgid ""
 "Месяц заводит тот, кто ведёт расчёт. Если месяцы уже заведены,\n"
 "    значит их не видит ваша роль — попросите доступ у того, кто заводит\n"
@@ -5139,11 +5226,11 @@ msgstr ""
 "Mesec otvara onaj ko vodi obračun. Ako meseci već postoje, ne vidi ih vaša "
 "uloga — pitajte onoga ko dodeljuje pristup."
 
-#: src/web/templates/web/periods.html:68
+#: src/web/templates/web/periods.html:69
 msgid "Сначала войдите"
 msgstr "Prvo se prijavite"
 
-#: src/web/templates/web/periods.html:70
+#: src/web/templates/web/periods.html:71
 msgid ""
 "Пока вы не вошли, база не показывает ничего: без пользователя политики "
 "доступа\n"

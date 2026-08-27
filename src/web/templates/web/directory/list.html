@@ -18,7 +18,9 @@
 шаблона не изменилось ни на строку — и это ровно то, ради чего оно так и
 написано: у читателя, который сотрудников не ведёт, кнопки по-прежнему нет.
 {% endcomment %}
-{% block title %}{{ heading }}{% endblock %}
+{% block title %}{{ heading }}
+{% if extra %}{% include extra.template %}{% endif %}
+{% endblock %}
 {% block content %}
 {% comment %}
 Ссылка возврата: по умолчанию — в справочники, но экран вправе назвать своё
