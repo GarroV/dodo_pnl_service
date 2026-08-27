@@ -1,0 +1,18 @@
+{
+  "Завести": {
+    "en": "Add",
+    "sr": "Dodaj"
+  },
+  "Заведите месяц — с него начинается работа: в нём табель, расчёт и\n    утверждение. Если месяцы уже заведены, а вы их не видите, значит их не видит ваша\n    роль — попросите доступ у того, кто заводит пользователей.": {
+    "en": "Open a month — the work starts there: the timesheet, the calculation and the approval all live inside it. If months are already there and you cannot see them, your role cannot see them — ask whoever manages access.",
+    "sr": "Otvorite mesec — od njega počinje rad: u njemu su evidencija sati, obračun i odobravanje. Ako meseci već postoje, a vi ih ne vidite, ne vidi ih vaša uloga — pitajte onoga ko dodeljuje pristup."
+  },
+  "Месяц заводит тот, кто ведёт расчёт. Если месяцы уже заведены,\n    значит их не видит ваша роль — попросите доступ у того, кто заводит\n    пользователей.": {
+    "en": "A month is opened by whoever runs the calculation. If months are already there, your role cannot see them — ask whoever manages access.",
+    "sr": "Mesec otvara onaj ko vodi obračun. Ako meseci već postoje, ne vidi ih vaša uloga — pitajte onoga ko dodeljuje pristup."
+  },
+  "Месяц пишется как 2026-06, а не «%(value)s».": {
+    "en": "A month is written as 2026-06, not «%(value)s».",
+    "sr": "Mesec se piše kao 2026-06, a ne «%(value)s»."
+  }
+}

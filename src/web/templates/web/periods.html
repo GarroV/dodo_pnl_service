@@ -35,13 +35,34 @@
 тому, кто заводит доступы. Свалить их в одно «периодов нет» значило бы
 отправить человека искать не там.
 {% endcomment %}
+{% if may_open %}
+{% comment %}
+Месяц заводится действием, а не появляется сам: это учётный период со своим
+состоянием, и решение «с какого месяца партнёр начинает учёт» принимает человек,
+а не продукт (issue #192).
+{% endcomment %}
+<form method="post" action="{% url 'period-open' %}" class="search row">
+  {% csrf_token %}
+  <p class="field">
+    <label for="open-month">{% translate "Завести месяц" %}</label>
+    <input type="month" id="open-month" name="month" value="{{ next_month }}" required>
+  </p>
+  <button class="primary" type="submit">{% translate "Завести" %}</button>
+</form>
+{% endif %}
+
 {% if principal %}
 {% translate "Учётных месяцев пока не видно" as no_periods %}
 {% notice "empty" title=no_periods %}
-  {% blocktranslate %}Месяц заводится вместе с данными партнёра. Если продукт только что поставили,
-  наполните базу тестовыми данными командой <code>manage.py seed_dev</code>.
-  Если месяцы уже заведены, значит их не видит ваша роль — попросите доступ у того,
-  кто заводит пользователей.{% endblocktranslate %}
+  {% if may_open %}
+    {% blocktranslate %}Заведите месяц — с него начинается работа: в нём табель, расчёт и
+    утверждение. Если месяцы уже заведены, а вы их не видите, значит их не видит ваша
+    роль — попросите доступ у того, кто заводит пользователей.{% endblocktranslate %}
+  {% else %}
+    {% blocktranslate %}Месяц заводит тот, кто ведёт расчёт. Если месяцы уже заведены,
+    значит их не видит ваша роль — попросите доступ у того, кто заводит
+    пользователей.{% endblocktranslate %}
+  {% endif %}
 {% endnotice %}
 {% else %}
 {% translate "Сначала войдите" as sign_in_first %}

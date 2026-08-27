@@ -28,6 +28,9 @@ urlpatterns = [
     # только после входа, на него ответить не может по устройству.
     path("guide/", guide.page, name="guide"),
     path("periods/", views.periods, name="periods"),
+    # Завести учётный месяц (issue #192). Постоянный адрес идёт раньше адреса
+    # по номеру периода, иначе `open` разбирался бы как номер.
+    path("periods/open/", views.open_month, name="period-open"),
     path("periods/<uuid:period_id>/", views.period_detail, name="period"),
     path("periods/<uuid:period_id>/calculate/", views.period_calculate, name="period-calculate"),
     # Ход расчёта отдельным ответом: его спрашивает полоса прогресса на странице

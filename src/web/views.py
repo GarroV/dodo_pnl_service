@@ -8,6 +8,7 @@
 """
 from __future__ import annotations
 
+from datetime import date, datetime
 from decimal import Decimal
 
 from django.conf import settings
@@ -16,6 +17,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.http import (
     Http404,
+    HttpResponse,
     HttpResponseBadRequest,
     HttpResponseNotFound,
     JsonResponse,
@@ -105,8 +107,81 @@ def periods(request):
         # впервые открывший продукт, попадает на этот экран, и «что делать
         # дальше» он должен прочитать раньше, чем выберет месяц. Текущего шага
         # тут нет — отсюда не видно, о каком месяце речь.
-        {"periods": rows, "steps": onboarding.month_steps()},
+        {
+            "periods": rows,
+            "steps": onboarding.month_steps(),
+            # Месяц заводит тот, кто его ведёт. Кнопки нет у того, кто права не
+            # имеет: кнопка на отказ хуже отсутствующей.
+            "may_open": permissions.has(
+                get_current_principal(request), permissions.PAYRUN_CALCULATE,
+            ),
+            "next_month": _next_month_hint(),
+        },
     )
+
+
+@login_required
+@require_POST
+def open_month(request):
+    """Завести учётный месяц (issue #192).
+
+    До этого первый месяц появлялся только с сидом разработки, и новый партнёр
+    упирался в стену: заведены люди, календарь и правила — а часы вносить
+    некуда, потому что табель живёт внутри периода. Пустой список при этом
+    советовал `manage.py seed_dev`, то есть отсылал пользователя к команде
+    разработчика.
+
+    **Заводит тот, кто ведёт месяц.** Право то же, что у расчёта: открытие
+    периода — начало учёта, а не просмотр. Управляющему точки его не даётся.
+
+    **Повторное заведение того же месяца возвращает его же**, а не заводит
+    второй: два периода одного месяца — это два расчёта, между которыми продукт
+    не смог бы выбрать.
+    """
+    who = get_current_principal(request)
+    try:
+        permissions.check(who, permissions.PAYRUN_CALCULATE)
+    except permissions.PermissionRefused as refusal:
+        return HttpResponse(
+            refusal.message, status=refusal.http_status,
+            content_type="text/plain; charset=utf-8",
+        )
+
+    raw = (request.POST.get("month") or "").strip()
+    try:
+        month = datetime.strptime(raw, "%Y-%m").date().replace(day=1)
+    except ValueError:
+        # Отказ показывает, как надо писать: «неверный формат» человека не
+        # научит, а образец научит с первого раза.
+        return HttpResponse(
+            _("Месяц пишется как 2026-06, а не «%(value)s».") % {"value": raw or "—"},
+            status=400, content_type="text/plain; charset=utf-8",
+        )
+
+    # Партнёр берётся у самой записи, а не подставляется из принципала: чей это
+    # месяц, решает та же политика базы, что и везде (сторож в `test_auth`).
+    # Здесь она же и защищает: заведение периода чужому партнёру она отвергнет.
+    period = Period(period=month, status="open")
+    period.tenant_id = _tenant_of(who)
+    Period.objects.get_or_create(
+        tenant=period.tenant, period=month, defaults={"status": "open"},
+    )
+    return redirect(reverse("periods"))
+
+
+def _tenant_of(who) -> object:
+    """Партнёр вошедшего — одним местом, чтобы не подставлять его в фильтры.
+
+    Разграничение делает база; здесь нужен сам тенант для новой строки, и
+    отдельная функция отделяет «кому принадлежит запись» от «что человеку
+    видно» — второе представление решать не вправе.
+    """
+    return who.tenant_id
+
+
+def _next_month_hint() -> str:
+    """Какой месяц подставить в поле: текущий. Его и заводят чаще всего."""
+    return date.today().strftime("%Y-%m")
 
 
 def find_period(period_id) -> Period:
