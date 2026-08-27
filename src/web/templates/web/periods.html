@@ -11,6 +11,22 @@
 {% endcomment %}
 {% include "web/components/steps.html" %}
 
+{% if may_open %}
+{% comment %}
+Месяц заводится действием, а не появляется сам: это учётный период со своим
+состоянием, и решение «с какого месяца партнёр начинает учёт» принимает человек,
+а не продукт (issue #192).
+{% endcomment %}
+<form method="post" action="{% url 'period-open' %}" class="search row">
+  {% csrf_token %}
+  <p class="field">
+    <label for="open-month">{% translate "Завести месяц" %}</label>
+    <input type="month" id="open-month" name="month" value="{{ next_month }}" required>
+  </p>
+  <button class="primary" type="submit">{% translate "Завести" %}</button>
+</form>
+{% endif %}
+
 {% if periods %}
 <p class="note">{% translate "Откройте месяц — работа идёт внутри него." %}</p>
 <table>
@@ -35,21 +51,6 @@
 тому, кто заводит доступы. Свалить их в одно «периодов нет» значило бы
 отправить человека искать не там.
 {% endcomment %}
-{% if may_open %}
-{% comment %}
-Месяц заводится действием, а не появляется сам: это учётный период со своим
-состоянием, и решение «с какого месяца партнёр начинает учёт» принимает человек,
-а не продукт (issue #192).
-{% endcomment %}
-<form method="post" action="{% url 'period-open' %}" class="search row">
-  {% csrf_token %}
-  <p class="field">
-    <label for="open-month">{% translate "Завести месяц" %}</label>
-    <input type="month" id="open-month" name="month" value="{{ next_month }}" required>
-  </p>
-  <button class="primary" type="submit">{% translate "Завести" %}</button>
-</form>
-{% endif %}
 
 {% if principal %}
 {% translate "Учётных месяцев пока не видно" as no_periods %}

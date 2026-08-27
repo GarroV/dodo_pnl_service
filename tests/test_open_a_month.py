@@ -92,3 +92,18 @@ def _tenant():
     from core.models import Tenant
 
     return Tenant.objects.get(code="rs-dev").id
+
+
+def test_the_button_is_there_even_when_months_already_exist(client, web_env):
+    """Кнопка стоит и при непустом списке: новый месяц начинается каждые 30 дней.
+
+    Первая версия прятала её в ветку «периодов нет» — то есть месяц можно было
+    завести ровно один раз в жизни партнёра, а дальше кнопка исчезала. Поймано
+    скриншотом для гайда: на живом стенде её не оказалось.
+    """
+    from core.models import Period
+
+    assert Period.objects.exists(), "тест проверяет не то: периодов нет"
+    login_as(client, "director")
+    html = body(client.get("/periods/"))
+    assert "/periods/open/" in html, "кнопки заведения месяца нет при непустом списке"
