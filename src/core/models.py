@@ -720,15 +720,19 @@ class Position(models.Model):
     group = models.ForeignKey(
         "EmployeeGroup", on_delete=models.PROTECT, db_column="group_id",
     )
-    # Пусто — как у группы. Те же три поля, что человек может переопределить в
-    # своих условиях найма: должность заполняет их за него.
-    work_measure = models.TextField(null=True, blank=True)
-    scheme = models.TextField(null=True, blank=True)
-    ledger = ledger_field(null=True, blank=True)
-    # Границы ставки. Пусто — границы нет: у части должностей ставка
-    # договорная, и выдуманная вилка мешала бы заводить людей.
-    rate_from = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
-    rate_to = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    # Схемы расчёта, регистра и меры работы здесь НЕТ намеренно (правка
+    # 27.08.2026, вопрос владельца «разве не об одном и том же?»). Они уже
+    # заданы группой, а человеку переопределяются в его условиях найма — третье
+    # место для того же факта означало бы, что источники расходятся молча.
+    #
+    # Разделение такое: группа отвечает, КАК считаются деньги и куда попадают в
+    # отчёте; должность — КОГО нанимаем: в какую группу, в каких границах
+    # ставка, сколько часов по договору.
+    # Вилки ставки здесь нет (снято 27.08.2026, решение владельца «нахуя
+    # вилка?»). Она не участвовала ни в одной формуле — только сравнивалась с
+    # введённым числом, — а вести и обновлять её при каждой индексации
+    # пришлось бы руками. Опечатку в ставке ловим иначе: сравнением с тем, что
+    # уже стоит у людей той же группы.
     # Договорные часы по умолчанию для нанятых на эту должность (issue #171).
     # Подставляются в условия найма и дальше живут там своей версией.
     contract_hours = models.DecimalField(
@@ -741,14 +745,6 @@ class Position(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["tenant", "code"], name="positions_tenant_code_uniq",
-            ),
-            # Перевёрнутая вилка — не «строгая настройка», а опечатка: ни одна
-            # ставка в неё не попадёт, и заведение людей встанет молча.
-            models.CheckConstraint(
-                condition=models.Q(rate_from__isnull=True)
-                | models.Q(rate_to__isnull=True)
-                | models.Q(rate_to__gte=models.F("rate_from")),
-                name="positions_rate_range",
             ),
         ]
 

@@ -214,3 +214,29 @@ def exact(value: Decimal | int | float | None) -> str:
         cut = number.quantize(Decimal(1).scaleb(-EXACT_LIMIT), rounding=ROUND_DOWN)
         return _grouped(f"{cut:f}") + TAIL
     return _grouped(f"{trimmed:f}")
+
+
+# --- даты ---------------------------------------------------------------------
+# Человеческий формат по всему продукту — «01.06.2026» (решение владельца
+# 27.08.2026: «сделай нормальный, адекватный человеческий формат дат на весь
+# проект. День, месяц, год. Не надо вот эту хуйню исходно впереди»).
+#
+# Машинный `2026-06-01` остаётся ровно в двух местах, и оба не для чтения:
+# значение поля `<input type="date">` (стандарт HTML, иначе браузер его не
+# примет) и обмен с внешними системами. Всё, что видит человек, идёт через эти
+# две функции.
+DAY_SEPARATOR = "."
+
+
+def day(value) -> str:
+    """Дата по-человечески: 01.06.2026. Пусто — прочерк, а не пустая ячейка."""
+    if value is None or value == "":
+        return EMPTY
+    return f"{value.day:02d}{DAY_SEPARATOR}{value.month:02d}{DAY_SEPARATOR}{value.year}"
+
+
+def month(value) -> str:
+    """Месяц по-человечески: 06.2026. Для колонок, где день ничего не добавляет."""
+    if value is None or value == "":
+        return EMPTY
+    return f"{value.month:02d}{DAY_SEPARATOR}{value.year}"

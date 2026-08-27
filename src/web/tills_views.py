@@ -35,7 +35,7 @@ from core.models import Till, Unit
 
 from .dbrefusal import BadInput, ConstraintRefused, saving
 from .directory_views import LEDGER_CODES, _choice, _date, _guard, _select, _text
-from .format import ledger_title
+from .format import day, ledger_title
 
 
 @login_required
@@ -52,7 +52,7 @@ def tills(request):
                 {"text": till.title},
                 {"text": till.unit.code},
                 {"text": ledger_title(till.ledger)},
-                {"text": till.closed_at.isoformat() if till.closed_at else "—"},
+                {"text": day(till.closed_at)},
             ],
         }
         for till in visible_tills()

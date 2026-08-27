@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 13:15+0000\n"
+"POT-Creation-Date: 2026-08-27 14:28+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -304,8 +304,8 @@ msgstr "Employee"
 #: src/reports/export.py:217 src/reports/export.py:556
 #: src/timesheets/templates/timesheets/grid.html:185 src/web/cash_views.py:244
 #: src/web/cash_views.py:431 src/web/dbrefusal.py:109
-#: src/web/directory_views.py:561 src/web/directory_views.py:958
-#: src/web/directory_views.py:1073 src/web/directory_views.py:1162
+#: src/web/directory_views.py:561 src/web/directory_views.py:949
+#: src/web/directory_views.py:1062 src/web/directory_views.py:1151
 #: src/web/expenses_views.py:174 src/web/expenses_views.py:328
 #: src/web/papers_views.py:253 src/web/papers_views.py:314
 #: src/web/suppliers_views.py:616 src/web/templates/web/cash/expenses.html:55
@@ -452,7 +452,7 @@ msgid "Расход"
 msgstr "Expense"
 
 #: src/reports/export.py:591 src/web/templates/web/person_pay.html:76
-#: src/web/views.py:894
+#: src/web/views.py:909
 msgid "Налог"
 msgstr "Tax"
 
@@ -461,7 +461,7 @@ msgid "Налог на доход"
 msgstr "Income tax"
 
 #: src/reports/export.py:592 src/web/reports_views.py:46
-#: src/web/templates/web/person_pay.html:77 src/web/views.py:895
+#: src/web/templates/web/person_pay.html:77 src/web/views.py:910
 msgid "Взносы"
 msgstr "Contributions"
 
@@ -1274,7 +1274,7 @@ msgstr "\"%(label)s\": a rate over 100%% is not possible."
 #: src/web/cash_views.py:185 src/web/cash_views.py:244
 #: src/web/directory_views.py:321 src/web/directory_views.py:329
 #: src/web/directory_views.py:344 src/web/directory_views.py:372
-#: src/web/directory_views.py:1801 src/web/papers_views.py:230
+#: src/web/directory_views.py:1790 src/web/papers_views.py:230
 #: src/web/papers_views.py:253 src/web/suppliers_api.py:258
 #: src/web/suppliers_views.py:440 src/web/suppliers_views.py:473
 #: src/web/suppliers_views.py:993
@@ -1321,12 +1321,12 @@ msgstr ""
 "remove the till."
 
 #: src/web/cash_views.py:271 src/web/cash_views.py:327 src/web/dbrefusal.py:115
-#: src/web/directory_views.py:980 src/web/directory_views.py:1216
-#: src/web/directory_views.py:1269 src/web/directory_views.py:1304
-#: src/web/directory_views.py:1371 src/web/expense_items_views.py:356
-#: src/web/expenses_views.py:175 src/web/positions_views.py:214
-#: src/web/suppliers_views.py:61 src/web/suppliers_views.py:585
-#: src/web/suppliers_views.py:762 src/web/suppliers_views.py:857
+#: src/web/directory_views.py:970 src/web/directory_views.py:1205
+#: src/web/directory_views.py:1258 src/web/directory_views.py:1293
+#: src/web/directory_views.py:1360 src/web/expense_items_views.py:356
+#: src/web/expenses_views.py:175 src/web/suppliers_views.py:61
+#: src/web/suppliers_views.py:585 src/web/suppliers_views.py:762
+#: src/web/suppliers_views.py:857
 #: src/web/templates/web/directory/employee.html:108
 #: src/web/templates/web/person_pay.html:143 src/web/tills_views.py:68
 #: src/web/tills_views.py:119 src/web/tills_views.py:155
@@ -1495,20 +1495,20 @@ msgstr "Add counterparty"
 
 #: src/web/counterparties_views.py:86 src/web/counterparties_views.py:146
 #: src/web/counterparties_views.py:210 src/web/dbrefusal.py:102
-#: src/web/directory_views.py:1268 src/web/directory_views.py:1296
-#: src/web/directory_views.py:1357 src/web/directory_views.py:1491
-#: src/web/directory_views.py:1515 src/web/directory_views.py:1548
-#: src/web/directory_views.py:1582 src/web/directory_views.py:1603
-#: src/web/directory_views.py:1623 src/web/expense_items_views.py:224
-#: src/web/positions_views.py:83 src/web/positions_views.py:151
-#: src/web/positions_views.py:197 src/web/tills_views.py:67
+#: src/web/directory_views.py:1257 src/web/directory_views.py:1285
+#: src/web/directory_views.py:1346 src/web/directory_views.py:1480
+#: src/web/directory_views.py:1504 src/web/directory_views.py:1537
+#: src/web/directory_views.py:1571 src/web/directory_views.py:1592
+#: src/web/directory_views.py:1612 src/web/expense_items_views.py:224
+#: src/web/positions_views.py:81 src/web/positions_views.py:108
+#: src/web/positions_views.py:138 src/web/tills_views.py:67
 #: src/web/tills_views.py:108 src/web/tills_views.py:146
 msgid "Название"
 msgstr "Name"
 
 #: src/web/counterparties_views.py:86 src/web/counterparties_views.py:164
-#: src/web/counterparties_views.py:214 src/web/directory_views.py:1582
-#: src/web/directory_views.py:1604 src/web/directory_views.py:1625
+#: src/web/counterparties_views.py:214 src/web/directory_views.py:1571
+#: src/web/directory_views.py:1593 src/web/directory_views.py:1614
 msgid "Налоговый номер"
 msgstr "Tax number"
 
@@ -1519,7 +1519,7 @@ msgstr "Dodo IS key"
 
 #: src/web/counterparties_views.py:87 src/web/counterparties_views.py:147
 #: src/web/counterparties_views.py:225 src/web/dbrefusal.py:105
-#: src/web/directory_views.py:899 src/web/directory_views.py:1129
+#: src/web/directory_views.py:899 src/web/directory_views.py:1118
 #: src/web/expense_items_views.py:225 src/web/expense_items_views.py:259
 #: src/web/expense_items_views.py:332
 #: src/web/templates/web/directory/employee.html:91
@@ -1571,10 +1571,10 @@ msgstr "New counterparty"
 msgid "← К контрагентам"
 msgstr "← To the counterparties"
 
-#: src/web/counterparties_views.py:184 src/web/directory_views.py:1351
-#: src/web/directory_views.py:1542 src/web/directory_views.py:1621
-#: src/web/directory_views.py:1763 src/web/expense_items_views.py:309
-#: src/web/positions_views.py:192
+#: src/web/counterparties_views.py:184 src/web/directory_views.py:1340
+#: src/web/directory_views.py:1531 src/web/directory_views.py:1610
+#: src/web/directory_views.py:1752 src/web/expense_items_views.py:309
+#: src/web/positions_views.py:133
 #: src/web/templates/web/cash/expense_edit.html:44
 #: src/web/templates/web/roles/index.html:51 src/web/tills_views.py:141
 msgid "Сохранить"
@@ -1630,13 +1630,13 @@ msgstr ""
 msgid "Для человека: чем занимается, кто ведёт переписку."
 msgstr "For a human: what they do, who keeps the correspondence."
 
-#: src/web/dbrefusal.py:101 src/web/directory_views.py:1268
-#: src/web/directory_views.py:1295 src/web/directory_views.py:1353
-#: src/web/directory_views.py:1491 src/web/directory_views.py:1514
-#: src/web/directory_views.py:1544 src/web/expense_items_views.py:224
+#: src/web/dbrefusal.py:101 src/web/directory_views.py:1257
+#: src/web/directory_views.py:1284 src/web/directory_views.py:1342
+#: src/web/directory_views.py:1480 src/web/directory_views.py:1503
+#: src/web/directory_views.py:1533 src/web/expense_items_views.py:224
 #: src/web/expense_items_views.py:255 src/web/expense_items_views.py:311
-#: src/web/positions_views.py:83 src/web/positions_views.py:150
-#: src/web/positions_views.py:194 src/web/tills_views.py:67
+#: src/web/positions_views.py:81 src/web/positions_views.py:107
+#: src/web/positions_views.py:135 src/web/tills_views.py:67
 #: src/web/tills_views.py:107 src/web/tills_views.py:143
 msgid "Код"
 msgstr "Code"
@@ -1645,9 +1645,9 @@ msgstr "Code"
 msgid "Сквозной ключ"
 msgstr "External ID"
 
-#: src/web/dbrefusal.py:104 src/web/directory_views.py:1669
-#: src/web/directory_views.py:1765 src/web/directory_views.py:1801
-#: src/web/directory_views.py:1807
+#: src/web/dbrefusal.py:104 src/web/directory_views.py:1658
+#: src/web/directory_views.py:1754 src/web/directory_views.py:1790
+#: src/web/directory_views.py:1796
 #: src/web/templates/web/cash/unallocated.html:32
 #: src/web/templates/web/periods.html:18
 #: src/web/templates/web/person_pay.html:70
@@ -1663,15 +1663,15 @@ msgstr "Rate date"
 msgid "Страна"
 msgstr "Country"
 
-#: src/web/dbrefusal.py:108 src/web/directory_views.py:1491
-#: src/web/directory_views.py:1517 src/web/directory_views.py:1551
+#: src/web/dbrefusal.py:108 src/web/directory_views.py:1480
+#: src/web/directory_views.py:1506 src/web/directory_views.py:1540
 msgid "Юрлицо"
 msgstr "Legal entity"
 
 #: src/web/dbrefusal.py:111 src/web/directory_views.py:560
-#: src/web/directory_views.py:955 src/web/directory_views.py:1071
-#: src/web/directory_views.py:1150 src/web/positions_views.py:83
-#: src/web/positions_views.py:153 src/web/positions_views.py:238
+#: src/web/directory_views.py:946 src/web/directory_views.py:1060
+#: src/web/directory_views.py:1139 src/web/positions_views.py:81
+#: src/web/positions_views.py:110 src/web/positions_views.py:152
 #: src/web/templates/web/directory/employee.html:93
 msgid "Группа"
 msgstr "Group"
@@ -1853,7 +1853,7 @@ msgstr "Employees"
 msgid "Карточки людей и условия найма: группа, точка, ставка, коэффициент"
 msgstr "People's cards and employment terms: group, unit, rate, coefficient"
 
-#: src/web/directory_views.py:234 src/web/directory_views.py:1260
+#: src/web/directory_views.py:234 src/web/directory_views.py:1249
 #: src/web/rules.py:96
 msgid "Группы сотрудников"
 msgstr "Employee groups"
@@ -1862,7 +1862,7 @@ msgstr "Employee groups"
 msgid "Схема расчёта и регистр учёта по умолчанию"
 msgstr "Default calculation scheme and ledger"
 
-#: src/web/directory_views.py:240 src/web/directory_views.py:1485
+#: src/web/directory_views.py:240 src/web/directory_views.py:1474
 #: src/web/templates/web/guide.html:150
 msgid "Точки"
 msgstr "Units"
@@ -1871,7 +1871,7 @@ msgstr "Units"
 msgid "Пиццерии: код, название, юрлицо, даты открытия и закрытия"
 msgstr "Pizzerias: code, name, legal entity, opening and closing dates"
 
-#: src/web/directory_views.py:246 src/web/directory_views.py:1578
+#: src/web/directory_views.py:246 src/web/directory_views.py:1567
 msgid "Юрлица"
 msgstr "Legal entities"
 
@@ -1887,7 +1887,7 @@ msgstr "Expense items"
 msgid "Чем называют траты и в какую строку P&L они попадают"
 msgstr "What expenses are called and which P&L line they fall into"
 
-#: src/web/directory_views.py:260 src/web/positions_views.py:77
+#: src/web/directory_views.py:260 src/web/positions_views.py:75
 msgid "Должности"
 msgstr "Positions"
 
@@ -1911,7 +1911,7 @@ msgstr "Boxes cash is paid from: unit and ledger"
 msgid "Поставщики и получатели платежей: название, номера, ключ Dodo IS"
 msgstr "Suppliers and payees: name, numbers, Dodo IS key"
 
-#: src/web/directory_views.py:285 src/web/directory_views.py:1661
+#: src/web/directory_views.py:285 src/web/directory_views.py:1650
 #: src/web/rules.py:97
 msgid "Производственный календарь"
 msgstr "Production calendar"
@@ -1948,13 +1948,13 @@ msgstr "%(code)s — not in the country rules"
 msgid "Внешний ключ"
 msgstr "External key"
 
-#: src/web/directory_views.py:562 src/web/directory_views.py:1077
+#: src/web/directory_views.py:562 src/web/directory_views.py:1066
 #: src/web/templates/web/directory/employee.html:95
 msgid "Ставка"
 msgstr "Rate"
 
 #: src/web/directory_views.py:563 src/web/directory_views.py:882
-#: src/web/directory_views.py:1104 src/web/directory_views.py:1122
+#: src/web/directory_views.py:1093 src/web/directory_views.py:1111
 msgid "Уволен"
 msgstr "Terminated"
 
@@ -2023,8 +2023,8 @@ msgid "← К сотрудникам"
 msgstr "← To the employees"
 
 #: src/web/directory_views.py:824 src/web/directory_views.py:843
-#: src/web/directory_views.py:881 src/web/directory_views.py:1100
-#: src/web/directory_views.py:1115
+#: src/web/directory_views.py:881 src/web/directory_views.py:1089
+#: src/web/directory_views.py:1104
 msgid "Принят"
 msgstr "Hired"
 
@@ -2058,49 +2058,47 @@ msgstr ""
 msgid "Дата увольнения раньше даты приёма."
 msgstr "The termination date is earlier than the hire date."
 
-#: src/web/directory_views.py:946 src/web/directory_views.py:1171
+#: src/web/directory_views.py:942 src/web/directory_views.py:1160
 msgid "Ставка или оклад"
 msgstr "Rate or salary"
 
-#: src/web/directory_views.py:963 src/web/directory_views.py:1176
-#: src/web/positions_views.py:160 src/web/positions_views.py:220
+#: src/web/directory_views.py:954 src/web/directory_views.py:1165
+#: src/web/positions_views.py:82 src/web/positions_views.py:114
+#: src/web/positions_views.py:141
 msgid "Часы по договору"
 msgstr "Contract hours"
 
-#: src/web/directory_views.py:965 src/web/directory_views.py:1082
-#: src/web/directory_views.py:1182 src/web/reports_views.py:62
+#: src/web/directory_views.py:956 src/web/directory_views.py:1071
+#: src/web/directory_views.py:1171 src/web/reports_views.py:62
 #: src/web/templates/web/directory/employee.html:96
 msgid "Коэффициент"
 msgstr "Coefficient"
 
-#: src/web/directory_views.py:970 src/web/directory_views.py:1194
-#: src/web/directory_views.py:1269 src/web/directory_views.py:1301
-#: src/web/directory_views.py:1360 src/web/positions_views.py:209
+#: src/web/directory_views.py:961 src/web/directory_views.py:1183
+#: src/web/directory_views.py:1258 src/web/directory_views.py:1290
+#: src/web/directory_views.py:1349
 #: src/web/templates/web/directory/employee.html:97
 msgid "Схема расчёта"
 msgstr "Calculation scheme"
 
-#: src/web/directory_views.py:975 src/web/directory_views.py:1093
-#: src/web/directory_views.py:1207 src/web/directory_views.py:1270
-#: src/web/directory_views.py:1405 src/web/directory_views.py:1412
-#: src/web/directory_views.py:1419 src/web/directory_views.py:1441
-#: src/web/positions_views.py:84 src/web/positions_views.py:201
+#: src/web/directory_views.py:966 src/web/directory_views.py:1082
+#: src/web/directory_views.py:1196 src/web/directory_views.py:1259
+#: src/web/directory_views.py:1394 src/web/directory_views.py:1401
+#: src/web/directory_views.py:1408 src/web/directory_views.py:1430
 #: src/web/rules.py:94 src/web/templates/web/directory/employee.html:107
 msgid "Чем меряется работа"
 msgstr "Unit of work"
 
-#: src/web/directory_views.py:996
+#: src/web/directory_views.py:985
 msgid "Такой должности нет."
 msgstr "There is no such position."
 
-#: src/web/directory_views.py:1053 src/web/directory_views.py:1196
-#: src/web/directory_views.py:1209 src/web/directory_views.py:1219
-#: src/web/positions_views.py:96 src/web/positions_views.py:204
-#: src/web/positions_views.py:211 src/web/positions_views.py:218
+#: src/web/directory_views.py:1042 src/web/directory_views.py:1185
+#: src/web/directory_views.py:1198 src/web/directory_views.py:1208
 msgid "как у группы"
 msgstr "same as the group"
 
-#: src/web/directory_views.py:1124
+#: src/web/directory_views.py:1113
 msgid ""
 "Уволить — значит поставить дату. Карточка и история остаются: месяцы, в "
 "которые человек работал, считаются по ним. Очистить дату можно — увольнение "
@@ -2110,7 +2108,7 @@ msgstr ""
 "the months they worked are still calculated using them. The date can be "
 "cleared — termination is reversible."
 
-#: src/web/directory_views.py:1131
+#: src/web/directory_views.py:1120
 msgid ""
 "С этой даты действует новая версия. Прошлая закрывается этим же днём и "
 "остаётся в истории."
@@ -2118,15 +2116,15 @@ msgstr ""
 "The new version is effective from this date. The previous one closes on the "
 "same day and stays in the history."
 
-#: src/web/directory_views.py:1159
+#: src/web/directory_views.py:1148
 msgid "выберите группу"
 msgstr "select a group"
 
-#: src/web/directory_views.py:1164
+#: src/web/directory_views.py:1153
 msgid "не задана"
 msgstr "not set"
 
-#: src/web/directory_views.py:1173
+#: src/web/directory_views.py:1162
 msgid ""
 "Что это за число, решает «Чем меряется работа»: по часам — цена часа, оклад "
 "— сумма за месяц, сдельно — цена единицы."
@@ -2134,7 +2132,7 @@ msgstr ""
 "What this number means depends on «Unit of work»: by hours — the price of an "
 "hour, salary — the amount per month, piecework — the price of a unit."
 
-#: src/web/directory_views.py:1179
+#: src/web/directory_views.py:1168
 msgid ""
 "Сколько человек обязан отработать за месяц. Пусто — величины нет: в табеле "
 "он не будет считаться ни добравшим, ни недобравшим."
@@ -2142,7 +2140,7 @@ msgstr ""
 "How many hours the person is required to work per month. Empty — there is no "
 "such value: in the timesheet they count as neither over nor short."
 
-#: src/web/directory_views.py:1197
+#: src/web/directory_views.py:1186
 msgid ""
 "Пусто — как у группы. Заполняется там, где человек считается иначе своей "
 "группы."
@@ -2150,7 +2148,7 @@ msgstr ""
 "Empty — same as the group. Fill it in where the person is calculated "
 "differently from their group."
 
-#: src/web/directory_views.py:1199 src/web/directory_views.py:1366
+#: src/web/directory_views.py:1188 src/web/directory_views.py:1355
 msgid ""
 "Правил страны в базе нет, поэтому и списка схем нет: загрузите пресет "
 "страны. Пока — ключ схемы, как он написан в правилах."
@@ -2159,7 +2157,7 @@ msgstr ""
 "either: load the country preset. For now — the scheme key, as it's written "
 "in the rules."
 
-#: src/web/directory_views.py:1210
+#: src/web/directory_views.py:1199
 msgid ""
 "Часовая или сдельная — у этого человека. Пусто — как у группы. Сдельному "
 "человеку табель спросит величину за месяц вместо часов."
@@ -2168,7 +2166,7 @@ msgstr ""
 "For a piecework person, the timesheet will ask for a value for the month "
 "instead of hours."
 
-#: src/web/directory_views.py:1212
+#: src/web/directory_views.py:1201
 msgid ""
 "Правил страны в базе нет, поэтому и списка способов нет: загрузите пресет "
 "страны."
@@ -2176,7 +2174,7 @@ msgstr ""
 "There are no country rules in the database, so there's no list of measures "
 "either: load the country preset."
 
-#: src/web/directory_views.py:1262
+#: src/web/directory_views.py:1251
 msgid ""
 "Группа задаёт схему расчёта и регистр учёта по умолчанию. Отдельному "
 "человеку и то и другое переопределяется в условиях найма — с датой."
@@ -2184,44 +2182,44 @@ msgstr ""
 "The group sets the default calculation scheme and ledger. For an individual "
 "person, either one can be overridden in the employment terms — with a date."
 
-#: src/web/directory_views.py:1266
+#: src/web/directory_views.py:1255
 msgid "Завести группу"
 msgstr "Add group"
 
-#: src/web/directory_views.py:1273
+#: src/web/directory_views.py:1262
 msgid "Групп нет."
 msgstr "No groups."
 
-#: src/web/directory_views.py:1274
+#: src/web/directory_views.py:1263
 msgid "Без группы человека не посчитать: она задаёт схему расчёта."
 msgstr ""
 "A person cannot be calculated without a group: it sets the calculation "
 "scheme."
 
-#: src/web/directory_views.py:1316
+#: src/web/directory_views.py:1305
 msgid "схема расчёта и регистр группы"
 msgstr "calculation scheme and group ledger"
 
-#: src/web/directory_views.py:1342
+#: src/web/directory_views.py:1331
 msgid "Новая группа"
 msgstr "New group"
 
-#: src/web/directory_views.py:1344
+#: src/web/directory_views.py:1333
 msgid "← К группам"
 msgstr "← To the groups"
 
-#: src/web/directory_views.py:1355
+#: src/web/directory_views.py:1344
 msgid ""
 "По нему группа названа в правилах страны. Менять — только вместе с правилами."
 msgstr ""
 "The group is named by it in the country rules. Change it only together with "
 "the rules."
 
-#: src/web/directory_views.py:1362
+#: src/web/directory_views.py:1351
 msgid "выберите схему"
 msgstr "select a scheme"
 
-#: src/web/directory_views.py:1363
+#: src/web/directory_views.py:1352
 msgid ""
 "По ней движок считает людей группы. Список — из правил страны: отдельному "
 "человеку схема переопределяется в его условиях найма, с датой."
@@ -2230,11 +2228,11 @@ msgstr ""
 "the country rules: for an individual person, the scheme is overridden in "
 "their employment terms, with a date."
 
-#: src/web/directory_views.py:1406
+#: src/web/directory_views.py:1395
 msgid "Задаётся после сохранения группы: правило адресуется её кодом."
 msgstr "Set after the group is saved: the rule is addressed by its code."
 
-#: src/web/directory_views.py:1422
+#: src/web/directory_views.py:1411
 msgid ""
 "Правило страны, а не колонка справочника: у смены способа есть дата, и "
 "закрытый месяц от неё не двигается."
@@ -2242,11 +2240,11 @@ msgstr ""
 "A country rule, not a directory column: changing the method has a date, and "
 "a closed month is not moved by it."
 
-#: src/web/directory_views.py:1425 src/web/directory_views.py:1448
+#: src/web/directory_views.py:1414 src/web/directory_views.py:1437
 msgid "Способ действует с"
 msgstr "Method effective from"
 
-#: src/web/directory_views.py:1427
+#: src/web/directory_views.py:1416
 msgid ""
 "Нужна только при смене способа. Пусто — берётся первый день, который не "
 "задевает утверждённый месяц."
@@ -2254,7 +2252,7 @@ msgstr ""
 "Needed only when changing the method. Empty — the first day that does not "
 "touch an approved month is used."
 
-#: src/web/directory_views.py:1486
+#: src/web/directory_views.py:1475
 msgid ""
 "Расходы разносятся на точку, а не на юрлицо. Закрытая точка остаётся в "
 "истории."
@@ -2262,91 +2260,91 @@ msgstr ""
 "Expenses are allocated to the unit, not the legal entity. A closed unit "
 "stays in the history."
 
-#: src/web/directory_views.py:1489
+#: src/web/directory_views.py:1478
 msgid "Завести точку"
 msgstr "Add unit"
 
-#: src/web/directory_views.py:1492 src/web/directory_views.py:1518
-#: src/web/directory_views.py:1555
+#: src/web/directory_views.py:1481 src/web/directory_views.py:1507
+#: src/web/directory_views.py:1544
 msgid "Открыта"
 msgstr "Opened"
 
-#: src/web/directory_views.py:1492 src/web/directory_views.py:1519
-#: src/web/directory_views.py:1557 src/web/expense_items_views.py:225
+#: src/web/directory_views.py:1481 src/web/directory_views.py:1508
+#: src/web/directory_views.py:1546 src/web/expense_items_views.py:225
 #: src/web/expense_items_views.py:260 src/web/expense_items_views.py:334
 #: src/web/tills_views.py:68 src/web/tills_views.py:122
 #: src/web/tills_views.py:162
 msgid "Закрыта"
 msgstr "Closed"
 
-#: src/web/directory_views.py:1495
+#: src/web/directory_views.py:1484
 msgid "Точек нет."
 msgstr "No units."
 
-#: src/web/directory_views.py:1496
+#: src/web/directory_views.py:1485
 msgid "На точку разносятся часы и расходы — с неё и начинается учёт."
 msgstr ""
 "Hours and expenses are allocated to the unit — accounting starts from it."
 
-#: src/web/directory_views.py:1521
+#: src/web/directory_views.py:1510
 msgid "Дата закрытия раньше даты открытия."
 msgstr "The closing date is earlier than the opening date."
 
-#: src/web/directory_views.py:1538
+#: src/web/directory_views.py:1527
 msgid "Новая точка"
 msgstr "New unit"
 
-#: src/web/directory_views.py:1540
+#: src/web/directory_views.py:1529
 msgid "← К точкам"
 msgstr "← To the units"
 
-#: src/web/directory_views.py:1546
+#: src/web/directory_views.py:1535
 msgid "Короткий код точки, например NS1. Им точка названа в таблице партнёра."
 msgstr ""
 "A short unit code, for example NS1. The unit is named by it in the partner's "
 "table."
 
-#: src/web/directory_views.py:1553
+#: src/web/directory_views.py:1542
 msgid "не задано"
 msgstr "not set"
 
-#: src/web/directory_views.py:1559
+#: src/web/directory_views.py:1548
 msgid ""
 "Точка закрывается датой, а не удалением: закрытые месяцы ссылаются на неё."
 msgstr ""
 "A unit is closed with a date, not by deleting it: closed months refer to it."
 
-#: src/web/directory_views.py:1579
+#: src/web/directory_views.py:1568
 msgid "Бухгалтерия работает с юрлицом, пиццерий для неё нет."
 msgstr "Accounting works with the legal entity; pizzerias do not exist for it."
 
-#: src/web/directory_views.py:1581
+#: src/web/directory_views.py:1570
 msgid "Завести юрлицо"
 msgstr "Add legal entity"
 
-#: src/web/directory_views.py:1584
+#: src/web/directory_views.py:1573
 msgid "Юрлиц нет."
 msgstr "No legal entities."
 
-#: src/web/directory_views.py:1585
+#: src/web/directory_views.py:1574
 msgid "Юрлицо нужно точке: с ним бухгалтерия работает в официальном регистре."
 msgstr ""
 "A unit needs a legal entity: accounting uses it to work in the official "
 "ledger."
 
-#: src/web/directory_views.py:1617
+#: src/web/directory_views.py:1606
 msgid "Новое юрлицо"
 msgstr "New legal entity"
 
-#: src/web/directory_views.py:1619
+#: src/web/directory_views.py:1608
 msgid "← К юрлицам"
 msgstr "← To the legal entities"
 
-#: src/web/directory_views.py:1655
+#: src/web/directory_views.py:1644
 msgid "закрыт"
 msgstr "closed"
 
-#: src/web/directory_views.py:1663
+#: src/web/directory_views.py:1652
 msgid ""
 "Норма часов месяца берётся отсюда — её показывает страница месяца. Календаря "
 "на месяц нет — там стоит прочерк, а не правдоподобное число."
@@ -2355,29 +2353,29 @@ msgstr ""
 "If there is no calendar for a month, it shows a dash, not a plausible-"
 "looking number."
 
-#: src/web/directory_views.py:1667 src/web/templates/web/periods.html:46
+#: src/web/directory_views.py:1656 src/web/templates/web/periods.html:47
 msgid "Завести месяц"
 msgstr "Add month"
 
-#: src/web/directory_views.py:1669 src/web/directory_views.py:1710
-#: src/web/directory_views.py:1768 src/web/templates/web/period.html:148
+#: src/web/directory_views.py:1658 src/web/directory_views.py:1699
+#: src/web/directory_views.py:1757 src/web/templates/web/period.html:148
 msgid "Норма часов"
 msgstr "Standard hours"
 
-#: src/web/directory_views.py:1670 src/web/directory_views.py:1711
-#: src/web/directory_views.py:1770 src/web/directory_views.py:1794
+#: src/web/directory_views.py:1659 src/web/directory_views.py:1700
+#: src/web/directory_views.py:1759 src/web/directory_views.py:1783
 msgid "Рабочих дней"
 msgstr "Working days"
 
-#: src/web/directory_views.py:1670
+#: src/web/directory_views.py:1659
 msgid "Зарплата"
 msgstr "Payroll"
 
-#: src/web/directory_views.py:1673
+#: src/web/directory_views.py:1662
 msgid "Календарь пуст."
 msgstr "The calendar is empty."
 
-#: src/web/directory_views.py:1675
+#: src/web/directory_views.py:1664
 msgid ""
 "Пока месяца нет в календаре, норма часов на его странице — прочерк, и "
 "недоработку считать не от чего."
@@ -2385,15 +2383,15 @@ msgstr ""
 "Until the month is in the calendar, the standard hours on its page are a "
 "dash, and there is nothing to calculate the shortfall from."
 
-#: src/web/directory_views.py:1753
+#: src/web/directory_views.py:1742
 msgid "Новый месяц календаря"
 msgstr "New calendar month"
 
-#: src/web/directory_views.py:1755
+#: src/web/directory_views.py:1744
 msgid "← К календарю"
 msgstr "← To the calendar"
 
-#: src/web/directory_views.py:1792
+#: src/web/directory_views.py:1781
 #, python-format
 msgid ""
 "«%(label)s»: в месяце %(month)s столько дней не бывает — их всего %(limit)s."
@@ -2401,7 +2399,7 @@ msgstr ""
 "\"%(label)s\": month %(month)s does not have that many days — it has "
 "%(limit)s."
 
-#: src/web/directory_views.py:1806 src/web/suppliers_views.py:464
+#: src/web/directory_views.py:1795 src/web/suppliers_views.py:464
 #, python-format
 msgid "«%(label)s»: месяц пишется как 2026-06, а не «%(value)s»."
 msgstr "\"%(label)s\": a month is written as 2026-06, not \"%(value)s\"."
@@ -3220,7 +3218,7 @@ msgstr "Hours worked"
 msgid "По табелю за те же месяцы; часы регистром не делятся"
 msgstr "From the timesheet for the same months; hours are not split by ledger"
 
-#: src/web/positions_views.py:78
+#: src/web/positions_views.py:76
 msgid ""
 "Шаблон условий найма: кого нанимаем, в какую группу он попадает и в каких "
 "границах бывает его ставка."
@@ -3228,19 +3226,15 @@ msgstr ""
 "A template for employment terms: who we hire, which group they join and "
 "within what limits their rate falls."
 
-#: src/web/positions_views.py:81
+#: src/web/positions_views.py:79
 msgid "Завести должность"
 msgstr "Add a position"
 
-#: src/web/positions_views.py:84
-msgid "Вилка ставки"
-msgstr "Rate range"
-
-#: src/web/positions_views.py:87
+#: src/web/positions_views.py:85
 msgid "Должностей нет."
 msgstr "There are no positions."
 
-#: src/web/positions_views.py:88
+#: src/web/positions_views.py:86
 msgid ""
 "Пока их нет, условия найма набираются каждому человеку руками — это "
 "работает, просто дольше."
@@ -3248,57 +3242,19 @@ msgstr ""
 "Until there are, employment terms are filled in by hand for every person — "
 "that works, it just takes longer."
 
-#: src/web/positions_views.py:121
-#, python-format
-msgid "Ставка %(rate)s ниже вилки должности «%(title)s»: от %(low)s."
-msgstr ""
-"The rate %(rate)s is below the range of the position «%(title)s»: from "
-"%(low)s."
-
-#: src/web/positions_views.py:126
-#, python-format
-msgid "Ставка %(rate)s выше вилки должности «%(title)s»: до %(high)s."
-msgstr ""
-"The rate %(rate)s is above the range of the position «%(title)s»: up to "
-"%(high)s."
-
-#: src/web/positions_views.py:162 src/web/positions_views.py:225
-msgid "Ставка от"
-msgstr "Rate from"
-
-#: src/web/positions_views.py:163 src/web/positions_views.py:228
-msgid "Ставка до"
-msgstr "Rate up to"
-
-#: src/web/positions_views.py:169
-msgid ""
-"Вилка перевёрнута: «до» меньше, чем «от». В такую границу не попадёт ни одна "
-"ставка."
-msgstr ""
-"The range is inverted: «up to» is lower than «from». No rate can fall inside "
-"it."
-
-#: src/web/positions_views.py:188
+#: src/web/positions_views.py:129
 msgid "Новая должность"
 msgstr "New position"
 
-#: src/web/positions_views.py:190
+#: src/web/positions_views.py:131
 msgid "← К должностям"
 msgstr "← To positions"
 
-#: src/web/positions_views.py:196
+#: src/web/positions_views.py:137
 msgid "Короткий код, например pizzamaker."
 msgstr "A short code, for example pizzamaker."
 
-#: src/web/positions_views.py:205
-msgid ""
-"Пусто — как у группы. Оклад ставится здесь: тогда «Ставка» у человека будет "
-"означать сумму за месяц."
-msgstr ""
-"Empty — same as the group. Salary is set here: then «Rate» for a person "
-"means the amount per month."
-
-#: src/web/positions_views.py:223
+#: src/web/positions_views.py:144
 msgid ""
 "Умолчание для нанятых на эту должность. В условиях найма человека величину "
 "можно поставить свою."
@@ -3306,19 +3262,7 @@ msgstr ""
 "The default for people hired into this position. In a person's employment "
 "terms the value can be set separately."
 
-#: src/web/positions_views.py:227
-msgid "Нижняя граница. Пусто — границы нет: ставка договорная."
-msgstr "The lower limit. Empty — there is no limit: the rate is negotiated."
-
-#: src/web/positions_views.py:230
-msgid ""
-"Верхняя граница. Она ловит лишнюю цифру при заведении человека, пока ошибку "
-"ещё дёшево исправить."
-msgstr ""
-"The upper limit. It catches an extra digit while a person is being added, "
-"while the mistake is still cheap to fix."
-
-#: src/web/positions_views.py:241
+#: src/web/positions_views.py:155
 msgid ""
 "Куда попадёт нанятый: группа решает, как считается его работа и в какую "
 "строку P&L уходят его деньги."
@@ -3331,11 +3275,11 @@ msgid "К выплате (нето)"
 msgstr "Payable (net)"
 
 #: src/web/reports_views.py:45 src/web/templates/web/person_pay.html:75
-#: src/web/views.py:893
+#: src/web/views.py:908
 msgid "Бруто"
 msgstr "Gross"
 
-#: src/web/reports_views.py:47 src/web/views.py:896
+#: src/web/reports_views.py:47 src/web/views.py:911
 msgid "Полная стоимость"
 msgstr "Total cost"
 
@@ -3493,7 +3437,7 @@ msgstr "country rules"
 msgid "настройка партнёра"
 msgstr "partner setting"
 
-#: src/web/rules.py:105 src/web/views.py:988
+#: src/web/rules.py:105 src/web/views.py:1003
 msgid "переопределение группы"
 msgstr "group override"
 
@@ -4903,7 +4847,7 @@ msgstr ""
 "  what your role is entitled to."
 
 #: src/web/templates/web/guide.html:237 src/web/templates/web/login.html:34
-#: src/web/templates/web/periods.html:70
+#: src/web/templates/web/periods.html:72
 msgid "Войти"
 msgstr "Log in"
 
@@ -5284,34 +5228,39 @@ msgstr "Open a month — the work happens inside it."
 msgid "Партнёр"
 msgstr "Partner"
 
-#: src/web/templates/web/periods.html:48
+#: src/web/templates/web/periods.html:50
 msgid "Завести"
 msgstr "Add"
 
-#: src/web/templates/web/periods.html:53
+#: src/web/templates/web/periods.html:55
 msgid "Учётных месяцев пока не видно"
 msgstr "No accounting months visible yet"
 
-#: src/web/templates/web/periods.html:56
+#: src/web/templates/web/periods.html:58
 msgid ""
 "Заведите месяц — с него начинается работа: в нём табель, расчёт и\n"
 "    утверждение. Если месяцы уже заведены, а вы их не видите, значит их не "
 "видит ваша\n"
 "    роль — попросите доступ у того, кто заводит пользователей."
-msgstr "Open a month — the work starts there: the timesheet, the calculation and the approval all live inside it. If months are already there and you cannot see them, your role cannot see them — ask whoever manages access."
+msgstr ""
+"Open a month — the work starts there: the timesheet, the calculation and the "
+"approval all live inside it. If months are already there and you cannot see "
+"them, your role cannot see them — ask whoever manages access."
 
-#: src/web/templates/web/periods.html:60
+#: src/web/templates/web/periods.html:62
 msgid ""
 "Месяц заводит тот, кто ведёт расчёт. Если месяцы уже заведены,\n"
 "    значит их не видит ваша роль — попросите доступ у того, кто заводит\n"
 "    пользователей."
-msgstr "A month is opened by whoever runs the calculation. If months are already there, your role cannot see them — ask whoever manages access."
+msgstr ""
+"A month is opened by whoever runs the calculation. If months are already "
+"there, your role cannot see them — ask whoever manages access."
 
-#: src/web/templates/web/periods.html:66
+#: src/web/templates/web/periods.html:68
 msgid "Сначала войдите"
 msgstr "Log in first"
 
-#: src/web/templates/web/periods.html:68
+#: src/web/templates/web/periods.html:70
 msgid ""
 "Пока вы не вошли, база не показывает ничего: без пользователя политики "
 "доступа\n"
@@ -6618,236 +6567,236 @@ msgstr ""
 msgid "Месяц пишется как 2026-06, а не «%(value)s»."
 msgstr "A month is written as 2026-06, not «%(value)s»."
 
-#: src/web/views.py:467
+#: src/web/views.py:482
 #, python-format
 msgid "производственный календарь %(country)s"
 msgstr "%(country)s production calendar"
 
-#: src/web/views.py:469
+#: src/web/views.py:484
 #, python-format
 msgid "календарь %(country)s на этот месяц не заведён"
 msgstr "the %(country)s calendar for this month has not been set up"
 
-#: src/web/views.py:484
+#: src/web/views.py:499
 msgid "Расчёт не выполнен."
 msgstr "Calculation not performed."
 
-#: src/web/views.py:719
+#: src/web/views.py:734
 msgid "Период не утверждён."
 msgstr "Period not approved."
 
-#: src/web/views.py:734
+#: src/web/views.py:749
 msgid "Период не открыт."
 msgstr "Period not open."
 
-#: src/web/views.py:769 src/web/views.py:777
+#: src/web/views.py:784 src/web/views.py:792
 msgid "Разница не перенесена."
 msgstr "Difference not carried over."
 
-#: src/web/views.py:871
+#: src/web/views.py:886
 msgid "Строка не заморожена."
 msgstr "Row not frozen."
 
-#: src/web/views.py:883
+#: src/web/views.py:898
 msgid "Заморозка не снята."
 msgstr "Freeze not lifted."
 
-#: src/web/views.py:902
+#: src/web/views.py:917
 msgid "часов"
 msgstr "hours"
 
-#: src/web/views.py:903
+#: src/web/views.py:918
 msgid "ставка за час"
 msgstr "rate per hour"
 
-#: src/web/views.py:904
+#: src/web/views.py:919
 msgid "процент оплаты"
 msgstr "pay percentage"
 
-#: src/web/views.py:905
+#: src/web/views.py:920
 msgid "минимум за час"
 msgstr "minimum per hour"
 
-#: src/web/views.py:906
+#: src/web/views.py:921
 msgid "типы часов"
 msgstr "hour types"
 
-#: src/web/views.py:907
+#: src/web/views.py:922
 msgid "пропорция"
 msgstr "proportion"
 
-#: src/web/views.py:908
+#: src/web/views.py:923
 msgid "за полную норму"
 msgstr "for the full standard"
 
-#: src/web/views.py:909
+#: src/web/views.py:924
 msgid "отработано дней"
 msgstr "days worked"
 
-#: src/web/views.py:910
+#: src/web/views.py:925
 msgid "рабочих дней в месяце"
 msgstr "working days in the month"
 
-#: src/web/views.py:911
+#: src/web/views.py:926
 msgid "отработано часов"
 msgstr "hours worked"
 
-#: src/web/views.py:912
+#: src/web/views.py:927
 msgid "норма часов"
 msgstr "standard hours"
 
-#: src/web/views.py:913
+#: src/web/views.py:928
 msgid "способ"
 msgstr "method"
 
-#: src/web/views.py:914
+#: src/web/views.py:929
 msgid "база"
 msgstr "base"
 
-#: src/web/views.py:915
+#: src/web/views.py:930
 msgid "база взносов, часов"
 msgstr "contribution base, hours"
 
-#: src/web/views.py:919
+#: src/web/views.py:934
 msgid "базовая ставка"
 msgstr "base rate"
 
-#: src/web/views.py:920
+#: src/web/views.py:935
 msgid "коэффициент"
 msgstr "coefficient"
 
-#: src/web/views.py:924
+#: src/web/views.py:939
 msgid "нето"
 msgstr "net"
 
-#: src/web/views.py:925
+#: src/web/views.py:940
 msgid "бруто"
 msgstr "gross"
 
-#: src/web/views.py:926
+#: src/web/views.py:941
 msgid "налог"
 msgstr "tax"
 
-#: src/web/views.py:927
+#: src/web/views.py:942
 msgid "взносы"
 msgstr "contributions"
 
-#: src/web/views.py:928
+#: src/web/views.py:943
 msgid "зачтено"
 msgstr "credited"
 
-#: src/web/views.py:929
+#: src/web/views.py:944
 msgid "удержано с работника"
 msgstr "withheld from the employee"
 
-#: src/web/views.py:930
+#: src/web/views.py:945
 msgid "доля"
 msgstr "share"
 
-#: src/web/views.py:931
+#: src/web/views.py:946
 msgid "ставка налога"
 msgstr "tax rate"
 
-#: src/web/views.py:932
+#: src/web/views.py:947
 msgid "взносы работника"
 msgstr "employee contributions"
 
-#: src/web/views.py:933
+#: src/web/views.py:948
 msgid "взносы работодателя"
 msgstr "employer contributions"
 
-#: src/web/views.py:934
+#: src/web/views.py:949
 msgid "взносы вместе"
 msgstr "contributions together"
 
-#: src/web/views.py:935
+#: src/web/views.py:950
 msgid "множитель нето → бруто"
 msgstr "net → gross multiplier"
 
-#: src/web/views.py:936
+#: src/web/views.py:951
 msgid "необлагаемый минимум в месяц"
 msgstr "tax-exempt minimum per month"
 
-#: src/web/views.py:937
+#: src/web/views.py:952
 msgid "половина необлагаемого"
 msgstr "half of the tax-exempt amount"
 
-#: src/web/views.py:938
+#: src/web/views.py:953
 msgid "минимальная база взносов"
 msgstr "minimum contribution base"
 
-#: src/web/views.py:939
+#: src/web/views.py:954
 msgid "эталонная норма часов"
 msgstr "reference standard hours"
 
-#: src/web/views.py:940
+#: src/web/views.py:955
 msgid "делитель часов"
 msgstr "hours divisor"
 
-#: src/web/views.py:941
+#: src/web/views.py:956
 msgid "часов в рабочем дне"
 msgstr "hours in a workday"
 
-#: src/web/views.py:942
+#: src/web/views.py:957
 msgid "какая ставка"
 msgstr "which rate"
 
-#: src/web/views.py:945
+#: src/web/views.py:960
 msgid "мера работы"
 msgstr "unit of work"
 
-#: src/web/views.py:946
+#: src/web/views.py:961
 msgid "величина из табеля"
 msgstr "value from the timesheet"
 
-#: src/web/views.py:947
+#: src/web/views.py:962
 msgid "как считается"
 msgstr "how it is calculated"
 
-#: src/web/views.py:949
+#: src/web/views.py:964
 msgid "сумма"
 msgstr "amount"
 
-#: src/web/views.py:958
+#: src/web/views.py:973
 msgid "цена единицы"
 msgstr "unit price"
 
-#: src/web/views.py:959
+#: src/web/views.py:974
 msgid "количество"
 msgstr "quantity"
 
-#: src/web/views.py:967
+#: src/web/views.py:982
 msgid "ставка взносов"
 msgstr "contribution rate"
 
-#: src/web/views.py:973
+#: src/web/views.py:988
 msgid "сумма из табеля"
 msgstr "amount from the timesheet"
 
-#: src/web/views.py:979
+#: src/web/views.py:994
 msgid "количество × цена единицы"
 msgstr "quantity × unit price"
 
-#: src/web/views.py:980
+#: src/web/views.py:995
 msgid "сумма из табеля как есть"
 msgstr "amount from the timesheet, as is"
 
-#: src/web/views.py:986
+#: src/web/views.py:1001
 msgid "правило страны"
 msgstr "country rule"
 
-#: src/web/views.py:987
+#: src/web/views.py:1002
 msgid "переопределение партнёра"
 msgstr "partner override"
 
-#: src/web/views.py:989
+#: src/web/views.py:1004
 msgid "переопределение по сотруднику"
 msgstr "employee override"
 
-#: src/web/views.py:990
+#: src/web/views.py:1005
 msgid "введено руками"
 msgstr "entered manually"
 
-#: src/web/views.py:1397
+#: src/web/views.py:1412
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"

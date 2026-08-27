@@ -34,7 +34,7 @@ from core.models import Counterparty
 from . import permissions
 from .dbrefusal import BadInput, ConstraintRefused, saving
 from .directory_views import _date, _guard, _text
-from .format import EMPTY
+from .format import EMPTY, day
 from .principal import get_current_principal
 
 
@@ -59,8 +59,8 @@ def counterparties(request):
                 {"text": row.title},
                 {"text": row.tax_number or EMPTY},
                 {"text": row.external_id or EMPTY},
-                {"text": row.valid_from.isoformat()},
-                {"text": row.valid_to.isoformat() if row.valid_to else EMPTY},
+                {"text": day(row.valid_from)},
+                {"text": day(row.valid_to)},
             ],
         }
         for row in found(query)
@@ -155,7 +155,7 @@ def counterparty(request, counterparty_id=None):
                 raise BadInput(
                     _("«%(label)s»: дата закрытия должна быть позже даты начала "
                       "(%(from)s).")
-                    % {"label": _("Закрыт с"), "from": valid_from.isoformat()}
+                    % {"label": _("Закрыт с"), "from": day(valid_from)}
                 )
 
             if item is None:

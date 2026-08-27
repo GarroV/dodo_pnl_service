@@ -90,7 +90,7 @@ from core.models import (
 
 from . import directory, permissions, rules
 from .dbrefusal import BadInput, ConstraintRefused, saving
-from .format import EMPTY, exact, hours, ledger_title
+from .format import EMPTY, day, exact, hours, ledger_title
 from .i18n import month_title
 from .principal import get_current_principal
 
@@ -671,7 +671,7 @@ def _employee_rows(who, query: str = "", *, with_key: bool = True) -> list[dict]
             # даёт не ту сумму, что 152 × 421,085, и человек, повторяющий
             # расчёт на калькуляторе, обязан видеть настоящее основание.
             {"text": exact(term.base_rate) if term else EMPTY, "num": True},
-            {"text": person.dismissed_at.isoformat() if person.dismissed_at else EMPTY},
+            {"text": day(person.dismissed_at)},
         ]
         rows.append({
             "url": reverse("directory-employee", args=[person.id]),
@@ -938,17 +938,8 @@ def _wanted_terms(request, who, current: EmploymentTerm | None) -> dict:
     # Должность подставляет то, что у неё задано, и уступает всему, что человек
     # выбрал сам (issue #181): шаблон экономит набор, но не спорит с решением
     # того, кто заводит человека.
-    # Импорт внутри функции, а не сверху: `positions_views` сам построен на
-    # этом модуле, и кольцо импортов уронило бы оба.
-    from .positions_views import rate_refusal
-
     chosen = _position_of(request)
     base_rate = _number(request, "base_rate", _("Ставка или оклад"))
-    refusal = rate_refusal(chosen, base_rate)
-    if refusal:
-        # Вилка ловит опечатку там, где её ещё дёшево исправить: 420 вместо
-        # 4200 — лишняя цифра, и узнавать о ней на закрытии месяца поздно.
-        raise BadInput(refusal)
     return {
         "position": chosen,
         "group_id": _choice(
@@ -969,16 +960,14 @@ def _wanted_terms(request, who, current: EmploymentTerm | None) -> dict:
         "scheme": _from_rules(
             request, "scheme", _("Схема расчёта"), rules.scheme_choices(preset or {}),
             current.scheme if current else None, required=False,
-        ) or (chosen.scheme if chosen else None),
+        ),
         # Чем меряется работа именно этого человека (T164). Пусто — как у группы.
         "work_measure": _from_rules(
             request, "work_measure", _("Чем меряется работа"),
             rules.measure_choices(preset or {}),
             current.work_measure if current else None, required=False,
-        ) or (chosen.work_measure if chosen else None),
-        "ledger": _choice(
-            request, "ledger", _("Регистр учёта"), LEDGER_CODES, required=False,
-        ) or (chosen.ledger if chosen else None),
+        ),
+        "ledger": _choice(request, "ledger", _("Регистр учёта"), LEDGER_CODES, required=False),
     }
 
 
@@ -1030,8 +1019,8 @@ def _employee_context(
         ),
         "versions": [
             {
-                "from": term.valid_from.isoformat(),
-                "to": term.valid_to.isoformat() if term.valid_to else EMPTY,
+                "from": day(term.valid_from),
+                "to": day(term.valid_to),
                 "group": term.group.title,
                 "unit": term.unit.code if term.unit else EMPTY,
                 # Ставка и коэффициент — основания расчёта, а не деньги: как
@@ -1475,8 +1464,8 @@ def units(request):
                 {"text": unit.code},
                 {"text": unit.title},
                 {"text": unit.legal_entity.title if unit.legal_entity else "—"},
-                {"text": unit.opened_at.isoformat() if unit.opened_at else "—"},
-                {"text": unit.closed_at.isoformat() if unit.closed_at else "—"},
+                {"text": day(unit.opened_at)},
+                {"text": day(unit.closed_at)},
             ],
         }
         for unit in Unit.objects.select_related("legal_entity").order_by("code")

@@ -39,7 +39,7 @@ from . import cash, papers, permissions, suppliers, suppliers_views
 from .counterparties_views import found as counterparties_found
 from .dbrefusal import BadInput
 from .directory_views import _number, _select, _text
-from .format import EMPTY, money
+from .format import EMPTY, day, money
 from .i18n import month_title
 from .principal import get_current_principal
 from .suppliers_views import (
@@ -391,7 +391,7 @@ def paper(request, document_id):
             "note": papers.note_of(document),
             "stated_text": (money(document.total_amount)
                             if document.total_amount is not None else EMPTY),
-            "handed_over": (document.handed_over_at.date().isoformat()
+            "handed_over": (day(document.handed_over_at.date())
                             if document.handed_over_at else ""),
         },
         "shown_inline": bool(kept and kept.media_type in papers.SHOWN_INLINE),

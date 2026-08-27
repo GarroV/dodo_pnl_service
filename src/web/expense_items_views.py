@@ -54,7 +54,7 @@ from .directory_views import (
     _select,
     _text,
 )
-from .format import ledger_title
+from .format import day, ledger_title
 
 # Разбор ввода берётся у соседнего справочника целиком, а не переписывается
 # здесь: правила у всех шести экранов одни («поле обязательно», «дата пишется
@@ -162,8 +162,8 @@ def _list_page(request, who, *, error: str = "", status: int = 200):
                 {"text": item.code},
                 {"text": item_title(item.titles)},
                 {"text": item.pnl_item.title},
-                {"text": item.valid_from.isoformat()},
-                {"text": item.valid_to.isoformat() if item.valid_to else "—"},
+                {"text": day(item.valid_from)},
+                {"text": day(item.valid_to)},
             ],
         }
         for item in ExpenseItem.objects.select_related("pnl_item").order_by("code")

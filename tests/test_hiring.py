@@ -282,7 +282,9 @@ def test_dismissing_is_a_date_and_the_person_stays(
     assert sql.execute(
         "select count(*) from employment_terms where employee_id = %s", (person[0],),
     ).fetchone()[0] == 1
-    assert "2026-06-30" in body(client.get(LIST)), "в списке не видно, что человек уволен"
+    # Дата в списке — человеческая (решение владельца 27.08.2026): 30.06.2026,
+    # а не машинное 2026-06-30.
+    assert "30.06.2026" in body(client.get(LIST)), "в списке не видно, что человек уволен"
 
     # И обратимо: дату можно очистить.
     back = client.post(card, {

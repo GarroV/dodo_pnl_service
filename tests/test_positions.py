@@ -12,9 +12,7 @@
    ведёт остальные справочники, а видят все.
 2. Она **подставляет** значения в условия найма, но не диктует их: ставку
    конкретному человеку можно поставить свою.
-3. **Вилка ставки** ловит опечатку в момент ввода, а не на закрытии месяца:
-   420 вместо 4200 — это не «низкая ставка», это лишняя цифра.
-4. Шаблон **не меняет условия уже нанятых** — иначе правка должности молча
+3. Шаблон **не меняет условия уже нанятых** — иначе правка должности молча
    пересчитывала бы закрытые месяцы всем, кто на ней сидит.
 """
 from __future__ import annotations
@@ -38,8 +36,7 @@ def a_position(web_env):
     group = EmployeeGroup.objects.filter(tenant=tenant).order_by("code").first()
     position = Position.objects.create(
         tenant=tenant, code="pizzamaker", title="Пиццамейкер",
-        group=group, work_measure="hours",
-        rate_from=Decimal("400.0000"), rate_to=Decimal("520.0000"),
+        group=group, contract_hours=Decimal("176.00"),
     )
     yield position
     Position.objects.filter(pk=position.pk).delete()
@@ -73,28 +70,9 @@ def test_hiring_by_position_fills_the_terms(client, a_position):
     term = EmploymentTerm.objects.filter(employee=person).first()
     assert term is not None, "условий найма нет — заводить человека незачем"
     assert term.group_id == a_position.group_id, "группа не подставилась из должности"
-    assert term.work_measure == "hours"
     assert term.position_id == a_position.id, "связь с должностью не сохранена"
 
     Employee.objects.filter(pk=person.pk).delete()
-
-
-def test_a_rate_outside_the_range_is_refused_in_words(client, a_position):
-    """Опечатка в ставке ловится при вводе, а не на закрытии месяца."""
-    from core.models import Employee
-
-    login_as(client, "admin")
-    response = client.post("/directory/employees/new/", {
-        "last_name": "Сидоров", "first_name": "Пётр",
-        "external_id": "POS-0002", "hired_at": "2026-06-01",
-        "position": str(a_position.id),
-        "base_rate": "45", "coefficient": "1",
-    })
-    text = body(response)
-    assert "вилк" in text.lower() or "400" in text, text[:400]
-    assert not Employee.objects.filter(external_id="POS-0002").exists(), (
-        "человек заведён со ставкой вне вилки — проверка бумажная"
-    )
 
 
 def test_editing_the_position_does_not_touch_those_already_hired(client, a_position):
@@ -112,8 +90,7 @@ def test_editing_the_position_does_not_touch_those_already_hired(client, a_posit
 
     client.post(f"/directory/positions/{a_position.id}/", {
         "code": "pizzamaker", "title": "Пиццамейкер",
-        "group": str(a_position.group_id), "work_measure": "hours",
-        "rate_from": "600", "rate_to": "900",
+        "group": str(a_position.group_id), "contract_hours": "160",
     }, follow=True)
 
     assert EmploymentTerm.objects.get(employee=person).base_rate == before, (
@@ -126,8 +103,7 @@ def test_the_screen_refuses_the_one_who_does_not_keep_directories(client, a_posi
     """Право то же, что у остальных справочников: ведёт администратор сети."""
     login_as(client, "accountant")
     response = client.post("/directory/positions/new/", {
-        "code": "courier", "title": "Курьер",
-        "group": str(a_position.group_id), "work_measure": "hours",
+        "code": "courier", "title": "Курьер", "group": str(a_position.group_id),
     })
     assert response.status_code == 403, body(response)[:300]
 

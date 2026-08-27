@@ -117,7 +117,8 @@ def test_closing_by_date_keeps_the_card(client, no_counterparties):
     assert client.post(card, {
         "title": "EPS Elektro", "valid_from": "2026-01-01", "valid_to": "2026-07-01",
     }).status_code == 302
-    assert "2026-07-01" in body(client.get(LIST))
+    # Дата человеческая (решение владельца 27.08.2026): 01.07.2026.
+    assert "01.07.2026" in body(client.get(LIST))
 
 
 def test_dates_that_run_backwards_are_refused(client, no_counterparties):
