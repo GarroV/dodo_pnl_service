@@ -1,0 +1,18 @@
+{
+  "_": "Экраны, которые показывает гайд. Один список на съёмку и на сборку: ключ — имя снимка, значение — адрес. Тест tests/test_guide_screens.py сверяет его с плейсхолдерами {{SHOT:…}} в самом гайде, поэтому забыть новый экран нельзя.",
+  "01-periods": "/periods/",
+  "02-directory": "/directory/",
+  "03-units": "/directory/units/",
+  "04-groups": "/directory/groups/",
+  "05-group-form": "/directory/groups/new/",
+  "06-positions": "/directory/positions/",
+  "07-employees": "/directory/employees/",
+  "08-employee-form": "/directory/employees/new/",
+  "09-employee-card": "{employee}",
+  "10-calendar": "/directory/calendar/",
+  "11-period": "/periods/{period}/",
+  "12-timesheet": "/timesheets/{period}/",
+  "13-reconcile": "/periods/{period}/reconcile/",
+  "14-variance": "/periods/{period}/variance/",
+  "15-expenses": "/expenses/"
+}

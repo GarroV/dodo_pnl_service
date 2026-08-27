@@ -20,8 +20,9 @@
  * Дальше снимки сжимаются и встраиваются в страницу как data:-адреса —
  * внешние картинки в опубликованном артефакте не грузятся.
  *
- * Список экранов ниже — то, что показывает гайд. Добавили экран в гайд —
- * добавьте сюда; иначе следующая пересъёмка обойдёт его стороной.
+ * Список экранов лежит в `docs/guides/screens.json` — один и тот же на съёмку и
+ * на сборку страницы. Добавили экран в гайд — впишите его туда; забыть нельзя,
+ * это стережёт `tests/test_guide_screens.py`.
  */
 const APP = process.env.APP || "http://127.0.0.1:8000";
 const OUT = process.argv[2];
@@ -115,24 +116,19 @@ const employeeUrl = await (async () => {
 })();
 
 console.log("период:", periodId, "| карточка:", employeeUrl);
-const shots = [
-  ["01-periods", `${APP}/periods/`],
-  ["02-directory", `${APP}/directory/`],
-  ["03-units", `${APP}/directory/units/`],
-  ["04-groups", `${APP}/directory/groups/`],
-  ["05-group-form", `${APP}/directory/groups/new/`],
-  ["06-positions", `${APP}/directory/positions/`],
-  ["07-employees", `${APP}/directory/employees/`],
-  ["08-employee-form", `${APP}/directory/employees/new/`],
-  ["09-employee-card", `${APP}${employeeUrl}`],
-  ["10-calendar", `${APP}/directory/calendar/`],
-  ["11-period", `${APP}/periods/${periodId}/`],
-  ["12-timesheet", `${APP}/timesheets/${periodId}/`],
-  ["13-reconcile", `${APP}/periods/${periodId}/reconcile/`],
-  ["14-variance", `${APP}/periods/${periodId}/variance/`],
-  ["15-expenses", `${APP}/expenses/`],
-  ["16-rules", `${APP}/rules/`],
-];
+// Список экранов — один на съёмку и на сборку гайда: `docs/guides/screens.json`.
+// Своя копия здесь означала бы дубль, который разъезжается молча — гайд
+// поправили, список поправили, а снимают по старому. Сторож этого не допустит
+// (tests/test_guide_screens.py).
+const fsSync = await import("node:fs/promises");
+const listRaw = await fsSync.readFile(new URL("../docs/guides/screens.json", import.meta.url), "utf8");
+const shots = Object.entries(JSON.parse(listRaw))
+  .filter(([name]) => !name.startsWith("_"))
+  .map(([name, path]) => [
+    name,
+    APP + path.replace("{period}", periodId).replace("{employee}", employeeUrl),
+  ]);
+
 
 const fs = await import("node:fs/promises");
 for (const [name, url] of shots) {
