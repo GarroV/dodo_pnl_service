@@ -957,6 +957,11 @@ def _wanted_terms(request, who, current: EmploymentTerm | None) -> dict:
         ) or (chosen.group_id if chosen else None),
         "unit_id": _choice(request, "unit", _("Точка"), units, required=False),
         "base_rate": base_rate,
+        # Договорные часы: своё сильнее умолчания должности — как и всё
+        # остальное в этой форме (issue #171).
+        "contract_hours": _number(
+            request, "contract_hours", _("Часы по договору"), required=False,
+        ) or (chosen.contract_hours if chosen else None),
         "coefficient": _number(request, "coefficient", _("Коэффициент")),
         # Схема расчёта — выбор из правил страны, а не набранный текст (T164).
         # Опечатка в ключе означала молча несчитанного человека: расчёт узнаёт о
@@ -1168,6 +1173,12 @@ def _terms_fields(who, current: EmploymentTerm | None) -> list[dict]:
          "help": _("Что это за число, решает «Чем меряется работа»: по часам — "
                    "цена часа, оклад — сумма за месяц, сдельно — цена единицы."),
          "value": current.base_rate if current else ""},
+        {"kind": "number", "name": "contract_hours", "label": _("Часы по договору"),
+         "value": (exact(current.contract_hours)
+                   if current and current.contract_hours is not None else ""),
+         "help": _("Сколько человек обязан отработать за месяц. Пусто — величины "
+                   "нет: в табеле он не будет считаться ни добравшим, ни недобравшим."),
+         },
         {"kind": "number", "name": "coefficient", "label": _("Коэффициент"), "required": True,
          # Единица подставлена заранее: коэффициент есть у каждого, и у
          # большинства он ровно один. Пустое обязательное поле на форме

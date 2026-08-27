@@ -206,6 +206,16 @@
         помечается, и период не считается, пока числа не сойдутся.
         {% endcomment %}
         <th class="num muted" title="{% translate "Вход расчёта наравне с часами: по ней считаются взносы и бруто" %}">{% translate "База взносов" %}</th>
+        {% comment %}
+        Договорные часы и расхождение показываются только там, где величину
+        ведут (issue #171): пустые колонки на табеле партнёра, который её не
+        считает, отнимали бы ширину у часов и приглашали заполнить то, чего он
+        не заводил.
+        {% endcomment %}
+        {% if grid.has_contract_hours %}
+          <th class="num muted" title="{% translate "Сколько человек обязан отработать по договору" %}">{% translate "Договор" %}</th>
+          <th class="num muted" title="{% translate "Отработанное минус договорные часы: плюс — переработал, минус — недобрал" %}">{% translate "Δ к договору" %}</th>
+        {% endif %}
         <th class="num muted">{% translate "Норма" %}</th>
       </tr>
     </thead>
@@ -302,6 +312,14 @@
           {% endif %}
           {% include "timesheets/_row_total.html" with row=row oob=False %}
           {% include "timesheets/_insured_cell.html" with row=row oob=False %}
+          {% if grid.has_contract_hours %}
+            <td class="num muted">{% if row.contract_hours is not None %}{{ row.contract_hours|hours }}{% else %}—{% endif %}</td>
+            {% comment %}
+            Знак важнее модуля: «12 часов расхождения» управляющему ничего не
+            говорит, а «−12» говорит, что смену недоукомплектовали.
+            {% endcomment %}
+            <td class="num{% if row.contract_diff %} warn{% endif %}">{% if row.contract_diff is not None %}{% if row.contract_diff > 0 %}+{% endif %}{{ row.contract_diff|hours }}{% else %}—{% endif %}</td>
+          {% endif %}
           <td class="num muted">{{ row.norm_hours|hours }}</td>
         </tr>
       {% endfor %}
@@ -315,8 +333,27 @@
         {# Сдельную величину по столбцу не суммируют — см. заголовок колонки. #}
         {% if grid.has_piecework %}<td></td>{% endif %}
         <td class="num strong" id="grand-total">{{ grid.total|hours }}</td>
-        <td></td><td></td>
+        <td></td>
+        {% if grid.has_contract_hours %}<td></td><td></td>{% endif %}
+        <td></td>
       </tr>
+      {% if grid.has_contract_hours %}
+      {% comment %}
+      Лишние и недостающие стоят отдельными числами, а не одной разностью:
+      смена, где один переработал двадцать часов, а трое недобрали по семь, в
+      сальдо выглядит ровной — а это две беды, а не ноль.
+      {% endcomment %}
+      <tr class="grand">
+        <td colspan="2">{% translate "По договорам" %}</td>
+        <td class="num muted" colspan="{{ grid.columns|length }}">
+          {% translate "Лишние часы" %}: <b>{{ grid.contract_extra|hours }}</b> ·
+          {% translate "Недостающие" %}: <b>{{ grid.contract_missing|hours }}</b> ·
+          {% translate "Сальдо" %}: <b>{% if grid.contract_balance > 0 %}+{% endif %}{{ grid.contract_balance|hours }}</b>
+        </td>
+        {% if grid.has_piecework %}<td></td>{% endif %}
+        <td></td><td></td><td></td><td></td>
+      </tr>
+      {% endif %}
     </tfoot>
   </table>
 {% endscroll %}

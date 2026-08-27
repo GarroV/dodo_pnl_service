@@ -156,6 +156,9 @@ def position(request, position_id=None):
             measure = request.POST.get("work_measure") or None
             scheme = request.POST.get("scheme") or None
             ledger = request.POST.get("ledger") or None
+            contract_hours = _number(
+                request, "contract_hours", _("Часы по договору"), required=False,
+            )
             rate_from = _number(request, "rate_from", _("Ставка от"), required=False)
             rate_to = _number(request, "rate_to", _("Ставка до"), required=False)
             if rate_from is not None and rate_to is not None and rate_to < rate_from:
@@ -172,6 +175,7 @@ def position(request, position_id=None):
             item.code, item.title, item.group_id = code, title, group_id
             item.work_measure, item.scheme, item.ledger = measure, scheme, ledger
             item.rate_from, item.rate_to = rate_from, rate_to
+            item.contract_hours = contract_hours
             with saving():
                 item.save()
             return redirect(reverse("directory-positions"))
@@ -213,6 +217,11 @@ def position(request, position_id=None):
                 (item.ledger if item else None) or None,
                 required=False, empty_label=_("как у группы"),
             ),
+            {"kind": "number", "name": "contract_hours", "label": _("Часы по договору"),
+             "value": (exact(item.contract_hours)
+                       if item and item.contract_hours is not None else ""),
+             "help": _("Умолчание для нанятых на эту должность. В условиях найма "
+                       "человека величину можно поставить свою.")},
             {"kind": "number", "name": "rate_from", "label": _("Ставка от"),
              "value": exact(item.rate_from) if item and item.rate_from is not None else "",
              "help": _("Нижняя граница. Пусто — границы нет: ставка договорная.")},

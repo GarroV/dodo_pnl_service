@@ -98,10 +98,27 @@ class Row:
         """Все подсказки строки одной фразой — для подписи и подсказки мыши."""
         return " · ".join(hint.text for hint in self.hints)
 
+    # Сколько человек обязан отработать по договору и на сколько разошлось
+    # (issue #171). Пусто — величины нет: про такого человека нельзя сказать
+    # «недобрал», и в итогах точки он не участвует.
+    contract_hours: Decimal | None = None
+
     # Оплачивается ли работа этой строки по часам. У почасовика да; у окладника
     # тоже — его часовая ставка выводится из оклада (issue #188), поэтому часы
     # ему оплачены и помечать их «не оплачиваются» нельзя. У сдельных нет.
     pays_by_hours: bool = True
+
+    @property
+    def contract_diff(self) -> Decimal | None:
+        """На сколько отработанное разошлось с договором. Со знаком.
+
+        Плюс — переработал, минус — недобрал. Знак важнее модуля: «12 часов
+        расхождения» ничего не говорит управляющему, а «−12» говорит, что смену
+        недоукомплектовали.
+        """
+        if self.contract_hours is None:
+            return None
+        return self.total - self.contract_hours
 
     @property
     def piecework(self) -> bool:
@@ -135,6 +152,43 @@ class Grid:
         там, где её никто не спрашивает.
         """
         return any(row.piecework for row in self.rows)
+
+    @property
+    def has_contract_hours(self) -> bool:
+        """Есть ли хоть у кого договорные часы — от этого зависят две колонки.
+
+        Пустые колонки «Договор» и «Δ» на табеле партнёра, который эту величину
+        не ведёт, только отнимали бы ширину у часов.
+        """
+        return any(row.contract_hours is not None for row in self.rows)
+
+    @property
+    def contract_extra(self) -> Decimal:
+        """Лишние часы по точке: сумма переработок, без взаимозачёта."""
+        return sum(
+            (row.contract_diff for row in self.rows
+             if row.contract_diff is not None and row.contract_diff > 0),
+            Decimal("0"),
+        )
+
+    @property
+    def contract_missing(self) -> Decimal:
+        """Недостающие часы: сумма недоработок, положительным числом.
+
+        Отдельно от лишних, а не одной разностью: смена, где один переработал
+        двадцать часов, а трое недобрали по семь, в сальдо выглядит ровной — и
+        ровно это управляющему надо увидеть как две беды, а не как ноль.
+        """
+        return -sum(
+            (row.contract_diff for row in self.rows
+             if row.contract_diff is not None and row.contract_diff < 0),
+            Decimal("0"),
+        )
+
+    @property
+    def contract_balance(self) -> Decimal:
+        """Сальдо: лишние минус недостающие. Люди без договора не участвуют."""
+        return self.contract_extra - self.contract_missing
 
     @property
     def suspicious_rows(self) -> list:
@@ -278,6 +332,7 @@ def build_grid(tenant_id: UUID, period: date, *, unit_ids=None) -> Grid:
                 measure=measure,
                 measure_title=measure_title,
                 pays_by_hours=pays_by_hours(rules, terms.get(sheet.employee_id), measure),
+                contract_hours=_contract_of(terms.get(sheet.employee_id)),
                 piece_value=Decimal(str(sheet.piece_value)),
                 # Подсказки считаются по тем же числам, что показаны в строке, и
                 # тем же правилом, каким их считает загрузка файла (T118).
@@ -365,9 +420,17 @@ def _rows_without_a_sheet(tenant_id, period, *, terms, codes, seen, unit_ids, cl
                 measure=measure,
                 measure_title=measure_title,
                 pays_by_hours=pays_by_hours(rules, term, measure),
+                contract_hours=_contract_of(term),
             )
         )
     return empty
+
+
+def _contract_of(term) -> Decimal | None:
+    """Договорные часы человека этого месяца. Нет условий — нет и величины."""
+    if term is None or term.contract_hours is None:
+        return None
+    return Decimal(str(term.contract_hours))
 
 
 def _norm_or_zero(tenant_id, period) -> Decimal:

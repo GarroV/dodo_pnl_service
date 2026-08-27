@@ -1,0 +1,25 @@
+{
+  "Сколько человек обязан отработать по договору": {
+    "en": "How many hours the person is required to work under their contract",
+    "sr": "Koliko je sati čovek dužan da odradi po ugovoru"
+  },
+  "Договор": {"en": "Contract", "sr": "Ugovor"},
+  "Отработанное минус договорные часы: плюс — переработал, минус — недобрал": {
+    "en": "Hours worked minus contract hours: plus — worked over, minus — fell short",
+    "sr": "Odrađeni sati minus ugovoreni: plus — prekovremeno, minus — manjak"
+  },
+  "Δ к договору": {"en": "Δ to contract", "sr": "Δ do ugovora"},
+  "По договорам": {"en": "Against contracts", "sr": "Po ugovorima"},
+  "Лишние часы": {"en": "Extra hours", "sr": "Višak sati"},
+  "Недостающие": {"en": "Missing", "sr": "Manjak"},
+  "Сальдо": {"en": "Balance", "sr": "Saldo"},
+  "Часы по договору": {"en": "Contract hours", "sr": "Ugovoreni sati"},
+  "Сколько человек обязан отработать за месяц. Пусто — величины нет: в табеле он не будет считаться ни добравшим, ни недобравшим.": {
+    "en": "How many hours the person is required to work per month. Empty — there is no such value: in the timesheet they count as neither over nor short.",
+    "sr": "Koliko je sati čovek dužan da odradi mesečno. Prazno — vrednosti nema: u evidenciji se ne računa ni kao višak ni kao manjak."
+  },
+  "Умолчание для нанятых на эту должность. В условиях найма человека величину можно поставить свою.": {
+    "en": "The default for people hired into this position. In a person's employment terms the value can be set separately.",
+    "sr": "Podrazumevana vrednost za zaposlene na ovom radnom mestu. U uslovima zaposlenja čoveka može se postaviti svoja."
+  }
+}

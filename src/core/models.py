@@ -729,6 +729,11 @@ class Position(models.Model):
     # договорная, и выдуманная вилка мешала бы заводить людей.
     rate_from = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
     rate_to = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    # Договорные часы по умолчанию для нанятых на эту должность (issue #171).
+    # Подставляются в условия найма и дальше живут там своей версией.
+    contract_hours = models.DecimalField(
+        max_digits=8, decimal_places=2, null=True, blank=True,
+    )
     created_at = models.DateTimeField(db_default=now_default())
 
     class Meta:
@@ -809,6 +814,14 @@ class EmploymentTerm(models.Model):
     )
     base_rate = models.DecimalField(max_digits=12, decimal_places=4)
     coefficient = models.DecimalField(max_digits=8, decimal_places=4, db_default=1)
+    # Сколько часов человек обязан отработать по договору (issue #171). Пусто —
+    # величины нет: у части людей её не считают вовсе, и «недобрал» про них
+    # сказать нечего. Живёт здесь, а не в должности, потому что меняется вместе
+    # с условиями: перевели на полставки — норма по договору другая с той же
+    # даты. В должности лежит умолчание, подставляемое при найме.
+    contract_hours = models.DecimalField(
+        max_digits=8, decimal_places=2, null=True, blank=True,
+    )
     scheme = models.TextField(null=True, blank=True)  # переопределяет схему группы
     ledger = ledger_field(null=True, blank=True)  # переопределяет регистр группы
     # Чем меряется работа именно этого человека (T164): ключ из `work_measures`
