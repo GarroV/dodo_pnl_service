@@ -131,3 +131,61 @@ def test_states_are_from_the_dictionary():
             states.append(cells[2])
     unknown = sorted({state for state in states if state and state not in allowed})
     assert not unknown, f"в карте состояния не из словаря: {unknown}"
+
+
+# --- карта ↔ граф задач ---------------------------------------------------------
+#
+# Расхождение, ради которого эти две проверки написаны, стоило возможности
+# строить агентами. Работа переехала в issues, `tasks.md` остался со старыми
+# статусами — и диспетчер `forge-build`, который читает именно граф, увидел
+# «почти всё done»: раздавать нечего. Заметить это можно было только сверив
+# три файла целиком, чего никто не делал два десятка задач подряд.
+
+TASKS = ROOT / "tasks.md"
+PLAN = ROOT / "docs" / "forge" / "plan.md"
+
+
+def graph_ids() -> set[str]:
+    """Номера задач графа — по первой ячейке строки таблицы."""
+    import re
+
+    return set(re.findall(r"^\| (T\d+) \|", TASKS.read_text(encoding="utf-8"), re.M))
+
+
+def test_every_task_named_in_the_map_exists_in_the_graph():
+    """Карта ссылается на задачу — задача обязана быть в графе.
+
+    Ссылка на несуществующий номер хуже отсутствия ссылки: она выглядит как
+    план, которого нет, и читатель идёт искать его в `tasks.md`.
+    """
+    import re
+
+    named = set(re.findall(r"\bT\d{3}\b", rows()))
+    missing = sorted(named - graph_ids())
+    assert not missing, (
+        "карта продукта ссылается на задачи, которых в графе нет: "
+        + ", ".join(missing)
+    )
+
+
+def test_every_block_used_in_the_graph_is_named_in_the_plan():
+    """Блок из графа обязан быть в плане: диспетчер раздаёт работу блоками.
+
+    `chores` — не блок продукта, а служебная корзина, и в плане её нет
+    намеренно (так описан формат в шапке `tasks.md`).
+    """
+    import re
+
+    used = {
+        block
+        for block in re.findall(r"^\| T\d+ \| ([a-z0-9-]+) \|", TASKS.read_text(encoding="utf-8"), re.M)
+        if block != "chores"
+    }
+    plan = PLAN.read_text(encoding="utf-8")
+    missing = sorted(block for block in used if f"`{block}`" not in plan)
+    assert not missing, (
+        "эти блоки используются в графе, а план про них не знает: "
+        + ", ".join(missing)
+        + " — диспетчер раздаёт работу по плану, и блока без описания он не увидит"
+    )
+
