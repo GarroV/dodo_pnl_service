@@ -176,9 +176,10 @@ def test_every_block_used_in_the_graph_is_named_in_the_plan():
     """
     import re
 
+    graph = TASKS.read_text(encoding="utf-8")
     used = {
         block
-        for block in re.findall(r"^\| T\d+ \| ([a-z0-9-]+) \|", TASKS.read_text(encoding="utf-8"), re.M)
+        for block in re.findall(r"^\| T\d+ \| ([a-z0-9-]+) \|", graph, re.M)
         if block != "chores"
     }
     plan = PLAN.read_text(encoding="utf-8")

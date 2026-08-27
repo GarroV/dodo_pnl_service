@@ -22,7 +22,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import subprocess
 import sys
@@ -79,10 +78,11 @@ def version(call, is_remote: bool) -> dict:
     """Версия кода на стенде против origin/master."""
     cd = f"cd {REMOTE_PATH};" if is_remote else f"cd {ROOT} &&"
     here = call(f"{cd} git log -1 --format='%h|%ad|%s' --date=short").strip().splitlines()
-    behind = call(f"{cd} git fetch origin -q; {cd} git rev-list --count HEAD..origin/master").strip().splitlines()
-    line = next((l for l in here if "|" in l), "?|?|?")
-    n = next((l for l in reversed(behind) if l.strip().isdigit()), "?")
-    return {"commit": line, "behind": n}
+    counting = f"{cd} git fetch origin -q; {cd} git rev-list --count HEAD..origin/master"
+    behind = call(counting).strip().splitlines()
+    commit = next((row for row in here if "|" in row), "?|?|?")
+    count = next((row for row in reversed(behind) if row.strip().isdigit()), "?")
+    return {"commit": commit, "behind": count}
 
 
 def design_system(call, prefix: str, service: str = "app") -> str:
@@ -113,7 +113,8 @@ def funnel(prefix: str) -> list[tuple[str, str]]:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Паспорт стенда: наше, версия, публичность")
     ap.add_argument("--host", choices=["muspelheim", "local"], default="muspelheim")
-    ap.add_argument("--prefix", default=DEFAULT_PREFIX, help="имя compose-проекта (префикс контейнеров)")
+    ap.add_argument("--prefix", default=DEFAULT_PREFIX,
+                    help="имя compose-проекта (префикс контейнеров)")
     args = ap.parse_args()
 
     is_remote = args.host == "muspelheim"
@@ -143,11 +144,13 @@ def main() -> int:
     behind = v["behind"]
     fresh = behind == "0"
     print(f"  {c} от {d} — {subj[:70]}")
-    print(f"  {(OK + 'совпадает с origin/master' if fresh else WARN + f'ОТСТАЁТ от origin/master на {behind} коммитов')}{OFF}")
+    verdict = (OK + "совпадает с origin/master" if fresh
+               else WARN + f"ОТСТАЁТ от origin/master на {behind} коммитов")
+    print(f"  {verdict}{OFF}")
 
     head("Дизайн-система в работающих образах")
-    ref = sum(1 for l in (ROOT / "src/web/static/web/tokens.css").read_text().splitlines()
-              if l.strip().startswith("--"))
+    ref = sum(1 for line in (ROOT / "src/web/static/web/tokens.css").read_text().splitlines()
+              if line.strip().startswith("--"))
     # Демо живёт под отдельным профилем compose и на обычном `up -d` остаётся
     # на прежнем образе — молча. Именно так стенд и разъехался 22.08.
     for service, title in (("app", "приложение"), ("demo", "демо")):
@@ -172,7 +175,8 @@ def main() -> int:
             tag = f"{OK}НАШЕ{OFF}" if mine else f"{BAD}ЧУЖОЙ ПРОЕКТ{OFF}"
             print(f"  {addr}  →  {target}   {tag}")
         if not any(re.search(r":(8010|8030)", t) for _, t in rows):
-            print(f"  {WARN}наш продукт наружу НЕ опубликован — по публичному адресу отвечает не он{OFF}")
+            print(f"  {WARN}наш продукт наружу НЕ опубликован — "
+                  f"по публичному адресу отвечает не он{OFF}")
 
     print()
     return 0

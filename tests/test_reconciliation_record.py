@@ -37,6 +37,15 @@ def reconciled(client, web_env):
     url = period_url(client)
     client.post(url + "calculate/", {"inline": "1"}, follow=True)
 
+    # Чужие протоколы убираются ДО сверки, а не только после (issue #198).
+    # Сверку через экран гоняют и соседние файлы тестов — в том числе файлом про
+    # чужих людей, где не сопоставилось ни строки. Такая запись живёт в той же
+    # таблице с `lines = 0`, и выборка «первая попавшаяся за июнь» однажды
+    # возвращает именно её. Локально порядок оказывался удачным, в CI — нет:
+    # тест краснел на исправном продукте, а выглядело это как потерянный
+    # счётчик строк.
+    Reconciliation.objects.all().delete()
+
     sample = Path(__file__).resolve().parent / "fixtures" / "plata-sample.xlsx"
     with sample.open("rb") as file:
         response = client.post(url + "reconcile/", {"table": file}, follow=True)
@@ -45,11 +54,29 @@ def reconciled(client, web_env):
     Reconciliation.objects.all().delete()
 
 
-def test_the_reconciliation_is_recorded(reconciled):
-    """После сверки в системе остаётся запись: когда, кто, с каким файлом."""
+def our_record():
+    """Протокол ИМЕННО нашей сверки, а не первый попавшийся за июнь (#198).
+
+    Якорь — имя файла, а не порядок записей. Сортировка «самая свежая» тоже не
+    годится: чужую запись может создать и тест, идущий позже. Ошибка была
+    именно в выборке «первая попавшаяся»: соседний тест сверяет файл про чужих
+    людей, у той записи `lines = 0`, и когда база возвращала её, тест краснел на
+    исправном продукте.
+    """
     from core.models import Reconciliation
 
-    record = Reconciliation.objects.filter(period=JUNE).first()
+    return (
+        Reconciliation.objects
+        .filter(period=JUNE, file_name="plata-sample.xlsx")
+        .order_by("-created_at")
+        .first()
+    )
+
+
+def test_the_reconciliation_is_recorded(reconciled):
+    """После сверки в системе остаётся запись: когда, кто, с каким файлом."""
+
+    record = our_record()
     assert record is not None, "сверка нигде не сохранилась"
     assert record.file_name.endswith(".xlsx"), "имя файла не записано"
     assert record.created_by is not None, "не видно, кто сверял"
@@ -58,9 +85,8 @@ def test_the_reconciliation_is_recorded(reconciled):
 
 def test_the_file_itself_is_not_stored(reconciled):
     """Файла в системе нет: в нём ФИО и суммы живых людей (D028)."""
-    from core.models import Reconciliation
 
-    record = Reconciliation.objects.filter(period=JUNE).first()
+    record = our_record()
     for field in record._meta.get_fields():
         assert "content" not in field.name and "payload" not in field.name, (
             f"в протоколе есть поле «{field.name}» — похоже, файл всё-таки хранится"
@@ -73,9 +99,9 @@ def test_the_findings_are_recorded_with_both_sides(reconciled):
     Если файл сошёлся целиком — записывать нечего, и это не повод пропускать
     проверку: заводим расхождение сами и убеждаемся, что обе стороны на месте.
     """
-    from core.models import Employee, Reconciliation, ReconciliationFinding
+    from core.models import Employee, ReconciliationFinding
 
-    record = Reconciliation.objects.filter(period=JUNE).first()
+    record = our_record()
     if not ReconciliationFinding.objects.filter(record=record).exists():
         person = Employee.objects.first()
         ReconciliationFinding.objects.create(
@@ -95,9 +121,9 @@ def test_a_decision_can_be_recorded_and_stays(client, reconciled):
     трактовкой правила». Без решения протокол отвечает только «разошлось», а
     вопрос через полгода звучит «и что вы с этим сделали».
     """
-    from core.models import Employee, Reconciliation, ReconciliationFinding
+    from core.models import Employee, ReconciliationFinding
 
-    record = Reconciliation.objects.filter(period=JUNE).first()
+    record = our_record()
     found = ReconciliationFinding.objects.filter(record=record).first()
     if found is None:
         # Файл сошёлся целиком — заводим расхождение сами: проверяется решение,
