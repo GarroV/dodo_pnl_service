@@ -57,7 +57,8 @@ def main() -> int:
 
     target.write_text(built, encoding="utf-8")
     size = target.stat().st_size / 1024 / 1024
-    print(f"собрано: {target} ({size:.1f} МБ, снимков {len(PLACEHOLDER.findall(source.read_text(encoding='utf-8')))})")
+    shots_count = len(PLACEHOLDER.findall(source.read_text(encoding="utf-8")))
+    print(f"собрано: {target} ({size:.1f} МБ, снимков {shots_count})")
     return 0
 
 
