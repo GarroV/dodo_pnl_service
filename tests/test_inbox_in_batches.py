@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import pytest
 
-from conftest import body, login_as
+from conftest import MONTH_CYCLE_WITHOUT_CLASSIFY, body, login_as, narrowed_permissions
 from test_supplier_invoices import (  # noqa: F401
     NEW,
     counterparty,
@@ -218,3 +218,25 @@ def test_repeating_the_same_decision_counts_it(client, sql, item, three_lines): 
 
     hits = sql.execute("select hits from classification_rules").fetchone()[0]
     assert hits == 2
+
+
+def test_a_role_without_the_right_to_remember_still_sorts(
+    client, sql, web_env, item, three_lines,  # noqa: F811
+):
+    """Памяти нет права — разбор всё равно проходит, а не падает пятисоткой.
+
+    Политика `classify_insert` требует `suppliers.classify`. Роль, которая
+    строки разбирать может, а память вести — нет, получила бы отказ базы
+    посреди запроса, и при `ATOMIC_REQUESTS` вместе с памятью развалился бы сам
+    разбор. Это не гипотеза: ровно такая роль стояла на стенде — у бухгалтера
+    права не было, форма ролей туда не доехала.
+    """
+    first = waiting_ids(client)[0]
+    with narrowed_permissions(web_env, "accountant", MONTH_CYCLE_WITHOUT_CLASSIFY):
+        answer = client.post(f"/inbox/{first}/classify/",
+                             {"item": item, "unit": "network"})
+        assert answer.status_code == 302, body(answer)[:300]
+
+    assert sorted_out(sql, item) == 1, "строка не разобралась"
+    remembered = sql.execute("select count(*) from classification_rules").fetchone()[0]
+    assert remembered == 0, "память записалась без права на неё"

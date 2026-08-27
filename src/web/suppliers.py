@@ -71,7 +71,7 @@ from core.models import (
     SourceDocument,
 )
 
-from . import cash
+from . import cash, permissions
 
 # Приставки ключей идемпотентности. Разные у счёта, платежа и оплаты без счёта:
 # ключ — это ответ на вопрос «то же самое событие или другое», и общая приставка
@@ -756,8 +756,18 @@ def remember(who, counterparty_id, item) -> None:
 
     Строка без контрагента памяти не оставляет: помнить «безымянному — статью»
     значило бы предлагать её всему, что пришло без имени.
+
+    **Права спрашиваются заранее, а не ловятся отказом базы.** Политика
+    `classify_insert` требует `suppliers.classify`; роль, которая строки
+    разбирать может, а память вести — нет, получила бы отказ базы посреди
+    запроса, и вместе с памятью развалился бы сам разбор: при `ATOMIC_REQUESTS`
+    упавшая вставка ломает транзакцию целиком. Это не гипотеза — ровно такая
+    роль стояла на стенде (у бухгалтера права не было). Поэтому память —
+    удобство, которое **пропускается**, когда права на неё нет, а не ошибка.
     """
     if counterparty_id is None:
+        return
+    if not permissions.has(who, "suppliers.classify"):
         return
     rule = ClassificationRule.objects.filter(
         tenant_id=who.tenant_id, counterparty_id=counterparty_id,

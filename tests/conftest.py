@@ -519,6 +519,14 @@ def wipe_payruns(dsn: str) -> None:
 # справочники, правила и роли он ведёт, данные расчёта — нет.
 DIRECTORIES_ONLY = ["directory.manage", "rules.manage", "roles.manage"]
 
+# Цикл месяца без разбора первички: роль ведёт месяц, но память разбора вести не
+# вправе. Набор не выдуманный — ровно он стоял на стенде у бухгалтера и
+# директора, пока форма ролей туда не доехала (issue #173).
+MONTH_CYCLE_WITHOUT_CLASSIFY = [
+    "timesheet.edit", "payrun.calculate", "period.approve",
+    "period.reopen", "payslip.freeze", "retro.post", "unit.close",
+]
+
 
 @pytest.fixture
 def admin_without_month_rights(web_env):
