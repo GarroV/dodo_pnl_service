@@ -43,6 +43,37 @@ def test_the_map_exists():
     )
 
 
+def test_the_reference_folder_is_named_in_one_normal_form():
+    """Имя папки эталона в git — в NFC, как во всём коде (issue #197).
+
+    Куплено красным прогоном, который никто не заметил двое суток. В имени есть
+    «й», и юникод записывает его двумя способами: одним символом (NFC) или «и»
+    плюс значок (NFD). macOS показывает обе формы одинаково и открывает папку по
+    любой, а Linux — нет. Папка попала в git в NFD, код искал её в NFC: на
+    машине всё зелено, в CI «папки дизайн-системы нет».
+
+    Сторож смотрит **в индекс git**, а не на диск: на macOS проверка диска
+    пройдёт при любой форме и ничего не докажет.
+    """
+    import subprocess
+    import unicodedata
+
+    listing = subprocess.run(
+        ["git", "ls-files", "-z"], capture_output=True, cwd=ROOT, check=True,
+    ).stdout.split(b"\0")
+    tops = {
+        entry.decode().split("/")[0]
+        for entry in listing
+        if entry and b"Dodo P&L" in entry
+    }
+    assert tops, "эталона нет в индексе git"
+    wrong = [name for name in tops if not unicodedata.is_normalized("NFC", name)]
+    assert not wrong, (
+        "имя папки эталона записано в git не в NFC: " + ", ".join(map(ascii, wrong))
+        + " — на Linux код её не найдёт, а на macOS этого не видно"
+    )
+
+
 def test_every_page_of_the_reference_is_in_the_map():
     """Нарисовали модуль — карта обязана про него знать."""
     text = rows()
