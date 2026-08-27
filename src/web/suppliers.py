@@ -59,9 +59,17 @@ from decimal import Decimal
 
 from django.db import Error as DatabaseError
 from django.db import connection, transaction
+from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from core.models import Counterparty, Fact, PnlItem, SourceDocument
+from core.models import (
+    ClassificationRule,
+    Counterparty,
+    ExpenseItem,
+    Fact,
+    PnlItem,
+    SourceDocument,
+)
 
 from . import cash
 
@@ -680,6 +688,7 @@ def classify(who, fact, *, item, unit_id) -> Recorded:
     неразобранного — это правка задним числом, и переписать ею закрытый месяц
     нельзя: июнь сегодня и июнь через полгода обязаны давать одно число.
     """
+    remember(who, fact.counterparty_id, item)
     if not cash.month_is_closed(who.tenant_id, fact.period):
         return _reclassified(who, fact, item=item, unit_id=unit_id,
                              dedup_key=fact.dedup_key)
@@ -732,6 +741,55 @@ def _reclassified(who, fact, *, item, unit_id, dedup_key: str) -> Recorded:
         document_id=str(fact.document_id or ""), fact_id=str(fact_id),
         action=action, landing=landing,
     )
+
+
+def remember(who, counterparty_id, item) -> None:
+    """Запомнить, какую статью человек дал этому поставщику (issue #173).
+
+    Память нужна ради одной цифры: половина инбокса каждый месяц — те же
+    поставщики, и без неё бухгалтер ищет ту же статью в списке сорок раз подряд.
+
+    **Последнее решение побеждает.** Версий у памяти нет намеренно: она ничего
+    не считает и в закрытый месяц не входит, поэтому переучить её должно быть
+    так же дёшево, как разобрать одну строку. `hits` растёт — по нему видно,
+    какая подсказка заслужена практикой, а какая поставлена одним разбором.
+
+    Строка без контрагента памяти не оставляет: помнить «безымянному — статью»
+    значило бы предлагать её всему, что пришло без имени.
+    """
+    if counterparty_id is None:
+        return
+    rule = ClassificationRule.objects.filter(
+        tenant_id=who.tenant_id, counterparty_id=counterparty_id,
+    ).first()
+    if rule is None:
+        ClassificationRule.objects.create(
+            tenant_id=who.tenant_id, counterparty_id=counterparty_id,
+            expense_item=item, decided_by=who.user_id,
+        )
+        return
+    same = rule.expense_item_id == item.id
+    rule.expense_item = item
+    # Переучили — счётчик начинается заново: он отвечает на вопрос «сколько раз
+    # подтвердили ЭТО соответствие», а не «сколько раз тут вообще разбирали».
+    rule.hits = rule.hits + 1 if same else 1
+    rule.decided_at = timezone.now()
+    rule.decided_by = who.user_id
+    rule.save(update_fields=["expense_item", "hits", "decided_at", "decided_by"])
+
+
+def suggestions(who) -> dict[str, ExpenseItem]:
+    """Что предложить по каждому поставщику: id контрагента → статья.
+
+    Одной выборкой на весь список, а не по строке: инбокс в сорок строк дал бы
+    сорок запросов ровно за тем, чтобы нарисовать подсказку.
+    """
+    rules = (
+        ClassificationRule.objects
+        .filter(tenant_id=who.tenant_id)
+        .select_related("expense_item")
+    )
+    return {str(rule.counterparty_id): rule.expense_item for rule in rules}
 
 
 def unclassified_fact(fact_id) -> Fact | None:

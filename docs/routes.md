@@ -68,6 +68,7 @@
 | `/i18n/setlang/` | `set_language` | `django.views.i18n.set_language` |
 | `/inbox/` | `inbox` | `web.suppliers_views.inbox` |
 | `/inbox/<uuid:fact_id>/classify/` | `inbox-classify` | `web.suppliers_views.inbox_classify` |
+| `/inbox/classify/` | `inbox-batch` | `web.suppliers_views.inbox_batch` |
 | `/invoices/` | `invoices` | `web.suppliers_views.invoices` |
 | `/invoices/<uuid:document_id>/` | `invoice` | `web.suppliers_views.invoice` |
 | `/invoices/<uuid:document_id>/pay/` | `invoice-pay` | `web.suppliers_views.invoice_pay` |

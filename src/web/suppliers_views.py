@@ -40,7 +40,7 @@ from .cash_views import _ledger, _till, _unit, _vat_rate
 from .counterparties_views import found as counterparties_found
 from .dbrefusal import BadInput
 from .directory_views import LEDGER_CODES, _number, _select, _text
-from .format import EMPTY, ledger_title, money
+from .format import EMPTY, day, ledger_title, money
 from .i18n import month_title
 from .principal import get_current_principal
 from .tills_views import visible_tills
@@ -917,27 +917,64 @@ def inbox(request):
         "stated_raw": f"{stated}", "stated_text": money(stated),
         "papers_url": reverse("papers"),
         "notice": _inbox_notice(request),
+        "failed": "",
         "back_url": reverse("invoices"),
+        **_batch_fields(who),
     })
 
 
-def inbox_rows(who) -> list[dict]:
-    """Строки инбокса и поля разбора у каждой. Выборка одна: из неё же итог."""
-    items = [
+def _inbox_items(who) -> list[tuple]:
+    """Статьи, действующие сегодня: одинаковые в строчной форме и в пакетной."""
+    return [
         (item.id, cash.item_title(item.titles))
         for item in cash.items_on(who.tenant_id, date.today())
     ]
+
+
+def _inbox_units(who) -> list[tuple]:
+    """Точки для разбора плюс «вся сеть». Список — удобство, отбор делает база."""
     units = Unit.objects.order_by("code")
     if who.unit_ids:
         units = units.filter(pk__in=who.unit_ids)
-    unit_options = [(cash.NETWORK_UNIT, _("Вся сеть"))] + [
+    return [(cash.NETWORK_UNIT, _("Вся сеть"))] + [
         (code, title) for code, title in units.values_list("id", "code")
     ]
 
-    return [
-        {
+
+def _batch_fields(who) -> dict:
+    """Поля пакетной панели. Ничего не выбрано заранее: статья на пачку — это
+    решение человека, а подсказка живёт в строках, где видно, к чему она."""
+    return {
+        "batch_items": [
+            {"code": str(code), "title": title, "selected": False}
+            for code, title in _inbox_items(who)
+        ],
+        "batch_units": [
+            {"code": str(code), "title": title,
+             "selected": str(code) == cash.NETWORK_UNIT}
+            for code, title in _inbox_units(who)
+        ],
+    }
+
+
+def inbox_rows(who) -> list[dict]:
+    """Строки инбокса и поля разбора у каждой. Выборка одна: из неё же итог.
+
+    У строки с запомненным поставщиком статья **предложена**: она отмечена в
+    списке и названа словами в отдельной колонке. Проставленной она при этом не
+    считается — пока человек не нажал «Разобрать», строка остаётся в инбоксе
+    (issue #173).
+    """
+    items = _inbox_items(who)
+    remembered = suppliers.suggestions(who)
+    unit_options = _inbox_units(who)
+
+    rows = []
+    for row in suppliers.waiting_for_an_article(who):
+        guess = remembered.get(str(row.counterparty_id)) if row.counterparty_id else None
+        rows.append({
             "id": str(row.id),
-            "date": row.doc_date.isoformat() if row.doc_date else "",
+            "date": day(row.doc_date),
             "period": month_title(row.period),
             "counterparty": row.counterparty.title if row.counterparty else EMPTY,
             # Название позиции: до разбора это имя контрагента или строка
@@ -953,8 +990,13 @@ def inbox_rows(who) -> list[dict]:
             "url": reverse("inbox-classify", args=[row.id]),
             "invoice_url": (reverse("invoice", args=[row.document_id])
                             if row.document_id else ""),
+            # Подсказка — это `selected` в списке и название рядом с ним.
+            # Ставить статью в саму строку продукт не должен: назначенная молча,
+            # она уезжает в P&L и находится на сверке (issue #173).
+            "suggested": cash.item_title(guess.titles) if guess is not None else "",
             "items": [
-                {"code": str(code), "title": title, "selected": False}
+                {"code": str(code), "title": title,
+                 "selected": guess is not None and code == guess.id}
                 for code, title in items
             ],
             "units": [
@@ -963,9 +1005,8 @@ def inbox_rows(who) -> list[dict]:
                                            else cash.NETWORK_UNIT)}
                 for code, title in unit_options
             ],
-        }
-        for row in suppliers.waiting_for_an_article(who)
-    ]
+        })
+    return rows
 
 
 @login_required
@@ -1011,6 +1052,113 @@ def inbox_classify(request, fact_id):
     return redirect(landed)
 
 
+@login_required
+def inbox_batch(request):
+    """Присвоить статью сразу нескольким отмеченным строкам (issue #173).
+
+    Эталон ставит цель числом: «разобрать сорок штук за десять минут». Пока
+    каждая строка разбирается своей формой, сорок строк — это сорок проходов
+    через выпадающий список, и на сороковом человек уже не читает, что нажимает.
+    Отмеченная пачка одного поставщика уходит одним действием.
+
+    **Пачка либо разбирается целиком, либо не разбирается вовсе.** Запрос идёт
+    в одной транзакции (`ATOMIC_REQUESTS`), и половинчатый результат означал бы
+    «часть строк ушла, часть осталась, какие — ищите сами». Отказ по одной
+    строке возвращает все — вместе с фразой, что случилось.
+
+    **Точка одна на пачку, и это ограничение честное.** Разные точки у разных
+    строк означают разный разбор, а не пачку; такие строки разбираются
+    поодиночке своей формой, которая никуда не делась.
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        return _no_membership(request, _(
+            "Вас ещё не завели ни к одному партнёру, поэтому разбирать нечего."
+        ))
+
+    chosen = request.POST.getlist("facts")
+    if not chosen:
+        # Ничего не отмечено — отказ словами. Молчаливый редирект на тот же
+        # экран читался бы как «разобрано», и человек ушёл бы, не разобрав.
+        return _inbox_refused(request, who, _(
+            "Отметьте строки, которым присваивается статья: без отметки "
+            "присваивать нечему."
+        ))
+
+    facts = [suppliers.unclassified_fact(fact_id) for fact_id in chosen]
+    if any(fact is None for fact in facts):
+        # Чужая строка, выдуманный номер и уже разобранная отвечают одинаково,
+        # и одинаково же — 404, а не «часть строк не найдена» (D023).
+        raise Http404("строка не найдена")
+
+    try:
+        # Статья проверяется на самую раннюю дату пачки: она должна действовать
+        # во ВСЕХ строках, которым присваивается. Взять сегодняшнее число
+        # значило бы молча поставить в июньский счёт правило, заведённое в
+        # августе, — ровно то, от чего страхует `valid_from`.
+        earliest = min((fact.doc_date or fact.period) for fact in facts)
+        item = _item_or_none(request, earliest)
+        if item is None:
+            raise BadInput(
+                _("Поле «%(label)s» обязательно.") % {"label": _("Статья расхода")}
+            )
+        unit_id = _unit(request, who)
+        landed = [
+            suppliers.classify(who, fact, item=item, unit_id=unit_id)
+            for fact in facts
+        ]
+    except (BadInput, cash.UnitRefused, cash.CashRefused) as refused:
+        return _inbox_refused(
+            request, who, refused.message,
+            status=getattr(refused, "http_status", 400),
+        )
+
+    if unit_id is None:
+        # Строки на всю сеть разносятся сразу — тем же доводом, что и
+        # поодиночке: узнать через месяц, что суммы висели нераспределёнными,
+        # хуже, чем разнести их в момент разбора.
+        for recorded in landed:
+            cash.spread_now(recorded.fact_id)
+
+    address = reverse("inbox") + f"?sorted={len(landed)}"
+    moved = [r.landing.moved_from for r in landed if r.landing.moved_from is not None]
+    if moved:
+        address += f"&moved={min(moved):%Y-%m}"
+    return redirect(address)
+
+
+def _inbox_refused(request, who, message: str, *, status: int = 400):
+    """Отказ пачки — на том же экране и с тем же списком.
+
+    Не редиректом с признаком, как у разбора по одной: там причина одна на все
+    случаи («выберите статью и точку»), а здесь причин несколько — не отмечено
+    ничего, чужая точка, закрытая касса, — и подменять их общей фразой значит
+    отвечать не на то, что случилось.
+    """
+    rows = inbox_rows(who)
+    total = sum((row["amount"] for row in rows), Decimal("0"))
+    from .papers_views import paper_rows
+
+    handed = paper_rows(who, only_waiting=True)
+    stated = sum((row["amount"] for row in handed), Decimal("0"))
+    return render(request, "web/suppliers/inbox.html", {
+        "rows": rows,
+        "total_raw": f"{total}", "total_text": money(total),
+        "counted": len(rows),
+        "papers": handed,
+        "papers_counted": len(handed),
+        "stated_raw": f"{stated}", "stated_text": money(stated),
+        "papers_url": reverse("papers"),
+        "notice": "",
+        "failed": message,
+        "back_url": reverse("invoices"),
+        **_batch_fields(who),
+    }, status=status)
+
+
 def _inbox_notice(request) -> str:
     """Что случилось с разбором. Молчание после нажатия читается как успех."""
     if request.GET.get("failed"):
@@ -1019,6 +1167,12 @@ def _inbox_notice(request) -> str:
             "Строка осталась в списке."
         )
     said = []
+    sorted_out = request.GET.get("sorted")
+    if sorted_out and sorted_out.isdigit():
+        # Счётом, а не склонением: «Разобрано строк: 1» грамматично так же, как
+        # «…: 40», и обходится одной формой вместо трёх на каждый язык. Формы
+        # заводятся там, где без них фраза ломается, — здесь не тот случай.
+        said.append(_("Разобрано строк: %(count)d.") % {"count": int(sorted_out)})
     done = _month_or_none(request.GET.get("done"))
     if done is not None:
         said.append(_("Строка разобрана и учтена в периоде %(month)s.")
@@ -1036,6 +1190,7 @@ def _inbox_notice(request) -> str:
 __all__ = [
     "filters_default",
     "inbox",
+    "inbox_batch",
     "inbox_classify",
     "inbox_rows",
     "filters_from",

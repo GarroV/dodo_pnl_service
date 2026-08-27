@@ -1,0 +1,38 @@
+{
+  "Присвоить статью отмеченным": {
+    "en": "Assign the article to the selected",
+    "sr": "Dodeli stavku označenima"
+  },
+  "Отметьте несколько строк одного поставщика — статья присвоится всем сразу. Пробел отмечает строку, Shift со щелчком — диапазон.": {
+    "en": "Select several rows of the same supplier — the article is assigned to all of them at once. Space selects a row, Shift with a click selects a range.",
+    "sr": "Označite nekoliko redova istog dobavljača — stavka se dodeljuje svima odjednom. Razmak označava red, Shift sa klikom označava opseg."
+  },
+  "Отмечено строк: {n}. Статья присвоится всем сразу.": {
+    "en": "Rows selected: {n}. The article will be assigned to all of them at once.",
+    "sr": "Označenih redova: {n}. Stavka će biti dodeljena svima odjednom."
+  },
+  "Отметить": {
+    "en": "Select",
+    "sr": "Označi"
+  },
+  "Отметить строку %(what)s": {
+    "en": "Select the row %(what)s",
+    "sr": "Označi red %(what)s"
+  },
+  "Похоже на": {
+    "en": "Looks like",
+    "sr": "Liči na"
+  },
+  "Не выбрана": {
+    "en": "Not chosen",
+    "sr": "Nije izabrana"
+  },
+  "Отметьте строки, которым присваивается статья: без отметки присваивать нечему.": {
+    "en": "Select the rows the article is assigned to: with nothing selected there is nothing to assign it to.",
+    "sr": "Označite redove kojima se dodeljuje stavka: bez oznake nema čemu da se dodeli."
+  },
+  "Разобрано строк: %(count)d.": {
+    "en": "Rows sorted out: %(count)d.",
+    "sr": "Rešenih redova: %(count)d."
+  }
+}

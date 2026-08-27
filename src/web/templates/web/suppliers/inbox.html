@@ -10,8 +10,16 @@
 кнопка. Отдельная страница на строку означала бы вдвое больше нажатий, чем самой
 работы: строки разбирают подряд, десятками.
 
-Каждая строка — своя форма, а не одна общая на таблицу. Общая отправляла бы все
-строки разом, и одна ошибка в одной строке роняла бы разбор всех.
+Строчная форма — на одну строку, а над таблицей стоит вторая, на пачку (issue
+#173). Они не дублируют друг друга: строчная разбирает свою строку со своей
+точкой, пакетная присваивает одну статью всем отмеченным. Чекбоксы стоят в
+ячейках, а форма — снаружи таблицы: формы в HTML не вкладываются, поэтому
+чекбоксы связаны с ней атрибутом `form`, а не положением в разметке.
+
+**Подсказка не разбирает за человека.** Если по этому поставщику решение уже
+принимали, статья предложена — отмечена в списке и названа в колонке «Похоже
+на». Строка при этом остаётся в инбоксе, пока человек не нажал «Разобрать»:
+молча назначенная статья уезжает в P&L и находится на сверке.
 
 **Второй список — бумаги с точек** (T174), и он отделён от первого нарочно.
 Разница между ними не в оформлении, а в деньгах: строка без статьи **уже** в
@@ -27,31 +35,46 @@ P&L, только не в той статье, а бумага в P&L не вх�
   <a href="{{ papers_url }}">{% translate "Бумаги с точек" %}</a></p>
 
 {% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+{% if failed %}{% notice "alert" %}{{ failed }}{% endnotice %}{% endif %}
 
 {% if rows %}
 {% notice "alert" title=total_text %}<span data-total="{{ total_raw }}">{% blocktranslate count counter=counted %}ждёт разбора {{ counter }} строка{% plural %}ждут разбора {{ counter }} строк{% endblocktranslate %}</span>{% endnotice %}
 
+{% translate "Статья расхода" as item_label %}{% translate "Не выбрана" as not_chosen %}{% translate "Точка" as unit_label %}
+<form id="inbox-batch" class="search row" method="post" action="{% url 'inbox-batch' %}">{% csrf_token %}
+  <p class="field">{% include "web/components/select.html" with id="batch-item" name="item" label=item_label options=batch_items required=1 empty_label=not_chosen empty_selected=1 %}</p>
+  <p class="field">{% include "web/components/select.html" with id="batch-unit" name="unit" label=unit_label options=batch_units required=1 %}</p>
+  <button class="primary" type="submit">{% translate "Присвоить статью отмеченным" %}</button>
+</form>
+{% translate "Отмечено строк: {n}. Статья присвоится всем сразу." as picked_text %}
+<p class="note" data-selected="0" data-picked="{{ picked_text }}">{% translate "Отметьте несколько строк одного поставщика — статья присвоится всем сразу. Пробел отмечает строку, Shift со щелчком — диапазон." %}</p>
+
 {% scroll %}<table>
   <thead>
     <tr>
+      <th><span class="sr-only">{% translate "Отметить" %}</span></th>
       <th>{% translate "Дата" %}</th>
       <th>{% translate "Контрагент" %}</th>
       <th>{% translate "Что это" %}</th>
       <th class="num">{% translate "Сумма" %}</th>
       <th>{% translate "Период учёта" %}</th>
       <th>{% translate "Регистр" %}</th>
+      <th>{% translate "Похоже на" %}</th>
       <th>{% translate "Разобрать" %}</th>
     </tr>
   </thead>
   <tbody>
     {% for row in rows %}
     <tr data-amount="{{ row.amount_raw }}" data-fact="{{ row.id }}">
+      <td><input type="checkbox" form="inbox-batch" name="facts" value="{{ row.id }}"
+                 aria-label="{% blocktranslate with what=row.title %}Отметить строку {{ what }}{% endblocktranslate %}"></td>
       <td>{% if row.invoice_url %}<a href="{{ row.invoice_url }}">{{ row.date }}</a>{% else %}{{ row.date }}{% endif %}</td>
       <td>{{ row.counterparty }}</td>
       <td>{{ row.title }}</td>
       <td class="{{ row.amount_text|numclass }}">{{ row.amount_text }}</td>
       <td>{{ row.period }}</td>
       <td>{{ row.ledger }}</td>
+      <td>{% if row.suggested %}<span class="chip">{{ row.suggested }}</span>{% endif %}</td>
       <td>
         <form class="inline" method="post" action="{{ row.url }}">{% csrf_token %}
           {% include "web/components/select.html" with id=row.id|add:"-item" name="item" label="" options=row.items required=1 empty_label="" empty_selected=1 %}
@@ -64,12 +87,50 @@ P&L, только не в той статье, а бумага в P&L не вх�
   </tbody>
   <tfoot>
     <tr data-total="{{ total_raw }}">
-      <th colspan="3">{% translate "Итого без статьи" %}</th>
+      <th colspan="4">{% translate "Итого без статьи" %}</th>
       <th class="{{ total_text|numclass }}">{{ total_text }}</th>
-      <th colspan="3"></th>
+      <th colspan="4"></th>
     </tr>
   </tfoot>
 </table>{% endscroll %}
+
+<script>
+  // Отметки пачкой. Скрипт — надстройка, а не условие работы: без него чекбоксы
+  // отмечаются щелчком по одному, а форма отправляется той же кнопкой. Он
+  // добавляет две вещи, которые руками делать долго, — диапазон по Shift и
+  // счётчик отмеченного (задача 173).
+  (function () {
+    var form = document.getElementById('inbox-batch');
+    var hint = document.querySelector('p.note[data-selected]');
+    if (!form || !hint) { return; }
+    var boxes = Array.prototype.slice.call(
+      document.querySelectorAll('input[type=checkbox][name=facts]')
+    );
+    if (!boxes.length) { return; }
+    var plain = hint.textContent;
+    var last = null;
+    var count = function () {
+      var picked = boxes.filter(function (box) { return box.checked; }).length;
+      hint.dataset.selected = String(picked);
+      // Ноль отмеченных возвращает подсказку: счётчик «отмечено 0» ничего не
+      // сообщает, а объяснение, как отмечать, — сообщает.
+      hint.textContent = picked ? hint.dataset.picked.replace('{n}', picked) : plain;
+    };
+    boxes.forEach(function (box) {
+      box.addEventListener('click', function (event) {
+        if (event.shiftKey && last !== null) {
+          var from = boxes.indexOf(last), to = boxes.indexOf(box);
+          var lo = Math.min(from, to), hi = Math.max(from, to);
+          for (var i = lo; i <= hi; i += 1) { boxes[i].checked = box.checked; }
+        }
+        last = box;
+        count();
+      });
+      box.addEventListener('change', count);
+    });
+    count();
+  })();
+</script>
 {% else %}
 {% translate "Инбокс пуст." as empty %}
 {% notice "empty" title=empty %}<span data-total="{{ total_raw }}">{% translate "У всех строк есть статья: разбирать нечего." %}</span>{% endnotice %}
