@@ -278,6 +278,58 @@
 </section>
 {% endif %}
 
+{% if readiness and can_approve %}
+{% comment %}
+Готовность к закрытию (#175). Эталон формулирует это как условие, а не как
+справку: «список „прежде чем закрыть“ — не отчёт, который надо открыть, а
+условие, без которого кнопка не нажимается». Поэтому список стоит РЯДОМ с
+кнопкой, а отказ — на самом действии: экран показывает то, что человек открыл,
+а утверждение приходит запросом.
+{% endcomment %}
+<section class="card">
+  <h2>{% translate "Прежде чем закрыть" %}</h2>
+  {% if readiness.ready %}
+    {% translate "Всё на месте" as all_set %}
+    {% notice "ok" title=all_set %}{% blocktranslate %}Часы закрыты, документы разобраны, строк без статьи нет. Месяц можно утверждать.{% endblocktranslate %}{% endnotice %}
+  {% else %}
+    {% translate "Это нужно устранить или отложить с причиной" as blockers_title %}
+    {% notice "alert" title=blockers_title %}
+      {% blocktranslate %}Из-за этого P&L будет неверным. Отложенное попадёт в протокол закрытия вместе с причиной.{% endblocktranslate %}
+    {% endnotice %}
+    {% for found in readiness.blocking %}
+    <div class="note">
+      <p><b>{{ found.title }}</b></p>
+      {% if found.detail %}<p class="note">{{ found.detail }}</p>{% endif %}
+      <form method="post" action="{% url 'period-postpone' period.id %}" class="search row">
+        {% csrf_token %}
+        <input type="hidden" name="finding" value="{{ found.code }}">
+        <p class="field">
+          <label for="why-{{ found.code }}">{% translate "Отложить, потому что" %}</label>
+          <input type="text" id="why-{{ found.code }}" name="reason" required
+                 placeholder="{% translate "выписка придёт послезавтра, платим сегодня" %}">
+        </p>
+        <button type="submit">{% translate "Отложить" %}</button>
+      </form>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  {% for found in readiness.postponed %}
+  <p class="note">{% blocktranslate with reason=found.reason %}Отложено: {{ reason }}{% endblocktranslate %}</p>
+  {% endfor %}
+
+  {% if readiness.suspicious %}
+  {% comment %}
+  Подозрительное закрыть не мешает: система не знает, ошибка это или жизнь.
+  Но молчать нельзя — рост вдвое человек обязан увидеть до утверждения.
+  {% endcomment %}
+  {% for found in readiness.suspicious %}
+  <p class="note">{{ found.title }} — {{ found.detail }}</p>
+  {% endfor %}
+  {% endif %}
+</section>
+{% endif %}
+
 {% if can_approve or approve_denied or can_reopen or reopen_denied %}
 {% url 'period-approve' period.id as approve_url %}
 {% url 'period-reopen' period.id as reopen_url %}

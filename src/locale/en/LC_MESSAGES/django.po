@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 16:28+0000\n"
+"POT-Creation-Date: 2026-08-27 21:22+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -248,6 +248,51 @@ msgstr ""
 "The period's state changed while the page was open. Refresh the page to see "
 "what happened to it."
 
+#: src/payrun/lifecycle.py:200
+#, python-format
+msgid "Месяц не закрыт: %(what)s. Устраните или отложите с причиной."
+msgstr "The month was not closed: %(what)s. Fix it or postpone it with a reason."
+
+#: src/payrun/readiness.py:109
+#, python-format
+msgid "Часы точки не закрыты: %(units)s"
+msgstr "Unit hours are not closed: %(units)s"
+
+#: src/payrun/readiness.py:112
+msgid ""
+"Пока часы открыты, их могут поправить после утверждения — и ведомость "
+"разойдётся с табелем."
+msgstr "While hours are open they can be edited after approval — and the payroll sheet will drift apart from the timesheet."
+
+#: src/payrun/readiness.py:133
+#, python-format
+msgid "Бумаг с точек ждут разбора: %(count)s"
+msgstr "Papers from units awaiting sorting: %(count)s"
+
+#: src/payrun/readiness.py:134
+msgid ""
+"Пока бумага не разобрана, её денег в отчёте нет — не потому что "
+"отфильтровали, а потому что фактов по ней не существует."
+msgstr "Until a paper is sorted, its money is not in the report — not because it was filtered out, but because no facts about it exist."
+
+#: src/payrun/readiness.py:158
+#, python-format
+msgid "Строк без статьи: %(count)s"
+msgstr "Lines without an expense item: %(count)s"
+
+#: src/payrun/readiness.py:159
+msgid "Деньги в отчёте есть, но лежат не в той строке, где их будут искать."
+msgstr "The money is in the report, but not in the line where people will look for it."
+
+#: src/payrun/readiness.py:184
+#, python-format
+msgid "Отклонений от прошлого месяца: %(count)s"
+msgstr "Deviations from the previous month: %(count)s"
+
+#: src/payrun/readiness.py:185
+msgid "Может быть правдой — но проверить стоит до утверждения."
+msgstr "It may well be true — but it is worth checking before approval."
+
 #: src/payrun/retro.py:79
 msgid ""
 "У этого партнёра правки задним числом ведутся пересчётом, а не переносом: "
@@ -297,7 +342,7 @@ msgstr "No."
 #: src/web/dbrefusal.py:110 src/web/directory_views.py:556
 #: src/web/templates/web/components/diff_table.html:21
 #: src/web/templates/web/directory/raise_preview.html:21
-#: src/web/templates/web/period.html:255 src/web/templates/web/period.html:372
+#: src/web/templates/web/period.html:255 src/web/templates/web/period.html:425
 #: src/web/templates/web/variance.html:39
 msgid "Сотрудник"
 msgstr "Employee"
@@ -311,7 +356,7 @@ msgstr "Employee"
 #: src/web/papers_views.py:253 src/web/papers_views.py:314
 #: src/web/suppliers_views.py:616 src/web/templates/web/cash/expenses.html:55
 #: src/web/templates/web/directory/employee.html:130
-#: src/web/templates/web/period.html:372
+#: src/web/templates/web/period.html:425
 #: src/web/templates/web/person_pay.html:71
 #: src/web/templates/web/suppliers/inbox.html:87
 #: src/web/templates/web/suppliers/invoices.html:47
@@ -324,8 +369,8 @@ msgstr "Unit"
 
 #: src/reports/export.py:217 src/reports/export.py:556
 #: src/reports/export.py:627 src/web/templates/web/cash/expenses.html:60
-#: src/web/templates/web/period.html:255 src/web/templates/web/period.html:372
-#: src/web/templates/web/period.html:452
+#: src/web/templates/web/period.html:255 src/web/templates/web/period.html:425
+#: src/web/templates/web/period.html:505
 #: src/web/templates/web/suppliers/inbox.html:42
 #: src/web/templates/web/suppliers/invoice.html:54
 #: src/web/templates/web/trace.html:146 src/web/templates/web/variance.html:39
@@ -335,7 +380,7 @@ msgstr "Ledger"
 #: src/reports/export.py:219 src/reports/export.py:242
 #: src/timesheets/templates/timesheets/grid.html:205
 #: src/timesheets/templates/timesheets/grid.html:345
-#: src/web/templates/web/period.html:374 src/web/templates/web/period.html:459
+#: src/web/templates/web/period.html:427 src/web/templates/web/period.html:512
 #: src/web/templates/web/person_pay.html:145
 msgid "Итого"
 msgstr "Total"
@@ -434,7 +479,7 @@ msgstr "Component"
 #: src/web/suppliers_views.py:862 src/web/templates/web/cash/expenses.html:57
 #: src/web/templates/web/cash/unallocated.html:34
 #: src/web/templates/web/directory/employee.html:104
-#: src/web/templates/web/period.html:452
+#: src/web/templates/web/period.html:505
 #: src/web/templates/web/suppliers/inbox.html:40
 #: src/web/templates/web/suppliers/invoice.html:51
 #: src/web/templates/web/suppliers/invoices.html:50
@@ -454,7 +499,7 @@ msgid "Расход"
 msgstr "Expense"
 
 #: src/reports/export.py:591 src/web/templates/web/person_pay.html:76
-#: src/web/views.py:909
+#: src/web/views.py:987
 msgid "Налог"
 msgstr "Tax"
 
@@ -463,7 +508,7 @@ msgid "Налог на доход"
 msgstr "Income tax"
 
 #: src/reports/export.py:592 src/web/reports_views.py:46
-#: src/web/templates/web/person_pay.html:77 src/web/views.py:910
+#: src/web/templates/web/person_pay.html:77 src/web/views.py:988
 msgid "Взносы"
 msgstr "Contributions"
 
@@ -698,7 +743,7 @@ msgid "часы закрыты %(closed_at)s"
 msgstr "hours closed on %(closed_at)s"
 
 #: src/timesheets/templates/timesheets/grid.html:93
-#: src/web/templates/web/period.html:292
+#: src/web/templates/web/period.html:345
 msgid "Открыть заново"
 msgstr "Reopen"
 
@@ -930,7 +975,7 @@ msgstr "Sheet"
 
 #: src/timesheets/templates/timesheets/import_report.html:58
 #: src/timesheets/templates/timesheets/import_report.html:71
-#: src/web/templates/web/period.html:323
+#: src/web/templates/web/period.html:376
 #: src/web/templates/web/reconcile.html:188
 #: src/web/templates/web/reconcile.html:225
 #: src/web/templates/web/reconcile.html:242
@@ -3333,11 +3378,11 @@ msgid "К выплате (нето)"
 msgstr "Payable (net)"
 
 #: src/web/reports_views.py:45 src/web/templates/web/person_pay.html:75
-#: src/web/views.py:908
+#: src/web/views.py:986
 msgid "Бруто"
 msgstr "Gross"
 
-#: src/web/reports_views.py:47 src/web/views.py:911
+#: src/web/reports_views.py:47 src/web/views.py:989
 msgid "Полная стоимость"
 msgstr "Total cost"
 
@@ -3495,7 +3540,7 @@ msgstr "country rules"
 msgid "настройка партнёра"
 msgstr "partner setting"
 
-#: src/web/rules.py:105 src/web/views.py:1003
+#: src/web/rules.py:105 src/web/views.py:1081
 msgid "переопределение группы"
 msgstr "group override"
 
@@ -4287,7 +4332,10 @@ msgstr "Enter hours in the timesheet"
 msgid ""
 "Предварительно, по действующей версии условий найма и часам табеля. Месяц "
 "ещё не посчитан — числа изменятся, если часы поправят."
-msgstr "A preview based on the effective employment terms and the hours in the timesheet. The month has not been calculated yet — the numbers will change if the hours do."
+msgstr ""
+"A preview based on the effective employment terms and the hours in the "
+"timesheet. The month has not been calculated yet — the numbers will change "
+"if the hours do."
 
 #: src/web/templates/web/directory/employee.html:113
 msgid "Итого к выплате"
@@ -4674,7 +4722,7 @@ msgid "Ведёт: тот, кто считает месяц. Заканчива�
 msgstr ""
 "Run by: whoever is calculating the month. Ends when the period is calculated."
 
-#: src/web/templates/web/guide.html:95 src/web/templates/web/period.html:339
+#: src/web/templates/web/guide.html:95 src/web/templates/web/period.html:392
 msgid "Ведомость"
 msgstr "Payroll sheet"
 
@@ -5227,91 +5275,132 @@ msgstr ""
 "the period\n"
 "    with a reason and calculate it again."
 
-#: src/web/templates/web/period.html:290
+#: src/web/templates/web/period.html:296
+msgid "Прежде чем закрыть"
+msgstr "Before you close"
+
+#: src/web/templates/web/period.html:298
+msgid "Всё на месте"
+msgstr "Everything is in place"
+
+#: src/web/templates/web/period.html:299
+msgid ""
+"Часы закрыты, документы разобраны, строк без статьи нет. Месяц можно "
+"утверждать."
+msgstr "Hours are closed, documents are sorted, there are no lines without an item. The month can be approved."
+
+#: src/web/templates/web/period.html:301
+msgid "Это нужно устранить или отложить с причиной"
+msgstr "This must be fixed or postponed with a reason"
+
+#: src/web/templates/web/period.html:303
+msgid ""
+"Из-за этого P&L будет неверным. Отложенное попадёт в протокол закрытия "
+"вместе с причиной."
+msgstr "Because of this the P&L will be wrong. What you postpone goes into the closing record together with the reason."
+
+#: src/web/templates/web/period.html:313
+msgid "Отложить, потому что"
+msgstr "Postpone, because"
+
+#: src/web/templates/web/period.html:315
+msgid "выписка придёт послезавтра, платим сегодня"
+msgstr "the statement arrives the day after tomorrow, we are paying today"
+
+#: src/web/templates/web/period.html:317
+msgid "Отложить"
+msgstr "Postpone"
+
+#: src/web/templates/web/period.html:324
+#, python-format
+msgid "Отложено: %(reason)s"
+msgstr "Postponed: %(reason)s"
+
+#: src/web/templates/web/period.html:343
 msgid "Утвердить период"
 msgstr "Approve the period"
 
-#: src/web/templates/web/period.html:291
+#: src/web/templates/web/period.html:344
 msgid "После утверждения расчёт и его данные меняться не будут."
 msgstr "After approval, the calculation and its data will not change."
 
-#: src/web/templates/web/period.html:293
+#: src/web/templates/web/period.html:346
 msgid "Причина попадёт в историю рядом с вашим именем."
 msgstr "The reason will be recorded in the history next to your name."
 
-#: src/web/templates/web/period.html:294
+#: src/web/templates/web/period.html:347
 msgid "Зачем открываете период"
 msgstr "Why are you reopening the period"
 
-#: src/web/templates/web/period.html:295
+#: src/web/templates/web/period.html:348
 msgid "например: ошиблись в часах за третью неделю"
 msgstr "for example: hours were entered wrong for the third week"
 
-#: src/web/templates/web/period.html:320
+#: src/web/templates/web/period.html:373
 msgid "История периода"
 msgstr "Period history"
 
-#: src/web/templates/web/period.html:323
+#: src/web/templates/web/period.html:376
 msgid "Когда"
 msgstr "When"
 
-#: src/web/templates/web/period.html:323
+#: src/web/templates/web/period.html:376
 msgid "Что стало"
 msgstr "What changed"
 
-#: src/web/templates/web/period.html:323
+#: src/web/templates/web/period.html:376
 msgid "Причина"
 msgstr "Reason"
 
-#: src/web/templates/web/period.html:330
+#: src/web/templates/web/period.html:383
 msgid "мимо приложения"
 msgstr "outside the app"
 
-#: src/web/templates/web/period.html:352
+#: src/web/templates/web/period.html:405
 msgid "Разрез ведомости по регистрам"
 msgstr "Payroll sheet view by ledger"
 
-#: src/web/templates/web/period.html:372
+#: src/web/templates/web/period.html:425
 msgid "Спор"
 msgstr "Dispute"
 
-#: src/web/templates/web/period.html:394
+#: src/web/templates/web/period.html:447
 #: src/web/templates/web/person_pay.html:152
 #, python-format
 msgid "Перерасчёт за %(title)s"
 msgstr "Recalculation for %(title)s"
 
-#: src/web/templates/web/period.html:406
+#: src/web/templates/web/period.html:459
 #: src/web/templates/web/person_pay.html:86
 msgid "Заморожена"
 msgstr "Frozen"
 
-#: src/web/templates/web/period.html:411
+#: src/web/templates/web/period.html:464
 msgid "Снять заморозку"
 msgstr "Unfreeze"
 
-#: src/web/templates/web/period.html:417
+#: src/web/templates/web/period.html:470
 msgid "Заморозить"
 msgstr "Freeze"
 
-#: src/web/templates/web/period.html:418
+#: src/web/templates/web/period.html:471
 msgid "из-за чего спор"
 msgstr "what the dispute is about"
 
-#: src/web/templates/web/period.html:431 src/web/templates/web/trace.html:13
+#: src/web/templates/web/period.html:484 src/web/templates/web/trace.html:13
 msgid "Как получилась эта сумма"
 msgstr "How this amount was calculated"
 
-#: src/web/templates/web/period.html:437
+#: src/web/templates/web/period.html:490
 #, python-format
 msgid "Итого · %(employees)s чел."
 msgstr "Total · %(employees)s employees"
 
-#: src/web/templates/web/period.html:450
+#: src/web/templates/web/period.html:503
 msgid "Итоги по регистрам"
 msgstr "Totals by ledger"
 
-#: src/web/templates/web/period.html:464
+#: src/web/templates/web/period.html:517
 msgid ""
 "Итог посчитан по тому, что видно вашей роли: строки чужих регистров не "
 "доезжают до страницы и не входят в сумму."
@@ -5319,7 +5408,7 @@ msgstr ""
 "The total is calculated based on what your role can see: rows from other "
 "ledgers never reach the page and are not included in the sum."
 
-#: src/web/templates/web/period.html:465
+#: src/web/templates/web/period.html:518
 #, python-format
 msgid ""
 "Сейчас показан один регистр — %(title)s;\n"
@@ -5328,11 +5417,11 @@ msgstr ""
 "Right now only one ledger is shown — %(title)s;\n"
 "  the total is calculated from it."
 
-#: src/web/templates/web/period.html:484
+#: src/web/templates/web/period.html:537
 msgid "Ведомости пока нет"
 msgstr "There is no payroll sheet yet"
 
-#: src/web/templates/web/period.html:487
+#: src/web/templates/web/period.html:540
 msgid ""
 "Месяц начинается с часов: без них считать нечего. Внесите их в табеле\n"
 "    руками или загрузите таблицей партнёра, а потом вернитесь сюда и "
@@ -5345,11 +5434,11 @@ msgstr ""
 "calculate the\n"
 "    period."
 
-#: src/web/templates/web/period.html:490
+#: src/web/templates/web/period.html:543
 msgid "Перейти к табелю"
 msgstr "Go to timesheet"
 
-#: src/web/templates/web/period.html:492
+#: src/web/templates/web/period.html:545
 msgid ""
 "Часы за месяц уже внесены — осталось посчитать период. Ведомость появится\n"
 "    здесь же: строка на каждого сотрудника в каждом регистре, который видно\n"
@@ -6679,19 +6768,19 @@ msgid ""
 msgstr ""
 "A till is closed with a date, not by deleting it: closed months refer to it."
 
-#: src/web/views.py:52
+#: src/web/views.py:60
 msgid "Открыт"
 msgstr "Open"
 
-#: src/web/views.py:53
+#: src/web/views.py:61
 msgid "Закрыт"
 msgstr "Closed"
 
-#: src/web/views.py:54
+#: src/web/views.py:62
 msgid "Заблокирован"
 msgstr "Blocked"
 
-#: src/web/views.py:62
+#: src/web/views.py:70
 msgid ""
 "Заморозка строки вам недоступна: она относится к строке ведомости целиком, а "
 "расчёт строки отдаётся вашей роли не весь. Спорную строку заморозит тот, кто "
@@ -6702,241 +6791,247 @@ msgstr ""
 "disputed row is frozen by whoever runs the month in full. This does not "
 "prevent approving the period."
 
-#: src/web/views.py:157
+#: src/web/views.py:165
 #, python-format
 msgid "Месяц пишется как 2026-06, а не «%(value)s»."
 msgstr "A month is written as 2026-06, not «%(value)s»."
 
-#: src/web/views.py:482
+#: src/web/views.py:520
 #, python-format
 msgid "производственный календарь %(country)s"
 msgstr "%(country)s production calendar"
 
-#: src/web/views.py:484
+#: src/web/views.py:522
 #, python-format
 msgid "календарь %(country)s на этот месяц не заведён"
 msgstr "the %(country)s calendar for this month has not been set up"
 
-#: src/web/views.py:499
+#: src/web/views.py:537
 msgid "Расчёт не выполнен."
 msgstr "Calculation not performed."
 
-#: src/web/views.py:734
+#: src/web/views.py:772
 msgid "Период не утверждён."
 msgstr "Period not approved."
 
-#: src/web/views.py:749
+#: src/web/views.py:804
+msgid ""
+"Отложить находку можно только с причиной: напишите, почему закрываем месяц, "
+"зная о ней."
+msgstr "A finding can only be postponed with a reason: write why the month is being closed despite it."
+
+#: src/web/views.py:827
 msgid "Период не открыт."
 msgstr "Period not open."
 
-#: src/web/views.py:784 src/web/views.py:792
+#: src/web/views.py:862 src/web/views.py:870
 msgid "Разница не перенесена."
 msgstr "Difference not carried over."
 
-#: src/web/views.py:886
+#: src/web/views.py:964
 msgid "Строка не заморожена."
 msgstr "Row not frozen."
 
-#: src/web/views.py:898
+#: src/web/views.py:976
 msgid "Заморозка не снята."
 msgstr "Freeze not lifted."
 
-#: src/web/views.py:917
+#: src/web/views.py:995
 msgid "часов"
 msgstr "hours"
 
-#: src/web/views.py:918
+#: src/web/views.py:996
 msgid "ставка за час"
 msgstr "rate per hour"
 
-#: src/web/views.py:919
+#: src/web/views.py:997
 msgid "процент оплаты"
 msgstr "pay percentage"
 
-#: src/web/views.py:920
+#: src/web/views.py:998
 msgid "минимум за час"
 msgstr "minimum per hour"
 
-#: src/web/views.py:921
+#: src/web/views.py:999
 msgid "типы часов"
 msgstr "hour types"
 
-#: src/web/views.py:922
+#: src/web/views.py:1000
 msgid "пропорция"
 msgstr "proportion"
 
-#: src/web/views.py:923
+#: src/web/views.py:1001
 msgid "за полную норму"
 msgstr "for the full standard"
 
-#: src/web/views.py:924
+#: src/web/views.py:1002
 msgid "отработано дней"
 msgstr "days worked"
 
-#: src/web/views.py:925
+#: src/web/views.py:1003
 msgid "рабочих дней в месяце"
 msgstr "working days in the month"
 
-#: src/web/views.py:926
+#: src/web/views.py:1004
 msgid "отработано часов"
 msgstr "hours worked"
 
-#: src/web/views.py:927
+#: src/web/views.py:1005
 msgid "норма часов"
 msgstr "standard hours"
 
-#: src/web/views.py:928
+#: src/web/views.py:1006
 msgid "способ"
 msgstr "method"
 
-#: src/web/views.py:929
+#: src/web/views.py:1007
 msgid "база"
 msgstr "base"
 
-#: src/web/views.py:930
+#: src/web/views.py:1008
 msgid "база взносов, часов"
 msgstr "contribution base, hours"
 
-#: src/web/views.py:934
+#: src/web/views.py:1012
 msgid "базовая ставка"
 msgstr "base rate"
 
-#: src/web/views.py:935
+#: src/web/views.py:1013
 msgid "коэффициент"
 msgstr "coefficient"
 
-#: src/web/views.py:939
+#: src/web/views.py:1017
 msgid "нето"
 msgstr "net"
 
-#: src/web/views.py:940
+#: src/web/views.py:1018
 msgid "бруто"
 msgstr "gross"
 
-#: src/web/views.py:941
+#: src/web/views.py:1019
 msgid "налог"
 msgstr "tax"
 
-#: src/web/views.py:942
+#: src/web/views.py:1020
 msgid "взносы"
 msgstr "contributions"
 
-#: src/web/views.py:943
+#: src/web/views.py:1021
 msgid "зачтено"
 msgstr "credited"
 
-#: src/web/views.py:944
+#: src/web/views.py:1022
 msgid "удержано с работника"
 msgstr "withheld from the employee"
 
-#: src/web/views.py:945
+#: src/web/views.py:1023
 msgid "доля"
 msgstr "share"
 
-#: src/web/views.py:946
+#: src/web/views.py:1024
 msgid "ставка налога"
 msgstr "tax rate"
 
-#: src/web/views.py:947
+#: src/web/views.py:1025
 msgid "взносы работника"
 msgstr "employee contributions"
 
-#: src/web/views.py:948
+#: src/web/views.py:1026
 msgid "взносы работодателя"
 msgstr "employer contributions"
 
-#: src/web/views.py:949
+#: src/web/views.py:1027
 msgid "взносы вместе"
 msgstr "contributions together"
 
-#: src/web/views.py:950
+#: src/web/views.py:1028
 msgid "множитель нето → бруто"
 msgstr "net → gross multiplier"
 
-#: src/web/views.py:951
+#: src/web/views.py:1029
 msgid "необлагаемый минимум в месяц"
 msgstr "tax-exempt minimum per month"
 
-#: src/web/views.py:952
+#: src/web/views.py:1030
 msgid "половина необлагаемого"
 msgstr "half of the tax-exempt amount"
 
-#: src/web/views.py:953
+#: src/web/views.py:1031
 msgid "минимальная база взносов"
 msgstr "minimum contribution base"
 
-#: src/web/views.py:954
+#: src/web/views.py:1032
 msgid "эталонная норма часов"
 msgstr "reference standard hours"
 
-#: src/web/views.py:955
+#: src/web/views.py:1033
 msgid "делитель часов"
 msgstr "hours divisor"
 
-#: src/web/views.py:956
+#: src/web/views.py:1034
 msgid "часов в рабочем дне"
 msgstr "hours in a workday"
 
-#: src/web/views.py:957
+#: src/web/views.py:1035
 msgid "какая ставка"
 msgstr "which rate"
 
-#: src/web/views.py:960
+#: src/web/views.py:1038
 msgid "мера работы"
 msgstr "unit of work"
 
-#: src/web/views.py:961
+#: src/web/views.py:1039
 msgid "величина из табеля"
 msgstr "value from the timesheet"
 
-#: src/web/views.py:962
+#: src/web/views.py:1040
 msgid "как считается"
 msgstr "how it is calculated"
 
-#: src/web/views.py:964
+#: src/web/views.py:1042
 msgid "сумма"
 msgstr "amount"
 
-#: src/web/views.py:973
+#: src/web/views.py:1051
 msgid "цена единицы"
 msgstr "unit price"
 
-#: src/web/views.py:974
+#: src/web/views.py:1052
 msgid "количество"
 msgstr "quantity"
 
-#: src/web/views.py:982
+#: src/web/views.py:1060
 msgid "ставка взносов"
 msgstr "contribution rate"
 
-#: src/web/views.py:988
+#: src/web/views.py:1066
 msgid "сумма из табеля"
 msgstr "amount from the timesheet"
 
-#: src/web/views.py:994
+#: src/web/views.py:1072
 msgid "количество × цена единицы"
 msgstr "quantity × unit price"
 
-#: src/web/views.py:995
+#: src/web/views.py:1073
 msgid "сумма из табеля как есть"
 msgstr "amount from the timesheet, as is"
 
-#: src/web/views.py:1001
+#: src/web/views.py:1079
 msgid "правило страны"
 msgstr "country rule"
 
-#: src/web/views.py:1002
+#: src/web/views.py:1080
 msgid "переопределение партнёра"
 msgstr "partner override"
 
-#: src/web/views.py:1004
+#: src/web/views.py:1082
 msgid "переопределение по сотруднику"
 msgstr "employee override"
 
-#: src/web/views.py:1005
+#: src/web/views.py:1083
 msgid "введено руками"
 msgstr "entered manually"
 
-#: src/web/views.py:1412
+#: src/web/views.py:1490
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"

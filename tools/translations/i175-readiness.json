@@ -1,0 +1,78 @@
+{
+  "Бумаг с точек ждут разбора: %(count)s": {
+    "en": "Papers from units awaiting sorting: %(count)s",
+    "sr": "Papira sa objekata čeka obradu: %(count)s"
+  },
+  "Всё на месте": {
+    "en": "Everything is in place",
+    "sr": "Sve je na mestu"
+  },
+  "Деньги в отчёте есть, но лежат не в той строке, где их будут искать.": {
+    "en": "The money is in the report, but not in the line where people will look for it.",
+    "sr": "Novac jeste u izveštaju, ali ne u stavci u kojoj će ga tražiti."
+  },
+  "Из-за этого P&L будет неверным. Отложенное попадёт в протокол закрытия вместе с причиной.": {
+    "en": "Because of this the P&L will be wrong. What you postpone goes into the closing record together with the reason.",
+    "sr": "Zbog toga će P&L biti pogrešan. Odloženo ide u zapisnik zatvaranja zajedno sa razlogom."
+  },
+  "Месяц не закрыт: %(what)s. Устраните или отложите с причиной.": {
+    "en": "The month was not closed: %(what)s. Fix it or postpone it with a reason.",
+    "sr": "Mesec nije zatvoren: %(what)s. Rešite ili odložite uz razlog."
+  },
+  "Может быть правдой — но проверить стоит до утверждения.": {
+    "en": "It may well be true — but it is worth checking before approval.",
+    "sr": "Može biti tačno — ali vredi proveriti pre odobravanja."
+  },
+  "Отклонений от прошлого месяца: %(count)s": {
+    "en": "Deviations from the previous month: %(count)s",
+    "sr": "Odstupanja u odnosu na prethodni mesec: %(count)s"
+  },
+  "Отложено: %(reason)s": {
+    "en": "Postponed: %(reason)s",
+    "sr": "Odloženo: %(reason)s"
+  },
+  "Отложить": {
+    "en": "Postpone",
+    "sr": "Odloži"
+  },
+  "Отложить находку можно только с причиной: напишите, почему закрываем месяц, зная о ней.": {
+    "en": "A finding can only be postponed with a reason: write why the month is being closed despite it.",
+    "sr": "Nalaz se može odložiti samo uz razlog: napišite zašto zatvaramo mesec i pored njega."
+  },
+  "Отложить, потому что": {
+    "en": "Postpone, because",
+    "sr": "Odloži, jer"
+  },
+  "Пока бумага не разобрана, её денег в отчёте нет — не потому что отфильтровали, а потому что фактов по ней не существует.": {
+    "en": "Until a paper is sorted, its money is not in the report — not because it was filtered out, but because no facts about it exist.",
+    "sr": "Dok papir nije obrađen, njegovog novca nema u izveštaju — ne zato što je filtriran, već zato što činjenice o njemu ne postoje."
+  },
+  "Пока часы открыты, их могут поправить после утверждения — и ведомость разойдётся с табелем.": {
+    "en": "While hours are open they can be edited after approval — and the payroll sheet will drift apart from the timesheet.",
+    "sr": "Dok su sati otvoreni, mogu se menjati posle odobravanja — i obračun će se razići sa evidencijom."
+  },
+  "Прежде чем закрыть": {
+    "en": "Before you close",
+    "sr": "Pre nego što zatvorite"
+  },
+  "Строк без статьи: %(count)s": {
+    "en": "Lines without an expense item: %(count)s",
+    "sr": "Stavki bez kategorije: %(count)s"
+  },
+  "Часы точки не закрыты: %(units)s": {
+    "en": "Unit hours are not closed: %(units)s",
+    "sr": "Sati objekta nisu zatvoreni: %(units)s"
+  },
+  "Часы закрыты, документы разобраны, строк без статьи нет. Месяц можно утверждать.": {
+    "en": "Hours are closed, documents are sorted, there are no lines without an item. The month can be approved.",
+    "sr": "Sati su zatvoreni, dokumenti obrađeni, nema stavki bez kategorije. Mesec se može odobriti."
+  },
+  "Это нужно устранить или отложить с причиной": {
+    "en": "This must be fixed or postponed with a reason",
+    "sr": "Ovo treba rešiti ili odložiti uz razlog"
+  },
+  "выписка придёт послезавтра, платим сегодня": {
+    "en": "the statement arrives the day after tomorrow, we are paying today",
+    "sr": "izvod stiže prekosutra, plaćamo danas"
+  }
+}

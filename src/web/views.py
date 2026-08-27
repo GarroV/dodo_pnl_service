@@ -28,7 +28,15 @@ from django.utils.translation import gettext, gettext_noop
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
-from core.models import Calendar, Payrun, Payslip, Period, Tenant, Timesheet
+from core.models import (
+    Calendar,
+    ClosingWaiver,
+    Payrun,
+    Payslip,
+    Period,
+    Tenant,
+    Timesheet,
+)
 
 # Демо спрашивают ровно об одном: показывать ли путь внутрь (T160).
 # Импортируется `demo.access`, а не `demo.views`: тот сам зовёт `web.auth`, и
@@ -248,6 +256,30 @@ def cut_url(period: Period, code: str) -> str:
     return base if not code else f"{base}?ledger={code}"
 
 
+def _readiness_of(period):
+    """Что мешает закрыть месяц — для показа рядом с кнопкой утверждения."""
+    from payrun import readiness
+
+    state = readiness.check(period.tenant_id, period.period)
+    return {
+        "ready": state.ready,
+        "blocking": [
+            {"code": found.code, "title": found.title, "detail": found.detail}
+            for found in state.blocking
+        ],
+        "suspicious": [
+            {"code": found.code, "title": found.title, "detail": found.detail}
+            for found in state.of_kind(readiness.SUSPICIOUS)
+        ],
+        # Отложенное показывается вместе с причиной: месяц закрыт с известной
+        # дырой, и через полгода это должно читаться, а не выясняться.
+        "postponed": [
+            {"code": code, "reason": reason}
+            for code, reason in state.postponed.items()
+        ],
+    }
+
+
 def period_page(
     request,
     period,
@@ -392,6 +424,12 @@ def period_page(
             "period": period,
             "title": month_title(period.period),
             "status": status_title(period.status),
+            # Готовность к закрытию (#175): список стоит рядом с кнопкой, а не
+            # отдельным отчётом — эталон формулирует это как условие, а не как
+            # справку. Отказ на самом действии живёт в `lifecycle.approve`:
+            # экран показывает то, что человек открыл, а утверждение приходит
+            # запросом.
+            "readiness": _readiness_of(period),
             "sheet": {
                 "columns": [label(column.code, column.title) for column in sheet.columns],
                 "rows": [
@@ -733,6 +771,46 @@ def period_approve(request, period_id):
         done_flag="approved",
         error_title=_("Период не утверждён."),
     )
+
+
+@login_required
+@require_POST
+def period_postpone(request, period_id):
+    """Отложить находку проверки полноты — с причиной (#175).
+
+    Без этого проверка «прежде чем закрыть» была бы тупиком: часть находок
+    законна — выписка придёт послезавтра, а зарплату платят сегодня. Запрет без
+    выхода заставил бы закрывать месяц мимо продукта.
+
+    Право то же, что у утверждения: откладывает тот, кто закрывает месяц.
+    """
+    period = find_period(period_id)
+    who = get_current_principal(request)
+    try:
+        permissions.check(who, permissions.PERIOD_APPROVE)
+    except permissions.PermissionRefused as refusal:
+        return HttpResponse(
+            refusal.message, status=refusal.http_status,
+            content_type="text/plain; charset=utf-8",
+        )
+
+    finding = (request.POST.get("finding") or "").strip()
+    reason = (request.POST.get("reason") or "").strip()
+    if not finding or not reason:
+        # Причина обязательна и здесь, и в базе: отложенное без причины через
+        # полгода необъяснимо — видно, что месяц закрыли с дырой, и неизвестно,
+        # сознательно или по недосмотру.
+        return HttpResponse(
+            _("Отложить находку можно только с причиной: напишите, почему "
+              "закрываем месяц, зная о ней."),
+            status=400, content_type="text/plain; charset=utf-8",
+        )
+
+    ClosingWaiver.objects.update_or_create(
+        tenant=period.tenant, period=period.period, finding=finding,
+        defaults={"reason": reason, "created_by": who.user_id},
+    )
+    return redirect(f"{reverse('period', args=[period.id])}?postponed=1")
 
 
 @login_required

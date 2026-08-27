@@ -47,6 +47,10 @@ urlpatterns = [
     # Цикл периода: утверждение и откат. Оба только POST — это запись, а не
     # просмотр, и по ссылке из письма или из истории браузера случиться не должны.
     path("periods/<uuid:period_id>/approve/", views.period_approve, name="period-approve"),
+    # Отложить находку проверки полноты с причиной (#175). Отдельный адрес, а не
+    # поле у утверждения: это самостоятельное решение со своим следом, и человек
+    # принимает его до того, как нажать «утвердить».
+    path("periods/<uuid:period_id>/postpone/", views.period_postpone, name="period-postpone"),
     path("periods/<uuid:period_id>/reopen/", views.period_reopen, name="period-reopen"),
     # Перенос разницы за закрытый месяц в текущий (T026). Только POST: это
     # запись денег, и по ссылке из истории браузера случиться не должна.

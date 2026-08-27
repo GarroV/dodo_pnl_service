@@ -388,13 +388,33 @@ def payruns_restored(web_env):
 
 
 def approve_june(client, web_env) -> str:
-    """Посчитать и утвердить июнь — руками по экрану, как это делает человек."""
+    """Посчитать и утвердить июнь — руками по экрану, как это делает человек.
+
+    С проверкой полноты (#175) утверждение отказывает, пока есть блокирующие
+    находки: неразобранные бумаги, строки без статьи. Человек в этом месте
+    либо устраняет их, либо откладывает с причиной — и хелпер делает второе,
+    потому что тестам нужен закрытый месяц, а не разбор первички.
+    """
     wipe_payruns(web_env)
     login_as(client, "director")
     url = period_url(client)
     assert client.post(url + "calculate/", {"inline": "1"}, follow=True).status_code == 200
+    postpone_blockers(client, url)
     assert client.post(url + "approve/", follow=True).status_code == 200
     return url
+
+
+def postpone_blockers(client, url: str) -> None:
+    """Отложить всё, что мешает закрыть месяц, — с причиной, как человек."""
+    from core.models import Period
+    from payrun import readiness
+
+    period = Period.objects.get(pk=url.strip("/").split("/")[-1])
+    state = readiness.check(period.tenant_id, period.period)
+    for found in state.blocking:
+        assert client.post(url + "postpone/", {
+            "finding": found.code, "reason": "закрываем месяц в тесте: разбор не про эту проверку",
+        }, follow=True).status_code == 200
 
 
 def june_snapshot(sql) -> list:

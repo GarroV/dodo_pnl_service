@@ -871,7 +871,37 @@ def _approve(tenant, month: Month) -> None:
     payrun = models.Payrun.objects.filter(
         tenant_id=tenant.id, period=month.period
     ).first()
+    _postpone_known_findings(tenant, month)
     approve(payrun, actor_id=det_id("user", "director"))
+
+
+def _postpone_known_findings(tenant, month: Month) -> None:
+    """Отложить находки проверки полноты с причиной — как это делает человек.
+
+    В демо намеренно лежит неразобранная бумага: без неё инбокс показывать
+    нечем. С проверкой полноты (#175) месяц с такой бумагой не закрывается — и
+    это правильно. Обходить проверку в сиде нельзя: демо показывало бы порядок,
+    которого в продукте нет.
+
+    Поэтому демо делает то же, что сделает партнёр: откладывает находку с
+    причиной. Заодно на закрытых месяцах видно, как выглядит отложенное, — а
+    это половина смысла проверки.
+    """
+    from payrun import readiness
+
+    state = readiness.check(tenant.id, month.period)
+    for found in state.blocking:
+        models.ClosingWaiver.objects.update_or_create(
+            tenant=tenant, period=month.period, finding=found.code,
+            defaults={
+                "reason": (
+                    "бумага пришла позже закрытия, разберём в следующем месяце"
+                    if found.code == "papers"
+                    else "закрываем месяц: остальное доедет отдельной строкой"
+                ),
+                "created_by": det_id("user", "director"),
+            },
+        )
 
 
 def person_by_key(key: str) -> Person | None:

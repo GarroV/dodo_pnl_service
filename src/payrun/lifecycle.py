@@ -19,7 +19,7 @@ from django.utils.translation import gettext_noop
 from core.models import Payrun, PayrunTransition
 
 from . import retro
-from .errors import PayrunRefused, ReasonRequired
+from .errors import NotReady, PayrunRefused, ReasonRequired
 
 DRAFT = "draft"
 CALCULATED = "calculated"
@@ -171,10 +171,36 @@ def _switch(payrun: Payrun, to_status: str, **fields) -> None:
 
 
 def approve(payrun: Payrun | None, *, actor_id) -> None:
-    """Утвердить расчёт. Кто утвердил — остаётся в самой строке и в журнале."""
+    """Утвердить расчёт. Кто утвердил — остаётся в самой строке и в журнале.
+
+    Перед утверждением проверяется полнота данных (#175): месяц с незакрытыми
+    часами, неразобранными бумагами и строками без статьи даёт неверный P&L, и
+    узнают об этом уже после закрытия. Находку можно отложить с причиной — но
+    сознательно, а не молча.
+
+    Проверка стоит здесь, а не только на экране: экран показывает то, что
+    человек открыл, а утверждение приходит запросом.
+    """
     refuse_if_cycle_forbids(payrun, APPROVED)
+    refuse_if_not_ready(payrun)
     with transaction.atomic():
         _switch(payrun, APPROVED, approved_by=actor_id)
+
+
+def refuse_if_not_ready(payrun: Payrun | None) -> None:
+    """Отказать, если месяц не готов к закрытию. Отказ называет находки."""
+    if payrun is None:
+        return
+    from . import readiness
+
+    state = readiness.check(payrun.tenant_id, payrun.period)
+    if state.ready:
+        return
+    raise NotReady(
+        _("Месяц не закрыт: %(what)s. Устраните или отложите с причиной.") % {
+            "what": "; ".join(found.title for found in state.blocking),
+        }
+    )
 
 
 def reopen(payrun: Payrun | None, *, reason: str) -> str:

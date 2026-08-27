@@ -243,6 +243,44 @@ class Membership(models.Model):
         ]
 
 
+class ClosingWaiver(models.Model):
+    """Отложенная находка проверки полноты: что закрыли, зная о дыре (#175).
+
+    Проверка «прежде чем закрыть» была бы тупиком без этой записи: часть находок
+    законна — выписка придёт послезавтра, а зарплату платят сегодня. Запрет без
+    выхода заставил бы закрывать месяц мимо продукта, то есть хуже, чем не
+    проверять вовсе.
+
+    **Причина обязательна и живёт вместе с периодом.** Отложенное без причины
+    через полгода необъяснимо: видно, что месяц закрыли с дырой, и неизвестно,
+    сознательно или по недосмотру.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    period = models.DateField()
+    # Код находки из `payrun.readiness`: `unit_hours`, `papers`, `inbox`.
+    finding = models.TextField()
+    reason = models.TextField()
+    created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "closing_waivers"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant", "period", "finding"],
+                name="closing_waivers_uniq",
+            ),
+            # Причина без содержания — не причина. `\S` вместо «непусто»:
+            # пробел обходится одним нажатием клавиши.
+            models.CheckConstraint(
+                condition=models.Q(reason__regex=r"\S"),
+                name="closing_waivers_reason_not_empty",
+            ),
+        ]
+
+
 class Calendar(models.Model):
     """Производственный календарь страны на месяц."""
 

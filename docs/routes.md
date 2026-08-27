@@ -88,6 +88,7 @@
 | `/periods/<uuid:period_id>/calculate/` | `period-calculate` | `web.views.period_calculate` |
 | `/periods/<uuid:period_id>/calculate/status/` | `period-calculate-status` | `web.views.period_calculate_status` |
 | `/periods/<uuid:period_id>/export/<slug:kind>/` | `period-export` | `web.reports_views.period_export` |
+| `/periods/<uuid:period_id>/postpone/` | `period-postpone` | `web.views.period_postpone` |
 | `/periods/<uuid:period_id>/reconcile/` | `period-reconcile` | `web.reports_views.period_reconcile` |
 | `/periods/<uuid:period_id>/reopen/` | `period-reopen` | `web.views.period_reopen` |
 | `/periods/<uuid:period_id>/retro/` | `period-retro` | `web.views.period_retro_post` |
