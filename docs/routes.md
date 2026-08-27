@@ -49,6 +49,9 @@
 | `/directory/legal-entities/` | `directory-legal-entities` | `web.directory_views.legal_entities` |
 | `/directory/legal-entities/<uuid:entity_id>/` | `directory-legal-entity` | `web.directory_views.legal_entity` |
 | `/directory/legal-entities/new/` | `directory-legal-entity-new` | `web.directory_views.legal_entity` |
+| `/directory/positions/` | `directory-positions` | `web.positions_views.positions` |
+| `/directory/positions/<uuid:position_id>/` | `directory-position` | `web.positions_views.position` |
+| `/directory/positions/new/` | `directory-position-new` | `web.positions_views.position` |
 | `/directory/tills/` | `directory-tills` | `web.tills_views.tills` |
 | `/directory/tills/<uuid:till_id>/` | `directory-till` | `web.tills_views.till` |
 | `/directory/tills/new/` | `directory-till-new` | `web.tills_views.till` |

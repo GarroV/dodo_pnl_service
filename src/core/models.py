@@ -693,6 +693,61 @@ class RuleOverride(models.Model):
         ]
 
 
+class Position(models.Model):
+    """Должность: шаблон условий найма (issue #181).
+
+    **Зачем слой между справочниками и людьми.** Условия найма — семь полей, и
+    каждому человеку они набираются заново: группа, точка, ставка, коэффициент,
+    схема расчёта, мера работы, регистр. Должность отвечает на них один раз за
+    всех, кто на ней сидит, и человека заводят выбором из списка.
+
+    **Она подставляет, а не диктует.** Ставка конкретному человеку своя — на то
+    и вилка: должность говорит, в каких границах эта ставка бывает, и ловит
+    опечатку в момент ввода. 420 вместо 4200 — не «низкая ставка», а лишняя
+    цифра, и узнавать о ней на закрытии месяца поздно.
+
+    **Правка должности не трогает нанятых.** Условия найма версионируются по
+    датам (D020), и молчаливый пересчёт закрытых месяцев всем, кто сидит на
+    этой должности, — ровно то, что версионирование и запрещает. Поэтому связь
+    односторонняя: условия помнят, из какой должности они собраны, но живут
+    дальше сами.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    code = models.TextField()
+    title = models.TextField()
+    group = models.ForeignKey(
+        "EmployeeGroup", on_delete=models.PROTECT, db_column="group_id",
+    )
+    # Пусто — как у группы. Те же три поля, что человек может переопределить в
+    # своих условиях найма: должность заполняет их за него.
+    work_measure = models.TextField(null=True, blank=True)
+    scheme = models.TextField(null=True, blank=True)
+    ledger = ledger_field(null=True, blank=True)
+    # Границы ставки. Пусто — границы нет: у части должностей ставка
+    # договорная, и выдуманная вилка мешала бы заводить людей.
+    rate_from = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    rate_to = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    created_at = models.DateTimeField(db_default=now_default())
+
+    class Meta:
+        db_table = "positions"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant", "code"], name="positions_tenant_code_uniq",
+            ),
+            # Перевёрнутая вилка — не «строгая настройка», а опечатка: ни одна
+            # ставка в неё не попадёт, и заведение людей встанет молча.
+            models.CheckConstraint(
+                condition=models.Q(rate_from__isnull=True)
+                | models.Q(rate_to__isnull=True)
+                | models.Q(rate_to__gte=models.F("rate_from")),
+                name="positions_rate_range",
+            ),
+        ]
+
+
 class EmployeeGroup(models.Model):
     """Группа сотрудников: схема расчёта и регистр учёта по умолчанию."""
 
@@ -745,6 +800,12 @@ class EmploymentTerm(models.Model):
     group = models.ForeignKey(EmployeeGroup, on_delete=models.PROTECT, db_column="group_id")
     unit = models.ForeignKey(
         Unit, on_delete=models.SET_NULL, null=True, blank=True, db_column="unit_id",
+    )
+    # Из какой должности собраны эти условия. Пусто — набраны руками: должности
+    # появились позже, и старые условия ничего о них не знают.
+    position = models.ForeignKey(
+        "Position", on_delete=models.SET_NULL, null=True, blank=True,
+        db_column="position_id",
     )
     base_rate = models.DecimalField(max_digits=12, decimal_places=4)
     coefficient = models.DecimalField(max_digits=8, decimal_places=4, db_default=1)

@@ -83,6 +83,7 @@ from core.models import (
     EmploymentTerm,
     ExpenseItem,
     LegalEntity,
+    Position,
     Till,
     Unit,
 )
@@ -253,6 +254,13 @@ def _sections(who) -> list[dict]:
             # Счётчик считает то же, что покажет раздел: статьи тенанта целиком.
             # Регистра у статьи нет — она словарь названий, а не данные о деньгах.
             "count": ExpenseItem.objects.count(),
+        },
+        {
+            "url": reverse("directory-positions"),
+            "title": _("Должности"),
+            "about": _("Шаблон условий найма: человека заводят выбором должности, "
+                       "а не набором семи полей"),
+            "count": Position.objects.count(),
         },
         {
             "url": reverse("directory-tills"),
@@ -927,10 +935,28 @@ def _wanted_terms(request, who, current: EmploymentTerm | None) -> dict:
     # подбором значения в форме (D023).
     groups = list(_visible_groups(who).values_list("id", flat=True))
     units = list(Unit.objects.values_list("id", flat=True))
+    # Должность подставляет то, что у неё задано, и уступает всему, что человек
+    # выбрал сам (issue #181): шаблон экономит набор, но не спорит с решением
+    # того, кто заводит человека.
+    # Импорт внутри функции, а не сверху: `positions_views` сам построен на
+    # этом модуле, и кольцо импортов уронило бы оба.
+    from .positions_views import rate_refusal
+
+    chosen = _position_of(request)
+    base_rate = _number(request, "base_rate", _("Ставка или оклад"))
+    refusal = rate_refusal(chosen, base_rate)
+    if refusal:
+        # Вилка ловит опечатку там, где её ещё дёшево исправить: 420 вместо
+        # 4200 — лишняя цифра, и узнавать о ней на закрытии месяца поздно.
+        raise BadInput(refusal)
     return {
-        "group_id": _choice(request, "group", _("Группа"), groups),
+        "position": chosen,
+        "group_id": _choice(
+            request, "group", _("Группа"), groups,
+            required=chosen is None,
+        ) or (chosen.group_id if chosen else None),
         "unit_id": _choice(request, "unit", _("Точка"), units, required=False),
-        "base_rate": _number(request, "base_rate", _("Ставка или оклад")),
+        "base_rate": base_rate,
         "coefficient": _number(request, "coefficient", _("Коэффициент")),
         # Схема расчёта — выбор из правил страны, а не набранный текст (T164).
         # Опечатка в ключе означала молча несчитанного человека: расчёт узнаёт о
@@ -938,15 +964,32 @@ def _wanted_terms(request, who, current: EmploymentTerm | None) -> dict:
         "scheme": _from_rules(
             request, "scheme", _("Схема расчёта"), rules.scheme_choices(preset or {}),
             current.scheme if current else None, required=False,
-        ),
+        ) or (chosen.scheme if chosen else None),
         # Чем меряется работа именно этого человека (T164). Пусто — как у группы.
         "work_measure": _from_rules(
             request, "work_measure", _("Чем меряется работа"),
             rules.measure_choices(preset or {}),
             current.work_measure if current else None, required=False,
-        ),
-        "ledger": _choice(request, "ledger", _("Регистр учёта"), LEDGER_CODES, required=False),
+        ) or (chosen.work_measure if chosen else None),
+        "ledger": _choice(
+            request, "ledger", _("Регистр учёта"), LEDGER_CODES, required=False,
+        ) or (chosen.ledger if chosen else None),
     }
+
+
+def _position_of(request) -> Position | None:
+    """Должность, выбранная в форме. Пусто — условия набирают руками.
+
+    Проверяется выборкой, а не доверием к форме: чужая должность не подставит
+    свою группу — её просто нет в выборке этого партнёра (D023).
+    """
+    chosen = request.POST.get("position") or ""
+    if not chosen:
+        return None
+    found = Position.objects.filter(pk=chosen).first()
+    if found is None:
+        raise BadInput(_("Такой должности нет."))
+    return found
 
 
 def _employee_context(

@@ -11,6 +11,7 @@ from . import (
     guide,
     papers_views,
     person_views,
+    positions_views,
     reports_views,
     roles_views,
     rules_views,
@@ -196,6 +197,15 @@ urlpatterns = [
         "directory/counterparties/<uuid:counterparty_id>/",
         counterparties_views.counterparty,
         name="directory-counterparty",
+    ),
+    # Должности (issue #181). Восьмой справочник: шаблон условий найма, чтобы
+    # человека заводили выбором из списка, а не набором семи полей.
+    path("directory/positions/", positions_views.positions, name="directory-positions"),
+    path("directory/positions/new/", positions_views.position, name="directory-position-new"),
+    path(
+        "directory/positions/<uuid:position_id>/",
+        positions_views.position,
+        name="directory-position",
     ),
     # Кассы (T145). Седьмой справочник, тот же префикс и то же право
     # `directory.manage`: касса — словарь, а не первичные данные.

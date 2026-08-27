@@ -1,0 +1,55 @@
+{
+  "Должности": {"en": "Positions", "sr": "Radna mesta"},
+  "Шаблон условий найма: человека заводят выбором должности, а не набором семи полей": {
+    "en": "A template for employment terms: a person is added by picking a position instead of filling in seven fields",
+    "sr": "Šablon uslova zaposlenja: čovek se dodaje izborom radnog mesta, a ne popunjavanjem sedam polja"
+  },
+  "Такой должности нет.": {"en": "There is no such position.", "sr": "Takvo radno mesto ne postoji."},
+  "Шаблон условий найма: кого нанимаем, в какую группу он попадает и в каких границах бывает его ставка.": {
+    "en": "A template for employment terms: who we hire, which group they join and within what limits their rate falls.",
+    "sr": "Šablon uslova zaposlenja: koga zapošljavamo, u koju grupu ulazi i u kojim granicama je njegova cena rada."
+  },
+  "Завести должность": {"en": "Add a position", "sr": "Dodaj radno mesto"},
+  "Вилка ставки": {"en": "Rate range", "sr": "Raspon cene rada"},
+  "Должностей нет.": {"en": "There are no positions.", "sr": "Nema radnih mesta."},
+  "Пока их нет, условия найма набираются каждому человеку руками — это работает, просто дольше.": {
+    "en": "Until there are, employment terms are filled in by hand for every person — that works, it just takes longer.",
+    "sr": "Dok ih nema, uslovi zaposlenja se unose ručno za svakog čoveka — to radi, samo duže traje."
+  },
+  "Ставка %(rate)s ниже вилки должности «%(title)s»: от %(low)s.": {
+    "en": "The rate %(rate)s is below the range of the position «%(title)s»: from %(low)s.",
+    "sr": "Cena rada %(rate)s je ispod raspona radnog mesta «%(title)s»: od %(low)s."
+  },
+  "Ставка %(rate)s выше вилки должности «%(title)s»: до %(high)s.": {
+    "en": "The rate %(rate)s is above the range of the position «%(title)s»: up to %(high)s.",
+    "sr": "Cena rada %(rate)s je iznad raspona radnog mesta «%(title)s»: do %(high)s."
+  },
+  "Ставка от": {"en": "Rate from", "sr": "Cena rada od"},
+  "Ставка до": {"en": "Rate up to", "sr": "Cena rada do"},
+  "Вилка перевёрнута: «до» меньше, чем «от». В такую границу не попадёт ни одна ставка.": {
+    "en": "The range is inverted: «up to» is lower than «from». No rate can fall inside it.",
+    "sr": "Raspon je obrnut: «do» je manje od «od». Nijedna cena rada ne može da uđe u njega."
+  },
+  "Новая должность": {"en": "New position", "sr": "Novo radno mesto"},
+  "← К должностям": {"en": "← To positions", "sr": "← Na radna mesta"},
+  "Короткий код, например pizzamaker.": {
+    "en": "A short code, for example pizzamaker.",
+    "sr": "Kratka šifra, na primer pizzamaker."
+  },
+  "Пусто — как у группы. Оклад ставится здесь: тогда «Ставка» у человека будет означать сумму за месяц.": {
+    "en": "Empty — same as the group. Salary is set here: then «Rate» for a person means the amount per month.",
+    "sr": "Prazno — kao kod grupe. Plata se postavlja ovde: tada «Cena rada» kod čoveka znači iznos mesečno."
+  },
+  "Нижняя граница. Пусто — границы нет: ставка договорная.": {
+    "en": "The lower limit. Empty — there is no limit: the rate is negotiated.",
+    "sr": "Donja granica. Prazno — granice nema: cena rada se dogovara."
+  },
+  "Верхняя граница. Она ловит лишнюю цифру при заведении человека, пока ошибку ещё дёшево исправить.": {
+    "en": "The upper limit. It catches an extra digit while a person is being added, while the mistake is still cheap to fix.",
+    "sr": "Gornja granica. Hvata suvišnu cifru pri dodavanju čoveka, dok je grešku još jeftino ispraviti."
+  },
+  "Куда попадёт нанятый: группа решает, как считается его работа и в какую строку P&L уходят его деньги.": {
+    "en": "Where the hired person lands: the group decides how their work is calculated and which P&L line their money goes to.",
+    "sr": "Gde ulazi zaposleni: grupa određuje kako se računa njegov rad i u koju stavku P&L-a idu njegove pare."
+  }
+}
