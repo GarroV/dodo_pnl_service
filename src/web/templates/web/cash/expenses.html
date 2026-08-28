@@ -42,6 +42,76 @@
 {% endcomment %}
 {% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
 
+{% comment %}
+Контроль кассы: три числа рядом (T184, модуль 6 эталона).
+
+Наличный расход — два независимых факта, а не один со статусом. «Ушло из кассы»
+случилось в тот момент, когда управляющий отдал деньги; «принято в P&L» — то,
+что из этих денег дойдёт до отчёта за этот же месяц. Разрыв между ними и есть
+контроль: пока эти числа не сведены, касса и отчёт живут отдельно, и никто этого
+не видит.
+
+**Разрыв показан всегда, включая ноль.** Спрятанный ноль читается как «этого
+числа тут не бывает», и человек перестаёт его искать — а доверие к кассе держится
+именно на нулевом разрыве.
+
+**Машиночитаемые значения (`data-cash`, `data-pnl`, `data-gap`) — не украшение.**
+По ним приёмка сверяет числа с базой, а не с их отформатированным видом:
+«1 000,00» в разметке зависит от языка страницы, а деньги — нет.
+
+Знак минус стоит у двух первых чисел и не стоит у разрыва: первые два — это
+деньги, которые ушли, а разрыв — расстояние между ними, и минус у расстояния
+читался бы как ещё один расход.
+
+Числа в карточках прижаты ВЛЕВО, а не вправо, — единственное место в продукте,
+где так. Правый край нужен столбику, в котором числа сравнивают друг с другом
+глазами сверху вниз; здесь их три, они стоят в ряд и каждое читается вместе со
+своей подписью. Прижатое вправо, число уезжало бы от подписи на всю ширину
+карточки. Тот же довод — у плиток на экране выплат человека (T166).
+{% endcomment %}
+<div class="control">
+  <div class="control__card" data-cash="{{ cash_raw }}">
+    <span class="control__label">{% translate "Ушло из кассы" %}</span>
+    <span class="control__num">&minus;{{ cash_text }}</span>
+    {% comment %}
+    Число расходов набрано без склонения намеренно: «Расходов: 1» читается
+    ровно так же понятно, как «1 расход», а множественное число здесь пришлось
+    бы вести на трёх языках с разными правилами — цена, которую эта подпись не
+    стоит.
+    {% endcomment %}
+    <span class="note">{% blocktranslate with count=counted %}Расходов: {{ count }} · факт кассы, не зависит от документов{% endblocktranslate %}</span>
+  </div>
+  <div class="control__card" data-pnl="{{ pnl_raw }}">
+    <span class="control__label">{% translate "Принято в P&L" %}</span>
+    <span class="control__num control__num--ok">&minus;{{ pnl_text }}</span>
+    <span class="note">{% translate "то, что дойдёт до отчёта за этот же месяц" %}</span>
+  </div>
+  <div class="control__card{% if gap_reasons %} control__card--gap{% endif %}" data-gap="{{ gap_raw }}">
+    <span class="control__label">{% translate "Разрыв" %}</span>
+    <span class="control__num{% if gap_reasons %} control__num--gap{% endif %}">{{ gap_text }}</span>
+    {% if gap_reasons %}
+    <span class="note">{{ gap_reasons|join:" · " }}</span>
+    {% else %}
+    <span class="note">{% translate "всё, что ушло из кассы, принято в отчёт" %}</span>
+    {% endif %}
+  </div>
+</div>
+
+{% comment %}
+Сумма без чека стоит отдельной строкой, а не четвёртой карточкой, и в разрыв не
+входит. Это разные вопросы: разрыв — про то, чего в отчёте нет, а чек — про то,
+чем трату подтвердить. Сегодня расход без чека в P&L входит, и рисовать его в
+разрыве значило бы показать число, которого в отчёте не будет.
+{% endcomment %}
+<p class="sub" data-noreceipt="{{ no_receipt_raw }}">
+  {% if no_receipt_counted %}
+  {% blocktranslate with amount=no_receipt_text count=no_receipt_counted %}Без чека: {{ amount }}. Расходов без бумаги: {{ count }}.{% endblocktranslate %}
+  {% translate "Деньги уже потрачены, подтвердить их пока нечем." %}
+  {% else %}
+  {% translate "Чек приложен к каждому расходу." %}
+  {% endif %}
+</p>
+
 <form class="search row" method="get">
   {% include "web/directory/fields.html" with fields=filters %}
   <button type="submit">{% translate "Показать" %}</button>
@@ -59,6 +129,7 @@
       <th class="num">{% translate "НДС" %}</th>
       <th>{% translate "Регистр" %}</th>
       <th>{% translate "Комментарий" %}</th>
+      <th>{% translate "Чек" %}</th>
       <th>{% translate "Состояние" %}</th>
     </tr>
   </thead>
@@ -73,6 +144,12 @@
       <td class="{{ row.vat|numclass }}">{{ row.vat }}</td>
       <td>{{ row.ledger }}</td>
       <td>{{ row.note }}</td>
+      {% comment %}
+      Метка чека — на каждой строке, а не только у тех, где чека нет. Пустая
+      ячейка читается как «неизвестно», и бухгалтер идёт проверять её вручную;
+      «Чека нет» — это ответ, с которым уже можно что-то делать.
+      {% endcomment %}
+      <td>{% if row.has_receipt %}<a class="mark mark--ok" href="{{ row.receipt_url }}">{{ row.receipt_title }}</a>{% else %}<span class="mark mark--warn">{{ row.receipt_title }}</span>{% endif %}</td>
       <td>{{ row.state_title }}{% if row.landed_in %} <span class="note">{% blocktranslate with month=row.landed_in %}учтён в {{ month }}{% endblocktranslate %}</span>{% endif %}</td>
     </tr>
     {% endfor %}
@@ -81,7 +158,7 @@
     <tr data-total="{{ total_raw }}">
       <th colspan="3">{% blocktranslate count counter=counted %}Итого по {{ counter }} строке{% plural %}Итого по {{ counter }} строкам{% endblocktranslate %}</th>
       <th class="{{ total_text|numclass }}">{{ total_text }}</th>
-      <th colspan="5"></th>
+      <th colspan="6"></th>
     </tr>
   </tfoot>
 </table>{% endscroll %}

@@ -38,6 +38,46 @@
 {% notice "empty" title=closed %}{{ closed_notice }}{% endnotice %}
 {% endif %}
 
+{% comment %}
+Чек расхода (T184).
+
+**Стоит выше формы правки и живёт отдельно от неё.** Приложить чек — это не
+правка расхода: деньги от появления фотографии не меняются, новая версия факта
+не заводится, и закрытый месяц этому не мешает. Одной формой с суммой чек
+означал бы, что снимок нельзя донести, не открыв месяц заново.
+
+**Состояние показано и тогда, когда чека нет.** Пустое место человек читает как
+«здесь ничего не бывает» и перестаёт искать; «Чека нет» — это ответ, после
+которого есть что делать.
+{% endcomment %}
+<div class="card receipt">
+  <p class="field-label">{% translate "Чек" %}</p>
+  {% if receipt.attached %}
+  <p><span class="mark mark--ok">{{ receipt.title }}</span>
+     <span class="note">{{ receipt.size }}{% if receipt.file_name %} · {{ receipt.file_name }}{% endif %}</span></p>
+  {% if receipt.shown %}
+  {% comment %}
+  Сам снимок, а не только ссылка: чек прикладывают, чтобы на него посмотреть, и
+  ссылка на скачивание заставляла бы бухгалтера открывать файл ради одного
+  взгляда на сумму. PDF и HEIC браузеры внутри страницы не рисуют — им остаётся
+  ссылка ниже.
+  {% endcomment %}
+  <p><a href="{{ receipt_url }}"><img class="receipt__shot" src="{{ receipt_url }}" alt="{% translate 'Фотография чека' %}"></a></p>
+  {% else %}
+  <p><a href="{{ receipt_url }}">{% translate "Открыть файл" %}</a></p>
+  {% endif %}
+  {% else %}
+  <p><span class="mark mark--warn">{{ receipt.title }}</span></p>
+  {% endif %}
+  <p class="note">{{ receipt.about }}</p>
+  <form method="post" action="{{ receipt_url }}" enctype="multipart/form-data">{% csrf_token %}
+    <p class="field">
+      {% include "web/components/field.html" with id="receipt" name="receipt" label="" type="file" accept=receipt_accept %}
+    </p>
+    <button type="submit">{% if receipt.attached %}{% translate "Заменить чек" %}{% else %}{% translate "Приложить чек" %}{% endif %}</button>
+  </form>
+</div>
+
 {% if editable %}
 <form class="card wide" method="post">{% csrf_token %}
   {% include "web/directory/fields.html" with fields=fields %}

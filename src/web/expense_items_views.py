@@ -54,7 +54,7 @@ from .directory_views import (
     _select,
     _text,
 )
-from .format import day, ledger_title
+from .format import SURFACE_ABOUT, SURFACE_TITLES, day, ledger_title, surfaces_text
 
 # Разбор ввода берётся у соседнего справочника целиком, а не переписывается
 # здесь: правила у всех шести экранов одни («поле обязательно», «дата пишется
@@ -116,6 +116,33 @@ def _titles_from_post(request) -> dict:
     return titles
 
 
+def _surfaces_from_post(request) -> list[str]:
+    """Где статья предлагается — набор галок из формы (T191).
+
+    **Пустой набор отвергается словами, а не молча превращается в «везде».**
+    Молчаливое умолчание здесь было бы худшим из вариантов: человек снял все
+    галки осознанно (например, выводя статью из оборота) и получил бы статью,
+    предлагаемую везде, ровно наоборот его действию. Отказ по этому же поводу
+    стоит и в базе — но он придёт кодом ошибки, а не фразой, которую человек
+    поймёт.
+
+    Незнакомое значение отбрасывается, а не отвергается: список галок рисует
+    сам продукт, и прислать чужое слово может только испорченная форма. Отказ
+    словами «такой поверхности нет» человек не прочитает — он её и не выбирал.
+    """
+    chosen = [
+        code for code in SURFACE_TITLES if code in request.POST.getlist("surfaces")
+    ]
+    if not chosen:
+        raise BadInput(
+            _("«%(label)s»: отметьте хотя бы одну форму. Статья, которую нигде "
+              "не предлагают, не выбирается вовсе — а чтобы вывести её из "
+              "оборота, есть поле «Закрыта».")
+            % {"label": _("Где выбирается")}
+        )
+    return chosen
+
+
 def _dates_touch_closed_month(tenant_id, item, valid_from: date, valid_to) -> bool:
     """Задевает ли новая или изменённая дата утверждённый месяц.
 
@@ -162,6 +189,11 @@ def _list_page(request, who, *, error: str = "", status: int = 200):
                 {"text": item.code},
                 {"text": item_title(item.titles)},
                 {"text": item.pnl_item.title},
+                # Где статья предлагается (T191). В списке, а не только в
+                # карточке: поле, которое видно лишь внутри записи, правится
+                # вслепую — понять, почему у управляющего короткий список
+                # получился таким, можно только просмотрев сорок карточек.
+                {"text": surfaces_text(item.surfaces)},
                 {"text": day(item.valid_from)},
                 {"text": day(item.valid_to)},
             ],
@@ -222,6 +254,7 @@ def _list_page(request, who, *, error: str = "", status: int = 200):
         "add_label": _("Завести статью"),
         "columns": [
             {"label": _("Код")}, {"label": _("Название")}, {"label": _("Строка P&L")},
+            {"label": _("Где выбирается")},
             {"label": _("Действует с")}, {"label": _("Закрыта")},
         ],
         "rows": rows,
@@ -256,6 +289,7 @@ def expense_item(request, item_id=None):
             titles = _titles_from_post(request)
             pnl_ids = list(_pnl_items().values_list("id", flat=True))
             pnl_item_id = _choice(request, "pnl_item", _("Строка P&L"), pnl_ids)
+            surfaces = _surfaces_from_post(request)
             valid_from = _date(request, "valid_from", _("Действует с"), required=True)
             valid_to = _date(request, "valid_to", _("Закрыта"), required=False)
             if valid_to and valid_to <= valid_from:
@@ -272,6 +306,7 @@ def expense_item(request, item_id=None):
             if item is None:
                 item = ExpenseItem(tenant_id=who.tenant_id)
             item.code, item.titles, item.pnl_item_id = code, titles, pnl_item_id
+            item.surfaces = surfaces
             item.valid_from, item.valid_to = valid_from, valid_to
             # Статья и её правило разнесения — одной точкой сохранения (T136):
             # повторный код (issue #109) и пересечение версий правила обязаны
@@ -328,6 +363,29 @@ def expense_item(request, item_id=None):
                     for pnl in _pnl_items()
                 ],
                 "empty_selected": item is None or item.pnl_item_id is None,
+            },
+            {
+                # Где статья предлагается (T191). Галки, а не список выбора:
+                # поверхностей может быть отмечено несколько, и это обычный
+                # случай — «вода» покупается и наличными, и по накладной.
+                #
+                # Новая статья приходит с полным набором. Умолчание такое же,
+                # как у базы, и по тому же доводу: человек, который про новое
+                # поле не думает, обязан получить прежнее поведение, а не
+                # статью, невидимую во всех формах продукта.
+                "kind": "checks", "name": "surfaces", "label": _("Где выбирается"),
+                "options": [
+                    {
+                        "code": code, "title": str(title),
+                        "about": str(SURFACE_ABOUT[code]),
+                        "checked": code in (item.surfaces if item else SURFACE_TITLES),
+                    }
+                    for code, title in SURFACE_TITLES.items()
+                ],
+                "help": _("В каких формах статью предлагают выбрать. Это не право "
+                          "её видеть: выбрать статью может любая роль, и в "
+                          "справочнике видны все. Управляющий на телефоне читает "
+                          "короткий список — сорок строк не читает никто."),
             },
             {"kind": "date", "name": "valid_from", "label": _("Действует с"), "required": True,
              "value": item.valid_from.isoformat() if item and item.valid_from else ""},

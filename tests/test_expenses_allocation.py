@@ -71,6 +71,10 @@ def set_rule(client, item_id, *, method="even", unit="", valid_from="2026-01-01"
         "code": _value(page, "code"),
         "title_ru": "Вода", "title_en": "Water", "title_sr_latn": "Voda",
         "pnl_item": _selected(page, "pnl_item"),
+        # Где статья предлагается (T191). Полный набор, как его подставляет
+        # сама форма: браузер отправляет то, что показано. Форма без этого
+        # поля — испорченная, и продукт отвечает ей 400.
+        "surfaces": ["cash", "invoice", "bank"],
         "valid_from": "2020-01-01",
         "valid_to": "",
         "alloc_method": method,
@@ -369,6 +373,7 @@ def test_a_retroactive_rule_is_taken_but_the_closed_month_stays(
             "code": _value(page, "code"),
             "title_ru": "Вода", "title_en": "Water", "title_sr_latn": "Voda",
             "pnl_item": _selected(page, "pnl_item"),
+            "surfaces": ["cash", "invoice", "bank"],  # см. комментарий в set_rule
             "valid_from": "2020-01-01", "valid_to": "",
             "alloc_method": "fixed_unit", "alloc_unit": units["BG1"],
             "alloc_ledger": "official", "alloc_from": "2026-06-01",

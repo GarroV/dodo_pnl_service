@@ -12,7 +12,7 @@
 значением: два источника одного `id` — верный способ развязать подпись и ввод
 молча.
 
-Виды: text, number, date, month, select, file, note. Незнакомый вид рисуется
+Виды: text, number, date, month, select, checks, file, note. Незнакомый вид рисуется
 обычным полем — это осознанно: молча пропущенное поле человек не заметит, а
 лишнее текстовое увидит сразу.
 
@@ -33,6 +33,31 @@
     <span class="field-label">{{ field.label }}</span>
     <span>{{ field.value }}</span>
     {% if field.help %}<span class="note">{{ field.help }}</span>{% endif %}
+  {% elif field.kind == "checks" %}
+    {% comment %}
+    Набор галок: одно поле, несколько значений (где выбирается статья, T191).
+
+    Обёрнуто в `fieldset` с `legend`, а не подписано обычным `label`: подпись
+    относится к группе, а `label` умеет указывать только на один ввод — экранный
+    диктор прочитал бы её как подпись первой галки и не назвал бы группу вовсе.
+
+    Пояснение под каждой галкой (`about`) — часть выбора, а не украшение: имена
+    поверхностей коротки настолько, что «Разбор выписки» без пояснения читается
+    как название экрана, а не как ответ на вопрос «где предложат эту статью».
+    {% endcomment %}
+    <fieldset class="checks">
+      <legend class="field-label">{{ field.label }}</legend>
+      {% for option in field.options %}
+      <span class="check">
+        <input type="checkbox" id="{{ field.name }}_{{ option.code }}"
+               name="{{ field.name }}" value="{{ option.code }}"
+               {% if option.checked %}checked{% endif %}>
+        <label for="{{ field.name }}_{{ option.code }}">{{ option.title }}</label>
+        {% if option.about %}<span class="note">{{ option.about }}</span>{% endif %}
+      </span>
+      {% endfor %}
+      {% if field.help %}<span class="note">{{ field.help }}</span>{% endif %}
+    </fieldset>
   {% elif field.kind == "select" %}
     {% include "web/components/select.html" with id=field.name name=field.name label=field.label options=field.options required=field.required empty_label=field.empty_label empty_selected=field.empty_selected help=field.help %}
   {% elif field.kind == "number" %}

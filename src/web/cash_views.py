@@ -30,9 +30,9 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from core.models import Unit
+from core.models import CASH, Unit
 
-from . import cash
+from . import cash, receipts
 from .directory_views import LEDGER_CODES, BadInput, _choice, _date, _number, _select, _text
 from .format import ledger_title
 from .i18n import month_title
@@ -65,6 +65,11 @@ def cash_expense(request):
             error, status = refusal.message, refusal.http_status
         except cash.CashRefused as refusal:
             error, status = refusal.message, refusal.http_status
+        except receipts.ReceiptRefused as refusal:
+            # Чек не принят — расход при этом уже записан: деньги ушли, и
+            # отменять их запись из-за неудачного снимка нельзя. Человеку
+            # говорится про чек, а расход он найдёт в списке.
+            error, status = refusal.message, refusal.http_status
 
     return render(request, "web/cash/expense.html", _context(
         request, who, entered, error=error,
@@ -83,6 +88,17 @@ def _save(request, who) -> str:
     entry_key = cash.parse_entry_key(request.POST.get("entry_key", ""))
 
     recorded = cash.record_expense(who, entry_key=entry_key, **entered)
+    # Чек прикладывается тем же движением, что и запись (T184). Управляющий
+    # снимает бумажку, стоя у печи, и второй заход «а теперь откройте расход и
+    # приложите фотографию» не случится никогда. Сам чек при этом
+    # необязателен: деньги уже потрачены, и отказать в записи расхода из-за
+    # отсутствия снимка значило бы потерять сам расход.
+    #
+    # Порядок именно такой: сначала расход, потом чек. Политика чека зовёт факт
+    # — до его записи чек класть некуда.
+    sent = request.FILES.get("receipt")
+    if sent is not None:
+        receipts.attach(who, entry_key, data=sent.read(), file_name=sent.name)
     landed = reverse("expense-new") + f"?saved={recorded.landing.period:%Y-%m}"
     if recorded.landing.moved_from is not None:
         landed += f"&from={recorded.landing.moved_from:%Y-%m}"
@@ -282,6 +298,8 @@ def _context(request, who, entered, *, error: str) -> dict:
         "notice": _notice(request),
         "entry_key": cash.new_entry_key(),
         "fields": expense_fields(who, entered),
+        # Чек снимается тем же движением, что вносится расход (T184).
+        "receipt_accept": receipts.ACCEPT,
     }
 
 
@@ -314,7 +332,14 @@ def expense_fields(who, entered) -> list[dict]:
             "item", _("Статья расхода"),
             [
                 (item.id, cash.item_title(item.titles))
-                for item in cash.items_on(who.tenant_id, on)
+                # Только статьи с пометкой «расходы наличными» (T191): сорок
+                # строк управляющий на телефоне не читает, а выбирает первую
+                # похожую. Уже выбранная статья остаётся в списке всегда — иначе
+                # правка комментария у старого расхода молча переназначила бы
+                # ему статью, а с ней и строку P&L.
+                for item in cash.items_on(
+                    who.tenant_id, on, surface=CASH, keep=entered.get("item") or None,
+                )
             ],
             entered.get("item"), required=True,
             help=_("Статьи ведёт администратор сети. Нужной нет — попросите завести: "
