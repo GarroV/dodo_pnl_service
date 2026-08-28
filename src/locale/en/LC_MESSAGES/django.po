@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-28 06:38+0000\n"
+"POT-Creation-Date: 2026-08-28 08:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -248,7 +248,7 @@ msgstr ""
 "The period's state changed while the page was open. Refresh the page to see "
 "what happened to it."
 
-#: payrun/lifecycle.py:200
+#: payrun/lifecycle.py:210
 #, python-format
 msgid "Месяц не закрыт: %(what)s. Устраните или отложите с причиной."
 msgstr ""
@@ -1913,7 +1913,7 @@ msgstr ""
 "You have not been added to any partner yet, so you have no employees. Ask "
 "the network administrator to add you."
 
-#: web/directory_views.py:228 web/directory_views.py:568 web/navigation.py:80
+#: web/directory_views.py:228 web/directory_views.py:568 web/navigation.py:113
 msgid "Сотрудники"
 msgstr "Employees"
 
@@ -2980,24 +2980,24 @@ msgstr "Regional Manager"
 msgid "role.shift_manager"
 msgstr "Shift Manager"
 
-#: web/navigation.py:64
+#: web/navigation.py:97
 msgid "Сбор данных"
 msgstr "Data collection"
 
-#: web/navigation.py:68 web/templates/web/guide.html:80
+#: web/navigation.py:101 web/templates/web/guide.html:80
 #: web/templates/web/period.html:175
 msgid "Табель"
 msgstr "Timesheet"
 
-#: web/navigation.py:69
+#: web/navigation.py:102
 msgid "Наличные расходы"
 msgstr "Cash expenses"
 
-#: web/navigation.py:74
+#: web/navigation.py:107
 msgid "Инбокс документов"
 msgstr "Document inbox"
 
-#: web/navigation.py:76 web/navigation.py:81
+#: web/navigation.py:109 web/navigation.py:114
 #: web/templates/web/directory/denied.html:13
 #: web/templates/web/directory/denied.html:15
 #: web/templates/web/directory/index.html:15
@@ -3005,17 +3005,17 @@ msgstr "Document inbox"
 msgid "Справочники"
 msgstr "Directories"
 
-#: web/navigation.py:82 web/rules_views.py:187 web/rules_views.py:200
+#: web/navigation.py:115 web/rules_views.py:187 web/rules_views.py:200
 #: web/templates/web/rules/denied.html:14
 #: web/templates/web/rules/denied.html:16
 msgid "Правила расчёта"
 msgstr "Calculation rules"
 
-#: web/navigation.py:84
+#: web/navigation.py:117
 msgid "Настройки"
 msgstr "Settings"
 
-#: web/navigation.py:85 web/templates/web/roles/denied.html:10
+#: web/navigation.py:118 web/templates/web/roles/denied.html:10
 #: web/templates/web/roles/denied.html:12 web/templates/web/roles/index.html:18
 #: web/templates/web/roles/index.html:20
 msgid "Роли и права"
@@ -4306,6 +4306,11 @@ msgid "Все расходы лежат на точках: закрывать м
 msgstr ""
 "All expenses are sitting on units: nothing is holding up closing the month."
 
+#: web/templates/web/components/appnav_item.html:24
+#: web/templates/web/components/header.html:110
+msgid "ждёт работы"
+msgstr "work waiting"
+
 #: web/templates/web/components/diff_table.html:21
 msgid "В таблице"
 msgstr "In the table"
@@ -4351,54 +4356,54 @@ msgstr "P&L report"
 msgid "Сверка с таблицей"
 msgstr "Reconciliation with the table"
 
-#: web/templates/web/components/header.html:92
+#: web/templates/web/components/header.html:111
 msgid "Основная навигация"
 msgstr "Main navigation"
 
-#: web/templates/web/components/header.html:118
+#: web/templates/web/components/header.html:148
 msgid "как это работает"
 msgstr "how this works"
 
-#: web/templates/web/components/header.html:134
+#: web/templates/web/components/header.html:164
 msgid "Как в системе"
 msgstr "Follow the system"
 
-#: web/templates/web/components/header.html:135
+#: web/templates/web/components/header.html:165
 msgid "Светлая тема"
 msgstr "Light theme"
 
-#: web/templates/web/components/header.html:136
+#: web/templates/web/components/header.html:166
 msgid "Тёмная тема"
 msgstr "Dark theme"
 
-#: web/templates/web/components/header.html:161
+#: web/templates/web/components/header.html:191
 msgid ""
 "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)"
 msgstr ""
 "The login page has quick sign-in buttons for seed accounts (DEV_LOGIN=1)"
 
-#: web/templates/web/components/header.html:161
+#: web/templates/web/components/header.html:191
 msgid "dev-вход"
 msgstr "dev login"
 
-#: web/templates/web/components/header.html:174
+#: web/templates/web/components/header.html:204
 msgid "Данные и итоги на всех страницах — только по этой точке"
 msgstr "Data and totals on all pages — for this unit only"
 
-#: web/templates/web/components/header.html:174
+#: web/templates/web/components/header.html:204
 #, python-format
 msgid "точка: %(code)s"
 msgstr "unit: %(code)s"
 
-#: web/templates/web/components/header.html:177
+#: web/templates/web/components/header.html:207
 msgid "пароль"
 msgstr "password"
 
-#: web/templates/web/components/header.html:179
+#: web/templates/web/components/header.html:209
 msgid "выйти"
 msgstr "log out"
 
-#: web/templates/web/components/header.html:182 web/templates/web/login.html:61
+#: web/templates/web/components/header.html:212 web/templates/web/login.html:61
 msgid "войти"
 msgstr "log in"
 
@@ -5999,7 +6004,8 @@ msgstr "The report is incomplete"
 #: web/templates/web/reports/pnl.html:26
 #, python-format
 msgid "%(amount)s не попали в отчёт: строк без статьи %(counter)s."
-msgstr "%(amount)s did not make it into the report: %(counter)s lines have no item."
+msgstr ""
+"%(amount)s did not make it into the report: %(counter)s lines have no item."
 
 #: web/templates/web/reports/pnl.html:27
 #: web/templates/web/suppliers/inbox.html:63

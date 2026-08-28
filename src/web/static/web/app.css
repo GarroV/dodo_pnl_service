@@ -182,6 +182,126 @@ p.back a:hover { color: var(--accent); }
 }
 .appnav .nav-offer:hover::after { content: " →"; opacity: .6; }
 
+/* ── Области учёта: меню вместо ряда пунктов ─────────────────── */
+
+/* Модуль 10 эталона собирает разделы по фазам работы: «Сбор данных», «Расчёт»,
+   «Отчёты», «Справочники», «Настройки», — а пункты живут внутри области. Довод
+   эталона дословно: «Не „Сотрудники, Контрагенты, Документы“, а „Сбор, Расчёт,
+   Отчёты“. Человек приходит с задачей, а не с сущностью».
+
+   Плоский ряд этого не сказал бы никак. Шесть слов подряд без единой границы
+   читаются как один список равнозначных вещей, а на телефоне разваливаются на
+   три одинаковых ряда, в которых уже ничего не найти.
+
+   Меню держит `<details>`, а не скрипт — и это не про вкус. Раскрытие обязано
+   работать до того, как приедет любой скрипт, и браузер умеет его сам: с
+   клавиатурой, с диктором («свёрнуто» / «развёрнуто») и с тем, что пункты
+   закрытого меню не ловят табуляцию. Своя реализация была бы хуже во всех трёх
+   местах, а выиграла бы только в закрытии по щелчку мимо. */
+.appnav__area { position: relative; }
+
+/* Название области. Треугольник браузера убран: он свой в каждом движке, а
+   рядом стоит счётчик — два значка на одной кнопке спорят. Вместо него свой
+   знак, который поворачивается при раскрытии: без него кнопка ничем не
+   отличается от ссылки и не обещает меню.
+
+   Знак нарисован рамками, а не символом «▾» в `content`. Причина не
+   декоративная: текст псевдоэлемента экранные дикторы читают вслух, и человек
+   услышал бы «Сбор данных, чёрный треугольник вниз» — при том что состояние
+   ему уже сказано словом «свёрнуто» самим `<details>`. Нарисованному
+   треугольнику читать нечего. */
+.appnav__area-name {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--r-control);
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+  list-style: none;
+}
+.appnav__area-name::-webkit-details-marker { display: none; }
+.appnav__area-name::after {
+  content: "";
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--ink-3);
+  transition: transform var(--t-state) var(--ease);
+}
+.appnav__area[open] > .appnav__area-name::after { transform: rotate(180deg); }
+.appnav__area-name:hover { background: var(--surface-3); color: var(--ink); }
+
+/* Область, в которой человек сейчас. Пометка именно у области, а не вторая
+   `aria-current="page"`: страница одна и она внутри области — сказать диктору,
+   что открытых страниц две, было бы неправдой. Отсюда `aria-current="true"` в
+   разметке и цвет здесь. */
+.appnav__area--here > .appnav__area-name {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: var(--w-semibold);
+}
+.appnav__area--here > .appnav__area-name::after { border-top-color: var(--accent); }
+
+/* Само меню. Поверх страницы, а не в потоке: панель в потоке раздвинула бы
+   шапку до своей ширины, и страница поехала бы вбок целиком — то самое
+   «рассыпалось», от которого шапку защищали в issue #151. */
+.appnav__menu {
+  position: absolute;
+  top: calc(100% + var(--space-3));
+  left: 0;
+  z-index: 20;
+  min-width: 232px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-block);
+  box-shadow: var(--sh-pop);
+  overflow: hidden;
+}
+/* Строка меню: имя слева, счётчик справа — как в эталоне. Скругление снимается:
+   строки стоят вплотную, и скруглённые углы внутри панели читались бы как
+   отдельные кнопки. */
+.appnav__menu > * {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-6);
+  border-radius: 0;
+  white-space: nowrap;
+}
+.appnav__menu > * + * { border-top: 1px solid var(--line); }
+.appnav__menu .appnav__link:hover { background: var(--surface-3); }
+/* Раздел, который ведёт другая роль (только демо). Пунктир — язык этой
+   системы: «поведение отличается от соседей», здесь переключится роль. Снизу
+   он в меню не годится (спорил бы с разделителем строк), поэтому переезжает
+   на левый край — в вертикальном списке это его законное место. */
+.appnav__menu .nav-offer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-6);
+  border-radius: 0;
+  border-bottom: 0;
+  border-left: 2px dashed var(--line-control-2);
+}
+.appnav__menu .nav-offer:hover { border-left-color: var(--accent-line); }
+
+/* Счётчик ждущей работы. Тёплая метка, а не красная: очередь — это «сюда надо
+   вернуться», а не поломка. Цифры моноширинные, как все числа продукта.
+   Ноль сюда не попадает вовсе — его не рисует разметка. */
+.appnav__count {
+  flex: 0 0 auto;
+  font-family: var(--font-num); font-size: var(--fs-num-sm); line-height: 1;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-line);
+  color: var(--warn-ink);
+}
+/* У области счётчик плотный и без рамки: областей в ряду несколько, и тёплая
+   рамка на каждой прочиталась бы как ряд предупреждений. В открытой области он
+   акцентный — там же, где и её имя. */
+.appnav__area-name .appnav__count {
+  background: var(--ink-3); border-color: transparent; color: var(--ink-inverse);
+}
+.appnav__area--here > .appnav__area-name .appnav__count { background: var(--accent); }
+
 .appbar__spacer { flex: 1 1 auto; }
 
 /* Правый край шапки. Шапка обязана держаться в ОДНУ строку: служебное (кем
@@ -1375,6 +1495,12 @@ table.sheet.person td .hint { display: block; margin-top: var(--space-1); }
      администратора сети в одну строку на планшете не встают. Наружу при этом
      ничего не выйдет — высота идёт за содержимым. */
   .appnav { flex-wrap: wrap; }
+  /* Меню привязывается к навигации целиком, а не к своей кнопке: у последней
+     области панель, отсчитанная от её левого края, вылезла бы за экран и
+     утащила бы за собой всю страницу. */
+  .appnav { position: relative; }
+  .appnav__area { position: static; }
+  .appnav__menu { left: 0; right: 0; min-width: 0; }
   .who { flex-wrap: wrap; row-gap: var(--space-3); }
   .viewer { text-align: left; }
 
@@ -1424,6 +1550,17 @@ table.sheet.person td .hint { display: block; margin-top: var(--space-1); }
   .kpi { grid-template-columns: 1fr; }
   .chart__month { flex: 0 0 92px; }
   .chart__value { flex: 0 0 104px; }
+
+  /* Меню — то, чем управляющий пользуется чаще всего: он заходит на две минуты
+     отметить часы или внести расход. И кнопка области, и строка меню обязаны
+     ловиться пальцем, а не кончиком ногтя. */
+  .appnav__area-name { min-height: var(--tap-min); }
+  .appnav__menu a { min-height: var(--tap-min); }
+  /* Только прямой потомок — сама строка меню (текущий раздел рисуется `span`,
+     а не ссылкой). Без `>` под правило попадал и счётчик внутри строки: круглая
+     метка растягивалась на все 44 пикселя и превращалась в овал. Замечено на
+     снимке телефона, разбором разметки такое не ловится. */
+  .appnav__menu > span { min-height: var(--tap-min); }
 }
 
 /* ── Печать ──────────────────────────────────────────────────── */

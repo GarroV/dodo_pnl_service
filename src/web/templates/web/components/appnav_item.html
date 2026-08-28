@@ -1,7 +1,14 @@
 {% load ui %}{% comment %}
 Пункт навигации шапки: ссылка — или не ссылка, если человек уже здесь.
 
-Ждёт в контексте `section_url` (куда ведёт) и `section_label` (что написано).
+Ждёт в контексте `section_url` (куда ведёт), `section_label` (что написано) и
+необязательное `section_waiting` — сколько работы ждёт человека в этом разделе.
+
+Счётчик рисуется, только когда работа есть. Ноль не показывается вовсе, и это
+не экономия места: «Инбокс документов · 0» сообщает «здесь очередь, и она
+пуста», а человеку нужно обратное — чтобы очередь бросалась в глаза, только
+когда в ней что-то лежит (правило модуля 10 эталона дословно). Отсюда и условие
+на само число, а не на его наличие в контексте.
 
 Отдельным компонентом, а не шестью копиями в шапке: копия инварианта разъезжается
 тихо. Инвариант тут один и он же живёт у переключателя разреза ведомости —
@@ -14,4 +21,4 @@
 целиком (фильтр `in_section`). Иначе выделение пропадало бы на каждом вложенном
 экране — на следе расчёта, в табеле, на карточке счёта, — и пункт, потерявший
 выделение, читается как «вы ушли из раздела», хотя человек внутри него.
-{% endcomment %}{% if request.path|in_section:section_url %}<span class="appnav__current" aria-current="page">{{ section_label }}</span>{% else %}<a class="appnav__link" href="{{ section_url }}">{{ section_label }}</a>{% endif %}
+{% endcomment %}{% load i18n %}{% translate "ждёт работы" as waiting_hint %}{% if request.path|in_section:section_url %}<span class="appnav__current" aria-current="page">{{ section_label }}{% if section_waiting %}<span class="appnav__count" title="{{ waiting_hint }}">{{ section_waiting }}</span>{% endif %}</span>{% else %}<a class="appnav__link" href="{{ section_url }}">{{ section_label }}{% if section_waiting %}<span class="appnav__count" title="{{ waiting_hint }}">{{ section_waiting }}</span>{% endif %}</a>{% endif %}
