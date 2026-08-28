@@ -211,8 +211,10 @@ def test_a_role_does_not_see_sections_it_does_not_lead(client, web_env):
             f"управляющему обещан раздел {absent}, который ответит отказом"
         )
     # А то, что видит каждый вошедший, — на месте: права на внесение первичных
-    # данных в продукте нет, расход отвергают точка и регистр.
-    assert 'href="/expenses/"' in page and 'href="/invoices/"' in page
+    # данных в продукте нет, расход отвергают точка и регистр. Раздел первички
+    # ведёт в инбокс, а не в список счетов (issue #162, словарь эталона): работа
+    # с бумагами начинается с очереди разбора.
+    assert 'href="/expenses/"' in page and 'href="/inbox/"' in page
 
 
 def test_the_role_that_leads_the_directory_sees_it(client, web_env):

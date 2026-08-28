@@ -1,0 +1,38 @@
+{
+  "Табель": {
+    "en": "Timesheet",
+    "sr": "Evidencija sati"
+  },
+  "Наличные расходы": {
+    "en": "Cash expenses",
+    "sr": "Gotovinski troškovi"
+  },
+  "Инбокс документов": {
+    "en": "Document inbox",
+    "sr": "Prijemno sanduče dokumenata"
+  },
+  "Правила расчёта": {
+    "en": "Calculation rules",
+    "sr": "Pravila obračuna"
+  },
+  "Роли и права": {
+    "en": "Roles and rights",
+    "sr": "Uloge i prava"
+  },
+  "Сбор данных": {
+    "en": "Data collection",
+    "sr": "Prikupljanje podataka"
+  },
+  "Настройки": {
+    "en": "Settings",
+    "sr": "Podešavanja"
+  },
+  "Табель по месяцам": {
+    "en": "Timesheet by month",
+    "sr": "Evidencija sati po mesecima"
+  },
+  "Работа идёт внутри месяца: часы, расчёт, закрытие.": {
+    "en": "The work happens inside a month: hours, calculation, closing.",
+    "sr": "Rad se odvija unutar meseca: sati, obračun, zatvaranje."
+  }
+}

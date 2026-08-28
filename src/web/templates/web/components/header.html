@@ -75,49 +75,27 @@
   контракт между тегом и проверкой `tests/test_demo_role_switch.py`:
   переименование сломает её громко, и это правильно.
   {% endcomment %}
+  {% comment %}
+  Разделы приходят готовым списком из `web/navigation.py` (issue #162): словарь
+  один на весь продукт и сверяется тестом со словами ИЗ САМОГО эталона. Пока
+  названия были набраны здесь, они не сверялись ни с чем — расхождение с
+  макетом видел только тот, кто помнил обе картинки.
+
+  Раздел, которого роль не ведёт, в ПРОДУКТЕ не показывается; в ДЕМО на его
+  месте стоит предложение открыть его подходящей ролью (T163) — посетитель
+  видит продукт впервые и отсутствие раздела читает как отсутствие
+  функциональности. Права при этом не меняются ни на копейку.
+  {% endcomment %}
   <nav class="appnav" aria-label="{% translate "Основная навигация" %}">
-    {% url 'periods' as section_url %}{% translate "Периоды" as section_label %}{% include "web/components/appnav_item.html" %}
-    {% if principal %}
-      {% url 'expenses' as section_url %}{% translate "Расходы" as section_label %}{% include "web/components/appnav_item.html" %}
-      {% url 'invoices' as section_url %}{% translate "Счета" as section_label %}{% include "web/components/appnav_item.html" %}
-    {% endif %}
-    {% comment %}
-    «Сотрудники» (T173, D047) — единственный справочник, который читают все, а
-    ведёт один, поэтому он и стоит здесь пунктом, а не только внутри раздела
-    справочников. Управляющему точки нужны имена, должности и ставки своих
-    людей: ставок в Dodo IS нет вовсе — это условия найма, наши данные.
-
-    Пункт показан тому, у кого раздела справочников НЕТ: у администратора сети
-    он ведёт туда же, и два входа в один экран из одной шапки читались бы как
-    два разных места. Срез строк при этом делают политики `employees` (`0020`) и
-    `employment_terms` (`0011`), а не наличие пункта в шапке — управляющий видит
-    только своих людей, и это гарантия базы, а не свойство разметки.
-
-    Известная неточность выделения: корень адреса у сотрудников и у контрагентов
-    один (`/directory/…`), поэтому читатель, открывший список контрагентов из
-    счёта, увидит выделенным «Сотрудники». Лечится это в `in_section` (там
-    сравниваются корни, и намеренно — иначе выделение теряется на вложенных
-    экранах), а не здесь; заведено issue.
-    {% endcomment %}
-    {% if principal and not principal|may:"directory.manage" %}
-      {% url 'directory-employees' as section_url %}{% translate "Сотрудники" as section_label %}{% include "web/components/appnav_item.html" %}
-    {% endif %}
-    {% translate "Справочники" as nav_directory %}{% translate "Правила" as nav_rules %}{% translate "Роли" as nav_roles %}
-    {% if principal|may:"directory.manage" %}
-      {% url 'directory' as section_url %}{% translate "Справочники" as section_label %}{% include "web/components/appnav_item.html" %}
-    {% elif principal %}
-      {% demo_switch "directory.manage" "directory" nav_directory %}
-    {% endif %}
-    {% if principal|may:"rules.manage" %}
-      {% url 'rules' as section_url %}{% translate "Правила" as section_label %}{% include "web/components/appnav_item.html" %}
-    {% elif principal %}
-      {% demo_switch "rules.manage" "rules" nav_rules %}
-    {% endif %}
-    {% if principal|may:"roles.manage" %}
-      {% url 'roles' as section_url %}{% translate "Роли" as section_label %}{% include "web/components/appnav_item.html" %}
-    {% elif principal %}
-      {% demo_switch "roles.manage" "roles" nav_roles %}
-    {% endif %}
+    {% for section in nav_sections %}
+      {% if section.allowed %}
+        {% with section_url=section.url section_label=section.title %}
+          {% include "web/components/appnav_item.html" %}
+        {% endwith %}
+      {% elif principal and section.offer %}
+        {% demo_switch section.needs section.route section.title %}
+      {% endif %}
+    {% endfor %}
   </nav>
   <span class="appbar__spacer"></span>
   <div class="who">

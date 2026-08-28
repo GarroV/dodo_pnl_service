@@ -268,13 +268,16 @@ def test_the_switch_actually_changes_the_page(client, web_env):
     """
     login_as(client, "director")
     russian = body(client.get("/periods/"))
-    assert "Периоды" in russian, "исходный язык страницы уже не русский"
+    # «Табель» вместо «Периоды»: раздел переименован по словарю эталона
+    # (issue #162). Слово-маркер обязано быть тем, что на странице действительно
+    # есть, иначе проверка охраняет прошлое.
+    assert "Табель" in russian, "исходный язык страницы уже не русский"
 
     answer = client.post("/i18n/setlang/", {"language": "en", "next": "/periods/"})
     assert answer.status_code in (302, 200), answer.status_code
 
     english = body(client.get("/periods/"))
-    assert "Периоды" not in english, "после переключения страница осталась русской"
+    assert "Табель" not in english, "после переключения страница осталась русской"
     assert 'lang="en"' in english, "страница не объявила свой язык"
 
 
@@ -323,7 +326,7 @@ def test_forced_language_hides_the_switch(client, web_env):
         html = body(fresh.get("/periods/"))
 
     assert 'lang="en"' in html, "закреплённый язык не переопределил выбор человека"
-    assert "Периоды" not in html
+    assert "Табель" not in html
     assert 'class="lang"' not in html, "при закреплённом языке переключатель показан"
 
 
