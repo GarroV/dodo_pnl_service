@@ -62,6 +62,7 @@
 | `/expenses/` | `expenses` | `web.expenses_views.expenses` |
 | `/expenses/<uuid:fact_id>/` | `expense` | `web.expenses_views.expense` |
 | `/expenses/<uuid:fact_id>/delete/` | `expense-delete` | `web.expenses_views.expense_delete` |
+| `/expenses/<uuid:fact_id>/receipt/` | `expense-receipt` | `web.expenses_views.expense_receipt` |
 | `/expenses/<uuid:fact_id>/split/` | `expense-split-form` | `web.expenses_views.split_form` |
 | `/expenses/new/` | `expense-new` | `web.cash_views.cash_expense` |
 | `/expenses/split/` | `expense-split` | `web.expenses_views.split` |

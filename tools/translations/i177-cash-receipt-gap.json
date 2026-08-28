@@ -1,0 +1,98 @@
+{
+  "Ушло из кассы": {
+    "en": "Left the till",
+    "sr": "Izašlo iz kase"
+  },
+  "Принято в P&L": {
+    "en": "Taken into the P&L",
+    "sr": "Ušlo u P&L"
+  },
+  "Разрыв": {
+    "en": "Gap",
+    "sr": "Raskorak"
+  },
+  "Расходов: %(count)s · факт кассы, не зависит от документов": {
+    "en": "Expenses: %(count)s · a till fact, independent of any paperwork",
+    "sr": "Troškova: %(count)s · činjenica kase, ne zavisi od dokumenata"
+  },
+  "то, что дойдёт до отчёта за этот же месяц": {
+    "en": "what will reach the report for this same month",
+    "sr": "ono što će stići u izveštaj za isti mesec"
+  },
+  "всё, что ушло из кассы, принято в отчёт": {
+    "en": "everything that left the till is taken into the report",
+    "sr": "sve što je izašlo iz kase ušlo je u izveštaj"
+  },
+  "перевод, в P&L не входит": {
+    "en": "a transfer, not part of the P&L",
+    "sr": "prenos, ne ulazi u P&L"
+  },
+  "учтён в другом месяце": {
+    "en": "booked in another month",
+    "sr": "knjiženo u drugom mesecu"
+  },
+  "%(why)s — %(amount)s (%(count)s)": {
+    "en": "%(why)s — %(amount)s (%(count)s)",
+    "sr": "%(why)s — %(amount)s (%(count)s)"
+  },
+  "Без чека: %(amount)s. Расходов без бумаги: %(count)s.": {
+    "en": "Without a receipt: %(amount)s. Expenses with no paper: %(count)s.",
+    "sr": "Bez računa: %(amount)s. Troškova bez papira: %(count)s."
+  },
+  "Деньги уже потрачены, подтвердить их пока нечем.": {
+    "en": "The money is already spent, and there is nothing yet to back it up.",
+    "sr": "Novac je već potrošen, a još nema čime da se potvrdi."
+  },
+  "Чек приложен к каждому расходу.": {
+    "en": "Every expense has a receipt attached.",
+    "sr": "Uz svaki trošak priložen je račun."
+  },
+  "Чек приложен": {
+    "en": "Receipt attached",
+    "sr": "Račun priložen"
+  },
+  "Чека нет": {
+    "en": "No receipt",
+    "sr": "Nema računa"
+  },
+  "Приложить чек": {
+    "en": "Attach a receipt",
+    "sr": "Priloži račun"
+  },
+  "Заменить чек": {
+    "en": "Replace the receipt",
+    "sr": "Zameni račun"
+  },
+  "Открыть файл": {
+    "en": "Open the file",
+    "sr": "Otvori fajl"
+  },
+  "Фотография чека": {
+    "en": "Photo of the receipt",
+    "sr": "Fotografija računa"
+  },
+  "Расход записан и деньги из кассы ушли — чек этого не меняет. Он нужен, чтобы через месяц трату было чем подтвердить.": {
+    "en": "The expense is recorded and the money has left the till — a receipt does not change that. It is there so that a month from now the spending can be backed up.",
+    "sr": "Trošak je zabeležen i novac je izašao iz kase — račun to ne menja. On je tu da bi se za mesec dana trošak imao čime potvrditi."
+  },
+  "Переснятый чек заменит этот: у расхода он один.": {
+    "en": "A re-shot receipt replaces this one: an expense has only one.",
+    "sr": "Ponovo slikan račun zamenjuje ovaj: trošak ima samo jedan."
+  },
+  "Фотография бумажки. Без неё расход всё равно запишется — деньги уже отданы.": {
+    "en": "A photo of the slip. The expense is recorded without it too — the money is already handed over.",
+    "sr": "Fotografija papirića. Trošak se beleži i bez nje — novac je već predat."
+  },
+  "Файл не приложен: прикладывать нечего.": {
+    "en": "No file attached: there is nothing to attach.",
+    "sr": "Fajl nije priložen: nema šta da se priloži."
+  },
+  "Файл больше %(limit)s МБ. Сфотографируйте чек ещё раз или уменьшите снимок.": {
+    "en": "The file is larger than %(limit)s MB. Photograph the receipt again or shrink the picture.",
+    "sr": "Fajl je veći od %(limit)s MB. Slikajte račun ponovo ili smanjite sliku."
+  },
+  "К этому расходу чек приложить нельзя.": {
+    "en": "A receipt cannot be attached to this expense.",
+    "sr": "Uz ovaj trošak nije moguće priložiti račun."
+  }
+}

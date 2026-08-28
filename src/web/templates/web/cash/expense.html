@@ -31,9 +31,22 @@
 {% notice "alert" title=not_saved %}{{ error }}{% endnotice %}
 {% endif %}
 
-<form class="card wide" method="post">{% csrf_token %}
+<form class="card wide" method="post" enctype="multipart/form-data">{% csrf_token %}
   <input type="hidden" name="entry_key" value="{{ entry_key }}">
   {% include "web/directory/fields.html" with fields=fields %}
+  {% comment %}
+  Чек снимается здесь же (T184). Управляющий отдаёт деньги, стоя у печи, и
+  второго захода «откройте расход и приложите фотографию» не будет никогда.
+
+  Поле необязательное намеренно: деньги уже потрачены, и отказать в записи
+  расхода из-за отсутствия снимка значило бы потерять сам расход. Без чека
+  строка сохранится и будет помечена в реестре.
+  {% endcomment %}
+  <p class="field">
+    {% translate "Чек" as receipt_label %}
+    {% translate "Фотография бумажки. Без неё расход всё равно запишется — деньги уже отданы." as receipt_help %}
+    {% include "web/components/field.html" with id="receipt" name="receipt" label=receipt_label type="file" accept=receipt_accept help=receipt_help %}
+  </p>
   <p class="actions"><button type="submit" class="primary">{% translate "Записать расход" %}</button></p>
 </form>
 {% endblock %}

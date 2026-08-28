@@ -1,0 +1,34 @@
+{
+  "Где выбирается": {
+    "en": "Where it is offered",
+    "sr": "Gde se bira"
+  },
+  "Разнесение накладных": {
+    "en": "Invoice allocation",
+    "sr": "Raspoređivanje faktura"
+  },
+  "Разбор выписки": {
+    "en": "Bank statement review",
+    "sr": "Obrada izvoda"
+  },
+  "Телефон управляющего: короткий список, который читают целиком.": {
+    "en": "The manager’s phone: a short list that gets read all the way through.",
+    "sr": "Telefon menadžera: kratak spisak koji se pročita do kraja."
+  },
+  "Разбор накладной поставщика бухгалтером.": {
+    "en": "The accountant sorting out a supplier invoice.",
+    "sr": "Knjigovođa obrađuje fakturu dobavljača."
+  },
+  "Разбор банковской выписки.": {
+    "en": "Sorting out the bank statement.",
+    "sr": "Obrada bankovnog izvoda."
+  },
+  "В каких формах статью предлагают выбрать. Это не право её видеть: выбрать статью может любая роль, и в справочнике видны все. Управляющий на телефоне читает короткий список — сорок строк не читает никто.": {
+    "en": "Which forms offer this item for selection. This is not permission to see it: any role can pick any item, and the directory shows them all. The manager on a phone reads a short list — nobody reads forty lines.",
+    "sr": "U kojim obrascima se ova stavka nudi na izbor. To nije pravo da se vidi: svaka uloga može izabrati bilo koju stavku, a u šifarniku su vidljive sve. Menadžer na telefonu čita kratak spisak — niko ne čita četrdeset redova."
+  },
+  "«%(label)s»: отметьте хотя бы одну форму. Статья, которую нигде не предлагают, не выбирается вовсе — а чтобы вывести её из оборота, есть поле «Закрыта».": {
+    "en": "“%(label)s”: tick at least one form. An item offered nowhere cannot be picked at all — and to retire one there is the “Closed” field.",
+    "sr": "„%(label)s“: označite bar jedan obrazac. Stavka koja se nigde ne nudi ne može se ni izabrati — a da biste je povukli iz upotrebe, tu je polje „Zatvorena“."
+  }
+}

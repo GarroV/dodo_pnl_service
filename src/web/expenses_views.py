@@ -32,7 +32,7 @@ from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.http import Http404, HttpResponseNotAllowed
+from django.http import Http404, HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
@@ -40,7 +40,7 @@ from django.utils.translation import gettext_lazy
 
 from core.models import ExpenseItem, Fact, Unit
 
-from . import allocation, cash
+from . import allocation, cash, papers, receipts
 from .cash_views import expense_fields, parse_expense
 from .directory_views import LEDGER_CODES, BadInput, _select
 from .format import EMPTY, ledger_title, money
@@ -69,6 +69,7 @@ def expenses(request):
     rows = rows_for(who, chosen) if not error else []
     total = sum((row["amount"] for row in rows if row["state"] == ACTIVE), Decimal("0"))
     return render(request, "web/cash/expenses.html", {
+        **_control(rows, total),
         "error": error,
         # Что случилось с расходом до того, как человека увели сюда: удаление
         # (T154) и правка. Оба ответа приезжают признаками в адресе и
@@ -86,6 +87,66 @@ def expenses(request):
         "narrowed": narrowed(chosen),
         "add_url": reverse("expense-new"),
     }, status=status)
+
+
+def _control(rows: list[dict], total) -> dict:
+    """Три числа контроля кассы и сумма без чека (T184, модуль 6 эталона).
+
+    **Ушло из кассы и принято в P&L — два разных факта, а не два состояния
+    одного.** Деньги вышли, когда управляющий их отдал; в отчёт трата попадает
+    по правилам отчёта. Разрыв между этими числами и есть то, ради чего касса и
+    P&L разведены, — поэтому он показан всегда, включая ноль. Спрятанный ноль
+    читается как «этого числа тут не бывает», и человек перестаёт его искать.
+
+    **Все три считаются по одному списку — тому, что показан.** Второй запрос
+    `sum(...)` был бы вторым источником истины и разошёлся бы с таблицей молча:
+    тот же довод, по которому здесь уже считается итог.
+
+    **Сумма без чека стоит отдельно от разрыва и в него не входит.** Соблазн
+    сложить их велик — эталон именно так и рисует, — но это была бы неправда про
+    сегодняшний продукт: расход без чека в P&L входит, потому что вопрос
+    «принимать ли его без документа» владельцем ещё не закрыт. Показывать сумму
+    в разрыве, которого в отчёте нет, значит учить человека не верить экрану.
+    """
+    counted = [row for row in rows if row["state"] == ACTIVE]
+    kept_out = [row for row in counted if row["out_of_pnl"]]
+    in_pnl = total - sum((row["amount"] for row in kept_out), Decimal("0"))
+    gap = total - in_pnl
+    without = sum(
+        (row["amount"] for row in counted if not row["has_receipt"]), Decimal("0")
+    )
+    return {
+        "cash_raw": f"{total}", "cash_text": money(total),
+        "pnl_raw": f"{in_pnl}", "pnl_text": money(in_pnl),
+        "gap_raw": f"{gap}", "gap_text": money(gap),
+        "gap_reasons": _gap_reasons(kept_out),
+        "no_receipt_raw": f"{without}", "no_receipt_text": money(without),
+        "no_receipt_counted": sum(1 for row in counted if not row["has_receipt"]),
+    }
+
+
+def _gap_reasons(kept_out: list[dict]) -> list[str]:
+    """Разрыв словами: из чего он сложился.
+
+    Число без причины — это число, с которым нечего делать: человек пойдёт
+    искать её глазами по всей таблице. Причин ровно столько, сколько их знает
+    `out_of_pnl`, и каждая называет свою сумму — «370,00 не принято» без
+    разбивки не подсказывает ни одного следующего действия.
+    """
+    words = {
+        TRANSFER: _("перевод, в P&L не входит"),
+        OTHER_MONTH: _("учтён в другом месяце"),
+    }
+    reasons = []
+    for code, title in words.items():
+        rows = [row for row in kept_out if row["out_of_pnl"] == code]
+        if rows:
+            amount = sum((row["amount"] for row in rows), Decimal("0"))
+            reasons.append(
+                _("%(why)s — %(amount)s (%(count)s)")
+                % {"why": title, "amount": money(amount), "count": len(rows)}
+            )
+    return reasons
 
 
 def _no_membership(request):
@@ -221,7 +282,7 @@ def rows_for(who, chosen: dict, *, window: tuple[int, int] | None = None) -> lis
     месяц, и половина месяца ему бесполезна.
     """
     found = (
-        Fact.objects.select_related("unit", "expense_item", "till")
+        Fact.objects.select_related("unit", "expense_item", "till", "pnl_item")
         .filter(
             source=cash.MANUAL_SOURCE,
             channel=cash.CASH_CHANNEL,
@@ -254,7 +315,16 @@ def rows_for(who, chosen: dict, *, window: tuple[int, int] | None = None) -> lis
     if window is not None:
         offset, size = window
         found = found[offset:offset + size]
-    return [row_of(fact) for fact in found]
+
+    rows = [row_of(fact) for fact in found]
+    # Чеки — одним запросом на весь список, а не по запросу на строку (T184).
+    # Присутствие чека приписывается уже собранным строкам, потому что ключ
+    # записи известен только из `dedup_key` факта, а не из отбора.
+    known = receipts.presence_of(row["entry_key"] for row in rows)
+    for row in rows:
+        row["has_receipt"] = row["entry_key"] in known
+        row["receipt_title"] = _("Чек приложен") if row["has_receipt"] else _("Чека нет")
+    return rows
 
 
 def row_of(fact) -> dict:
@@ -263,7 +333,14 @@ def row_of(fact) -> dict:
         state = REPLACED if fact.superseded_by is not None else REMOVED
     return {
         "id": str(fact.id),
+        # Ключ записи, а не строки: чек цепляется к нему и переживает правку
+        # (T184). Нужен и разметке — адрес чека собирается по номеру факта, но
+        # присутствие ищется по ключу.
+        "entry_key": cash.entry_key_of(fact),
         "url": reverse("expense", args=[fact.id]),
+        "receipt_url": reverse("expense-receipt", args=[fact.id]),
+        # Почему расход не попал в P&L своего месяца; пусто — попал (T184).
+        "out_of_pnl": out_of_pnl(fact),
         "date": fact.doc_date.isoformat() if fact.doc_date else "",
         # Точка без строки в справочнике — состояние, которого при исправных
         # политиках не бывает: факт чужой точки роль не видит вовсе. Но если
@@ -300,6 +377,39 @@ def row_of(fact) -> dict:
             else ""
         ),
     }
+
+
+# Почему расход, ушедший из кассы, не попал в P&L этого месяца. Коды короткие и
+# машинные: по ним же собирается объяснение разрыва, и слова к ним подбираются
+# один раз в `_gap_reasons`.
+TRANSFER, OTHER_MONTH = "transfer", "other_month"
+
+
+def out_of_pnl(fact) -> str:
+    """Причина, по которой расход не считается в P&L своего месяца; пусто — считается.
+
+    Правило здесь не выдумано, а **списано с самого отчёта** — с представлений
+    `pnl_by_unit` и `pnl_by_network` (миграция `0230`):
+
+    * `kind = 'transfer'` они исключают явно: инкассация и пополнение кассы —
+      движение денег, а не расход. Из кассы деньги при этом вышли, и в реестре
+      строка стоит;
+    * отчёт строится по `period`, а касса пустеет в день траты (`doc_date`).
+      Расход, датированный июнем и учтённый в августе (так ложится правка
+      закрытого месяца, D020), в июньском P&L не появится — он появится в
+      августовском.
+
+    Третьей причины — «нет подтверждённого документа» — здесь намеренно нет.
+    Эталон называет её нерешённым вопросом («расход в P&L без документа»), и
+    ответа владельца на него пока не существует. Пока его нет, продукт считает
+    так, как считает на самом деле: расход без чека в P&L входит. Написать здесь
+    иначе значило бы показать человеку разрыв, которого в его отчёте не будет.
+    """
+    if fact.pnl_item.kind == "transfer":
+        return TRANSFER
+    if fact.doc_date is not None and fact.period != fact.doc_date.replace(day=1):
+        return OTHER_MONTH
+    return ""
 
 
 def state_title(fact, state: str) -> str:
@@ -747,10 +857,17 @@ def _card(request, who, fact, *, entered=None, error: str = "", status: int = 20
     удаление теперь тоже может отказать словами (T154), а собранная во второй раз
     карточка разъехалась бы с первой молча.
     """
+    kept = receipts.of(cash.entry_key_of(fact))
     return render(request, "web/cash/expense_edit.html", {
         "error": error,
         "fields": expense_fields(who, entered if entered is not None else _entered(fact)),
         "fact": fact,
+        # Чек расхода (T184): есть он или нет — видно всегда, а не только когда
+        # есть. «Чека нет» — это состояние, о котором человек должен узнать, а не
+        # пустое место, которое он примет за «здесь ничего не бывает».
+        "receipt": _receipt_card(fact, kept),
+        "receipt_url": reverse("expense-receipt", args=[fact.id]),
+        "receipt_accept": receipts.ACCEPT,
         "editable": editable(fact),
         "closed_notice": closed_notice(who, fact),
         "delete_notice": delete_notice(who, fact),
@@ -758,6 +875,33 @@ def _card(request, who, fact, *, entered=None, error: str = "", status: int = 20
         "delete_url": reverse("expense-delete", args=[fact.id]),
         "back_url": reverse("expenses"),
     }, status=status)
+
+
+def _receipt_card(fact, kept) -> dict:
+    """Что сказать про чек на карточке расхода.
+
+    Показывается сам снимок, а не только строка «файл есть»: чек прикладывают,
+    чтобы на него посмотреть, и ссылка, ведущая к скачиванию, заставляет
+    бухгалтера открывать файл ради одного взгляда на сумму. PDF и HEIC внутри
+    страницы не рисуются (`SHOWN_INLINE`) — им остаётся ссылка.
+    """
+    if kept is None:
+        return {
+            "attached": False,
+            "title": _("Чека нет"),
+            "about": _(
+                "Расход записан и деньги из кассы ушли — чек этого не меняет. "
+                "Он нужен, чтобы через месяц трату было чем подтвердить."
+            ),
+        }
+    return {
+        "attached": True,
+        "title": _("Чек приложен"),
+        "shown": kept.media_type in papers.SHOWN_INLINE,
+        "size": _("%(size)s КБ") % {"size": max(1, round(kept.byte_size / 1024))},
+        "file_name": kept.file_name or "",
+        "about": _("Переснятый чек заменит этот: у расхода он один."),
+    }
 
 
 def _entered(fact) -> dict:
@@ -864,6 +1008,62 @@ def _save(request, who, fact) -> str:
         # закрыт и не сдвинулся, — а спрашивают ровно об этом.
         landed += f"&from={recorded.landing.moved_from:%Y-%m}"
     return landed
+
+
+@login_required
+def expense_receipt(request, fact_id):
+    """Чек расхода: GET отдаёт файл, POST прикладывает новый (T184).
+
+    Один адрес на оба действия намеренно: это одна вещь — бумага этого расхода,
+    — и разводить её по двум адресам значило бы, что «где чек» и «куда его
+    класть» отвечают разные страницы.
+
+    **Проверок прав здесь нет ни одной.** Расход ищется под политиками
+    смотрящего (`expense_or_404`), а чек — под политикой, которая зовёт сам
+    расход. Чужой не найдётся, и ответ на него — тот же 404, что на
+    несуществующий: по нему нельзя понять, что строка существует у соседа
+    (D023).
+    """
+    if request.method not in ("GET", "HEAD", "POST"):
+        return HttpResponseNotAllowed(["GET", "HEAD", "POST"])
+
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        return _no_membership(request)
+
+    fact = expense_or_404(fact_id)
+    key = cash.entry_key_of(fact)
+
+    if request.method == "POST":
+        sent = request.FILES.get("receipt")
+        try:
+            receipts.attach(
+                who, key,
+                data=sent.read() if sent is not None else b"",
+                file_name=sent.name if sent is not None else "",
+            )
+        except receipts.ReceiptRefused as refusal:
+            # Отказ показывается на самой карточке, а не отдельной страницей:
+            # человек стоит перед расходом и должен выбрать другой файл, не
+            # возвращаясь назад руками.
+            return _card(request, who, fact, error=refusal.message,
+                         status=refusal.http_status)
+        return redirect(reverse("expense", args=[fact.id]))
+
+    kept = receipts.of(key)
+    if kept is None:
+        raise Http404("чека нет")
+
+    answer = HttpResponse(bytes(kept.content), content_type=kept.media_type)
+    shown = "inline" if kept.media_type in papers.SHOWN_INLINE else "attachment"
+    answer["Content-Disposition"] = (
+        f'{shown}; filename="{receipts.file_name_for(fact, kept)}"'
+    )
+    answer["X-Content-Type-Options"] = "nosniff"
+    # Чек партнёра не должен попасть ни в один общий кэш: адрес угадать нельзя,
+    # но кэш посредника про политики базы ничего не знает.
+    answer["Cache-Control"] = "private, no-store"
+    return answer
 
 
 @login_required

@@ -231,5 +231,5 @@ def test_the_list_names_where_each_item_is_offered(client, items):
     login_as(client, "admin")
     page = body(client.get("/directory/expense-items/"))
     assert "Где выбирается" in page
-    assert "Расходы наличными" in page
+    assert "Наличные расходы" in page
     assert "Разнесение накладных" in page
