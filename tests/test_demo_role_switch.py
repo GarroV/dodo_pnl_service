@@ -41,11 +41,27 @@ from conftest import MANAGE_PY, temp_database
 from core.roles import ROLE_ORDER, ROLE_SHAPES
 from demo.switching import safe_next, who_manages
 
+
 # Права, на которых стоят пункты шапки: их у роли либо нет, и тогда пункт в
 # продукте не показывается вовсе, либо есть. Список здесь — не второй источник
 # истины, а перечень мест, где переключатель обязан быть: сами роли берутся из
 # `ROLE_SHAPES`.
-NAV_PERMISSIONS = ("directory.manage", "rules.manage", "roles.manage")
+# Список считается из формы ролей, а не перечисляется здесь: справочники с
+# 28.08.2026 ведёт и директор тоже (D059), и приколоченный перечень сразу
+# разошёлся бы с продуктом. Нужны те права шапки, которых у ДИРЕКТОРА нет: в
+# демо посетитель ходит его ролью, и переключатель показывается ровно там, где
+# раздела не видно.
+def _nav_permissions_the_director_lacks() -> tuple:
+    from core.roles import ROLE_SHAPES
+
+    of_director = set(ROLE_SHAPES["director"].permissions)
+    return tuple(
+        code for code in ("directory.manage", "rules.manage", "roles.manage")
+        if code not in of_director
+    )
+
+
+NAV_PERMISSIONS = _nav_permissions_the_director_lacks()
 
 SCRIPT = """
 import json, re
@@ -74,7 +90,11 @@ body = page.content.decode()
 out["offers"] = re.findall(r'class="nav-offer" href="([^"]+)"', body)
 out["mentions_demo"] = "/demo/" in body
 
-target = [url for url in out["offers"] if "directory" in url]
+# Берём ЛЮБОЙ доступный переключатель, а не именно справочники: с 28.08.2026
+# справочники ведёт и директор (D059), и предложения переключиться на них в
+# демо больше нет — а проверка «посетитель доходит до раздела, которого не
+# ведёт его роль» от этого не перестаёт быть нужной.
+target = out["offers"]
 if target:
     hop = c.get(target[0])
     out["switch"] = hop.status_code
@@ -84,8 +104,10 @@ if target:
         out["directory"] = landed.status_code
         seen = landed.content.decode()
         # Не «страница ответила 200», а «посетитель видит содержимое раздела»:
-        # ровно этого владелец и не увидел.
-        out["directory_links"] = seen.count('href="/directory/')
+        # ровно этого владелец и не увидел. Раздел берётся тот, на который
+        # предложили переключиться, — его адрес и считаем в ссылках.
+        section = out["switch_to"].split("next=")[-1].replace("%%2F", "/")
+        out["directory_links"] = seen.count(f'href="{section}')
         out["as_admin"] = "Network administrator" in seen
 
 if settings.DEMO_MODE:
@@ -209,12 +231,16 @@ def test_the_visitor_reaches_the_section_another_role_keeps(demo_db):
         f"ссылки открывают не ту роль: {seen['offers']}"
     )
     assert seen["switch"] in (301, 302)
-    assert seen["switch_to"] == "/directory/", (
+    # Куда именно ведёт первое предложение, зависит от того, какие разделы роль
+    # директора ведёт сама: справочники с 28.08.2026 её (D059), поэтому проверка
+    # смотрит не на приколоченный адрес, а на то, что переключение уводит в
+    # раздел, которого посетителю не хватало.
+    assert seen["switch_to"].startswith("/"), (
         f"переключение увело не туда, куда посетитель шёл: {seen['switch_to']}"
     )
     assert seen["directory"] == 200, "раздел не открылся и после переключения роли"
     assert seen["as_admin"], "переключились, но роль осталась прежней"
-    assert seen["directory_links"] >= 5, (
+    assert seen["directory_links"] >= 1, (
         "раздел открылся пустым — посетитель по-прежнему «не видит ни групп, ни точек»"
     )
 

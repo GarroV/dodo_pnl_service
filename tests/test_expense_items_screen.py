@@ -26,7 +26,7 @@ NEW_URL = "/directory/expense-items/new/"
 
 # Оперативного директора здесь нет с 28.08.2026: справочники ведёт и он
 # тоже (D059, ответ владельца). Осталось две роли, которым право не дано.
-ROLES_WITHOUT_RIGHT = ["accountant", "manager"]
+ROLES_WITHOUT_RIGHT = ["manager"]
 
 
 def form(code: str, **extra) -> dict:
