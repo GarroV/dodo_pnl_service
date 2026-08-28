@@ -15,6 +15,11 @@
   {{ employee }}{% if unit %} · {{ unit }}{% endif %}{% if title %} · {{ title }}{% endif %}
   {% if cut_title %} · {% blocktranslate with cut=cut_title %}разрез: {{ cut }}{% endblocktranslate %}{% endif %}
   · <a href="{{ back_url }}">{% translate "вернуться в ведомость" %}</a>
+  {% comment %}
+  Отсюда же берут бумагу для человека (T187): расчётный листок объясняет ту же
+  строку, только словами, которые отдают на руки.
+  {% endcomment %}
+  · <a href="{{ print_url }}">{% translate "расчётный листок на печать" %}</a>
 </p>
 
 {% comment %}

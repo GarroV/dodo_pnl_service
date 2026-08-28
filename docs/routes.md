@@ -85,6 +85,7 @@
 | `/papers/new/` | `paper-new` | `web.papers_views.paper_new` |
 | `/payments/new/` | `payment-new` | `web.suppliers_views.payment_new` |
 | `/payslips/<uuid:payslip_id>/freeze/` | `payslip-freeze` | `web.views.payslip_freeze` |
+| `/payslips/<uuid:payslip_id>/print/` | `payslip-print` | `web.printing_views.payslip` |
 | `/payslips/<uuid:payslip_id>/release/` | `payslip-release` | `web.views.payslip_release` |
 | `/payslips/<uuid:payslip_id>/trace/` | `payslip-trace` | `web.views.payslip_trace` |
 | `/periods/` | `periods` | `web.views.periods` |
@@ -96,6 +97,7 @@
 | `/periods/<uuid:period_id>/pnl/` | `period-pnl` | `web.reports_views.pnl` |
 | `/periods/<uuid:period_id>/pnl/<slug:code>/` | `period-pnl-line` | `web.reports_views.pnl_line` |
 | `/periods/<uuid:period_id>/postpone/` | `period-postpone` | `web.views.period_postpone` |
+| `/periods/<uuid:period_id>/print/payout/` | `period-print-payout` | `web.printing_views.payout` |
 | `/periods/<uuid:period_id>/reconcile/` | `period-reconcile` | `web.reports_views.period_reconcile` |
 | `/periods/<uuid:period_id>/reopen/` | `period-reopen` | `web.views.period_reopen` |
 | `/periods/<uuid:period_id>/retro/` | `period-retro` | `web.views.period_retro_post` |

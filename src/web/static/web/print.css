@@ -1,0 +1,351 @@
+/* Печатные формы: платёжная ведомость и расчётный листок (T187, issue #184).
+ *
+ * Лист здесь — величина, а не то, как получится. Продукт сам раскладывает
+ * строки по листам (`reports/printing.py`), чтобы на бумаге стояло честное
+ * «Лист 2 из 3», и это работает только пока миллиметры разметки совпадают с
+ * миллиметрами расчёта. Поэтому высоты ниже не «на глаз»: те же числа
+ * объявлены константами в `reports/printing.py`, а тест сверяет их между
+ * собой. Разъедься они — продукт напишет «Лист 1 из 2», браузер напечатает
+ * три, из которых один пустой, и заметит это тот, кто уже понёс бумагу на
+ * подпись.
+ *
+ * Палитра своя, бумажная, а не продуктовая: у продукта есть тёмная тема, а у
+ * бумаги её не бывает. Значения взяты из эталона «Печатные формы».
+ *
+ * Файл подключается ТОЛЬКО печатными страницами и не тянет `app.css`: на
+ * бумаге нет ни шапки продукта, ни кнопок, ни прокрутки, и правила экрана
+ * здесь только мешали бы.
+ */
+
+/* Цвета — продуктовые токены из `tokens.css`, а не своя бумажная палитра.
+ * У эталона печатных форм палитра действительно своя (`--paper`, `--ink`,
+ * `--rule`), но у продукта правило сильнее и куплено дефектом: значения живут в
+ * одном месте, иначе палитр становится две и одно и то же серое в двух местах
+ * оказывается разным. Значения при этом из той же дизайн-системы, так что лист
+ * выглядит как эталон.
+ *
+ * Тёмная тема на печать не попадает по построению: `data-theme` на печатной
+ * странице не ставится вовсе (`web/print/base.html`), поэтому здесь всегда
+ * читаются светлые значения — прятать тему в `@media print` не приходится.
+ */
+:root {
+  /* Геометрия листа. Зеркало констант `reports/printing.py`. */
+  --print-margin-top: 14mm;
+  --print-margin-bottom: 12mm;
+  --print-margin-side: 12mm;
+  --print-head-first: 22mm;   /* + отбивка ниже = HEAD_FIRST_MM */
+  --print-head-next: 8mm;     /* + отбивка ниже = HEAD_NEXT_MM  */
+  --print-head-gap: 5mm;
+  --print-head-gap-next: 4mm;
+  --print-table-head: 8mm;
+  --print-row: 5.5mm;
+  --print-foot: 52mm;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-ui, 'Golos Text', 'Segoe UI', system-ui, sans-serif);
+}
+
+/* Стол, на котором лежат листы. На экране — серый, на бумаге его нет. */
+.desk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10mm;
+  padding: 10mm 0;
+}
+
+.paper {
+  width: 210mm;
+  height: 297mm;
+  flex: 0 0 auto;
+  background: var(--surface);
+  padding: var(--print-margin-top) var(--print-margin-side) var(--print-margin-bottom);
+  box-shadow: var(--sh-pop);
+}
+
+.paper__body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Распорка: подвал прижат к низу листа, как на бланке. */
+.spacer { flex: 1; }
+
+/* ── Шапка документа ───────────────────────────────────────────── */
+
+.doc-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12mm;
+  height: var(--print-head-first);
+  margin-bottom: var(--print-head-gap);
+  padding-bottom: 4mm;
+  border-bottom: 1.5pt solid var(--ink);
+}
+
+.doc-head--next {
+  height: var(--print-head-next);
+  margin-bottom: var(--print-head-gap-next);
+  padding-bottom: 2mm;
+  border-bottom: .75pt solid var(--line-strong);
+  align-items: baseline;
+}
+
+.doc-head__main { flex: 1; min-width: 0; }
+.doc-head__aside { flex: 0 0 auto; text-align: right; }
+
+.doc-who {
+  font-size: 8pt;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.doc-title {
+  font-size: 15pt;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  margin-top: 2mm;
+}
+
+.doc-sub {
+  font-size: 8.5pt;
+  color: var(--ink-2);
+  margin-top: 1.5mm;
+}
+
+.doc-label { font-size: 8pt; color: var(--ink-3); }
+
+.doc-num {
+  font-family: var(--font-num, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size: 10pt;
+  font-weight: 600;
+}
+
+.doc-when {
+  font-family: var(--font-num, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size: 9pt;
+}
+
+/* ── Таблица ведомости ─────────────────────────────────────────── */
+
+/* Фиксированная раскладка обязательна: без неё ширина колонки зависит от
+ * длины фамилии, а высота строки — от того, перенеслась ли она. Тогда лист
+ * вмещает то 42 строки, то 39, и «Лист 1 из 2» врёт. */
+table.payout, table.slip {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+table.payout thead th, table.slip thead th {
+  height: var(--print-table-head);
+  padding: 1.6mm 1.5mm;
+  font-size: 7.5pt;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-align: left;
+  border-bottom: .75pt solid var(--ink);
+  vertical-align: bottom;
+}
+
+table.payout tbody tr {
+  height: var(--print-row);
+}
+
+table.payout tbody td {
+  height: var(--print-row);
+  padding: 0 1.5mm;
+  font-size: 8pt;
+  border-bottom: .5pt solid var(--line);
+  /* Обрезка длинного значения многоточием — единственный способ удержать
+   * высоту строки: перенос превратил бы одну строку в две и уронил бы
+   * последнюю строку листа за край. Ширины подобраны так, чтобы обычная
+   * фамилия и должность помещались целиком. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Чётные строки подложкой: в ведомости на сорок строк глаз иначе съезжает. */
+table.payout tbody tr.line:nth-child(even) td { background: var(--surface-2); }
+
+.num, th.num {
+  font-family: var(--font-num, 'IBM Plex Mono', ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Колонки названы по смыслу, а не по месту, и каждая звучит своим тоном.
+ * Порядок голосов взят у эталона: удержанное тише — это вычет, а не сумма к
+ * получению; «к выплате» полновесно — за него расписываются. Часы к ним
+ * добавлены нашим решением: без этого четыре числа подряд читаются как четыре
+ * суммы, а часы — величина другого рода. Номер строки самый тихий: он служебный
+ * и нужен только чтобы сослаться на строку голосом. */
+td.n { color: var(--ink-3); font-size: 7pt; }
+td.hours { color: var(--ink-2); }
+td.accrued { color: var(--ink); }
+td.held { color: var(--ink-2); }
+td.paid { font-weight: 600; }
+td.sign { border-bottom: .5pt solid var(--line-strong); }
+
+table.payout tfoot td, table.payout tfoot th {
+  padding: 2.2mm 1.5mm;
+  font-size: 8.5pt;
+  font-weight: 700;
+  border-top: 1pt solid var(--ink);
+  text-align: left;
+}
+table.payout tfoot td.paid { font-size: 9.5pt; }
+
+/* Ширины колонок ведомости. Сумма фиксированных = 134мм, имени остаётся 52мм
+ * от 186мм полосы набора — тридцать с лишним знаков, обычной фамилии хватает. */
+col.c-num { width: 8mm; }
+col.c-role { width: 22mm; }
+col.c-hours { width: 14mm; }
+col.c-accrued { width: 22mm; }
+col.c-held { width: 20mm; }
+col.c-paid { width: 22mm; }
+col.c-sign { width: 26mm; }
+
+/* ── Подвал: итог прописью, подписи, мелкий шрифт ──────────────── */
+
+.foot { height: var(--print-foot); }
+
+.in-words {
+  font-size: 7.5pt;
+  line-height: 11pt;
+  color: var(--ink-2);
+  margin: 4mm 0 0;
+}
+
+.signatures {
+  display: flex;
+  gap: 10mm;
+  padding-top: 6mm;
+  margin-top: 6mm;
+  border-top: .75pt solid var(--line-strong);
+}
+
+.signatures > div { flex: 1; }
+.signatures > div.narrow { flex: 0 0 46mm; }
+
+.sign-line {
+  height: 12mm;
+  border-bottom: .75pt solid var(--ink);
+}
+
+.sign-who { font-size: 8pt; color: var(--ink-2); margin-top: 1.5mm; }
+.sign-name { font-size: 8pt; color: var(--ink-3); min-height: 3.5mm; }
+
+.fine {
+  display: flex;
+  align-items: baseline;
+  gap: 4mm;
+  margin: 4mm 0 0;
+  font-size: 7pt;
+  line-height: 9pt;
+  color: var(--ink-3);
+}
+.fine .right {
+  margin-left: auto;
+  font-family: var(--font-num, 'IBM Plex Mono', ui-monospace, monospace);
+}
+
+/* ── Расчётный листок ──────────────────────────────────────────── */
+
+.slip-who { display: flex; gap: 8mm; margin-top: 5mm; }
+.slip-who > div:first-child { flex: 1; min-width: 0; }
+.slip-who > div:last-child { flex: 0 0 auto; text-align: right; }
+.slip-name { font-size: 12pt; font-weight: 600; margin-top: 1mm; }
+.slip-role { font-size: 8.5pt; color: var(--ink-2); margin-top: .5mm; }
+.slip-hours {
+  font-family: var(--font-num, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size: 12pt;
+  font-weight: 600;
+  margin-top: 1mm;
+}
+
+table.slip { margin-top: 6mm; }
+table.slip col.c-how { width: 46mm; }
+table.slip col.c-sum { width: 30mm; }
+
+table.slip tbody tr.item td, table.slip tbody tr.sum td {
+  padding: 2.2mm 2mm;
+  font-size: 9pt;
+  border-bottom: .5pt solid var(--line);
+}
+table.slip td.how {
+  font-family: var(--font-num, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size: 8pt;
+  color: var(--ink-3);
+}
+table.slip tr.sum td {
+  background: var(--surface-3);
+  font-weight: 700;
+}
+/* Начисленное — итог позиций выше, и на листке это опорное число: по нему
+ * человек проверяет, что сумма собрана из того, что перечислено. */
+td.accrued-sum { font-size: 9.5pt; }
+table.slip tfoot th, table.slip tfoot td {
+  padding: 3mm 2mm;
+  font-weight: 700;
+  border-top: 1pt solid var(--ink);
+  text-align: left;
+}
+table.slip tfoot th { font-size: 10.5pt; }
+table.slip tfoot td { font-size: 13pt; }
+
+.gross-note {
+  margin-top: 5mm;
+  padding: 3mm 4mm;
+  border: .75pt solid var(--line);
+  background: var(--surface-2);
+  font-size: 8pt;
+  line-height: 11pt;
+  color: var(--ink-2);
+}
+.gross-note b { color: var(--ink); }
+
+/* ── Отказ вместо документа ────────────────────────────────────── */
+
+/* Отказ — не документ и листом не притворяется: бумага, на которой написано,
+ * почему бумаги нет, ушла бы в папку наравне с настоящими. */
+.refused {
+  max-width: 150mm;
+  margin: 20mm auto;
+  padding: 8mm;
+  background: var(--surface);
+  font-size: 11pt;
+  line-height: 1.5;
+}
+.refused h1 { font-size: 15pt; margin: 0 0 4mm; }
+.refused a { color: var(--accent); }
+
+/* ── Печать ────────────────────────────────────────────────────── */
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  html, body { background: var(--surface); }
+  .desk { display: block; gap: 0; padding: 0; }
+  .paper { box-shadow: none; break-after: page; }
+  .paper:last-child { break-after: auto; }
+  /* Заголовок таблицы повторяется на каждом листе сам: листы собирает
+   * продукт, и thead стоит в каждой из них своим. Правило оставлено на
+   * случай, если браузер всё-таки решит разложить таблицу по-своему. */
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+}
