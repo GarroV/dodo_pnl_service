@@ -24,7 +24,9 @@ from test_directory import approve_june, payruns_restored, sql  # noqa: F401
 LIST_URL = "/directory/expense-items/"
 NEW_URL = "/directory/expense-items/new/"
 
-ROLES_WITHOUT_RIGHT = ["director", "accountant", "manager"]
+# Оперативного директора здесь нет с 28.08.2026: справочники ведёт и он
+# тоже (D059, ответ владельца). Осталось две роли, которым право не дано.
+ROLES_WITHOUT_RIGHT = ["accountant", "manager"]
 
 
 def form(code: str, **extra) -> dict:

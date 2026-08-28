@@ -34,9 +34,13 @@ import pytest
 
 from conftest import body, login_as, period_url, wipe_payruns
 
-# Роли без права вести справочники. Директор здесь не случайно: он может
-# больше всех в расчёте — и справочники всё равно не его.
-ROLES_WITHOUT_RIGHT = ["director", "accountant", "manager"]
+# Роли без права вести справочники. Оперативного директора здесь больше нет:
+# владелец 28.08.2026 ответил прямо — «операционный директор мне кажется может
+# вести справочники, почему нет?» (D059). У партнёра он второй человек после
+# бухгалтера, а не гость: точки, группы, статьи и контрагентов заводит он же.
+# Правила страны и роли при этом остались администратору сети — это
+# платформенный уровень, а не работа партнёра.
+ROLES_WITHOUT_RIGHT = ["accountant", "manager"]
 
 # Справочники, закрытые правом целиком.
 #
@@ -89,14 +93,19 @@ def sql(web_env):
 
 
 def test_only_the_role_that_manages_directories_sees_the_link(client):
-    """Ссылка на справочники есть у администратора и больше ни у кого (T072)."""
+    """Ссылка на справочники есть у тех, кто их ведёт: администратор и директор.
+
+    Директор добавился решением владельца 28.08.2026 (D059). Бухгалтер и
+    управляющий по-прежнему справочники не ведут — им ссылка не показывается,
+    и это не оформление: кнопка на отказ хуже отсутствующей.
+    """
     seen = {}
     for role in ["director", "accountant", "manager", "admin"]:
         login_as(client, role)
         seen[role] = 'href="/directory/"' in body(client.get("/periods/"))
         client.post("/logout/")
 
-    assert seen == {"director": False, "accountant": False, "manager": False, "admin": True}
+    assert seen == {"director": True, "accountant": False, "manager": False, "admin": True}
 
 
 @pytest.mark.parametrize("role", ROLES_WITHOUT_RIGHT)

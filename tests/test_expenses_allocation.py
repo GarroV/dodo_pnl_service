@@ -164,7 +164,9 @@ def test_the_rule_is_kept_with_the_expense_item(
         client.post("/logout/")
 
 
-@pytest.mark.parametrize("role", ["director", "accountant", "manager"])
+  # Оперативного директора здесь нет с 28.08.2026: справочники ведёт и он
+  # тоже (D059, ответ владельца). Осталось две роли, которым право не дано.
+@pytest.mark.parametrize("role", ["accountant", "manager"])
 def test_only_the_directory_keeper_sets_the_rule(
     client, sql, item, rules_removed, role,  # noqa: F811
 ):

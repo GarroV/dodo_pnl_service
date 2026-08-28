@@ -86,7 +86,9 @@ SAMPLE = [
 # --- право --------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("role", ["director", "accountant", "manager"])
+  # Оперативного директора здесь нет с 28.08.2026: справочники ведёт и он
+  # тоже (D059, ответ владельца). Осталось две роли, которым право не дано.
+@pytest.mark.parametrize("role", ["accountant", "manager"])
 def test_a_role_without_the_right_cannot_load_the_directory(client, sql, role, items_removed):  # noqa: F811
     """Загрузка — ведение справочника, и право у неё то же, что у формы."""
     login_as(client, role)
