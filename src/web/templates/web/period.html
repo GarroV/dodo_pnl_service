@@ -409,6 +409,7 @@
 {% url 'period-export' period.id 'pnl' as pnl_url %}
 {% url 'period-export' period.id 'partner' as partner_url %}
 {% url 'period-reconcile' period.id as reconcile_url %}
+{% url 'period-pnl' period.id as report_url %}
 {% include "web/components/exports.html" %}
 {% scroll %}
 <table class="sheet">

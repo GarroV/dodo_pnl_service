@@ -1,0 +1,60 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Отчёт P&L (issue #183, модуль эталона 5).
+
+Экран, ради которого собирали данные. Три вещи, без которых он не отчёт, а
+таблица чисел:
+
+1. **рядом с суммой — прошлый месяц.** «Аренда 486 000» ни о чём не говорит,
+   пока не видно, сколько было;
+2. **любая сумма раскрывается** до первичных фактов — тем же приёмом, что след
+   расчёта зарплаты: отчёт, которому нельзя задать вопрос «почему столько»,
+   проверяют пересчётом в Excel, то есть не пользуются им;
+3. **отчёт говорит, чего в нём нет.** Неразобранные деньги существуют, и
+   молчание о них делает отчёт убедительным, но неверным.
+
+Цвет у чисел не используется: эталон говорит прямо — «цвет у числа только в
+отклонении, в самом отчёте суммы одного цвета».
+{% endcomment %}
+{% block title %}{% translate "P&L" %}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К месяцу" %}</a></p>
+<h1>{% translate "P&L" %} · {{ period.title }}</h1>
+
+{% if has_missing %}
+{% translate "Отчёт неполный" as incomplete %}
+{% notice "alert" title=incomplete %}{% blocktranslate with amount=missing counter=missing_facts %}{{ amount }} не попали в отчёт: строк без статьи {{ counter }}.{% endblocktranslate %}
+  <a href="{% url 'inbox' %}">{% translate "Разобрать" %}</a>{% endnotice %}
+{% endif %}
+
+{% scroll %}<table class="report">
+  <thead>
+    <tr>
+      <th>{% translate "Строка отчёта" %}</th>
+      <th class="num">{{ period.title }}</th>
+      <th class="num">{% blocktranslate with month=previous_title %}Прошлый: {{ month }}{% endblocktranslate %}</th>
+      <th class="num">{% translate "Разница" %}</th>
+      <th>{% translate "Из чего собралось" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in lines %}
+    <tr data-line="{{ line.code }}">
+      <td>{{ line.title }}</td>
+      <td class="{{ line.amount|numclass }}">{{ line.amount }}</td>
+      <td class="{{ line.previous|numclass }}">{{ line.previous }}</td>
+      <td class="{{ line.difference|numclass }}">{{ line.difference }}</td>
+      <td><a href="{{ line.url }}">{% blocktranslate with counter=line.facts %}записей: {{ counter }}{% endblocktranslate %}</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="grand">
+      <th>{% translate "Итог отчёта" %}</th>
+      <th class="{{ total|numclass }}">{{ total }}</th>
+      <th class="{{ previous_total|numclass }}">{{ previous_total }}</th>
+      <th colspan="2"></th>
+    </tr>
+  </tfoot>
+</table>{% endscroll %}
+{% endblock %}

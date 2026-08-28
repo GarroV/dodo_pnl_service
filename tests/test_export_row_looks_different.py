@@ -64,7 +64,14 @@ def test_the_screen_link_is_not_dressed_as_a_file(client, web_env, calculated):
     _cuts, exports = rows(client)
 
     page_links = re.findall(r'<a[^>]*class="[^"]*\bpage\b[^"]*"[^>]*>', exports)
-    assert len(page_links) == 1, f"ссылка на экран сверки не помечена: {exports}"
+    # Экранов в этом ряду теперь два — сверка и отчёт P&L (issue #183). Число
+    # не приколочено к единице: проверяется свойство («экран помечен как
+    # экран»), а не сегодняшний состав ряда.
+    assert page_links, f"ссылка на экран не помечена: {exports}"
+    for link in page_links:
+        assert "download" not in link, (
+            f"ссылка на экран притворяется файлом: {link}"
+        )
     assert "download" not in page_links[0], "экран сверки притворяется файлом"
 
 

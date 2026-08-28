@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-28 02:34+0000\n"
+"POT-Creation-Date: 2026-08-28 06:38+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -349,7 +349,7 @@ msgstr "No."
 #: web/dbrefusal.py:110 web/directory_views.py:556
 #: web/templates/web/components/diff_table.html:21
 #: web/templates/web/directory/raise_preview.html:21
-#: web/templates/web/period.html:255 web/templates/web/period.html:435
+#: web/templates/web/period.html:255 web/templates/web/period.html:436
 #: web/templates/web/variance.html:39
 msgid "Сотрудник"
 msgstr "Employee"
@@ -363,7 +363,8 @@ msgstr "Employee"
 #: web/suppliers_views.py:783 web/templates/web/cash/expenses.html:55
 #: web/templates/web/cash/split.html:39
 #: web/templates/web/directory/employee.html:130
-#: web/templates/web/period.html:435 web/templates/web/person_pay.html:71
+#: web/templates/web/period.html:436 web/templates/web/person_pay.html:71
+#: web/templates/web/reports/pnl_line.html:18
 #: web/templates/web/suppliers/inbox.html:43
 #: web/templates/web/suppliers/inbox.html:148
 #: web/templates/web/suppliers/invoice.html:78
@@ -377,7 +378,7 @@ msgstr "Unit"
 
 #: reports/export.py:217 reports/export.py:556 reports/export.py:627
 #: web/templates/web/cash/expenses.html:60 web/templates/web/period.html:255
-#: web/templates/web/period.html:435 web/templates/web/period.html:518
+#: web/templates/web/period.html:436 web/templates/web/period.html:519
 #: web/templates/web/suppliers/inbox.html:61
 #: web/templates/web/suppliers/invoice.html:128
 #: web/templates/web/trace.html:146 web/templates/web/variance.html:39
@@ -387,7 +388,7 @@ msgstr "Ledger"
 #: reports/export.py:219 reports/export.py:242
 #: timesheets/templates/timesheets/grid.html:205
 #: timesheets/templates/timesheets/grid.html:345
-#: web/templates/web/period.html:437 web/templates/web/period.html:525
+#: web/templates/web/period.html:438 web/templates/web/period.html:526
 #: web/templates/web/person_pay.html:145
 msgid "Итого"
 msgstr "Total"
@@ -486,7 +487,8 @@ msgstr "Component"
 #: web/templates/web/cash/split.html:28
 #: web/templates/web/cash/unallocated.html:34
 #: web/templates/web/directory/employee.html:104
-#: web/templates/web/period.html:518 web/templates/web/suppliers/inbox.html:59
+#: web/templates/web/period.html:519 web/templates/web/reports/pnl_line.html:21
+#: web/templates/web/suppliers/inbox.html:59
 #: web/templates/web/suppliers/invoice.html:79
 #: web/templates/web/suppliers/invoice.html:125
 #: web/templates/web/suppliers/invoices.html:50
@@ -512,7 +514,7 @@ msgstr "Tax"
 msgid "Налог на доход"
 msgstr "Income tax"
 
-#: reports/export.py:592 web/reports_views.py:49
+#: reports/export.py:592 web/reports_views.py:52
 #: web/templates/web/person_pay.html:77 web/views.py:1113
 msgid "Взносы"
 msgstr "Contributions"
@@ -713,6 +715,7 @@ msgid "Табель · %(title)s"
 msgstr "Timesheet · %(title)s"
 
 #: timesheets/templates/timesheets/grid.html:38
+#: web/templates/web/reports/pnl.html:21
 msgid "← К месяцу"
 msgstr "← To the month"
 
@@ -1064,17 +1067,17 @@ msgid "точка не найдена"
 msgstr "unit not found"
 
 #: timesheets/views.py:491 web/expense_items_views.py:509
-#: web/reports_views.py:236
+#: web/reports_views.py:307
 msgid "Файл не выбран."
 msgstr "No file selected."
 
-#: timesheets/views.py:495 web/reports_views.py:240
+#: timesheets/views.py:495 web/reports_views.py:311
 #, python-format
 msgid "Файл больше %(limit)s МБ — это не зарплатная таблица."
 msgstr "File is larger than %(limit)s MB — this is not a payroll table."
 
 #: timesheets/views.py:519 web/expense_items_upload.py:129
-#: web/reports_views.py:252
+#: web/reports_views.py:323
 #, python-format
 msgid "Файл не удалось прочитать как книгу Excel: %(reason)s"
 msgstr "Could not read the file as an Excel workbook: %(reason)s"
@@ -1749,6 +1752,7 @@ msgstr "P&L line"
 
 #: web/dbrefusal.py:114 web/suppliers_views.py:60 web/suppliers_views.py:640
 #: web/suppliers_views.py:734 web/suppliers_views.py:1010
+#: web/templates/web/reports/pnl_line.html:19
 #: web/templates/web/suppliers/inbox.html:57
 #: web/templates/web/suppliers/invoices.html:46
 msgid "Контрагент"
@@ -2149,7 +2153,7 @@ msgid "Часы по договору"
 msgstr "Contract hours"
 
 #: web/directory_views.py:997 web/directory_views.py:1150
-#: web/directory_views.py:1250 web/reports_views.py:65
+#: web/directory_views.py:1250 web/reports_views.py:68
 #: web/templates/web/directory/employee.html:132
 msgid "Коэффициент"
 msgstr "Coefficient"
@@ -3115,6 +3119,7 @@ msgstr ""
 #: web/papers_views.py:220 web/papers_views.py:299
 #: web/templates/web/cash/split.html:26
 #: web/templates/web/cash/unallocated.html:33
+#: web/templates/web/reports/pnl_line.html:20
 #: web/templates/web/suppliers/inbox.html:58
 #: web/templates/web/suppliers/inbox.html:150
 #: web/templates/web/suppliers/invoice.html:77
@@ -3428,42 +3433,42 @@ msgstr ""
 msgid "Часов за этот месяц нет — начислять пока нечего."
 msgstr "There are no hours for this month yet — nothing to accrue."
 
-#: web/reports_views.py:47
+#: web/reports_views.py:50
 msgid "К выплате (нето)"
 msgstr "Payable (net)"
 
-#: web/reports_views.py:48 web/templates/web/person_pay.html:75
+#: web/reports_views.py:51 web/templates/web/person_pay.html:75
 #: web/views.py:1111
 msgid "Бруто"
 msgstr "Gross"
 
-#: web/reports_views.py:50 web/views.py:1114
+#: web/reports_views.py:53 web/views.py:1114
 msgid "Полная стоимость"
 msgstr "Total cost"
 
-#: web/reports_views.py:57
+#: web/reports_views.py:60
 msgid "Часы для взносов"
 msgstr "Hours for contributions"
 
-#: web/reports_views.py:64
+#: web/reports_views.py:67
 msgid "Базовая ставка"
 msgstr "Base rate"
 
-#: web/reports_views.py:66
+#: web/reports_views.py:69
 msgid "Топли оброк и регрес"
 msgstr "Топли оброк и регрес"
 
-#: web/reports_views.py:105
+#: web/reports_views.py:108
 #, python-format
 msgid "Часы · %(kind)s"
 msgstr "Hours · %(kind)s"
 
-#: web/reports_views.py:106 web/reports_views.py:113
+#: web/reports_views.py:109 web/reports_views.py:116
 #, python-format
 msgid "%(what)s: в таблице %(expected)s, в расчёте %(actual)s"
 msgstr "%(what)s: %(expected)s in the table, %(actual)s in the calculation"
 
-#: web/reports_views.py:293
+#: web/reports_views.py:364
 msgid ""
 "Решение записывается вместе с объяснением: без него «ошибка в файле» через "
 "полгода не отличить от «не разбирались»."
@@ -4141,6 +4146,7 @@ msgid "Показать"
 msgstr "Show"
 
 #: web/templates/web/cash/expenses.html:54
+#: web/templates/web/reports/pnl_line.html:17
 #: web/templates/web/suppliers/inbox.html:56
 msgid "Дата"
 msgstr "Date"
@@ -4278,9 +4284,10 @@ msgid "Разнести по правилам"
 msgstr "Allocate by the rules"
 
 #: web/templates/web/cash/unallocated.html:35
+#: web/templates/web/reports/pnl_line.html:22
 #: web/templates/web/rules/index.html:54
 msgid "Откуда"
-msgstr "Source"
+msgstr "Where from"
 
 #: web/templates/web/cash/unallocated.html:36
 msgid "Почему ждёт"
@@ -4308,7 +4315,7 @@ msgid "В расчёте"
 msgstr "In the calculation"
 
 #: web/templates/web/components/diff_table.html:22
-#: web/templates/web/period.html:255
+#: web/templates/web/period.html:255 web/templates/web/reports/pnl.html:36
 msgid "Разница"
 msgstr "Difference"
 
@@ -4336,7 +4343,11 @@ msgstr "P&L lines with VAT"
 msgid "Вид бухгалтера"
 msgstr "Accountant view"
 
-#: web/templates/web/components/exports.html:44
+#: web/templates/web/components/exports.html:50
+msgid "Отчёт P&L"
+msgstr "P&L report"
+
+#: web/templates/web/components/exports.html:51
 msgid "Сверка с таблицей"
 msgstr "Reconciliation with the table"
 
@@ -5470,45 +5481,45 @@ msgstr "outside the app"
 msgid "Разрез ведомости по регистрам"
 msgstr "Payroll sheet view by ledger"
 
-#: web/templates/web/period.html:435
+#: web/templates/web/period.html:436
 msgid "Спор"
 msgstr "Dispute"
 
-#: web/templates/web/period.html:460 web/templates/web/person_pay.html:152
+#: web/templates/web/period.html:461 web/templates/web/person_pay.html:152
 #, python-format
 msgid "Перерасчёт за %(title)s"
 msgstr "Recalculation for %(title)s"
 
-#: web/templates/web/period.html:472 web/templates/web/person_pay.html:86
+#: web/templates/web/period.html:473 web/templates/web/person_pay.html:86
 msgid "Заморожена"
 msgstr "Frozen"
 
-#: web/templates/web/period.html:477
+#: web/templates/web/period.html:478
 msgid "Снять заморозку"
 msgstr "Unfreeze"
 
-#: web/templates/web/period.html:483
+#: web/templates/web/period.html:484
 msgid "Заморозить"
 msgstr "Freeze"
 
-#: web/templates/web/period.html:484
+#: web/templates/web/period.html:485
 msgid "из-за чего спор"
 msgstr "what the dispute is about"
 
-#: web/templates/web/period.html:497 web/templates/web/trace.html:13
+#: web/templates/web/period.html:498 web/templates/web/trace.html:13
 msgid "Как получилась эта сумма"
 msgstr "How this amount was calculated"
 
-#: web/templates/web/period.html:503
+#: web/templates/web/period.html:504
 #, python-format
 msgid "Итого · %(employees)s чел."
 msgstr "Total · %(employees)s employees"
 
-#: web/templates/web/period.html:516
+#: web/templates/web/period.html:517
 msgid "Итоги по регистрам"
 msgstr "Totals by ledger"
 
-#: web/templates/web/period.html:530
+#: web/templates/web/period.html:531
 msgid ""
 "Итог посчитан по тому, что видно вашей роли: строки чужих регистров не "
 "доезжают до страницы и не входят в сумму."
@@ -5516,7 +5527,7 @@ msgstr ""
 "The total is calculated based on what your role can see: rows from other "
 "ledgers never reach the page and are not included in the sum."
 
-#: web/templates/web/period.html:531
+#: web/templates/web/period.html:532
 #, python-format
 msgid ""
 "Сейчас показан один регистр — %(title)s;\n"
@@ -5525,11 +5536,11 @@ msgstr ""
 "Right now only one ledger is shown — %(title)s;\n"
 "  the total is calculated from it."
 
-#: web/templates/web/period.html:550
+#: web/templates/web/period.html:551
 msgid "Ведомости пока нет"
 msgstr "There is no payroll sheet yet"
 
-#: web/templates/web/period.html:553
+#: web/templates/web/period.html:554
 msgid ""
 "Месяц начинается с часов: без них считать нечего. Внесите их в табеле\n"
 "    руками или загрузите таблицей партнёра, а потом вернитесь сюда и "
@@ -5542,11 +5553,11 @@ msgstr ""
 "calculate the\n"
 "    period."
 
-#: web/templates/web/period.html:556
+#: web/templates/web/period.html:557
 msgid "Перейти к табелю"
 msgstr "Go to timesheet"
 
-#: web/templates/web/period.html:558
+#: web/templates/web/period.html:559
 msgid ""
 "Часы за месяц уже внесены — осталось посчитать период. Ведомость появится\n"
 "    здесь же: строка на каждого сотрудника в каждом регистре, который видно\n"
@@ -5977,6 +5988,58 @@ msgstr "awaiting a decision: %(left)s"
 msgid "всё разобрано"
 msgstr "all sorted out"
 
+#: web/templates/web/reports/pnl.html:19 web/templates/web/reports/pnl.html:22
+msgid "P&L"
+msgstr "P&L"
+
+#: web/templates/web/reports/pnl.html:25
+msgid "Отчёт неполный"
+msgstr "The report is incomplete"
+
+#: web/templates/web/reports/pnl.html:26
+#, python-format
+msgid "%(amount)s не попали в отчёт: строк без статьи %(counter)s."
+msgstr "%(amount)s did not make it into the report: %(counter)s lines have no item."
+
+#: web/templates/web/reports/pnl.html:27
+#: web/templates/web/suppliers/inbox.html:63
+#: web/templates/web/suppliers/inbox.html:82
+#: web/templates/web/suppliers/inbox.html:152
+msgid "Разобрать"
+msgstr "Sort out"
+
+#: web/templates/web/reports/pnl.html:33
+msgid "Строка отчёта"
+msgstr "Report line"
+
+#: web/templates/web/reports/pnl.html:35
+#, python-format
+msgid "Прошлый: %(month)s"
+msgstr "Previous: %(month)s"
+
+#: web/templates/web/reports/pnl.html:37
+#: web/templates/web/reports/pnl_line.html:8
+#: web/templates/web/reports/pnl_line.html:11
+msgid "Из чего собралось"
+msgstr "What it is made of"
+
+#: web/templates/web/reports/pnl.html:47
+#, python-format
+msgid "записей: %(counter)s"
+msgstr "records: %(counter)s"
+
+#: web/templates/web/reports/pnl.html:53
+msgid "Итог отчёта"
+msgstr "Report total"
+
+#: web/templates/web/reports/pnl_line.html:10
+msgid "← К отчёту"
+msgstr "← To the report"
+
+#: web/templates/web/reports/pnl_line.html:39
+msgid "Итого по строке"
+msgstr "Total for the line"
+
 #: web/templates/web/roles/index.html:21
 msgid ""
 "Роль — это набор прав, а человеку можно дать несколько ролей сразу. Так "
@@ -6265,12 +6328,6 @@ msgstr "Select"
 #: web/templates/web/suppliers/inbox.html:62
 msgid "Похоже на"
 msgstr "Looks like"
-
-#: web/templates/web/suppliers/inbox.html:63
-#: web/templates/web/suppliers/inbox.html:82
-#: web/templates/web/suppliers/inbox.html:152
-msgid "Разобрать"
-msgstr "Sort out"
 
 #: web/templates/web/suppliers/inbox.html:70
 #, python-format

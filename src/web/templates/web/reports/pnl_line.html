@@ -1,0 +1,45 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Раскрытие строки P&L до первичных фактов (модуль эталона 5, «Из чего собралось»).
+
+Тот же приём, что у следа расчёта зарплаты (D025): число объясняется не словами
+о методике, а самими записями, из которых сложилось.
+{% endcomment %}
+{% block title %}{% translate "Из чего собралось" %}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К отчёту" %}</a></p>
+<h1>{% translate "Из чего собралось" %}</h1>
+<p class="sub">{{ period.title }} · {{ code }}</p>
+
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Дата" %}</th>
+      <th>{% translate "Точка" %}</th>
+      <th>{% translate "Контрагент" %}</th>
+      <th>{% translate "Что это" %}</th>
+      <th class="num">{% translate "Сумма" %}</th>
+      <th>{% translate "Откуда" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.date }}</td>
+      <td>{{ row.unit }}</td>
+      <td>{{ row.counterparty }}</td>
+      <td>{{ row.title }}</td>
+      <td class="{{ row.amount|numclass }}">{{ row.amount }}</td>
+      <td>{{ row.source }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="grand">
+      <th colspan="4">{% translate "Итого по строке" %}</th>
+      <th class="{{ total|numclass }}">{{ total }}</th>
+      <th></th>
+    </tr>
+  </tfoot>
+</table>{% endscroll %}
+{% endblock %}

@@ -322,6 +322,19 @@ urlpatterns = [
         suppliers_views.invoice_not_ours,
         name="invoice-not-ours",
     ),
+    # P&L (issue #183, модуль эталона 5): отчёт месяца и раскрытие строки до
+    # первичных фактов. Внутри периода, а не отдельным разделом: отчёт — это
+    # срез месяца, и открывают его оттуда же, откуда считают.
+    path(
+        "periods/<uuid:period_id>/pnl/",
+        reports_views.pnl,
+        name="period-pnl",
+    ),
+    path(
+        "periods/<uuid:period_id>/pnl/<slug:code>/",
+        reports_views.pnl_line,
+        name="period-pnl-line",
+    ),
     path("inbox/", suppliers_views.inbox, name="inbox"),
     path(
         "inbox/<uuid:fact_id>/classify/",

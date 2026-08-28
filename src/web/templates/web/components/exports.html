@@ -40,6 +40,12 @@
   {% endcomment %}
   {% if has_vat %}<a class="cut file" download href="{{ pnl_url }}{% if ledger_query %}{{ ledger_query }}&amp;{% else %}?{% endif %}vat=gross">{% translate "Строки для P&L с НДС" %}</a>{% endif %}
   <a class="cut file" download href="{{ partner_url }}{{ ledger_query }}">{% translate "Вид бухгалтера" %}</a>
+  {% comment %}
+  Отчёт P&L — экран, а не файл (issue #183), поэтому стоит с классом `page`
+  рядом со сверкой: разное поведение обязано выглядеть по-разному, и «Строки
+  для P&L» выше — это выгрузка, а это сам отчёт.
+  {% endcomment %}
+  {% if report_url %}<a class="cut page" href="{{ report_url }}">{% translate "Отчёт P&L" %}</a>{% endif %}
   <a class="cut page" href="{{ reconcile_url }}">{% translate "Сверка с таблицей" %}</a>
 </nav>
 {% if exports_note %}<p class="hint">{{ exports_note }}</p>{% endif %}

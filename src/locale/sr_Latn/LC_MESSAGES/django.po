@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-28 02:34+0000\n"
+"POT-Creation-Date: 2026-08-28 06:38+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -339,7 +339,7 @@ msgstr "Br."
 #: web/dbrefusal.py:110 web/directory_views.py:556
 #: web/templates/web/components/diff_table.html:21
 #: web/templates/web/directory/raise_preview.html:21
-#: web/templates/web/period.html:255 web/templates/web/period.html:435
+#: web/templates/web/period.html:255 web/templates/web/period.html:436
 #: web/templates/web/variance.html:39
 msgid "Сотрудник"
 msgstr "Zaposleni"
@@ -353,7 +353,8 @@ msgstr "Zaposleni"
 #: web/suppliers_views.py:783 web/templates/web/cash/expenses.html:55
 #: web/templates/web/cash/split.html:39
 #: web/templates/web/directory/employee.html:130
-#: web/templates/web/period.html:435 web/templates/web/person_pay.html:71
+#: web/templates/web/period.html:436 web/templates/web/person_pay.html:71
+#: web/templates/web/reports/pnl_line.html:18
 #: web/templates/web/suppliers/inbox.html:43
 #: web/templates/web/suppliers/inbox.html:148
 #: web/templates/web/suppliers/invoice.html:78
@@ -367,7 +368,7 @@ msgstr "Objekat"
 
 #: reports/export.py:217 reports/export.py:556 reports/export.py:627
 #: web/templates/web/cash/expenses.html:60 web/templates/web/period.html:255
-#: web/templates/web/period.html:435 web/templates/web/period.html:518
+#: web/templates/web/period.html:436 web/templates/web/period.html:519
 #: web/templates/web/suppliers/inbox.html:61
 #: web/templates/web/suppliers/invoice.html:128
 #: web/templates/web/trace.html:146 web/templates/web/variance.html:39
@@ -377,7 +378,7 @@ msgstr "Knjiga"
 #: reports/export.py:219 reports/export.py:242
 #: timesheets/templates/timesheets/grid.html:205
 #: timesheets/templates/timesheets/grid.html:345
-#: web/templates/web/period.html:437 web/templates/web/period.html:525
+#: web/templates/web/period.html:438 web/templates/web/period.html:526
 #: web/templates/web/person_pay.html:145
 msgid "Итого"
 msgstr "Ukupno"
@@ -475,7 +476,8 @@ msgstr "Komponenta"
 #: web/templates/web/cash/split.html:28
 #: web/templates/web/cash/unallocated.html:34
 #: web/templates/web/directory/employee.html:104
-#: web/templates/web/period.html:518 web/templates/web/suppliers/inbox.html:59
+#: web/templates/web/period.html:519 web/templates/web/reports/pnl_line.html:21
+#: web/templates/web/suppliers/inbox.html:59
 #: web/templates/web/suppliers/invoice.html:79
 #: web/templates/web/suppliers/invoice.html:125
 #: web/templates/web/suppliers/invoices.html:50
@@ -501,7 +503,7 @@ msgstr "Porez"
 msgid "Налог на доход"
 msgstr "Porez na dohodak"
 
-#: reports/export.py:592 web/reports_views.py:49
+#: reports/export.py:592 web/reports_views.py:52
 #: web/templates/web/person_pay.html:77 web/views.py:1113
 msgid "Взносы"
 msgstr "Doprinosi"
@@ -696,6 +698,7 @@ msgid "Табель · %(title)s"
 msgstr "Evidencija sati · %(title)s"
 
 #: timesheets/templates/timesheets/grid.html:38
+#: web/templates/web/reports/pnl.html:21
 msgid "← К месяцу"
 msgstr "← Na mesec"
 
@@ -1043,17 +1046,17 @@ msgid "точка не найдена"
 msgstr "objekat nije pronađen"
 
 #: timesheets/views.py:491 web/expense_items_views.py:509
-#: web/reports_views.py:236
+#: web/reports_views.py:307
 msgid "Файл не выбран."
 msgstr "Fajl nije izabran."
 
-#: timesheets/views.py:495 web/reports_views.py:240
+#: timesheets/views.py:495 web/reports_views.py:311
 #, python-format
 msgid "Файл больше %(limit)s МБ — это не зарплатная таблица."
 msgstr "Fajl je veći od %(limit)s MB — ovo nije platna tabela."
 
 #: timesheets/views.py:519 web/expense_items_upload.py:129
-#: web/reports_views.py:252
+#: web/reports_views.py:323
 #, python-format
 msgid "Файл не удалось прочитать как книгу Excel: %(reason)s"
 msgstr "Fajl nije moguće pročitati kao Excel radnu svesku: %(reason)s"
@@ -1718,6 +1721,7 @@ msgstr "P&L red"
 
 #: web/dbrefusal.py:114 web/suppliers_views.py:60 web/suppliers_views.py:640
 #: web/suppliers_views.py:734 web/suppliers_views.py:1010
+#: web/templates/web/reports/pnl_line.html:19
 #: web/templates/web/suppliers/inbox.html:57
 #: web/templates/web/suppliers/invoices.html:46
 msgid "Контрагент"
@@ -2117,7 +2121,7 @@ msgid "Часы по договору"
 msgstr "Ugovoreni sati"
 
 #: web/directory_views.py:997 web/directory_views.py:1150
-#: web/directory_views.py:1250 web/reports_views.py:65
+#: web/directory_views.py:1250 web/reports_views.py:68
 #: web/templates/web/directory/employee.html:132
 msgid "Коэффициент"
 msgstr "Koeficijent"
@@ -3064,6 +3068,7 @@ msgstr ""
 #: web/papers_views.py:220 web/papers_views.py:299
 #: web/templates/web/cash/split.html:26
 #: web/templates/web/cash/unallocated.html:33
+#: web/templates/web/reports/pnl_line.html:20
 #: web/templates/web/suppliers/inbox.html:58
 #: web/templates/web/suppliers/inbox.html:150
 #: web/templates/web/suppliers/invoice.html:77
@@ -3373,42 +3378,42 @@ msgstr ""
 msgid "Часов за этот месяц нет — начислять пока нечего."
 msgstr "Za ovaj mesec još nema sati — nema šta da se obračuna."
 
-#: web/reports_views.py:47
+#: web/reports_views.py:50
 msgid "К выплате (нето)"
 msgstr "Za isplatu (neto)"
 
-#: web/reports_views.py:48 web/templates/web/person_pay.html:75
+#: web/reports_views.py:51 web/templates/web/person_pay.html:75
 #: web/views.py:1111
 msgid "Бруто"
 msgstr "Bruto"
 
-#: web/reports_views.py:50 web/views.py:1114
+#: web/reports_views.py:53 web/views.py:1114
 msgid "Полная стоимость"
 msgstr "Ukupan trošak"
 
-#: web/reports_views.py:57
+#: web/reports_views.py:60
 msgid "Часы для взносов"
 msgstr "Sati za doprinose"
 
-#: web/reports_views.py:64
+#: web/reports_views.py:67
 msgid "Базовая ставка"
 msgstr "Osnovna stopa rada"
 
-#: web/reports_views.py:66
+#: web/reports_views.py:69
 msgid "Топли оброк и регрес"
 msgstr "Топли оброк и регрес"
 
-#: web/reports_views.py:105
+#: web/reports_views.py:108
 #, python-format
 msgid "Часы · %(kind)s"
 msgstr "Sati · %(kind)s"
 
-#: web/reports_views.py:106 web/reports_views.py:113
+#: web/reports_views.py:109 web/reports_views.py:116
 #, python-format
 msgid "%(what)s: в таблице %(expected)s, в расчёте %(actual)s"
 msgstr "%(what)s: %(expected)s u tabeli, %(actual)s u obračunu"
 
-#: web/reports_views.py:293
+#: web/reports_views.py:364
 msgid ""
 "Решение записывается вместе с объяснением: без него «ошибка в файле» через "
 "полгода не отличить от «не разбирались»."
@@ -4065,6 +4070,7 @@ msgid "Показать"
 msgstr "Prikaži"
 
 #: web/templates/web/cash/expenses.html:54
+#: web/templates/web/reports/pnl_line.html:17
 #: web/templates/web/suppliers/inbox.html:56
 msgid "Дата"
 msgstr "Datum"
@@ -4202,9 +4208,10 @@ msgid "Разнести по правилам"
 msgstr "Raspodeli po pravilima"
 
 #: web/templates/web/cash/unallocated.html:35
+#: web/templates/web/reports/pnl_line.html:22
 #: web/templates/web/rules/index.html:54
 msgid "Откуда"
-msgstr "Poreklo"
+msgstr "Odakle"
 
 #: web/templates/web/cash/unallocated.html:36
 msgid "Почему ждёт"
@@ -4231,7 +4238,7 @@ msgid "В расчёте"
 msgstr "U obračunu"
 
 #: web/templates/web/components/diff_table.html:22
-#: web/templates/web/period.html:255
+#: web/templates/web/period.html:255 web/templates/web/reports/pnl.html:36
 msgid "Разница"
 msgstr "Razlika"
 
@@ -4259,7 +4266,11 @@ msgstr "P&L redovi sa PDV-om"
 msgid "Вид бухгалтера"
 msgstr "Prikaz knjigovođe"
 
-#: web/templates/web/components/exports.html:44
+#: web/templates/web/components/exports.html:50
+msgid "Отчёт P&L"
+msgstr "P&L izveštaj"
+
+#: web/templates/web/components/exports.html:51
 msgid "Сверка с таблицей"
 msgstr "Usaglašavanje sa tabelom"
 
@@ -5347,45 +5358,45 @@ msgstr "mimo aplikacije"
 msgid "Разрез ведомости по регистрам"
 msgstr "Prikaz obračunske liste po knjigama"
 
-#: web/templates/web/period.html:435
+#: web/templates/web/period.html:436
 msgid "Спор"
 msgstr "Spor"
 
-#: web/templates/web/period.html:460 web/templates/web/person_pay.html:152
+#: web/templates/web/period.html:461 web/templates/web/person_pay.html:152
 #, python-format
 msgid "Перерасчёт за %(title)s"
 msgstr "Ponovni obračun za %(title)s"
 
-#: web/templates/web/period.html:472 web/templates/web/person_pay.html:86
+#: web/templates/web/period.html:473 web/templates/web/person_pay.html:86
 msgid "Заморожена"
 msgstr "Zamrznut"
 
-#: web/templates/web/period.html:477
+#: web/templates/web/period.html:478
 msgid "Снять заморозку"
 msgstr "Ukini zamrzavanje"
 
-#: web/templates/web/period.html:483
+#: web/templates/web/period.html:484
 msgid "Заморозить"
 msgstr "Zamrzni"
 
-#: web/templates/web/period.html:484
+#: web/templates/web/period.html:485
 msgid "из-за чего спор"
 msgstr "zbog čega je spor"
 
-#: web/templates/web/period.html:497 web/templates/web/trace.html:13
+#: web/templates/web/period.html:498 web/templates/web/trace.html:13
 msgid "Как получилась эта сумма"
 msgstr "Kako je dobijen ovaj iznos"
 
-#: web/templates/web/period.html:503
+#: web/templates/web/period.html:504
 #, python-format
 msgid "Итого · %(employees)s чел."
 msgstr "Ukupno · %(employees)s zaposlenih"
 
-#: web/templates/web/period.html:516
+#: web/templates/web/period.html:517
 msgid "Итоги по регистрам"
 msgstr "Ukupno po knjigama"
 
-#: web/templates/web/period.html:530
+#: web/templates/web/period.html:531
 msgid ""
 "Итог посчитан по тому, что видно вашей роли: строки чужих регистров не "
 "доезжают до страницы и не входят в сумму."
@@ -5393,7 +5404,7 @@ msgstr ""
 "Zbir je izračunat na osnovu onoga što je vidljivo vašoj ulozi: redovi iz "
 "tuđih knjiga ne stižu do stranice i ne ulaze u zbir."
 
-#: web/templates/web/period.html:531
+#: web/templates/web/period.html:532
 #, python-format
 msgid ""
 "Сейчас показан один регистр — %(title)s;\n"
@@ -5402,11 +5413,11 @@ msgstr ""
 "Trenutno je prikazana jedna knjiga — %(title)s;\n"
 "  zbir je izračunat na osnovu nje."
 
-#: web/templates/web/period.html:550
+#: web/templates/web/period.html:551
 msgid "Ведомости пока нет"
 msgstr "Obračunske liste još nema"
 
-#: web/templates/web/period.html:553
+#: web/templates/web/period.html:554
 msgid ""
 "Месяц начинается с часов: без них считать нечего. Внесите их в табеле\n"
 "    руками или загрузите таблицей партнёра, а потом вернитесь сюда и "
@@ -5419,11 +5430,11 @@ msgstr ""
 "obračunajte\n"
 "    period."
 
-#: web/templates/web/period.html:556
+#: web/templates/web/period.html:557
 msgid "Перейти к табелю"
 msgstr "Idi na evidenciju sati"
 
-#: web/templates/web/period.html:558
+#: web/templates/web/period.html:559
 msgid ""
 "Часы за месяц уже внесены — осталось посчитать период. Ведомость появится\n"
 "    здесь же: строка на каждого сотрудника в каждом регистре, который видно\n"
@@ -5843,6 +5854,58 @@ msgstr "čeka odluku: %(left)s"
 msgid "всё разобрано"
 msgstr "sve rešeno"
 
+#: web/templates/web/reports/pnl.html:19 web/templates/web/reports/pnl.html:22
+msgid "P&L"
+msgstr "P&L"
+
+#: web/templates/web/reports/pnl.html:25
+msgid "Отчёт неполный"
+msgstr "Izveštaj je nepotpun"
+
+#: web/templates/web/reports/pnl.html:26
+#, python-format
+msgid "%(amount)s не попали в отчёт: строк без статьи %(counter)s."
+msgstr "%(amount)s nije ušlo u izveštaj: %(counter)s redova bez stavke."
+
+#: web/templates/web/reports/pnl.html:27
+#: web/templates/web/suppliers/inbox.html:63
+#: web/templates/web/suppliers/inbox.html:82
+#: web/templates/web/suppliers/inbox.html:152
+msgid "Разобрать"
+msgstr "Razvrstaj"
+
+#: web/templates/web/reports/pnl.html:33
+msgid "Строка отчёта"
+msgstr "Red izveštaja"
+
+#: web/templates/web/reports/pnl.html:35
+#, python-format
+msgid "Прошлый: %(month)s"
+msgstr "Prethodni: %(month)s"
+
+#: web/templates/web/reports/pnl.html:37
+#: web/templates/web/reports/pnl_line.html:8
+#: web/templates/web/reports/pnl_line.html:11
+msgid "Из чего собралось"
+msgstr "Od čega je sastavljeno"
+
+#: web/templates/web/reports/pnl.html:47
+#, python-format
+msgid "записей: %(counter)s"
+msgstr "zapisa: %(counter)s"
+
+#: web/templates/web/reports/pnl.html:53
+msgid "Итог отчёта"
+msgstr "Ukupno u izveštaju"
+
+#: web/templates/web/reports/pnl_line.html:10
+msgid "← К отчёту"
+msgstr "← Na izveštaj"
+
+#: web/templates/web/reports/pnl_line.html:39
+msgid "Итого по строке"
+msgstr "Ukupno za red"
+
 #: web/templates/web/roles/index.html:21
 msgid ""
 "Роль — это набор прав, а человеку можно дать несколько ролей сразу. Так "
@@ -6125,12 +6188,6 @@ msgstr "Označi"
 #: web/templates/web/suppliers/inbox.html:62
 msgid "Похоже на"
 msgstr "Liči na"
-
-#: web/templates/web/suppliers/inbox.html:63
-#: web/templates/web/suppliers/inbox.html:82
-#: web/templates/web/suppliers/inbox.html:152
-msgid "Разобрать"
-msgstr "Razvrstaj"
 
 #: web/templates/web/suppliers/inbox.html:70
 #, python-format

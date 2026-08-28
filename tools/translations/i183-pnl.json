@@ -1,0 +1,62 @@
+{
+  "Отчёт неполный": {
+    "en": "The report is incomplete",
+    "sr": "Izveštaj je nepotpun"
+  },
+  "Разобрать": {
+    "en": "Sort out",
+    "sr": "Razvrstaj"
+  },
+  "Строка отчёта": {
+    "en": "Report line",
+    "sr": "Red izveštaja"
+  },
+  "Прошлый: %(month)s": {
+    "en": "Previous: %(month)s",
+    "sr": "Prethodni: %(month)s"
+  },
+  "Разница": {
+    "en": "Difference",
+    "sr": "Razlika"
+  },
+  "Из чего собралось": {
+    "en": "What it is made of",
+    "sr": "Od čega je sastavljeno"
+  },
+  "← К месяцу": {
+    "en": "← To the month",
+    "sr": "← Na mesec"
+  },
+  "← К отчёту": {
+    "en": "← To the report",
+    "sr": "← Na izveštaj"
+  },
+  "Итого по строке": {
+    "en": "Total for the line",
+    "sr": "Ukupno za red"
+  },
+  "Откуда": {
+    "en": "Where from",
+    "sr": "Odakle"
+  },
+  "Отчёт P&L": {
+    "en": "P&L report",
+    "sr": "P&L izveštaj"
+  },
+  "Итог отчёта": {
+    "en": "Report total",
+    "sr": "Ukupno u izveštaju"
+  },
+  "P&L": {
+    "en": "P&L",
+    "sr": "P&L"
+  },
+  "записей: %(counter)s": {
+    "en": "records: %(counter)s",
+    "sr": "zapisa: %(counter)s"
+  },
+  "%(amount)s не попали в отчёт: строк без статьи %(counter)s.": {
+    "en": "%(amount)s did not make it into the report: %(counter)s lines have no item.",
+    "sr": "%(amount)s nije ušlo u izveštaj: %(counter)s redova bez stavke."
+  }
+}

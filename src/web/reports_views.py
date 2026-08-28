@@ -12,6 +12,8 @@
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
@@ -21,12 +23,13 @@ from django.utils.translation import gettext_noop
 from django.views.decorators.http import require_POST
 
 from reports import export as exports
+from reports import pnl as pnl_report
 from reports.reconcile import reconcile
 from reports.sheet import build_slice
 
 from . import reconciliation_log, runslice
 from .cash import item_title
-from .format import ledger_title, money
+from .format import EMPTY, day, ledger_title, money
 from .labels import labeller
 from .principal import get_current_principal
 from .views import find_period, month_title
@@ -213,6 +216,74 @@ def _report(request, period, *, result=None, error=None, status=200):
         },
         status=status,
     )
+
+
+@login_required
+def pnl(request, period_id):
+    """Экран P&L: отчёт за месяц рядом с прошлым (issue #183, модуль 5 эталона).
+
+    То, ради чего собирали данные. Сборка живёт в `reports/pnl.py`, здесь только
+    показ: срез роли делает база (представление `pnl_lines` — `security_invoker`),
+    и второго ответа на вопрос о доступе тут нет (D014).
+    """
+    period = find_period(period_id)
+    report = pnl_report.build(period.tenant_id, period.period)
+    return render(request, "web/reports/pnl.html", {
+        "period": {"id": str(period.id), "title": month_title(period.period)},
+        "previous_title": month_title(report.previous_period),
+        "lines": [
+            {
+                "code": line.code,
+                "title": line.title,
+                "amount": money(line.amount),
+                "previous": money(line.previous),
+                "difference": money(line.difference),
+                "facts": line.facts,
+                "url": reverse("period-pnl-line", args=[period.id, line.code]),
+            }
+            for line in report.lines
+        ],
+        "total": money(report.total),
+        "previous_total": money(report.previous_total),
+        "missing": money(report.missing),
+        "missing_facts": report.missing_facts,
+        "has_missing": report.missing != 0,
+        "back_url": reverse("period", args=[period.id]),
+    })
+
+
+@login_required
+def pnl_line(request, period_id, code):
+    """Раскрытие строки отчёта до первичных фактов (модуль 5 эталона).
+
+    Отчёт, которому нельзя задать вопрос «почему столько», проверяют пересчётом
+    в Excel — то есть не пользуются им. Тот же приём, что у следа расчёта
+    зарплаты (D025).
+    """
+    period = find_period(period_id)
+    rows = pnl_report.facts_of(period.tenant_id, period.period, code)
+    if not rows:
+        # Выдуманная строка и строка без фактов отвечают одинаково: по ответу
+        # нельзя понять, какие строки P&L существуют у партнёра (D023).
+        raise Http404("строка отчёта не найдена")
+
+    return render(request, "web/reports/pnl_line.html", {
+        "period": {"id": str(period.id), "title": month_title(period.period)},
+        "code": code,
+        "rows": [
+            {
+                "date": day(doc_date),
+                "unit": unit or EMPTY,
+                "counterparty": counterparty or EMPTY,
+                "title": title or EMPTY,
+                "amount": money(amount),
+                "source": source,
+            }
+            for doc_date, unit, counterparty, title, amount, source in rows
+        ],
+        "total": money(sum((row[4] for row in rows), Decimal("0"))),
+        "back_url": reverse("period-pnl", args=[period.id]),
+    })
 
 
 @login_required
