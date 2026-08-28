@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 22:16+0000\n"
+"POT-Creation-Date: 2026-08-28 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -348,9 +348,10 @@ msgstr "Zaposleni"
 #: timesheets/templates/timesheets/grid.html:185 web/cash_views.py:244
 #: web/cash_views.py:431 web/dbrefusal.py:109 web/directory_views.py:561
 #: web/directory_views.py:990 web/directory_views.py:1141
-#: web/directory_views.py:1230 web/expenses_views.py:174
-#: web/expenses_views.py:328 web/papers_views.py:253 web/papers_views.py:314
+#: web/directory_views.py:1230 web/expenses_views.py:175
+#: web/expenses_views.py:329 web/papers_views.py:253 web/papers_views.py:314
 #: web/suppliers_views.py:616 web/templates/web/cash/expenses.html:55
+#: web/templates/web/cash/split.html:39
 #: web/templates/web/directory/employee.html:130
 #: web/templates/web/period.html:425 web/templates/web/person_pay.html:71
 #: web/templates/web/suppliers/inbox.html:43
@@ -469,6 +470,7 @@ msgstr "Komponenta"
 #: web/suppliers_views.py:421 web/suppliers_views.py:591
 #: web/suppliers_views.py:820 web/suppliers_views.py:822
 #: web/suppliers_views.py:862 web/templates/web/cash/expenses.html:57
+#: web/templates/web/cash/split.html:28
 #: web/templates/web/cash/unallocated.html:34
 #: web/templates/web/directory/employee.html:104
 #: web/templates/web/period.html:505 web/templates/web/suppliers/inbox.html:59
@@ -1196,7 +1198,7 @@ msgstr "„limit“ mora biti veći od nule."
 msgid "«%(name)s»: это целое число, а не «%(value)s»."
 msgstr "„%(name)s“ mora biti ceo broj, a ne „%(value)s“."
 
-#: web/api.py:287 web/expenses_views.py:661
+#: web/api.py:287 web/expenses_views.py:856
 msgid "Эта строка уже заменена: правьте ту, что действует."
 msgstr "Ovaj red je već zamenjen: uredite onaj koji je važeći."
 
@@ -1284,7 +1286,7 @@ msgstr ""
 msgid "Месяц закрылся, пока расход удаляли. Откройте список заново."
 msgstr "Mesec je zatvoren dok je trošak brisan. Otvorite listu ponovo."
 
-#: web/cash.py:793
+#: web/cash.py:825
 msgid ""
 "Форма устарела или испорчена. Откройте её заново и внесите расход ещё раз."
 msgstr ""
@@ -1337,7 +1339,7 @@ msgid "Поле «%(label)s» обязательно."
 msgstr "Polje „%(label)s“ je obavezno."
 
 #: web/cash_views.py:185 web/cash_views.py:189 web/cash_views.py:314
-#: web/dbrefusal.py:113 web/expenses_views.py:174 web/expenses_views.py:332
+#: web/dbrefusal.py:113 web/expenses_views.py:175 web/expenses_views.py:333
 #: web/suppliers_api.py:258 web/suppliers_views.py:513
 #: web/suppliers_views.py:576 web/suppliers_views.py:849
 #: web/suppliers_views.py:1034 web/suppliers_views.py:1106
@@ -1377,7 +1379,7 @@ msgstr ""
 #: web/directory_views.py:1011 web/directory_views.py:1284
 #: web/directory_views.py:1337 web/directory_views.py:1379
 #: web/directory_views.py:1446 web/expense_items_views.py:356
-#: web/expenses_views.py:175 web/suppliers_views.py:61
+#: web/expenses_views.py:176 web/suppliers_views.py:61
 #: web/suppliers_views.py:585 web/suppliers_views.py:762
 #: web/suppliers_views.py:857 web/templates/web/directory/employee.html:144
 #: web/templates/web/person_pay.html:143 web/tills_views.py:68
@@ -1459,7 +1461,7 @@ msgstr ""
 "Mesec %(closed)s je zatvoren: trošak upada u %(month)s, a ovaj datum ostaje "
 "uz njega."
 
-#: web/cash_views.py:425 web/expenses_views.py:271 web/papers_views.py:493
+#: web/cash_views.py:425 web/expenses_views.py:272 web/papers_views.py:493
 #: web/suppliers_views.py:237 web/suppliers_views.py:614
 #: web/suppliers_views.py:939 web/suppliers_views.py:988
 msgid "Вся сеть"
@@ -1946,7 +1948,7 @@ msgstr "Proizvodni kalendar"
 msgid "Норма часов и рабочие дни месяца — отсюда их берёт страница месяца"
 msgstr "Norma časova i radni dani meseca — odavde ih uzima stranica meseca"
 
-#: web/directory_views.py:335 web/expenses_views.py:184
+#: web/directory_views.py:335 web/expenses_views.py:185
 #: web/suppliers_views.py:140 web/suppliers_views.py:445
 #, python-format
 msgid "«%(label)s»: дата пишется как 2026-06-01, а не «%(value)s»."
@@ -2670,7 +2672,7 @@ msgstr ""
 "U šifarniku su ostale stavke kojih nema u fajlu: %(codes)s. Proizvod ih ne "
 "dira — zatvorite datumom one koje više nisu potrebne."
 
-#: web/expenses_views.py:94
+#: web/expenses_views.py:95
 msgid ""
 "Вас ещё не завели ни к одному партнёру, поэтому расходов у вас нет. "
 "Попросите администратора сети добавить вас."
@@ -2678,52 +2680,81 @@ msgstr ""
 "Još niste dodati ni jednom partneru, pa nemate troškove. Zamolite "
 "administratora mreže da vas doda."
 
-#: web/expenses_views.py:152 web/suppliers_views.py:114
+#: web/expenses_views.py:153 web/suppliers_views.py:114
 msgid "Конец периода раньше начала: поправьте даты."
 msgstr "Kraj perioda je pre početka: ispravite datume."
 
-#: web/expenses_views.py:173 web/suppliers_views.py:58
+#: web/expenses_views.py:174 web/suppliers_views.py:58
 msgid "С даты"
 msgstr "Od datuma"
 
-#: web/expenses_views.py:173 web/suppliers_views.py:59
+#: web/expenses_views.py:174 web/suppliers_views.py:59
 msgid "По дату"
 msgstr "Do datuma"
 
-#: web/expenses_views.py:209 web/suppliers_views.py:152
+#: web/expenses_views.py:210 web/suppliers_views.py:152
 #, python-format
 msgid "«%(label)s»: это номер из списка, а не «%(value)s»."
 msgstr "„%(label)s“ mora biti ID sa liste, a ne „%(value)s“."
 
-#: web/expenses_views.py:306
+#: web/expenses_views.py:307
 msgid "удалён"
 msgstr "Uklonjen"
 
-#: web/expenses_views.py:308
+#: web/expenses_views.py:309
 msgid "заменён"
 msgstr "Zamenjen"
 
-#: web/expenses_views.py:311
+#: web/expenses_views.py:312
 msgid "сторно"
 msgstr "Storno"
 
-#: web/expenses_views.py:313
+#: web/expenses_views.py:314
 msgid "исправление"
 msgstr "Ispravka"
 
-#: web/expenses_views.py:329
+#: web/expenses_views.py:330
 msgid "Все точки"
 msgstr "Svi objekti"
 
-#: web/expenses_views.py:337
+#: web/expenses_views.py:338
 msgid "Все статьи"
 msgstr "Sve stavke"
 
-#: web/expenses_views.py:346 web/format.py:96 web/suppliers_views.py:295
+#: web/expenses_views.py:347 web/format.py:96 web/suppliers_views.py:295
 msgid "Все регистры"
 msgstr "Sve knjige"
 
-#: web/expenses_views.py:464
+#: web/expenses_views.py:437
+msgid ""
+"Разнести эту сумму может только тот, кто ведёт все точки партнёра: строки "
+"разнесения ложатся и на чужие точки."
+msgstr "Ovaj iznos može da rasporedi samo onaj ko vodi sve objekte partnera: nastali redovi padaju i na tuđe objekte."
+
+#: web/expenses_views.py:468
+msgid "Нет ни одной точки, на которую можно разнести."
+msgstr "Nema nijednog objekta na koji bi se ovo rasporedilo."
+
+#: web/expenses_views.py:487
+msgid "Ни одной доли не задано: поставьте, какая часть накладной чья."
+msgstr "Nijedan udeo nije zadat: navedite koji deo fakture kome pripada."
+
+#: web/expenses_views.py:495
+#, python-format
+msgid "Доли дают %(given)s%% вместо 100%%: не разнесено %(left)s%%."
+msgstr "Udeli daju %(given)s%% umesto 100%%: %(left)s%% nije raspoređeno."
+
+#: web/expenses_views.py:504
+msgid "Доля должна быть числом."
+msgstr "Udeo mora biti broj."
+
+#: web/expenses_views.py:552
+msgid ""
+"Выручки за этот месяц в продукте нет, поэтому по выручке разносить нечего: "
+"поставьте доли руками или разнесите поровну."
+msgstr "Za ovaj mesec u proizvodu nema prihoda, pa nema po čemu da se raspoređuje: zadajte udele ručno ili rasporedite podjednako."
+
+#: web/expenses_views.py:659
 #, python-format
 msgid ""
 "Пересчёт прошёл: ни одна строка не изменилась, а ждут разнесения %(count)s. "
@@ -2732,18 +2763,18 @@ msgstr ""
 "Ponovni obračun je izvršen: nijedan red se nije promenio, a čeka raspodelu "
 "%(count)s. Šta sprečava svaki red piše u koloni „Zašto čeka“."
 
-#: web/expenses_views.py:468
+#: web/expenses_views.py:663
 msgid "Пересчёт прошёл: менять было нечего, ни одна строка не тронута."
 msgstr ""
 "Ponovni obračun je izvršen: nije bilo šta da se menja, ni jedan red nije "
 "dodirnut."
 
-#: web/expenses_views.py:470
+#: web/expenses_views.py:665
 #, python-format
 msgid "Пересчёт прошёл: строк изменено — %(count)s."
 msgstr "Ponovni obračun je izvršen: izmenjeno redova — %(count)s."
 
-#: web/expenses_views.py:475
+#: web/expenses_views.py:670
 #, python-format
 msgid ""
 "Закрытые месяцы не пересчитывались: %(months)s. Чтобы пересчитать их, месяц "
@@ -2752,7 +2783,7 @@ msgstr ""
 "Zatvoreni meseci nisu ponovo obračunati: %(months)s. Da biste ih ponovo "
 "obračunali, mesec morate ponovo otvoriti sa razlogom."
 
-#: web/expenses_views.py:481
+#: web/expenses_views.py:676
 #, python-format
 msgid ""
 "Эти месяцы не пересчитаны: %(months)s — разносит расходы по точкам тот, кто "
@@ -2761,7 +2792,7 @@ msgstr ""
 "Ovi meseci nisu ponovo obračunati: %(months)s — troškove po objektima "
 "raspodeljuje onaj ko vodi sve objekte partnera."
 
-#: web/expenses_views.py:612
+#: web/expenses_views.py:807
 #, python-format
 msgid ""
 "Месяц %(closed)s закрыт: строку в нём не изменить. Правка ляжет в %(month)s "
@@ -2772,7 +2803,7 @@ msgstr ""
 "u %(month)s kao dva reda — storno ovog zapisa i novi — a zatvoreni mesec se "
 "neće pomeriti ni za paru."
 
-#: web/expenses_views.py:630
+#: web/expenses_views.py:825
 msgid ""
 "Удалённый расход не стирается: строка останется в списке помеченной, а из "
 "итога выйдет."
@@ -2780,7 +2811,7 @@ msgstr ""
 "Obrisan trošak nije izbrisan bez traga: red ostaje u listi, obeležen, i "
 "izlazi iz ukupnog iznosa."
 
-#: web/expenses_views.py:638
+#: web/expenses_views.py:833
 #, python-format
 msgid ""
 "Строку закрытого месяца не тронуть и здесь: удаление положит в %(month)s "
@@ -2791,7 +2822,7 @@ msgstr ""
 "njegov iznos u %(month)s, a %(closed)s se ne pomera. Red neće biti označen u "
 "listi — iz zbira ga izvodi storno."
 
-#: web/expenses_views.py:644
+#: web/expenses_views.py:839
 msgid ""
 "Исправленная строка прежней правки при этом снимется — денег этого расхода в "
 "P&L не останется."
@@ -2799,7 +2830,7 @@ msgstr ""
 "Ispravljeni red od ranije izmene će pritom biti povučen — novca ovog troška "
 "u P&L-u neće ostati."
 
-#: web/expenses_views.py:733
+#: web/expenses_views.py:928
 msgid ""
 "Этот расход уже удалён: отменяющая строка за него записана раньше. Ничего не "
 "изменилось."
@@ -2807,7 +2838,7 @@ msgstr ""
 "Ovaj trošak je već obrisan: storno za njega je upisan ranije. Ništa se nije "
 "promenilo."
 
-#: web/expenses_views.py:738
+#: web/expenses_views.py:933
 #, python-format
 msgid ""
 "Расход удалён. Месяц %(closed)s закрыт, строку в нём не тронуть, поэтому в "
@@ -2818,7 +2849,7 @@ msgstr ""
 "dirati, pa je u %(month)s upisan storno na njegov iznos — zatvoreni mesec se "
 "nije pomerio ni za dinar."
 
-#: web/expenses_views.py:744
+#: web/expenses_views.py:939
 msgid ""
 "Исправленная строка прежней правки снята — денег этого расхода в P&L больше "
 "нет."
@@ -2826,20 +2857,20 @@ msgstr ""
 "Ispravljeni red od ranije izmene je povučen — novca ovog troška više nema u "
 "P&L-u."
 
-#: web/expenses_views.py:749
+#: web/expenses_views.py:944
 msgid "Расход удалён: в текущий месяц легло сторно на его сумму."
 msgstr "Trošak je obrisan: u tekući mesec je upisan storno na njegov iznos."
 
-#: web/expenses_views.py:751
+#: web/expenses_views.py:946
 msgid "Расход удалён: строка осталась в списке помеченной, а из итога вышла."
 msgstr "Trošak je obrisan: red ostaje u listi, označen, a iz zbira izlazi."
 
-#: web/expenses_views.py:767
+#: web/expenses_views.py:962
 #, python-format
 msgid "Правка записана в месяц %(month)s."
 msgstr "Izmena je upisana u mesec %(month)s."
 
-#: web/expenses_views.py:769
+#: web/expenses_views.py:964
 #, python-format
 msgid ""
 "Месяц %(closed)s закрыт, поэтому правка записана в %(month)s двумя строками "
@@ -2983,6 +3014,7 @@ msgstr ""
 "„%(label)s“: nula nije iznos. Ostavite polje prazno ako iznos nije poznat."
 
 #: web/papers_views.py:220 web/papers_views.py:299
+#: web/templates/web/cash/split.html:26
 #: web/templates/web/cash/unallocated.html:33
 #: web/templates/web/suppliers/inbox.html:58
 #: web/templates/web/suppliers/inbox.html:150
@@ -3026,7 +3058,8 @@ msgid ""
 msgstr ""
 "Snimak telefonom je dovoljan. Bitno je da se vide dobavljač, datum i iznos."
 
-#: web/papers_views.py:289 web/templates/web/suppliers/inbox.html:149
+#: web/papers_views.py:289 web/templates/web/cash/split.html:25
+#: web/templates/web/suppliers/inbox.html:149
 #: web/templates/web/suppliers/papers.html:40
 msgid "Поставщик"
 msgstr "Dobavljač"
@@ -3699,6 +3732,7 @@ msgid "Номер счёта"
 msgstr "Broj fakture"
 
 #: web/suppliers_views.py:465 web/suppliers_views.py:562
+#: web/templates/web/cash/split.html:27
 #: web/templates/web/suppliers/inbox.html:60
 #: web/templates/web/suppliers/invoice.html:50
 #: web/templates/web/suppliers/invoices.html:49
@@ -3871,7 +3905,9 @@ msgstr "Još niste dodati nijednom partneru, pa nema šta da se razvrstava."
 msgid ""
 "Отметьте строки, которым присваивается статья: без отметки присваивать "
 "нечему."
-msgstr "Označite redove kojima se dodeljuje stavka: bez oznake nema čemu da se dodeli."
+msgstr ""
+"Označite redove kojima se dodeljuje stavka: bez oznake nema čemu da se "
+"dodeli."
 
 #: web/suppliers_views.py:1166
 msgid ""
@@ -4044,6 +4080,52 @@ msgstr ""
 msgid "Внести первый расход"
 msgstr "Unesi prvi trošak"
 
+#: web/templates/web/cash/split.html:17 web/templates/web/cash/split.html:20
+#: web/templates/web/cash/unallocated.html:48
+msgid "Чья накладная"
+msgstr "Čija je faktura"
+
+#: web/templates/web/cash/split.html:19
+msgid "← К нераспределённому"
+msgstr "← Na neraspoređeno"
+
+#: web/templates/web/cash/split.html:30
+msgid "из документа, здесь не правится"
+msgstr "iz dokumenta, ovde se ne menja"
+
+#: web/templates/web/cash/split.html:40
+#, python-format
+msgid "Доля, %%"
+msgstr "Udeo, %%"
+
+#: web/templates/web/cash/split.html:55
+#, python-format
+msgid ""
+"Доли должны дать ровно 100%%: остаток, оставшийся без точки, — это сумма, "
+"которой нет ни в одном отчёте по точкам."
+msgstr "Udeli moraju dati tačno 100%%: ostatak bez objekta je iznos kojeg nema ni u jednom izveštaju po objektima."
+
+#: web/templates/web/cash/split.html:57
+#: web/templates/web/cash/unallocated.html:37
+msgid "Разнести"
+msgstr "Rasporedi"
+
+#: web/templates/web/cash/split.html:58
+msgid "Поровну"
+msgstr "Podjednako"
+
+#: web/templates/web/cash/split.html:59
+msgid "По выручке"
+msgstr "Po prihodu"
+
+#: web/templates/web/cash/split.html:63
+msgid "Разносить не на что"
+msgstr "Nema na šta da se rasporedi"
+
+#: web/templates/web/cash/split.html:64
+msgid "У юрлица этой накладной нет ни одной точки, которую вы ведёте."
+msgstr "Pravno lice ove fakture nema nijedan objekat koji vodite."
+
 #: web/templates/web/cash/unallocated.html:13
 #: web/templates/web/cash/unallocated.html:16
 msgid "Нераспределённое"
@@ -4071,15 +4153,15 @@ msgstr "Poreklo"
 msgid "Почему ждёт"
 msgstr "Zašto čeka"
 
-#: web/templates/web/cash/unallocated.html:52
+#: web/templates/web/cash/unallocated.html:54
 msgid "Итого ждёт разнесения"
 msgstr "Ukupno čeka raspodelu"
 
-#: web/templates/web/cash/unallocated.html:59
+#: web/templates/web/cash/unallocated.html:61
 msgid "Нераспределённого нет."
 msgstr "Nema neraspoređenog."
 
-#: web/templates/web/cash/unallocated.html:60
+#: web/templates/web/cash/unallocated.html:62
 msgid "Все расходы лежат на точках: закрывать месяц ничто не держит."
 msgstr "Svi troškovi su na objektima: ništa ne sprečava zatvaranje meseca."
 
@@ -5975,7 +6057,9 @@ msgstr "Označenih redova: {n}. Stavka će biti dodeljena svima odjednom."
 msgid ""
 "Отметьте несколько строк одного поставщика — статья присвоится всем сразу. "
 "Пробел отмечает строку, Shift со щелчком — диапазон."
-msgstr "Označite nekoliko redova istog dobavljača — stavka se dodeljuje svima odjednom. Razmak označava red, Shift sa klikom označava opseg."
+msgstr ""
+"Označite nekoliko redova istog dobavljača — stavka se dodeljuje svima "
+"odjednom. Razmak označava red, Shift sa klikom označava opseg."
 
 #: web/templates/web/suppliers/inbox.html:55
 msgid "Отметить"

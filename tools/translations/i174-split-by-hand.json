@@ -1,0 +1,66 @@
+{
+  "Чья накладная": {
+    "en": "Whose invoice",
+    "sr": "Čija je faktura"
+  },
+  "из документа, здесь не правится": {
+    "en": "from the document, not editable here",
+    "sr": "iz dokumenta, ovde se ne menja"
+  },
+  "Разнести": {
+    "en": "Split",
+    "sr": "Rasporedi"
+  },
+  "Поровну": {
+    "en": "Equally",
+    "sr": "Podjednako"
+  },
+  "По выручке": {
+    "en": "By revenue",
+    "sr": "Po prihodu"
+  },
+  "Разносить не на что": {
+    "en": "Nothing to split onto",
+    "sr": "Nema na šta da se rasporedi"
+  },
+  "У юрлица этой накладной нет ни одной точки, которую вы ведёте.": {
+    "en": "The legal entity of this invoice has no unit that you manage.",
+    "sr": "Pravno lice ove fakture nema nijedan objekat koji vodite."
+  },
+  "Нет ни одной точки, на которую можно разнести.": {
+    "en": "There is no unit to split this onto.",
+    "sr": "Nema nijednog objekta na koji bi se ovo rasporedilo."
+  },
+  "Ни одной доли не задано: поставьте, какая часть накладной чья.": {
+    "en": "No share is set: state which part of the invoice belongs where.",
+    "sr": "Nijedan udeo nije zadat: navedite koji deo fakture kome pripada."
+  },
+  "Доли дают %(given)s%% вместо 100%%: не разнесено %(left)s%%.": {
+    "en": "The shares add up to %(given)s%% instead of 100%%: %(left)s%% is left unsplit.",
+    "sr": "Udeli daju %(given)s%% umesto 100%%: %(left)s%% nije raspoređeno."
+  },
+  "Доля должна быть числом.": {
+    "en": "A share must be a number.",
+    "sr": "Udeo mora biti broj."
+  },
+  "Выручки за этот месяц в продукте нет, поэтому по выручке разносить нечего: поставьте доли руками или разнесите поровну.": {
+    "en": "There is no revenue for this month in the product, so there is nothing to split by: set the shares by hand or split equally.",
+    "sr": "Za ovaj mesec u proizvodu nema prihoda, pa nema po čemu da se raspoređuje: zadajte udele ručno ili rasporedite podjednako."
+  },
+  "Разнести эту сумму может только тот, кто ведёт все точки партнёра: строки разнесения ложатся и на чужие точки.": {
+    "en": "Only someone who manages all the partner's units can split this amount: the resulting lines land on other units too.",
+    "sr": "Ovaj iznos može da rasporedi samo onaj ko vodi sve objekte partnera: nastali redovi padaju i na tuđe objekte."
+  },
+  "← К нераспределённому": {
+    "en": "← To the unallocated",
+    "sr": "← Na neraspoređeno"
+  },
+  "Доля, %%": {
+    "en": "Share, %%",
+    "sr": "Udeo, %%"
+  },
+  "Доли должны дать ровно 100%%: остаток, оставшийся без точки, — это сумма, которой нет ни в одном отчёте по точкам.": {
+    "en": "The shares must add up to exactly 100%%: whatever is left without a unit is an amount that appears in no per-unit report.",
+    "sr": "Udeli moraju dati tačno 100%%: ostatak bez objekta je iznos kojeg nema ni u jednom izveštaju po objektima."
+  }
+}

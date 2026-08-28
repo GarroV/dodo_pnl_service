@@ -31,6 +31,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.http import Http404, HttpResponseNotAllowed
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -382,6 +383,194 @@ def unallocated(request):
     })
 
 
+# Доли ручного разнесения приходят полями `share:<номер точки>` — по одному на
+# точку, а не одной строкой «50/30/20». Строка потребовала бы от человека
+# соблюдать порядок точек, а от нас — разбирать её и объяснять ошибки разбора;
+# отдельные поля этой работы не создают вовсе.
+SHARE_PREFIX = "share:"
+
+
+@login_required
+def split_form(request, fact_id):
+    """Экран «Чья накладная»: точки и доли (модуль 15 эталона, issue #174).
+
+    Разнесение правилом отвечает на вопрос «этот поставщик всегда делится
+    так-то». Конкретная накладная — не «всегда»: одну поставку сырья привезли на
+    две пиццерии, ремонт сделали на одной. Поэтому здесь доли ставит человек, а
+    правило остаётся для того, что действительно повторяется.
+    """
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        return _no_membership(request)
+
+    fact = _waiting_fact(fact_id)
+    if fact is None:
+        # Чужая строка, выдуманный номер и уже разнесённая отвечают одинаково (D023).
+        raise Http404("строка не найдена")
+
+    return render(request, "web/cash/split.html", _split_page(who, fact))
+
+
+@login_required
+def split(request):
+    """Разнести накладную долями. Только POST: это запись денег."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        return _no_membership(request)
+
+    fact = _waiting_fact(request.POST.get("fact"))
+    if fact is None:
+        raise Http404("строка не найдена")
+
+    try:
+        shares = _shares(request, who, fact)
+    except BadInput as bad:
+        return render(request, "web/cash/split.html",
+                      _split_page(who, fact, error=bad.message), status=400)
+
+    written = cash.split_by_hand(fact.id, shares, getattr(who, "user_id", None))
+    if written is None:
+        return render(request, "web/cash/split.html", _split_page(who, fact, error=_(
+            "Разнести эту сумму может только тот, кто ведёт все точки партнёра: "
+            "строки разнесения ложатся и на чужие точки."
+        )), status=403)
+
+    return redirect(reverse("expenses-unallocated") + f"?split={written}")
+
+
+def _waiting_fact(fact_id):
+    """Строка, которую ещё можно разнести: ждущая и видимая этой роли."""
+    if not fact_id:
+        return None
+    try:
+        return (
+            Fact.objects.select_related("counterparty")
+            .filter(pk=fact_id, allocation="pending", superseded_at__isnull=True)
+            .first()
+        )
+    except (ValueError, ValidationError):
+        # Не номер вовсе — тот же ответ, что на чужую строку (D023).
+        return None
+
+
+def _shares(request, who, fact) -> dict:
+    """Доли по точкам: заготовкой или руками. Проверка одна на все три пути.
+
+    Заготовки («поровну», «по выручке») не отдельный вид разнесения, а способ
+    заполнить те же доли: разносит их та же функция базы, и объяснение суммы у
+    них одинаковое — доля, которую видно в строке.
+    """
+    units = _units_for(who, fact)
+    if not units:
+        raise BadInput(_("Нет ни одной точки, на которую можно разнести."))
+
+    if request.POST.get("evenly"):
+        return {unit.id: 1 for unit in units}
+    if request.POST.get("by_revenue"):
+        return _by_revenue(units, fact)
+
+    given, total = {}, Decimal("0")
+    for name, raw in request.POST.items():
+        if not name.startswith(SHARE_PREFIX):
+            continue
+        percent = _percent(raw)
+        if percent <= 0:
+            continue
+        given[name[len(SHARE_PREFIX):]] = percent
+        total += percent
+
+    if not given:
+        raise BadInput(_(
+            "Ни одной доли не задано: поставьте, какая часть накладной чья."
+        ))
+    if total != 100:
+        # Взято у ERPNext (`cost_center_allocation`): сумма долей обязана быть
+        # ровно 100, иначе документ не сохраняется. Разнести «сколько дали»
+        # значило бы потерять остаток между «по точкам» и «по сети» — ту самую
+        # дыру, которую разнесение и закрывает.
+        raise BadInput(_(
+            "Доли дают %(given)s%% вместо 100%%: не разнесено %(left)s%%."
+        ) % {"given": _plain_percent(total), "left": _plain_percent(100 - total)})
+    return given
+
+
+def _percent(raw: str) -> Decimal:
+    try:
+        return Decimal((raw or "0").replace(",", ".").strip() or "0")
+    except (ArithmeticError, ValueError) as bad:
+        raise BadInput(_("Доля должна быть числом.")) from bad
+
+
+def _plain_percent(value: Decimal) -> str:
+    """Процент без хвоста нулей: 20, а не 20.00."""
+    return f"{value.normalize():f}".rstrip(".")
+
+
+def _units_for(who, fact) -> list:
+    """Точки, между которыми делится эта накладная.
+
+    Фактура пришла на юрлицо — делится только на его точки: разнести на чужое
+    юрлицо значит переложить расход между компаниями молча. Ту же проверку
+    делает и база (`split_fact_by_hand`), здесь она нужна, чтобы форма не
+    предлагала того, что база не примет.
+    """
+    units = Unit.objects.order_by("code")
+    if fact.legal_entity_id:
+        units = units.filter(legal_entity_id=fact.legal_entity_id)
+    if who.unit_ids:
+        units = units.filter(pk__in=who.unit_ids)
+    return list(units)
+
+
+def _by_revenue(units, fact) -> dict:
+    """Доли по выручке точек за ТОТ ЖЕ период, что и накладная.
+
+    Не за сегодня и не за последний месяц: разнесение обязано давать то же число
+    через полгода, что и сегодня, а выручка с тех пор изменится.
+    """
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """select f.unit_id::text, sum(f.amount)
+                 from facts f join pnl_items p on p.id = f.pnl_item_id
+                where f.tenant_id = %s and f.period = %s and p.kind = 'revenue'
+                  and f.superseded_at is null and f.allocation <> 'split'
+                group by f.unit_id""",
+            [str(fact.tenant_id), fact.period],
+        )
+        revenue = {unit: amount for unit, amount in cursor.fetchall() if amount and amount > 0}
+
+    shares = {unit.id: revenue[str(unit.id)] for unit in units if str(unit.id) in revenue}
+    if not shares:
+        # Молча разнести поровну было бы худшим ответом: «по выручке» и
+        # «поровну» — разные решения, и человек должен знать, какое применилось.
+        raise BadInput(_(
+            "Выручки за этот месяц в продукте нет, поэтому по выручке разносить "
+            "нечего: поставьте доли руками или разнесите поровну."
+        ))
+    return shares
+
+
+def _split_page(who, fact, error: str = "") -> dict:
+    """Что показать на экране разнесения: сама накладная и точки с долями."""
+    units = _units_for(who, fact)
+    return {
+        "fact_id": str(fact.id),
+        "title": fact.title,
+        "counterparty": fact.counterparty.title if fact.counterparty else EMPTY,
+        "period": month_title(fact.period),
+        "amount_text": money(fact.amount),
+        "amount_raw": f"{fact.amount}",
+        "units": [{"id": str(unit.id), "code": unit.code} for unit in units],
+        "error": error,
+        "back_url": reverse("expenses-unallocated"),
+    }
+
+
 def waiting_rows(who) -> list[dict]:
     """Строки, ждущие разнесения, — и почему каждая ждёт (T132).
 
@@ -430,6 +619,12 @@ def waiting_rows(who) -> list[dict]:
             "amount_text": money(amount),
             "source": source,
             "why": allocation.waiting_title(reason) if reason else "",
+            # Выход из ожидания руками (issue #174): у части строк правила нет и
+            # не будет — накладную привезли на две точки в долях, которых ни одно
+            # правило не знает. Ссылка стоит у каждой строки, а не только у тех,
+            # где правило отсутствует: «правило есть, но эта бумага делится
+            # иначе» — обычный случай, а не исключение.
+            "split_url": reverse("expense-split-form", args=[fact_id]),
         }
         for fact_id, period, title, amount, source, item_id, reason in found
     ]

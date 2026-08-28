@@ -1,0 +1,66 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Разнесение накладной руками (issue #174, модуль эталона 15 «Чья накладная»).
+
+Экран отвечает на один вопрос: чья это бумага. Правило разнесения отвечает на
+другой — «этот поставщик всегда делится так-то», — и конкретной накладной,
+привезённой на две пиццерии, соответствовать нечему. Поэтому здесь доли ставит
+человек.
+
+**Заготовки — это те же доли, а не другой вид разнесения.** «Поровну» и «По
+выручке» заполняют то же поле, и разносит их та же функция базы: два способа
+делить одну сумму разошлись бы на первой неровной накладной.
+
+Сумма документа показана и не редактируется: она из документа, и правится он
+своей карточкой, а не отсюда.
+{% endcomment %}
+{% block title %}{% translate "Чья накладная" %}{% endblock %}
+{% block content %}
+<p class="note"><a href="{{ back_url }}">{% translate "← К нераспределённому" %}</a></p>
+<h1>{% translate "Чья накладная" %}</h1>
+
+{% if error %}{% notice "alert" %}{{ error }}{% endnotice %}{% endif %}
+
+<dl class="facts">
+  <dt>{% translate "Поставщик" %}</dt><dd>{{ counterparty }}</dd>
+  <dt>{% translate "Что это" %}</dt><dd>{{ title }}</dd>
+  <dt>{% translate "Период учёта" %}</dt><dd>{{ period }}</dd>
+  <dt>{% translate "Сумма" %}</dt>
+  <dd><span class="num" data-amount="{{ amount_raw }}">{{ amount_text }}</span>
+    <span class="hint">{% translate "из документа, здесь не правится" %}</span></dd>
+</dl>
+
+{% if units %}
+<form method="post" action="{% url 'expense-split' %}">{% csrf_token %}
+  <input type="hidden" name="fact" value="{{ fact_id }}">
+  {% scroll %}<table>
+    <thead>
+      <tr>
+        <th>{% translate "Точка" %}</th>
+        <th class="num">{% translate "Доля, %" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for unit in units %}
+      <tr data-unit="{{ unit.id }}">
+        <td><label for="share-{{ unit.id }}">{{ unit.code }}</label></td>
+        <td class="num">
+          <input class="input input--num" type="number" min="0" max="100" step="0.01"
+                 id="share-{{ unit.id }}" name="share:{{ unit.id }}" value="">
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>{% endscroll %}
+  <p class="note">{% translate "Доли должны дать ровно 100%: остаток, оставшийся без точки, — это сумма, которой нет ни в одном отчёте по точкам." %}</p>
+  <p class="actions">
+    <button class="primary" type="submit">{% translate "Разнести" %}</button>
+    <button type="submit" name="evenly" value="1">{% translate "Поровну" %}</button>
+    <button type="submit" name="by_revenue" value="1">{% translate "По выручке" %}</button>
+  </p>
+</form>
+{% else %}
+{% translate "Разносить не на что" as no_units %}
+{% notice "empty" title=no_units %}{% blocktranslate %}У юрлица этой накладной нет ни одной точки, которую вы ведёте.{% endblocktranslate %}{% endnotice %}
+{% endif %}
+{% endblock %}

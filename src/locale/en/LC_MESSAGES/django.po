@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-27 22:16+0000\n"
+"POT-Creation-Date: 2026-08-28 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -358,9 +358,10 @@ msgstr "Employee"
 #: timesheets/templates/timesheets/grid.html:185 web/cash_views.py:244
 #: web/cash_views.py:431 web/dbrefusal.py:109 web/directory_views.py:561
 #: web/directory_views.py:990 web/directory_views.py:1141
-#: web/directory_views.py:1230 web/expenses_views.py:174
-#: web/expenses_views.py:328 web/papers_views.py:253 web/papers_views.py:314
+#: web/directory_views.py:1230 web/expenses_views.py:175
+#: web/expenses_views.py:329 web/papers_views.py:253 web/papers_views.py:314
 #: web/suppliers_views.py:616 web/templates/web/cash/expenses.html:55
+#: web/templates/web/cash/split.html:39
 #: web/templates/web/directory/employee.html:130
 #: web/templates/web/period.html:425 web/templates/web/person_pay.html:71
 #: web/templates/web/suppliers/inbox.html:43
@@ -480,6 +481,7 @@ msgstr "Component"
 #: web/suppliers_views.py:421 web/suppliers_views.py:591
 #: web/suppliers_views.py:820 web/suppliers_views.py:822
 #: web/suppliers_views.py:862 web/templates/web/cash/expenses.html:57
+#: web/templates/web/cash/split.html:28
 #: web/templates/web/cash/unallocated.html:34
 #: web/templates/web/directory/employee.html:104
 #: web/templates/web/period.html:505 web/templates/web/suppliers/inbox.html:59
@@ -1221,7 +1223,7 @@ msgstr "\"limit\" must be greater than zero."
 msgid "«%(name)s»: это целое число, а не «%(value)s»."
 msgstr "\"%(name)s\" must be a whole number, not \"%(value)s\"."
 
-#: web/api.py:287 web/expenses_views.py:661
+#: web/api.py:287 web/expenses_views.py:856
 msgid "Эта строка уже заменена: правьте ту, что действует."
 msgstr "This row has already been replaced: edit the one in effect."
 
@@ -1311,7 +1313,7 @@ msgstr ""
 "The month was closed while the expense was being deleted. Reopen the list "
 "and try again."
 
-#: web/cash.py:793
+#: web/cash.py:825
 msgid ""
 "Форма устарела или испорчена. Откройте её заново и внесите расход ещё раз."
 msgstr ""
@@ -1363,7 +1365,7 @@ msgid "Поле «%(label)s» обязательно."
 msgstr "The \"%(label)s\" field is required."
 
 #: web/cash_views.py:185 web/cash_views.py:189 web/cash_views.py:314
-#: web/dbrefusal.py:113 web/expenses_views.py:174 web/expenses_views.py:332
+#: web/dbrefusal.py:113 web/expenses_views.py:175 web/expenses_views.py:333
 #: web/suppliers_api.py:258 web/suppliers_views.py:513
 #: web/suppliers_views.py:576 web/suppliers_views.py:849
 #: web/suppliers_views.py:1034 web/suppliers_views.py:1106
@@ -1404,7 +1406,7 @@ msgstr ""
 #: web/directory_views.py:1011 web/directory_views.py:1284
 #: web/directory_views.py:1337 web/directory_views.py:1379
 #: web/directory_views.py:1446 web/expense_items_views.py:356
-#: web/expenses_views.py:175 web/suppliers_views.py:61
+#: web/expenses_views.py:176 web/suppliers_views.py:61
 #: web/suppliers_views.py:585 web/suppliers_views.py:762
 #: web/suppliers_views.py:857 web/templates/web/directory/employee.html:144
 #: web/templates/web/person_pay.html:143 web/tills_views.py:68
@@ -1487,7 +1489,7 @@ msgstr ""
 "Month %(closed)s is closed: the expense lands in %(month)s, and this date "
 "stays with it."
 
-#: web/cash_views.py:425 web/expenses_views.py:271 web/papers_views.py:493
+#: web/cash_views.py:425 web/expenses_views.py:272 web/papers_views.py:493
 #: web/suppliers_views.py:237 web/suppliers_views.py:614
 #: web/suppliers_views.py:939 web/suppliers_views.py:988
 msgid "Вся сеть"
@@ -1979,7 +1981,7 @@ msgstr ""
 "Standard hours and working days of the month — the month page takes them "
 "from here"
 
-#: web/directory_views.py:335 web/expenses_views.py:184
+#: web/directory_views.py:335 web/expenses_views.py:185
 #: web/suppliers_views.py:140 web/suppliers_views.py:445
 #, python-format
 msgid "«%(label)s»: дата пишется как 2026-06-01, а не «%(value)s»."
@@ -2711,7 +2713,7 @@ msgstr ""
 "The catalog still has items that are not in the file: %(codes)s. The product "
 "leaves them as is — close the ones you no longer need with a date."
 
-#: web/expenses_views.py:94
+#: web/expenses_views.py:95
 msgid ""
 "Вас ещё не завели ни к одному партнёру, поэтому расходов у вас нет. "
 "Попросите администратора сети добавить вас."
@@ -2719,52 +2721,81 @@ msgstr ""
 "You have not been added to any partner yet, so you have no expenses. Ask the "
 "network administrator to add you."
 
-#: web/expenses_views.py:152 web/suppliers_views.py:114
+#: web/expenses_views.py:153 web/suppliers_views.py:114
 msgid "Конец периода раньше начала: поправьте даты."
 msgstr "The end of the period is before its start: fix the dates."
 
-#: web/expenses_views.py:173 web/suppliers_views.py:58
+#: web/expenses_views.py:174 web/suppliers_views.py:58
 msgid "С даты"
 msgstr "From date"
 
-#: web/expenses_views.py:173 web/suppliers_views.py:59
+#: web/expenses_views.py:174 web/suppliers_views.py:59
 msgid "По дату"
 msgstr "To date"
 
-#: web/expenses_views.py:209 web/suppliers_views.py:152
+#: web/expenses_views.py:210 web/suppliers_views.py:152
 #, python-format
 msgid "«%(label)s»: это номер из списка, а не «%(value)s»."
 msgstr "\"%(label)s\" must be an ID from the list, not \"%(value)s\"."
 
-#: web/expenses_views.py:306
+#: web/expenses_views.py:307
 msgid "удалён"
 msgstr "Removed"
 
-#: web/expenses_views.py:308
+#: web/expenses_views.py:309
 msgid "заменён"
 msgstr "Replaced"
 
-#: web/expenses_views.py:311
+#: web/expenses_views.py:312
 msgid "сторно"
 msgstr "Storno"
 
-#: web/expenses_views.py:313
+#: web/expenses_views.py:314
 msgid "исправление"
 msgstr "Correction"
 
-#: web/expenses_views.py:329
+#: web/expenses_views.py:330
 msgid "Все точки"
 msgstr "All units"
 
-#: web/expenses_views.py:337
+#: web/expenses_views.py:338
 msgid "Все статьи"
 msgstr "All items"
 
-#: web/expenses_views.py:346 web/format.py:96 web/suppliers_views.py:295
+#: web/expenses_views.py:347 web/format.py:96 web/suppliers_views.py:295
 msgid "Все регистры"
 msgstr "All ledgers"
 
-#: web/expenses_views.py:464
+#: web/expenses_views.py:437
+msgid ""
+"Разнести эту сумму может только тот, кто ведёт все точки партнёра: строки "
+"разнесения ложатся и на чужие точки."
+msgstr "Only someone who manages all the partner's units can split this amount: the resulting lines land on other units too."
+
+#: web/expenses_views.py:468
+msgid "Нет ни одной точки, на которую можно разнести."
+msgstr "There is no unit to split this onto."
+
+#: web/expenses_views.py:487
+msgid "Ни одной доли не задано: поставьте, какая часть накладной чья."
+msgstr "No share is set: state which part of the invoice belongs where."
+
+#: web/expenses_views.py:495
+#, python-format
+msgid "Доли дают %(given)s%% вместо 100%%: не разнесено %(left)s%%."
+msgstr "The shares add up to %(given)s%% instead of 100%%: %(left)s%% is left unsplit."
+
+#: web/expenses_views.py:504
+msgid "Доля должна быть числом."
+msgstr "A share must be a number."
+
+#: web/expenses_views.py:552
+msgid ""
+"Выручки за этот месяц в продукте нет, поэтому по выручке разносить нечего: "
+"поставьте доли руками или разнесите поровну."
+msgstr "There is no revenue for this month in the product, so there is nothing to split by: set the shares by hand or split equally."
+
+#: web/expenses_views.py:659
 #, python-format
 msgid ""
 "Пересчёт прошёл: ни одна строка не изменилась, а ждут разнесения %(count)s. "
@@ -2774,18 +2805,18 @@ msgstr ""
 "for allocation. What's blocking each one is in the \"Why it is waiting\" "
 "column."
 
-#: web/expenses_views.py:468
+#: web/expenses_views.py:663
 msgid "Пересчёт прошёл: менять было нечего, ни одна строка не тронута."
 msgstr ""
 "Recalculation completed: there was nothing to change, not a single row was "
 "touched."
 
-#: web/expenses_views.py:470
+#: web/expenses_views.py:665
 #, python-format
 msgid "Пересчёт прошёл: строк изменено — %(count)s."
 msgstr "Recalculation completed: rows changed — %(count)s."
 
-#: web/expenses_views.py:475
+#: web/expenses_views.py:670
 #, python-format
 msgid ""
 "Закрытые месяцы не пересчитывались: %(months)s. Чтобы пересчитать их, месяц "
@@ -2794,7 +2825,7 @@ msgstr ""
 "Closed months were not recalculated: %(months)s. To recalculate them, the "
 "month must be reopened with a reason."
 
-#: web/expenses_views.py:481
+#: web/expenses_views.py:676
 #, python-format
 msgid ""
 "Эти месяцы не пересчитаны: %(months)s — разносит расходы по точкам тот, кто "
@@ -2803,7 +2834,7 @@ msgstr ""
 "These months were not recalculated: %(months)s — expenses are allocated "
 "across units by whoever manages all of the partner's units."
 
-#: web/expenses_views.py:612
+#: web/expenses_views.py:807
 #, python-format
 msgid ""
 "Месяц %(closed)s закрыт: строку в нём не изменить. Правка ляжет в %(month)s "
@@ -2814,7 +2845,7 @@ msgstr ""
 "land in %(month)s as two rows — a storno of this record and a new one — and "
 "the closed month will not move by a cent."
 
-#: web/expenses_views.py:630
+#: web/expenses_views.py:825
 msgid ""
 "Удалённый расход не стирается: строка останется в списке помеченной, а из "
 "итога выйдет."
@@ -2822,7 +2853,7 @@ msgstr ""
 "A deleted expense is not wiped: the row stays in the list, marked, and drops "
 "out of the total."
 
-#: web/expenses_views.py:638
+#: web/expenses_views.py:833
 #, python-format
 msgid ""
 "Строку закрытого месяца не тронуть и здесь: удаление положит в %(month)s "
@@ -2834,7 +2865,7 @@ msgstr ""
 "will not be marked in the list — it is the storno that takes it out of the "
 "total."
 
-#: web/expenses_views.py:644
+#: web/expenses_views.py:839
 msgid ""
 "Исправленная строка прежней правки при этом снимется — денег этого расхода в "
 "P&L не останется."
@@ -2842,7 +2873,7 @@ msgstr ""
 "The corrected row from the earlier edit will be withdrawn as well — none of "
 "this expense's money will be left in the P&L."
 
-#: web/expenses_views.py:733
+#: web/expenses_views.py:928
 msgid ""
 "Этот расход уже удалён: отменяющая строка за него записана раньше. Ничего не "
 "изменилось."
@@ -2850,7 +2881,7 @@ msgstr ""
 "This expense has already been deleted: the storno for it was recorded "
 "earlier. Nothing changed."
 
-#: web/expenses_views.py:738
+#: web/expenses_views.py:933
 #, python-format
 msgid ""
 "Расход удалён. Месяц %(closed)s закрыт, строку в нём не тронуть, поэтому в "
@@ -2861,7 +2892,7 @@ msgstr ""
 "touched there, so a storno for its amount landed in %(month)s — the closed "
 "month has not moved by a cent."
 
-#: web/expenses_views.py:744
+#: web/expenses_views.py:939
 msgid ""
 "Исправленная строка прежней правки снята — денег этого расхода в P&L больше "
 "нет."
@@ -2869,23 +2900,23 @@ msgstr ""
 "The corrected row from the earlier edit was withdrawn — this expense's money "
 "is no longer in the P&L."
 
-#: web/expenses_views.py:749
+#: web/expenses_views.py:944
 msgid "Расход удалён: в текущий месяц легло сторно на его сумму."
 msgstr ""
 "The expense was deleted: a storno for its amount landed in the current month."
 
-#: web/expenses_views.py:751
+#: web/expenses_views.py:946
 msgid "Расход удалён: строка осталась в списке помеченной, а из итога вышла."
 msgstr ""
 "The expense was deleted: the row stays in the list, marked, and drops out of "
 "the total."
 
-#: web/expenses_views.py:767
+#: web/expenses_views.py:962
 #, python-format
 msgid "Правка записана в месяц %(month)s."
 msgstr "The edit was recorded for month %(month)s."
 
-#: web/expenses_views.py:769
+#: web/expenses_views.py:964
 #, python-format
 msgid ""
 "Месяц %(closed)s закрыт, поэтому правка записана в %(month)s двумя строками "
@@ -3032,6 +3063,7 @@ msgstr ""
 "unknown."
 
 #: web/papers_views.py:220 web/papers_views.py:299
+#: web/templates/web/cash/split.html:26
 #: web/templates/web/cash/unallocated.html:33
 #: web/templates/web/suppliers/inbox.html:58
 #: web/templates/web/suppliers/inbox.html:150
@@ -3076,7 +3108,8 @@ msgstr ""
 "A phone photo is fine. What matters is that the supplier, date and amount "
 "can be read."
 
-#: web/papers_views.py:289 web/templates/web/suppliers/inbox.html:149
+#: web/papers_views.py:289 web/templates/web/cash/split.html:25
+#: web/templates/web/suppliers/inbox.html:149
 #: web/templates/web/suppliers/papers.html:40
 msgid "Поставщик"
 msgstr "Supplier"
@@ -3755,6 +3788,7 @@ msgid "Номер счёта"
 msgstr "Invoice number"
 
 #: web/suppliers_views.py:465 web/suppliers_views.py:562
+#: web/templates/web/cash/split.html:27
 #: web/templates/web/suppliers/inbox.html:60
 #: web/templates/web/suppliers/invoice.html:50
 #: web/templates/web/suppliers/invoices.html:49
@@ -3944,7 +3978,9 @@ msgstr ""
 msgid ""
 "Отметьте строки, которым присваивается статья: без отметки присваивать "
 "нечему."
-msgstr "Select the rows the article is assigned to: with nothing selected there is nothing to assign it to."
+msgstr ""
+"Select the rows the article is assigned to: with nothing selected there is "
+"nothing to assign it to."
 
 #: web/suppliers_views.py:1166
 msgid ""
@@ -4117,6 +4153,52 @@ msgstr ""
 msgid "Внести первый расход"
 msgstr "Record the first expense"
 
+#: web/templates/web/cash/split.html:17 web/templates/web/cash/split.html:20
+#: web/templates/web/cash/unallocated.html:48
+msgid "Чья накладная"
+msgstr "Whose invoice"
+
+#: web/templates/web/cash/split.html:19
+msgid "← К нераспределённому"
+msgstr "← To the unallocated"
+
+#: web/templates/web/cash/split.html:30
+msgid "из документа, здесь не правится"
+msgstr "from the document, not editable here"
+
+#: web/templates/web/cash/split.html:40
+#, python-format
+msgid "Доля, %%"
+msgstr "Share, %%"
+
+#: web/templates/web/cash/split.html:55
+#, python-format
+msgid ""
+"Доли должны дать ровно 100%%: остаток, оставшийся без точки, — это сумма, "
+"которой нет ни в одном отчёте по точкам."
+msgstr "The shares must add up to exactly 100%%: whatever is left without a unit is an amount that appears in no per-unit report."
+
+#: web/templates/web/cash/split.html:57
+#: web/templates/web/cash/unallocated.html:37
+msgid "Разнести"
+msgstr "Split"
+
+#: web/templates/web/cash/split.html:58
+msgid "Поровну"
+msgstr "Equally"
+
+#: web/templates/web/cash/split.html:59
+msgid "По выручке"
+msgstr "By revenue"
+
+#: web/templates/web/cash/split.html:63
+msgid "Разносить не на что"
+msgstr "Nothing to split onto"
+
+#: web/templates/web/cash/split.html:64
+msgid "У юрлица этой накладной нет ни одной точки, которую вы ведёте."
+msgstr "The legal entity of this invoice has no unit that you manage."
+
 #: web/templates/web/cash/unallocated.html:13
 #: web/templates/web/cash/unallocated.html:16
 msgid "Нераспределённое"
@@ -4145,15 +4227,15 @@ msgstr "Source"
 msgid "Почему ждёт"
 msgstr "Why it is waiting"
 
-#: web/templates/web/cash/unallocated.html:52
+#: web/templates/web/cash/unallocated.html:54
 msgid "Итого ждёт разнесения"
 msgstr "Total waiting for allocation"
 
-#: web/templates/web/cash/unallocated.html:59
+#: web/templates/web/cash/unallocated.html:61
 msgid "Нераспределённого нет."
 msgstr "Nothing unallocated."
 
-#: web/templates/web/cash/unallocated.html:60
+#: web/templates/web/cash/unallocated.html:62
 msgid "Все расходы лежат на точках: закрывать месяц ничто не держит."
 msgstr ""
 "All expenses are sitting on units: nothing is holding up closing the month."
@@ -6106,13 +6188,16 @@ msgstr "Assign the article to the selected"
 #: web/templates/web/suppliers/inbox.html:49
 #, python-brace-format
 msgid "Отмечено строк: {n}. Статья присвоится всем сразу."
-msgstr "Rows selected: {n}. The article will be assigned to all of them at once."
+msgstr ""
+"Rows selected: {n}. The article will be assigned to all of them at once."
 
 #: web/templates/web/suppliers/inbox.html:50
 msgid ""
 "Отметьте несколько строк одного поставщика — статья присвоится всем сразу. "
 "Пробел отмечает строку, Shift со щелчком — диапазон."
-msgstr "Select several rows of the same supplier — the article is assigned to all of them at once. Space selects a row, Shift with a click selects a range."
+msgstr ""
+"Select several rows of the same supplier — the article is assigned to all of "
+"them at once. Space selects a row, Shift with a click selects a range."
 
 #: web/templates/web/suppliers/inbox.html:55
 msgid "Отметить"

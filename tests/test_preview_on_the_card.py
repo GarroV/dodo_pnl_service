@@ -99,17 +99,31 @@ def test_the_preview_agrees_with_the_real_calculation(client, someone, web_env):
 
 
 def test_a_person_without_hours_is_told_so(client, web_env):
-    """Часов нет — так и сказано, а не показан ноль как результат."""
-    from core.models import Employee, Timesheet
+    """Часов нет — так и сказано, а не показан ноль как результат.
+
+    Человека без табеля тест заводит сам. Раньше он искал такого в сиде и
+    пропускался, когда табель был у всех, — то есть проверка молча ничего не
+    проверяла, а прогон выглядел зелёным. Поймал шаг «пропуски» в CI.
+    """
+    from core.models import Employee, Tenant, Timesheet
 
     counted = set(Timesheet.objects.filter(period=JUNE).values_list("employee_id", flat=True))
     without = Employee.objects.exclude(id__in=counted).first()
+    made = None
     if without is None:
-        pytest.skip("в сиде нет человека без табеля")
-
-    login_as(client, "director")
-    html = body(client.get(card_url(without.id)))
-    assert "часов" in html.lower() or "нет данных" in html.lower()
+        made = without = Employee.objects.create(
+            tenant=Tenant.objects.get(code="rs-dev"),
+            external_id="preview-without-hours",
+            first_name="Bez", last_name="Sati",
+            hired_at=JUNE,
+        )
+    try:
+        login_as(client, "director")
+        html = body(client.get(card_url(without.id)))
+        assert "часов" in html.lower() or "нет данных" in html.lower()
+    finally:
+        if made is not None:
+            made.delete()
 
 
 # --- движение за месяц (вторая половина #185) ---------------------------------

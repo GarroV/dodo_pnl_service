@@ -645,6 +645,38 @@ def allocate(fact_id) -> int | None:
         raise
 
 
+def split_by_hand(fact_id, shares: dict, actor_id) -> int | None:
+    """Разнести факт долями, которые дал человек (issue #174). Строк или None.
+
+    Отличается от `allocate` только источником долей: там их считает правило,
+    здесь их назвал человек — а записывает набор строк одна и та же база, тем же
+    приёмом с копейками. Двух способов делить одну сумму быть не должно: они
+    разойдутся на первой же неровной накладной.
+
+    `None` — «разносить не вправе», ровно как у `allocate`: строки ложатся на
+    точки, которых роль может не видеть, и отказ приходит от политики
+    `unit_visibility`, а не от проверки в представлении (D014).
+    """
+    payload = json.dumps({str(unit): str(weight) for unit, weight in shares.items()})
+    try:
+        with transaction.atomic(), connection.cursor() as cursor:
+            cursor.execute(
+                "select split_fact_by_hand(%s, %s::jsonb, %s)",
+                [str(fact_id), payload, str(actor_id) if actor_id else None],
+            )
+            written = cursor.fetchone()[0]
+            # Тот же танец с отложенными ключами, что в `allocate`, и по той же
+            # причине — там она разобрана подробно.
+            cursor.execute("set constraints all immediate")
+            cursor.execute("set constraints all deferred")
+            return written
+    except DatabaseError as refusal:
+        state = getattr(getattr(refusal, "__cause__", None), "sqlstate", "") or ""
+        if state == "42501":
+            return None
+        raise
+
+
 @dataclass(frozen=True)
 class Outcome:
     """Что стало с расходом на всю сеть: разошёлся, ждёт (и почему) или не нам.

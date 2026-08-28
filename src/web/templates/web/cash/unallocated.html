@@ -34,6 +34,7 @@ P&L по сети, но её нет ни на одной точке.
       <th class="num">{% translate "Сумма" %}</th>
       <th>{% translate "Откуда" %}</th>
       <th>{% translate "Почему ждёт" %}</th>
+      <th>{% translate "Разнести" %}</th>
     </tr>
   </thead>
   <tbody>
@@ -44,6 +45,7 @@ P&L по сети, но её нет ни на одной точке.
       <td class="{{ row.amount_text|numclass }}">{{ row.amount_text }}</td>
       <td>{{ row.source }}</td>
       <td>{{ row.why }}</td>
+      <td><a class="btn" href="{{ row.split_url }}">{% translate "Чья накладная" %}</a></td>
     </tr>
     {% endfor %}
   </tbody>
@@ -51,7 +53,7 @@ P&L по сети, но её нет ни на одной точке.
     <tr data-total="{{ total_raw }}">
       <th colspan="2">{% translate "Итого ждёт разнесения" %}</th>
       <th class="{{ total_text|numclass }}">{{ total_text }}</th>
-      <th colspan="2"></th>
+      <th colspan="3"></th>
     </tr>
   </tfoot>
 </table>{% endscroll %}

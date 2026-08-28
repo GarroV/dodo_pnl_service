@@ -22,6 +22,7 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
+from django.utils import timezone
 
 from conftest import body, login_as, period_url
 
@@ -89,21 +90,42 @@ def test_untouched_closing_does_not_lock_the_month(client, calculated):
     assert Period.objects.get(period=JUNE).status == "closed"
 
 
+def tenant_id():
+    """Партнёр сида. Отдельной фикстурой ради этого заводить нечего."""
+    from core.models import Tenant
+
+    return Tenant.objects.get(code="rs-dev").id
+
+
 def test_papers_waiting_for_a_decision_block_it_too(client, calculated):
-    """Неразобранная бумага — деньги, которых нет в отчёте."""
-    from core.models import SourceDocument
+    """Неразобранная бумага — деньги, которых нет в отчёте.
 
-    # Разобрана — значит у документа появились строки; отдельного признака
-    # «разобрано» в продукте нет намеренно (`web/papers`).
-    waiting = SourceDocument.objects.filter(
-        handed_over_at__isnull=False, fact__isnull=True,
-    ).count()
-    if not waiting:
-        pytest.skip("в сиде нет неразобранных бумаг")
+    Материал тест заводит сам, а не ищет в сиде. Раньше он пропускался, когда
+    неразобранных бумаг в сиде не было, — и проверка молча ничего не проверяла:
+    прогон зелёный, полнота не проверена. Поймал это шаг «пропуски» в CI, а не
+    человек, и правильно: пропуск — это непроверенное, а выглядит как успех.
+    """
+    from core.models import SourceDocument, Unit
 
-    response = client.post(calculated + "approve/", follow=True)
-    assert response.status_code == 409
-    assert "бумаг" in body(response).lower() or "документ" in body(response).lower()
+    # Точка обязательна: бумага приходит С ТОЧКИ, и схема этого требует
+    # (`source_documents_paper_names_its_unit`). Без неё это не бумага с точки,
+    # а документ неизвестно чей.
+    handed = SourceDocument.objects.create(
+        tenant_id=tenant_id(), kind="invoice", source="manual",
+        external_id=f"readiness-paper-{JUNE:%Y%m}", doc_date=JUNE,
+        unit=Unit.objects.order_by("code").first(),
+        handed_over_at=timezone.now(),
+    )
+    try:
+        # Разобрана — значит у документа появились строки; отдельного признака
+        # «разобрано» в продукте нет намеренно (`web/papers`).
+        assert not handed.fact_set.exists()
+
+        response = client.post(calculated + "approve/", follow=True)
+        assert response.status_code == 409
+        assert "бумаг" in body(response).lower() or "документ" in body(response).lower()
+    finally:
+        handed.delete()
 
 
 def test_a_clean_month_closes(client, calculated):

@@ -250,6 +250,16 @@ urlpatterns = [
         expenses_views.unallocated,
         name="expenses-unallocated",
     ),
+    # Разнесение накладной руками (issue #174, модуль эталона 15). Запись — своим
+    # адресом и только POST; номер строки приезжает в теле, потому что долей
+    # много и форма всё равно отправляется целиком. Постоянный адрес стоит
+    # раньше адреса по номеру записи, иначе `split` разбирался бы как номер.
+    path("expenses/split/", expenses_views.split, name="expense-split"),
+    path(
+        "expenses/<uuid:fact_id>/split/",
+        expenses_views.split_form,
+        name="expense-split-form",
+    ),
     # Карточка расхода: правка и удаление. Удаление — своим адресом и только
     # POST: это запись, и по ссылке из истории браузера случиться не должна.
     path("expenses/<uuid:fact_id>/", expenses_views.expense, name="expense"),
