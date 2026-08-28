@@ -30,7 +30,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from core.models import Unit
+from core.models import CASH, Unit
 
 from . import cash
 from .directory_views import LEDGER_CODES, BadInput, _choice, _date, _number, _select, _text
@@ -314,7 +314,14 @@ def expense_fields(who, entered) -> list[dict]:
             "item", _("Статья расхода"),
             [
                 (item.id, cash.item_title(item.titles))
-                for item in cash.items_on(who.tenant_id, on)
+                # Только статьи с пометкой «расходы наличными» (T191): сорок
+                # строк управляющий на телефоне не читает, а выбирает первую
+                # похожую. Уже выбранная статья остаётся в списке всегда — иначе
+                # правка комментария у старого расхода молча переназначила бы
+                # ему статью, а с ней и строку P&L.
+                for item in cash.items_on(
+                    who.tenant_id, on, surface=CASH, keep=entered.get("item") or None,
+                )
             ],
             entered.get("item"), required=True,
             help=_("Статьи ведёт администратор сети. Нужной нет — попросите завести: "

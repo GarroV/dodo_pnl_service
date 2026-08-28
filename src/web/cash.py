@@ -46,7 +46,7 @@ from datetime import date
 
 from django.conf import settings
 from django.db import Error as DatabaseError
-from django.db import connection, transaction
+from django.db import connection, models, transaction
 from django.utils.translation import gettext as _
 
 from core.models import ExpenseItem, Period
@@ -102,14 +102,38 @@ def _current_language() -> str:
     return translation.get_language() or settings.LANGUAGE_CODE
 
 
-def items_on(tenant_id, moment: date):
-    """Статьи расходов, действующие на дату. Выборка идёт под политиками базы."""
-    return (
+def items_on(tenant_id, moment: date, *, surface: str = "", keep=None):
+    """Статьи расходов, действующие на дату. Выборка идёт под политиками базы.
+
+    `surface` — где список показывают (T191): «расходы наличными», «разнесение
+    накладных», «разбор выписки». Сорок строк никто не читает, и управляющему на
+    телефоне нужны его шесть, а не весь справочник. Пусто — весь справочник, и
+    это правильное умолчание для экранов бухгалтера (реестр, отбор): полный
+    список нужен именно им.
+
+    **Это не право видеть статью.** Отбор здесь — про то, что человеку
+    ПРЕДЛАГАЮТ, а не про то, что ему разрешено. Поэтому он и живёт в выборке
+    списка, а не в политике базы: политика запретила бы статью бухгалтеру, у
+    которого её просто нет в короткой форме.
+
+    `keep` — статья, которую надо оставить в списке, даже если её с этой
+    поверхности сняли. Нужен формам правки: расход, записанный на статью до
+    того, как её убрали с наличных, никуда не делся, и список без неё заставил
+    бы браузер отправить чужое значение — то есть молча переназначить статью, а
+    с ней и строку P&L, у записи, которую человек открыл поправить комментарий.
+    """
+    found = (
         ExpenseItem.objects.filter(tenant_id=tenant_id, valid_from__lte=moment)
         .exclude(valid_to__lte=moment)
         .select_related("pnl_item")
         .order_by("code")
     )
+    if surface:
+        offered = models.Q(surfaces__contains=[surface])
+        if keep is not None:
+            offered |= models.Q(pk=keep)
+        found = found.filter(offered)
+    return found
 
 
 def month_is_closed(tenant_id, period: date) -> bool:

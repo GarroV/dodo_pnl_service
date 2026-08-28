@@ -33,7 +33,7 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 
-from core.models import Counterparty, Unit
+from core.models import INVOICE, Counterparty, Unit
 
 from . import cash, suppliers
 from .cash_views import _ledger, _till, _unit, _vat_rate
@@ -543,7 +543,7 @@ def _position_fields(who, document) -> list[dict]:
         _select(
             "item", _("Статья расхода"),
             [(item.id, cash.item_title(item.titles))
-             for item in cash.items_on(who.tenant_id, on)],
+             for item in cash.items_on(who.tenant_id, on, surface=INVOICE)],
             "", required=False, empty_label=_("Пока не разобрано"),
         ),
         _unit_field(who, {}),
@@ -742,7 +742,12 @@ def invoice_fields(who, entered) -> list[dict]:
         _select(
             "item", _("Статья расхода"),
             [(item.id, cash.item_title(item.titles))
-             for item in cash.items_on(who.tenant_id, on)],
+             # Только статьи с пометкой «разнесение накладных» (T191). Уже
+             # выбранная остаётся в списке, даже если её с этой поверхности
+             # сняли: иначе правка номера счёта молча переназначила бы статью.
+             for item in cash.items_on(
+                 who.tenant_id, on, surface=INVOICE, keep=entered.get("item") or None,
+             )],
             entered.get("item"), required=False, empty_label=_("Пока не разобрано"),
             help=_("Можно не выбирать: счёт встанет в инбокс, и статью назначат там. "
                    "Сумма при этом видна в P&L, а не пропадает."),
@@ -1015,7 +1020,12 @@ def _purchase_fields(who, entered) -> list[dict]:
         _select(
             "item", _("Статья расхода"),
             [(item.id, cash.item_title(item.titles))
-             for item in cash.items_on(who.tenant_id, on)],
+             # Только статьи с пометкой «разнесение накладных» (T191). Уже
+             # выбранная остаётся в списке, даже если её с этой поверхности
+             # сняли: иначе правка номера счёта молча переназначила бы статью.
+             for item in cash.items_on(
+                 who.tenant_id, on, surface=INVOICE, keep=entered.get("item") or None,
+             )],
             entered.get("item"), required=False, empty_label=_("Пока не разобрано"),
             help=_("Можно не выбирать: строка встанет в инбокс и будет видна числом."),
         ),
@@ -1094,7 +1104,7 @@ def _inbox_items(who) -> list[tuple]:
     """Статьи, действующие сегодня: одинаковые в строчной форме и в пакетной."""
     return [
         (item.id, cash.item_title(item.titles))
-        for item in cash.items_on(who.tenant_id, date.today())
+        for item in cash.items_on(who.tenant_id, date.today(), surface=INVOICE)
     ]
 
 

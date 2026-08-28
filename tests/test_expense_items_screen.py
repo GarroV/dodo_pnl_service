@@ -34,6 +34,11 @@ def form(code: str, **extra) -> dict:
         "title_ru": f"Вода {code}",
         "title_en": f"Water {code}",
         "title_sr_latn": f"Voda {code}",
+        # Где статья предлагается (T191). Полный набор, как его подставляет сама
+        # форма: браузер отправляет то, что показано, а показано по умолчанию
+        # всё. Форма без этого поля — испорченная, и продукт отвечает ей 400;
+        # проверка этого отказа живёт в `test_expense_item_surfaces.py`.
+        "surfaces": ["cash", "invoice", "bank"],
         "valid_from": "2026-01-01",
         "valid_to": "",
     }

@@ -406,6 +406,20 @@ class PnlItem(models.Model):
         ]
 
 
+# Где статья расходов вообще предлагается (T191). Три поверхности выбора, и
+# больше в продукте их нет: расход наличными с телефона управляющего, разнесение
+# накладной поставщика, разбор банковской выписки. Кортеж, а не таблица: список
+# поверхностей меняется вместе с кодом, который их показывает, — новая строка в
+# справочнике без формы, которая её читает, не значила бы ничего.
+#
+# Это НЕ право видеть статью. Выбрать её из списка может любая роль; здесь
+# сказано только, в каких формах список её вообще предлагает. Смешать эти два
+# смысла — значит однажды спрятать статью от бухгалтера, поправив форму
+# управляющего.
+CASH, INVOICE, BANK = "cash", "invoice", "bank"
+EXPENSE_SURFACES = (CASH, INVOICE, BANK)
+
+
 class ExpenseItem(models.Model):
     """Статья расходов партнёра: то, что человек выбирает, внося трату (T108).
 
@@ -445,6 +459,11 @@ class ExpenseItem(models.Model):
     # разъехался бы с ними молча.
     titles = models.JSONField(db_default={})
     pnl_item = models.ForeignKey(PnlItem, on_delete=models.PROTECT, db_column="pnl_item_id")
+    # Где статья предлагается (T191). Умолчание — все поверхности сразу: статья,
+    # заведённая без ответа на этот вопрос, обязана вести себя как до задачи, то
+    # есть предлагаться везде. Обратное умолчание («нигде») тихо вычистило бы
+    # списки выбора у всех, кто про новое поле не знает.
+    surfaces = ArrayField(models.TextField(), db_default=list(EXPENSE_SURFACES))
     valid_from = models.DateField()
     valid_to = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(db_default=now_default())
@@ -467,6 +486,17 @@ class ExpenseItem(models.Model):
                 condition=models.Q(valid_to__isnull=True)
                 | models.Q(valid_to__gt=models.F("valid_from")),
                 name="expense_items_validity",
+            ),
+            # Статья, не предлагаемая нигде, — строка, которую нельзя выбрать ни
+            # в одной форме продукта. Это не «закрытая статья» (у той есть
+            # `valid_to` и она остаётся в прошлых записях), а мусор, который
+            # виден только в справочнике и ничего не делает. Запрет стоит в
+            # базе, а не в форме: писать сюда будут и загрузка файла бухгалтера,
+            # и будущий API — тот же довод, что у пустого названия.
+            models.CheckConstraint(
+                condition=models.Q(surfaces__len__gt=0)
+                & models.Q(surfaces__contained_by=list(EXPENSE_SURFACES)),
+                name="expense_items_surfaces_known",
             ),
         ]
 
@@ -1864,6 +1894,65 @@ class DocumentFile(models.Model):
             models.CheckConstraint(
                 condition=models.Q(byte_size__gt=0),
                 name="document_files_size_is_positive",
+            ),
+        ]
+
+
+class CashReceipt(models.Model):
+    """Чек к расходу наличными: фотография бумажки, которую отдали вместе с деньгами (T184).
+
+    **Почему не `document_files`, хотя таблица файлов уже есть.** Файл бумаги
+    виден тогда, когда виден его документ, а документ режется только по точке.
+    У расхода наличными кроме точки есть регистр учёта и касса, и по ним факт
+    режется тоже — то есть чек внутреннего расхода был бы виден тому, кому сам
+    расход не виден. Фотография чека показывает и сумму, и за что заплачено:
+    это ровно та утечка, от которой стоят политики на `facts`. Поэтому у чека
+    своя таблица, и её политика **зовёт сам факт**, а не повторяет его условия
+    (D014) — сойтись с ними точнее, чем совпасть, нельзя.
+
+    **Ключ — запись расхода (`entry_key`), а не строка факта.** Правка расхода
+    идёт заменой версии: у новой версии другой `id`, а чек — та же бумажка.
+    Привязка к `id` осиротела бы на первой правке суммы, причём молча. Ключ
+    записи живёт через все версии (`facts.dedup_key` = `manual:cash:` + ключ),
+    поэтому чек переживает и правку, и сторно.
+
+    **Приложить чек — не правка расхода.** Ни одной колонки в `facts` эта
+    таблица не трогает, и поэтому чек прикладывается к расходу закрытого месяца:
+    деньги от появления фотографии не меняются, а требовать открытия месяца
+    ради скана значило бы либо открывать его, либо оставить расход без бумаги
+    навсегда.
+
+    Байты лежат в базе по тому же доводу, что у `document_files`: бэкап у
+    продукта один — дамп Postgres, и файл на диске уехал бы из него молча.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    entry_key = models.TextField()
+    # Тип определяется по самим байтам, а не по слову из браузера — тот же
+    # разбор, что у бумаги с точки (`web/papers.media_type_of`).
+    media_type = models.TextField()
+    byte_size = models.IntegerField()
+    content = models.BinaryField()
+    sha256 = models.TextField()
+    # Как файл назывался у человека. Только чтобы показать его в карточке:
+    # имя на сохранение продукт собирает сам, чужое пришлось бы вычищать.
+    file_name = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(db_default=now_default())
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "cash_receipts"
+        constraints = [
+            # Один чек на запись расхода. Переснятая фотография заменяет
+            # прежнюю: две карточки одного и того же расхода с разными чеками
+            # означали бы, что бухгалтер сверяет сумму неизвестно с чем.
+            models.UniqueConstraint(
+                fields=["tenant", "entry_key"], name="cash_receipts_entry_uniq"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(byte_size__gt=0),
+                name="cash_receipts_size_is_positive",
             ),
         ]
 
