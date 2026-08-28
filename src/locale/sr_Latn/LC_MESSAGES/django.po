@@ -4700,17 +4700,6 @@ msgstr ""
 msgid "Месяц от начала до конца"
 msgstr "Mesec od početka do kraja"
 
-#: web/templates/web/guide.html:67
-msgid ""
-"Это главный сценарий продукта, и порядок в нём обязательный: каждый\n"
-"  следующий шаг невозможен без предыдущего. На экранах месяца тот же "
-"порядок\n"
-"  показан полосой шагов, чтобы было видно, где вы сейчас."
-msgstr ""
-"Ovo je glavni scenario proizvoda, i redosled u njemu je obavezan: svaki "
-"sledeći korak nije moguć bez prethodnog. Na ekranima meseca isti redosled je "
-"prikazan trakom koraka, da bi se videlo gde ste sada."
-
 #: web/templates/web/guide.html:81
 msgid ""
 "Часы за месяц по каждой точке. Основная часть приезжает из Dodo IS;\n"
@@ -7210,3 +7199,126 @@ msgstr "ručno uneto"
 #: web/views.py:1615
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
+
+msgid "Партнёр и юрлица"
+msgstr "Partner i pravna lica"
+
+msgid "Справочники → Юрлица"
+msgstr "Imenici → Pravna lica"
+
+msgid "Юрлицо — то, с чем работает бухгалтерия: зарплата, налоги и отчётность считаются по каждому отдельно."
+msgstr "Pravno lice je ono sa čim radi računovodstvo: zarada, porezi i izveštavanje računaju se za svako posebno."
+
+msgid "В шапке написано название партнёра, а в справочнике юрлиц есть хотя бы одна строка."
+msgstr "U zaglavlju piše naziv partnera, a u imeniku pravnih lica postoji bar jedan red."
+
+msgid "Самого партнёра заводит инженер — экрана для этого в продукте нет."
+msgstr "Samog partnera kreira inženjer — u proizvodu za to nema ekrana."
+
+msgid "Точки и кассы"
+msgstr "Objekti i kase"
+
+msgid "Справочники → Точки"
+msgstr "Imenici → Objekti"
+
+msgid "На точку вешаются часы, наличные расходы и строки P&L. Касса задаёт регистр учёта расхода, чтобы его не выбирали руками каждый раз."
+msgstr "Sati, gotovinski troškovi i redovi P&L-a vezuju se za objekat. Kasa određuje knjigu troška da se ona ne bi birala ručno svaki put."
+
+msgid "У каждой работающей точки есть касса, а у кассы — регистр учёта."
+msgstr "Svaki objekat koji radi ima kasu, a svaka kasa ima knjigu."
+
+msgid "Точку не удаляют, а закрывают датой: в прошлых месяцах лежат её зарплаты."
+msgstr "Objekat se ne briše nego zatvara datumom: u prošlim mesecima leže njegove zarade."
+
+msgid "Правила страны"
+msgstr "Pravila zemlje"
+
+msgid "Правило — это версия с датой, а не число в коде. Поэтому правка ставки в июле не переписывает уже закрытый июнь."
+msgstr "Pravilo je verzija sa datumom, a ne broj u kodu. Zato izmena stope u julu ne prepisuje već zatvoreni jun."
+
+msgid "Реестр открывается, и у каждого правила видно значение, уровень и дату начала действия."
+msgstr "Registar se otvara i kod svakog pravila vide se vrednost, nivo i datum od kada važi."
+
+msgid "Переопределение ставят на человека там, где нужно на группу. Уровень написан в строке правила — смотреть надо здесь, а не потом."
+msgstr "Izuzetak se postavlja na osobu tamo gde treba na grupu. Nivo piše u redu pravila — proveriti ga ovde, a ne kasnije."
+
+msgid "Группы и должности"
+msgstr "Grupe i radna mesta"
+
+msgid "Справочники → Группы сотрудников"
+msgstr "Imenici → Grupe zaposlenih"
+
+msgid "Группа отвечает, как считается работа и в какую строку затрат она попадёт. Должность — кого нанимаем и в какую группу он попадёт."
+msgstr "Grupa odgovara kako se rad obračunava i u koji red troška ulazi. Radno mesto odgovara koga zapošljavamo i u koju grupu on ulazi."
+
+msgid "У группы задана схема расчёта и регистр учёта, у должности — группа и часы по договору."
+msgstr "Grupa ima šemu obračuna i knjigu, a radno mesto ima grupu i ugovorene sate."
+
+msgid "Пропущенный регистр учёта группы — отказ формы: продукт не угадывает, в каком контуре живут эти деньги."
+msgstr "Izostavljena knjiga kod grupe je odbijanje forme: proizvod ne pogađa u kom krugu taj novac živi."
+
+msgid "Люди и условия найма"
+msgstr "Ljudi i uslovi zapošljavanja"
+
+msgid "Справочники → Сотрудники"
+msgstr "Imenici → Zaposleni"
+
+msgid "Расчёт берёт условия найма по версии на дату — поэтому у ставки есть «действует с», а не просто значение."
+msgstr "Obračun uzima uslove zapošljavanja po verziji na datum — zato stopa ima „od“, a ne samo vrednost."
+
+msgid "У каждого работающего есть версия условий, действующая на первое число вашего первого месяца."
+msgstr "Svako ko radi ima verziju uslova koja važi na prvi dan vašeg prvog meseca."
+
+msgid "Человек без условий найма не появляется в табеле вовсе — не «с нулями», а отсутствует: считать его нечем."
+msgstr "Osoba bez uslova zapošljavanja uopšte se ne pojavljuje u evidenciji sati — ne „sa nulama“, nego je nema: nema se čime obračunati."
+
+msgid "Справочники → Производственный календарь"
+msgstr "Imenici → Proizvodni kalendar"
+
+msgid "Отсюда берётся норма часов и число рабочих дней: на них опираются доплата до минимума и половина остальных правил."
+msgstr "Odavde se uzimaju norma sati i broj radnih dana: na njima počivaju doplata do minimuma i polovina ostalih pravila."
+
+msgid "У месяца, с которого вы начинаете, есть норма часов и число рабочих дней."
+msgstr "Mesec od kojeg počinjete ima normu sati i broj radnih dana."
+
+msgid "Месяц заводят раньше календаря — тогда вместо нормы часов страница месяца прямо пишет, что календарь на него не заведён."
+msgstr "Mesec se otvori pre kalendara — tada, umesto norme sati, stranica meseca otvoreno piše da kalendar za njega nije unet."
+
+msgid "Первый настоящий месяц"
+msgstr "Prvi pravi mesec"
+
+msgid "Онбординг заканчивается не обучением, а первой утверждённой ведомостью. Дальше месяц повторяется по той же полосе из трёх шагов."
+msgstr "Uvođenje se ne završava obukom nego prvom odobrenom obračunskom listom. Dalje se mesec ponavlja po istoj traci od tri koraka."
+
+msgid "Период утверждён, в истории видно, кто и когда это сделал, а в P&L появились строки."
+msgstr "Period je odobren, u istoriji se vidi ko je to uradio i kada, a u P&L-u su se pojavili redovi."
+
+msgid "Ждут, что расчёт пройдёт и без закрытых часов по точкам. Что мешает утвердить месяц, продукт перечисляет до утверждения, а не после."
+msgstr "Očekuje se da će obračun proći i bez zatvorenih sati po objektima. Šta smeta odobravanju meseca, proizvod nabraja pre odobravanja, a ne posle."
+
+msgid "Семь шагов до первой ведомости"
+msgstr "Sedam koraka do prve obračunske liste"
+
+msgid "Это не тур по кнопкам, а проход по настоящему месяцу. Первые шесть шагов\n  делаются один раз, когда партнёра заводят; седьмой повторяется каждый месяц.\n  Порядок не декоративный: каждый следующий шаг физически невозможен без\n  предыдущего, и продукт скажет об этом отказом, если попробовать иначе."
+msgstr "Ovo nije obilazak dugmadi nego prolazak kroz stvarni mesec. Prvih šest koraka radi se jednom, kada se partner uvodi; sedmi se ponavlja svakog meseca. Redosled nije ukras: svaki sledeći korak fizički je nemoguć bez prethodnog, a proizvod će to reći odbijanjem ako pokušate drugačije."
+
+msgid "Где это"
+msgstr "Gde je to"
+
+msgid "Готово, когда"
+msgstr "Gotovo kada"
+
+msgid "Здесь спотыкаются"
+msgstr "Ovde se spotiču"
+
+msgid "Шаги с первого по шестой партнёр проходит вместе с внедренцем — на это уходит\n  день. Седьмой партнёр делает сам: это и есть проверка, что онбординг\n  сработал."
+msgstr "Korake od prvog do šestog partner prolazi zajedno sa implementatorom — na to ode dan. Sedmi partner radi sam: to i jeste provera da je uvođenje uspelo."
+
+msgid "Седьмой шаг крупным планом — то, что повторяется каждый месяц. Порядок в нём\n  обязательный: каждое следующее действие невозможно без предыдущего. На экранах\n  месяца тот же порядок показан полосой шагов, чтобы было видно, где вы\n  сейчас."
+msgstr "Sedmi korak izbliza — ono što se ponavlja svakog meseca. Redosled u njemu je obavezan: svaka sledeća radnja nemoguća je bez prethodne. Na ekranima meseca isti redosled prikazan je trakom koraka, da se vidi gde ste sada."
+
+msgid "Кому что выдано и что из этого следует — раздел «Роли и права». Он открыт\n  тому, у кого есть право вести роли; остальным его в шапке не видно."
+msgstr "Kome je šta dodeljeno i šta iz toga sledi — odeljak „Uloge i prava“. Otvoren je onome ko ima pravo da vodi uloge; ostalima se u zaglavlju uopšte ne vidi."
+
+msgid "В шапке это два раздела: «Наличные расходы» — то, что вышло из кассы точки,\n  и «Инбокс документов» — очередь того, что продукт не смог отнести сам.\n  Список счетов открывается из инбокса и живёт в том же разделе."
+msgstr "U zaglavlju su to dva odeljka: „Gotovinski troškovi“ — ono što je izašlo iz kase objekta — i „Prijemno sanduče dokumenata“ — red onoga što proizvod nije uspeo sam da razvrsta. Spisak računa otvara se iz sandučeta i živi u istom odeljku."

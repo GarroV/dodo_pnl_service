@@ -1,0 +1,166 @@
+{
+  "Партнёр и юрлица": {
+    "en": "Partner and legal entities",
+    "sr": "Partner i pravna lica"
+  },
+  "Справочники → Юрлица": {
+    "en": "Directories → Legal entities",
+    "sr": "Imenici → Pravna lica"
+  },
+  "Юрлицо — то, с чем работает бухгалтерия: зарплата, налоги и отчётность считаются по каждому отдельно.": {
+    "en": "A legal entity is what accounting works with: payroll, taxes and reporting are calculated for each one separately.",
+    "sr": "Pravno lice je ono sa čim radi računovodstvo: zarada, porezi i izveštavanje računaju se za svako posebno."
+  },
+  "В шапке написано название партнёра, а в справочнике юрлиц есть хотя бы одна строка.": {
+    "en": "The header shows the partner's name and the legal entities directory has at least one row.",
+    "sr": "U zaglavlju piše naziv partnera, a u imeniku pravnih lica postoji bar jedan red."
+  },
+  "Самого партнёра заводит инженер — экрана для этого в продукте нет.": {
+    "en": "The partner itself is created by an engineer — there is no screen for that in the product.",
+    "sr": "Samog partnera kreira inženjer — u proizvodu za to nema ekrana."
+  },
+  "Точки и кассы": {
+    "en": "Units and tills",
+    "sr": "Objekti i kase"
+  },
+  "Справочники → Точки": {
+    "en": "Directories → Units",
+    "sr": "Imenici → Objekti"
+  },
+  "На точку вешаются часы, наличные расходы и строки P&L. Касса задаёт регистр учёта расхода, чтобы его не выбирали руками каждый раз.": {
+    "en": "Hours, cash expenses and P&L rows all hang on a unit. A till sets the ledger of an expense so that nobody has to pick it by hand every time.",
+    "sr": "Sati, gotovinski troškovi i redovi P&L-a vezuju se za objekat. Kasa određuje knjigu troška da se ona ne bi birala ručno svaki put."
+  },
+  "У каждой работающей точки есть касса, а у кассы — регистр учёта.": {
+    "en": "Every working unit has a till, and every till has a ledger.",
+    "sr": "Svaki objekat koji radi ima kasu, a svaka kasa ima knjigu."
+  },
+  "Точку не удаляют, а закрывают датой: в прошлых месяцах лежат её зарплаты.": {
+    "en": "A unit is not deleted but closed with a date: past months hold its payroll.",
+    "sr": "Objekat se ne briše nego zatvara datumom: u prošlim mesecima leže njegove zarade."
+  },
+  "Правила страны": {
+    "en": "Country rules",
+    "sr": "Pravila zemlje"
+  },
+  "Правило — это версия с датой, а не число в коде. Поэтому правка ставки в июле не переписывает уже закрытый июнь.": {
+    "en": "A rule is a version with a date, not a number in the code. That is why changing a rate in July does not rewrite an already closed June.",
+    "sr": "Pravilo je verzija sa datumom, a ne broj u kodu. Zato izmena stope u julu ne prepisuje već zatvoreni jun."
+  },
+  "Реестр открывается, и у каждого правила видно значение, уровень и дату начала действия.": {
+    "en": "The registry opens and every rule shows its value, its level and the date it starts to apply.",
+    "sr": "Registar se otvara i kod svakog pravila vide se vrednost, nivo i datum od kada važi."
+  },
+  "Переопределение ставят на человека там, где нужно на группу. Уровень написан в строке правила — смотреть надо здесь, а не потом.": {
+    "en": "An override is put on a person where it belongs on a group. The level is written in the rule's row — check it here, not later.",
+    "sr": "Izuzetak se postavlja na osobu tamo gde treba na grupu. Nivo piše u redu pravila — proveriti ga ovde, a ne kasnije."
+  },
+  "Группы и должности": {
+    "en": "Groups and positions",
+    "sr": "Grupe i radna mesta"
+  },
+  "Справочники → Группы сотрудников": {
+    "en": "Directories → Employee groups",
+    "sr": "Imenici → Grupe zaposlenih"
+  },
+  "Группа отвечает, как считается работа и в какую строку затрат она попадёт. Должность — кого нанимаем и в какую группу он попадёт.": {
+    "en": "A group answers how the work is calculated and which cost row it lands in. A position answers who we hire and which group they land in.",
+    "sr": "Grupa odgovara kako se rad obračunava i u koji red troška ulazi. Radno mesto odgovara koga zapošljavamo i u koju grupu on ulazi."
+  },
+  "У группы задана схема расчёта и регистр учёта, у должности — группа и часы по договору.": {
+    "en": "A group has a calculation scheme and a ledger; a position has a group and contract hours.",
+    "sr": "Grupa ima šemu obračuna i knjigu, a radno mesto ima grupu i ugovorene sate."
+  },
+  "Пропущенный регистр учёта группы — отказ формы: продукт не угадывает, в каком контуре живут эти деньги.": {
+    "en": "A missing ledger on a group is a refusal from the form: the product does not guess which circuit this money lives in.",
+    "sr": "Izostavljena knjiga kod grupe je odbijanje forme: proizvod ne pogađa u kom krugu taj novac živi."
+  },
+  "Люди и условия найма": {
+    "en": "People and employment terms",
+    "sr": "Ljudi i uslovi zapošljavanja"
+  },
+  "Справочники → Сотрудники": {
+    "en": "Directories → Employees",
+    "sr": "Imenici → Zaposleni"
+  },
+  "Расчёт берёт условия найма по версии на дату — поэтому у ставки есть «действует с», а не просто значение.": {
+    "en": "The calculation takes employment terms by their version on a date — that is why a rate has a “from” and not just a value.",
+    "sr": "Obračun uzima uslove zapošljavanja po verziji na datum — zato stopa ima „od“, a ne samo vrednost."
+  },
+  "У каждого работающего есть версия условий, действующая на первое число вашего первого месяца.": {
+    "en": "Everyone who works has a version of the terms that applies on the first day of your first month.",
+    "sr": "Svako ko radi ima verziju uslova koja važi na prvi dan vašeg prvog meseca."
+  },
+  "Человек без условий найма не появляется в табеле вовсе — не «с нулями», а отсутствует: считать его нечем.": {
+    "en": "A person without employment terms does not appear in the timesheet at all — not “with zeros”, but absent: there is nothing to calculate them with.",
+    "sr": "Osoba bez uslova zapošljavanja uopšte se ne pojavljuje u evidenciji sati — ne „sa nulama“, nego je nema: nema se čime obračunati."
+  },
+  "Справочники → Производственный календарь": {
+    "en": "Directories → Production calendar",
+    "sr": "Imenici → Proizvodni kalendar"
+  },
+  "Отсюда берётся норма часов и число рабочих дней: на них опираются доплата до минимума и половина остальных правил.": {
+    "en": "Standard hours and the number of working days come from here: the top-up to the minimum and half of the other rules rest on them.",
+    "sr": "Odavde se uzimaju norma sati i broj radnih dana: na njima počivaju doplata do minimuma i polovina ostalih pravila."
+  },
+  "У месяца, с которого вы начинаете, есть норма часов и число рабочих дней.": {
+    "en": "The month you start from has standard hours and a number of working days.",
+    "sr": "Mesec od kojeg počinjete ima normu sati i broj radnih dana."
+  },
+  "Месяц заводят раньше календаря — тогда вместо нормы часов страница месяца прямо пишет, что календарь на него не заведён.": {
+    "en": "A month is created before the calendar for it — then, instead of standard hours, the month's page says plainly that no calendar has been created for it.",
+    "sr": "Mesec se otvori pre kalendara — tada, umesto norme sati, stranica meseca otvoreno piše da kalendar za njega nije unet."
+  },
+  "Первый настоящий месяц": {
+    "en": "The first real month",
+    "sr": "Prvi pravi mesec"
+  },
+  "Онбординг заканчивается не обучением, а первой утверждённой ведомостью. Дальше месяц повторяется по той же полосе из трёх шагов.": {
+    "en": "Onboarding ends not with training but with the first approved payroll sheet. After that the month repeats along the same strip of three steps.",
+    "sr": "Uvođenje se ne završava obukom nego prvom odobrenom obračunskom listom. Dalje se mesec ponavlja po istoj traci od tri koraka."
+  },
+  "Период утверждён, в истории видно, кто и когда это сделал, а в P&L появились строки.": {
+    "en": "The period is approved, the history shows who did it and when, and rows have appeared in the P&L.",
+    "sr": "Period je odobren, u istoriji se vidi ko je to uradio i kada, a u P&L-u su se pojavili redovi."
+  },
+  "Ждут, что расчёт пройдёт и без закрытых часов по точкам. Что мешает утвердить месяц, продукт перечисляет до утверждения, а не после.": {
+    "en": "People expect the calculation to go through without hours being closed per unit. What stands in the way of approving the month, the product lists before approval, not after.",
+    "sr": "Očekuje se da će obračun proći i bez zatvorenih sati po objektima. Šta smeta odobravanju meseca, proizvod nabraja pre odobravanja, a ne posle."
+  },
+  "Семь шагов до первой ведомости": {
+    "en": "Seven steps to the first payroll sheet",
+    "sr": "Sedam koraka do prve obračunske liste"
+  },
+  "Это не тур по кнопкам, а проход по настоящему месяцу. Первые шесть шагов\n  делаются один раз, когда партнёра заводят; седьмой повторяется каждый месяц.\n  Порядок не декоративный: каждый следующий шаг физически невозможен без\n  предыдущего, и продукт скажет об этом отказом, если попробовать иначе.": {
+    "en": "This is not a tour of buttons but a walk through a real month. The first six steps are done once, when the partner is set up; the seventh repeats every month. The order is not decorative: each next step is physically impossible without the previous one, and the product will say so with a refusal if you try otherwise.",
+    "sr": "Ovo nije obilazak dugmadi nego prolazak kroz stvarni mesec. Prvih šest koraka radi se jednom, kada se partner uvodi; sedmi se ponavlja svakog meseca. Redosled nije ukras: svaki sledeći korak fizički je nemoguć bez prethodnog, a proizvod će to reći odbijanjem ako pokušate drugačije."
+  },
+  "Где это": {
+    "en": "Where it is",
+    "sr": "Gde je to"
+  },
+  "Готово, когда": {
+    "en": "Done when",
+    "sr": "Gotovo kada"
+  },
+  "Здесь спотыкаются": {
+    "en": "Where people stumble",
+    "sr": "Ovde se spotiču"
+  },
+  "Шаги с первого по шестой партнёр проходит вместе с внедренцем — на это уходит\n  день. Седьмой партнёр делает сам: это и есть проверка, что онбординг\n  сработал.": {
+    "en": "Steps one through six the partner walks together with the implementer — it takes a day. The seventh the partner does alone: that is the very check that the onboarding worked.",
+    "sr": "Korake od prvog do šestog partner prolazi zajedno sa implementatorom — na to ode dan. Sedmi partner radi sam: to i jeste provera da je uvođenje uspelo."
+  },
+  "Седьмой шаг крупным планом — то, что повторяется каждый месяц. Порядок в нём\n  обязательный: каждое следующее действие невозможно без предыдущего. На экранах\n  месяца тот же порядок показан полосой шагов, чтобы было видно, где вы\n  сейчас.": {
+    "en": "The seventh step close up — the part that repeats every month. Its order is mandatory: each next action is impossible without the previous one. On the month's screens the same order is shown as a strip of steps, so you can see where you are.",
+    "sr": "Sedmi korak izbliza — ono što se ponavlja svakog meseca. Redosled u njemu je obavezan: svaka sledeća radnja nemoguća je bez prethodne. Na ekranima meseca isti redosled prikazan je trakom koraka, da se vidi gde ste sada."
+  },
+  "Кому что выдано и что из этого следует — раздел «Роли и права». Он открыт\n  тому, у кого есть право вести роли; остальным его в шапке не видно.": {
+    "en": "Who has been given what, and what follows from it, lives in the “Roles and rights” section. It is open to whoever has the right to manage roles; others do not see it in the header at all.",
+    "sr": "Kome je šta dodeljeno i šta iz toga sledi — odeljak „Uloge i prava“. Otvoren je onome ko ima pravo da vodi uloge; ostalima se u zaglavlju uopšte ne vidi."
+  },
+  "В шапке это два раздела: «Наличные расходы» — то, что вышло из кассы точки,\n  и «Инбокс документов» — очередь того, что продукт не смог отнести сам.\n  Список счетов открывается из инбокса и живёт в том же разделе.": {
+    "en": "In the header these are two sections: “Cash expenses” — what left a unit's till — and “Document inbox” — the queue of what the product could not classify by itself. The list of invoices opens from the inbox and lives in the same section.",
+    "sr": "U zaglavlju su to dva odeljka: „Gotovinski troškovi“ — ono što je izašlo iz kase objekta — i „Prijemno sanduče dokumenata“ — red onoga što proizvod nije uspeo sam da razvrsta. Spisak računa otvara se iz sandučeta i živi u istom odeljku."
+  }
+}

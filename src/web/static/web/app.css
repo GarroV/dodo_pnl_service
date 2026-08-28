@@ -1200,6 +1200,30 @@ ol.steps li.now .name { color: var(--accent); }
 .guide__walk p:last-child { margin-bottom: 0; }
 .guide__meta { color: var(--ink-2); font-size: var(--fs-meta); line-height: var(--lh-meta); }
 
+/* Путь до первой ведомости — семь шагов подряд. Карточка на шаг, а не рельс,
+   как у сквозного месяца: там четыре действия одного дня и важна их
+   непрерывность, здесь семь заходов, между которыми проходит время, и у каждого
+   свой набор справок (где, готово когда, где спотыкаются). Номер шага — в
+   разметке, а не счётчиком CSS: он приходит из `web/guide.py` вместе с
+   остальными полями шага, и вторая нумерация рядом с первой рано или поздно
+   разъедется. */
+.guide__steps { list-style: none; margin: 0 0 var(--space-8); padding: 0; display: grid; gap: var(--space-6); }
+.guide__step {
+  background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--r-block); padding: var(--space-7) var(--space-8);
+}
+.guide__step h3 {
+  display: flex; align-items: baseline; gap: var(--space-5);
+  margin: 0 0 var(--space-5); font-size: var(--fs-lead); line-height: var(--lh-lead);
+}
+.guide__step p { max-width: none; margin: 0 0 var(--space-6); }
+.guide__step-num {
+  flex: 0 0 auto; min-width: 20px; height: 20px;
+  display: inline-grid; place-items: center;
+  border-radius: 999px; background: var(--accent); color: var(--ink-inverse);
+  font-family: var(--font-num); font-size: var(--fs-micro); font-weight: var(--w-bold);
+}
+
 /* Роли — сеткой, а не таблицей: у каждой роли есть абзац прозы, а абзац в
    ячейке таблицы делает строки разной высоты и растаскивает столбцы. Две
    колонки, потому что ролей четыре: в один столбец страница уезжает вниз, в

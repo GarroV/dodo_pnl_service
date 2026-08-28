@@ -87,9 +87,64 @@ def test_the_shooter_reads_the_same_list():
     )
 
 
+PLACEHOLDER_IN_URL = re.compile(r"\{([a-z_]+)\}")
+
+
 @pytest.mark.parametrize("name,url", sorted(screens().items()))
 def test_every_screen_points_somewhere(name, url):
-    """Адрес экрана — либо путь продукта, либо подстановка, которую скрипт знает."""
-    assert url.startswith("/") or url in ("{employee}",), (
-        f"{name}: непонятный адрес «{url}»"
+    """Адрес экрана — либо путь продукта, либо целиком подстановка."""
+    assert url.startswith("/") or PLACEHOLDER_IN_URL.fullmatch(url), (
+        f"{name}: непонятный адрес «{url}». Адрес — либо путь, начинающийся "
+        f"с «/», либо подстановка целиком, вида {{invoice}}"
+    )
+
+
+def test_the_shooter_knows_every_substitution():
+    """Подстановку в адресе экрана скрипт съёмки обязан уметь разрешать.
+
+    Иначе `{trace}` уедет в браузер как есть, страница не откроется, и в гайде
+    окажется дыра — а узнают о ней на сборке, в лучшем случае. Проверка дешёвая
+    и ловит ровно то, что забывают: экран в список вписали, а научить съёмку
+    искать его адрес — нет.
+    """
+    source = SHOOTER.read_text(encoding="utf-8")
+    used = {
+        name
+        for url in screens().values()
+        for name in PLACEHOLDER_IN_URL.findall(url)
+    }
+    unknown = sorted(name for name in used if "{" + name + "}" not in source)
+    assert not unknown, (
+        f"эти подстановки есть в {SCREENS.name}, но {SHOOTER.name} их не знает: "
+        f"{unknown}"
+    )
+
+
+# --- гайд называет разделы так же, как их называет продукт ------------------
+
+
+def test_the_guide_calls_the_sections_the_way_the_product_calls_them():
+    """Название раздела в гайде — то же, что в шапке продукта.
+
+    Куплено разрывом: разделы переименовали по словарю эталона (issue #162,
+    было «Периоды · Расходы · Счета», стало «Табель · Наличные расходы · Инбокс
+    документов»), а гайд остался со старыми именами. Человек читал про «Счета»,
+    искал их в шапке и не находил — и решал, что сломался он.
+
+    Проверка идёт от кода к тексту: список разделов берётся из `web.navigation`,
+    то есть из того же места, откуда собирается шапка. Переименуют раздел —
+    покраснеет здесь, а не у читателя.
+    """
+    text = GUIDE.read_text(encoding="utf-8")
+    from web.navigation import GROUPS
+
+    missing = [
+        str(item.title)
+        for group in GROUPS
+        for item in group.items
+        if str(item.title) not in text
+    ]
+    assert not missing, (
+        f"гайд не называет разделы продукта: {missing}. "
+        "Либо раздел переименовали и гайд отстал, либо гайд про него молчит"
     )

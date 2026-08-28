@@ -4789,18 +4789,6 @@ msgstr ""
 msgid "Месяц от начала до конца"
 msgstr "The month from start to finish"
 
-#: web/templates/web/guide.html:67
-msgid ""
-"Это главный сценарий продукта, и порядок в нём обязательный: каждый\n"
-"  следующий шаг невозможен без предыдущего. На экранах месяца тот же "
-"порядок\n"
-"  показан полосой шагов, чтобы было видно, где вы сейчас."
-msgstr ""
-"This is the product's main scenario, and its order is mandatory: each\n"
-"  next step is impossible without the previous one. The month's screens "
-"show\n"
-"  the same order as a strip of steps, so you can see where you are."
-
 #: web/templates/web/guide.html:81
 msgid ""
 "Часы за месяц по каждой точке. Основная часть приезжает из Dodo IS;\n"
@@ -7360,3 +7348,126 @@ msgstr "entered manually"
 #: web/views.py:1615
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
+
+msgid "Партнёр и юрлица"
+msgstr "Partner and legal entities"
+
+msgid "Справочники → Юрлица"
+msgstr "Directories → Legal entities"
+
+msgid "Юрлицо — то, с чем работает бухгалтерия: зарплата, налоги и отчётность считаются по каждому отдельно."
+msgstr "A legal entity is what accounting works with: payroll, taxes and reporting are calculated for each one separately."
+
+msgid "В шапке написано название партнёра, а в справочнике юрлиц есть хотя бы одна строка."
+msgstr "The header shows the partner's name and the legal entities directory has at least one row."
+
+msgid "Самого партнёра заводит инженер — экрана для этого в продукте нет."
+msgstr "The partner itself is created by an engineer — there is no screen for that in the product."
+
+msgid "Точки и кассы"
+msgstr "Units and tills"
+
+msgid "Справочники → Точки"
+msgstr "Directories → Units"
+
+msgid "На точку вешаются часы, наличные расходы и строки P&L. Касса задаёт регистр учёта расхода, чтобы его не выбирали руками каждый раз."
+msgstr "Hours, cash expenses and P&L rows all hang on a unit. A till sets the ledger of an expense so that nobody has to pick it by hand every time."
+
+msgid "У каждой работающей точки есть касса, а у кассы — регистр учёта."
+msgstr "Every working unit has a till, and every till has a ledger."
+
+msgid "Точку не удаляют, а закрывают датой: в прошлых месяцах лежат её зарплаты."
+msgstr "A unit is not deleted but closed with a date: past months hold its payroll."
+
+msgid "Правила страны"
+msgstr "Country rules"
+
+msgid "Правило — это версия с датой, а не число в коде. Поэтому правка ставки в июле не переписывает уже закрытый июнь."
+msgstr "A rule is a version with a date, not a number in the code. That is why changing a rate in July does not rewrite an already closed June."
+
+msgid "Реестр открывается, и у каждого правила видно значение, уровень и дату начала действия."
+msgstr "The registry opens and every rule shows its value, its level and the date it starts to apply."
+
+msgid "Переопределение ставят на человека там, где нужно на группу. Уровень написан в строке правила — смотреть надо здесь, а не потом."
+msgstr "An override is put on a person where it belongs on a group. The level is written in the rule's row — check it here, not later."
+
+msgid "Группы и должности"
+msgstr "Groups and positions"
+
+msgid "Справочники → Группы сотрудников"
+msgstr "Directories → Employee groups"
+
+msgid "Группа отвечает, как считается работа и в какую строку затрат она попадёт. Должность — кого нанимаем и в какую группу он попадёт."
+msgstr "A group answers how the work is calculated and which cost row it lands in. A position answers who we hire and which group they land in."
+
+msgid "У группы задана схема расчёта и регистр учёта, у должности — группа и часы по договору."
+msgstr "A group has a calculation scheme and a ledger; a position has a group and contract hours."
+
+msgid "Пропущенный регистр учёта группы — отказ формы: продукт не угадывает, в каком контуре живут эти деньги."
+msgstr "A missing ledger on a group is a refusal from the form: the product does not guess which circuit this money lives in."
+
+msgid "Люди и условия найма"
+msgstr "People and employment terms"
+
+msgid "Справочники → Сотрудники"
+msgstr "Directories → Employees"
+
+msgid "Расчёт берёт условия найма по версии на дату — поэтому у ставки есть «действует с», а не просто значение."
+msgstr "The calculation takes employment terms by their version on a date — that is why a rate has a “from” and not just a value."
+
+msgid "У каждого работающего есть версия условий, действующая на первое число вашего первого месяца."
+msgstr "Everyone who works has a version of the terms that applies on the first day of your first month."
+
+msgid "Человек без условий найма не появляется в табеле вовсе — не «с нулями», а отсутствует: считать его нечем."
+msgstr "A person without employment terms does not appear in the timesheet at all — not “with zeros”, but absent: there is nothing to calculate them with."
+
+msgid "Справочники → Производственный календарь"
+msgstr "Directories → Production calendar"
+
+msgid "Отсюда берётся норма часов и число рабочих дней: на них опираются доплата до минимума и половина остальных правил."
+msgstr "Standard hours and the number of working days come from here: the top-up to the minimum and half of the other rules rest on them."
+
+msgid "У месяца, с которого вы начинаете, есть норма часов и число рабочих дней."
+msgstr "The month you start from has standard hours and a number of working days."
+
+msgid "Месяц заводят раньше календаря — тогда вместо нормы часов страница месяца прямо пишет, что календарь на него не заведён."
+msgstr "A month is created before the calendar for it — then, instead of standard hours, the month's page says plainly that no calendar has been created for it."
+
+msgid "Первый настоящий месяц"
+msgstr "The first real month"
+
+msgid "Онбординг заканчивается не обучением, а первой утверждённой ведомостью. Дальше месяц повторяется по той же полосе из трёх шагов."
+msgstr "Onboarding ends not with training but with the first approved payroll sheet. After that the month repeats along the same strip of three steps."
+
+msgid "Период утверждён, в истории видно, кто и когда это сделал, а в P&L появились строки."
+msgstr "The period is approved, the history shows who did it and when, and rows have appeared in the P&L."
+
+msgid "Ждут, что расчёт пройдёт и без закрытых часов по точкам. Что мешает утвердить месяц, продукт перечисляет до утверждения, а не после."
+msgstr "People expect the calculation to go through without hours being closed per unit. What stands in the way of approving the month, the product lists before approval, not after."
+
+msgid "Семь шагов до первой ведомости"
+msgstr "Seven steps to the first payroll sheet"
+
+msgid "Это не тур по кнопкам, а проход по настоящему месяцу. Первые шесть шагов\n  делаются один раз, когда партнёра заводят; седьмой повторяется каждый месяц.\n  Порядок не декоративный: каждый следующий шаг физически невозможен без\n  предыдущего, и продукт скажет об этом отказом, если попробовать иначе."
+msgstr "This is not a tour of buttons but a walk through a real month. The first six steps are done once, when the partner is set up; the seventh repeats every month. The order is not decorative: each next step is physically impossible without the previous one, and the product will say so with a refusal if you try otherwise."
+
+msgid "Где это"
+msgstr "Where it is"
+
+msgid "Готово, когда"
+msgstr "Done when"
+
+msgid "Здесь спотыкаются"
+msgstr "Where people stumble"
+
+msgid "Шаги с первого по шестой партнёр проходит вместе с внедренцем — на это уходит\n  день. Седьмой партнёр делает сам: это и есть проверка, что онбординг\n  сработал."
+msgstr "Steps one through six the partner walks together with the implementer — it takes a day. The seventh the partner does alone: that is the very check that the onboarding worked."
+
+msgid "Седьмой шаг крупным планом — то, что повторяется каждый месяц. Порядок в нём\n  обязательный: каждое следующее действие невозможно без предыдущего. На экранах\n  месяца тот же порядок показан полосой шагов, чтобы было видно, где вы\n  сейчас."
+msgstr "The seventh step close up — the part that repeats every month. Its order is mandatory: each next action is impossible without the previous one. On the month's screens the same order is shown as a strip of steps, so you can see where you are."
+
+msgid "Кому что выдано и что из этого следует — раздел «Роли и права». Он открыт\n  тому, у кого есть право вести роли; остальным его в шапке не видно."
+msgstr "Who has been given what, and what follows from it, lives in the “Roles and rights” section. It is open to whoever has the right to manage roles; others do not see it in the header at all."
+
+msgid "В шапке это два раздела: «Наличные расходы» — то, что вышло из кассы точки,\n  и «Инбокс документов» — очередь того, что продукт не смог отнести сам.\n  Список счетов открывается из инбокса и живёт в том же разделе."
+msgstr "In the header these are two sections: “Cash expenses” — what left a unit's till — and “Document inbox” — the queue of what the product could not classify by itself. The list of invoices opens from the inbox and lives in the same section."
