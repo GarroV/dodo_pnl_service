@@ -117,6 +117,27 @@
     {% else %}
       <a class="guide-link" href="{{ guide_url }}">{{ guide_label }}</a>
     {% endif %}
+    {% comment %}
+    Переключатель темы (issue #164) стоит рядом с языком: обе ручки — про то,
+    КАК человек читает продукт, а не про то, что в нём лежит. Форма отправляет
+    выбор на сервер, потому что тему ставит сервер в атрибут `<html>`: выбранная
+    скриптом, она применялась бы после загрузки, и человек видел бы вспышку
+    светлого фона перед тёмным.
+    {% endcomment %}
+    <form class="lang seg" method="post" action="{% url 'set-theme' %}">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      {% translate "Как в системе" as theme_system %}
+      {% translate "Светлая тема" as theme_light %}
+      {% translate "Тёмная тема" as theme_dark %}
+      {% for option in themes %}
+      {% if option.current %}
+      <span class="lang-option" aria-current="true">{% if option.code == "system" %}A{% elif option.code == "light" %}☀{% else %}☾{% endif %}</span>
+      {% else %}
+      <button class="lang-option" type="submit" name="theme" value="{{ option.code }}"
+              title="{% if option.code == 'system' %}{{ theme_system }}{% elif option.code == 'light' %}{{ theme_light }}{% else %}{{ theme_dark }}{% endif %}">{% if option.code == "system" %}A{% elif option.code == "light" %}☀{% else %}☾{% endif %}</button>
+      {% endif %}
+      {% endfor %}
+    </form>
     {% if languages %}
     <form class="lang seg" method="post" action="{% url 'set_language' %}">{% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">

@@ -105,6 +105,7 @@
 | `/roles/people/<uuid:user_id>/` | `person-roles` | `web.roles_views.person_roles` |
 | `/rules/` | `rules` | `web.rules_views.index` |
 | `/rules/<str:path>/` | `rule` | `web.rules_views.rule` |
+| `/theme/` | `set-theme` | `web.theme.set_theme` |
 | `/timesheets/<uuid:period_id>/` | `timesheets` | `timesheets.views.grid` |
 | `/timesheets/<uuid:period_id>/cell/` | `timesheet-cell` | `timesheets.views.cell` |
 | `/timesheets/<uuid:period_id>/close/` | `timesheet-close` | `timesheets.views.close` |

@@ -19,7 +19,7 @@
 Комментарий именно {% comment %}: однострочный {# … #} многострочным не бывает
 и вывалился бы на страницу текстом (проверено в браузере дважды).
 {% endcomment %}{% load i18n static %}{% get_current_language as page_language %}<!doctype html>
-<html lang="{{ page_language }}">
+<html lang="{{ page_language }}"{% if theme_attr %} data-theme="{{ theme_attr }}"{% endif %}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

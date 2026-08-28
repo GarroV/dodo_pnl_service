@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-28 01:45+0000\n"
+"POT-Creation-Date: 2026-08-28 02:13+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1909,7 +1909,7 @@ msgstr ""
 "You have not been added to any partner yet, so you have no employees. Ask "
 "the network administrator to add you."
 
-#: web/directory_views.py:228 web/directory_views.py:568 web/navigation.py:76
+#: web/directory_views.py:228 web/directory_views.py:568 web/navigation.py:80
 msgid "Сотрудники"
 msgstr "Employees"
 
@@ -2989,11 +2989,11 @@ msgstr "Timesheet"
 msgid "Наличные расходы"
 msgstr "Cash expenses"
 
-#: web/navigation.py:70
+#: web/navigation.py:74
 msgid "Инбокс документов"
 msgstr "Document inbox"
 
-#: web/navigation.py:72 web/navigation.py:77
+#: web/navigation.py:76 web/navigation.py:81
 #: web/templates/web/directory/denied.html:13
 #: web/templates/web/directory/denied.html:15
 #: web/templates/web/directory/index.html:15
@@ -3001,17 +3001,17 @@ msgstr "Document inbox"
 msgid "Справочники"
 msgstr "Directories"
 
-#: web/navigation.py:78 web/rules_views.py:187 web/rules_views.py:200
+#: web/navigation.py:82 web/rules_views.py:187 web/rules_views.py:200
 #: web/templates/web/rules/denied.html:14
 #: web/templates/web/rules/denied.html:16
 msgid "Правила расчёта"
 msgstr "Calculation rules"
 
-#: web/navigation.py:80
+#: web/navigation.py:84
 msgid "Настройки"
 msgstr "Settings"
 
-#: web/navigation.py:81 web/templates/web/roles/denied.html:10
+#: web/navigation.py:85 web/templates/web/roles/denied.html:10
 #: web/templates/web/roles/denied.html:12 web/templates/web/roles/index.html:18
 #: web/templates/web/roles/index.html:20
 msgid "Роли и права"
@@ -4348,34 +4348,46 @@ msgstr "Main navigation"
 msgid "как это работает"
 msgstr "how this works"
 
-#: web/templates/web/components/header.html:139
+#: web/templates/web/components/header.html:134
+msgid "Как в системе"
+msgstr "Follow the system"
+
+#: web/templates/web/components/header.html:135
+msgid "Светлая тема"
+msgstr "Light theme"
+
+#: web/templates/web/components/header.html:136
+msgid "Тёмная тема"
+msgstr "Dark theme"
+
+#: web/templates/web/components/header.html:161
 msgid ""
 "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)"
 msgstr ""
 "The login page has quick sign-in buttons for seed accounts (DEV_LOGIN=1)"
 
-#: web/templates/web/components/header.html:139
+#: web/templates/web/components/header.html:161
 msgid "dev-вход"
 msgstr "dev login"
 
-#: web/templates/web/components/header.html:152
+#: web/templates/web/components/header.html:174
 msgid "Данные и итоги на всех страницах — только по этой точке"
 msgstr "Data and totals on all pages — for this unit only"
 
-#: web/templates/web/components/header.html:152
+#: web/templates/web/components/header.html:174
 #, python-format
 msgid "точка: %(code)s"
 msgstr "unit: %(code)s"
 
-#: web/templates/web/components/header.html:155
+#: web/templates/web/components/header.html:177
 msgid "пароль"
 msgstr "password"
 
-#: web/templates/web/components/header.html:157
+#: web/templates/web/components/header.html:179
 msgid "выйти"
 msgstr "log out"
 
-#: web/templates/web/components/header.html:160 web/templates/web/login.html:61
+#: web/templates/web/components/header.html:182 web/templates/web/login.html:61
 msgid "войти"
 msgstr "log in"
 

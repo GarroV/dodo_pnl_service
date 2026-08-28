@@ -18,12 +18,16 @@ from . import (
     rules_views,
     suppliers_api,
     suppliers_views,
+    theme,
     tills_views,
     views,
 )
 
 urlpatterns = [
     path("", views.index, name="index"),
+    # Тема оформления (issue #164). Без `@login_required`: тема — свойство
+    # читателя, а не роли, и гайд с титульной страницей открываются до входа.
+    path("theme/", theme.set_theme, name="set-theme"),
     # Гайд по продукту (T159). Без `@login_required` намеренно: половина
     # вопроса, на который он отвечает, — «кем входить», и страница, видимая
     # только после входа, на него ответить не может по устройству.
