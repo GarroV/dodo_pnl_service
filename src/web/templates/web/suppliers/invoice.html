@@ -41,6 +41,25 @@
   <p class="actions"><button type="submit" class="primary">{% translate "Сохранить счёт" %}</button></p>
 </form>
 
+{% if not_ours %}
+{% translate "Бумага признана чужой — «не наша»" as alien %}
+{% notice "alert" title=alien %}{% blocktranslate with why=not_ours_why on=not_ours_at %}{{ on }}: {{ why }}. Строки этого документа сторнированы, в P&L его денег нет. Сам документ остался, чтобы ту же бумагу не разобрали второй раз как новую.{% endblocktranslate %}{% endnotice %}
+{% elif summary %}
+{% comment %}
+«Не наша» (T205, модуль эталона 15). Кнопка стоит рядом с разбором и требует
+причины: через полгода «не наша» без объяснения не отличить от «не разбирались».
+Причину требует и сама схема, а не только форма.
+{% endcomment %}
+<form class="search row" method="post" action="{{ not_ours_url }}">{% csrf_token %}
+  <p class="field">
+    <label for="not-ours-why">{% translate "Почему бумага чужая" %}</label>
+    <input type="text" id="not-ours-why" name="why" required
+           placeholder="{% translate 'Например: накладная соседнего арендатора' %}">
+  </p>
+  <button type="submit">{% translate "Не наша" %}</button>
+</form>
+{% endif %}
+
 {% if positions %}
 {% comment %}
 Разбор документа на позиции (T204, модуль эталона 3).

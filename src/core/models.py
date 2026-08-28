@@ -1720,6 +1720,14 @@ class SourceDocument(models.Model):
     currency = models.TextField(null=True, blank=True)
     total_amount = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
     # Не поменялся — разбирать заново нечего.
+    # Бумага признана чужой (issue #174): документ чужого юрлица, ошибка почты
+    # поставщика, накладная соседнего арендатора. Не удаление, а пометка со
+    # следом: удалённый документ через месяц принесут второй раз и разберут как
+    # новый, а объяснить, почему его нет, будет нечем. Причина обязательна —
+    # «не наша» без слов через полгода не отличить от «не разбирались».
+    not_ours_at = models.DateTimeField(null=True, blank=True)
+    not_ours_by = models.UUIDField(null=True, blank=True)
+    not_ours_why = models.TextField(null=True, blank=True)
     content_hash = models.TextField(null=True, blank=True)
     file_url = models.TextField(null=True, blank=True)
     payload = models.JSONField(db_default={})  # сырой ответ источника, как пришёл
@@ -1760,6 +1768,14 @@ class SourceDocument(models.Model):
                 condition=models.Q(handed_over_at__isnull=True)
                 | models.Q(unit__isnull=False),
                 name="source_documents_paper_names_its_unit",
+            ),
+            # Пометка «не наша» обязана нести причину: через полгода «не наша»
+            # без слов не отличить от «не разбирались» (issue #174). Тот же
+            # довод и та же форма, что у решения по расхождению сверки.
+            models.CheckConstraint(
+                condition=models.Q(not_ours_at__isnull=True)
+                | models.Q(not_ours_why__regex=r"\S"),
+                name="source_documents_not_ours_has_a_reason",
             ),
         ]
 

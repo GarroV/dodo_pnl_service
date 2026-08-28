@@ -72,6 +72,7 @@ from core.models import (
 )
 
 from . import cash, permissions
+from .dbrefusal import BadInput
 
 # Приставки ключей идемпотентности. Разные у счёта, платежа и оплаты без счёта:
 # ключ — это ответ на вопрос «то же самое событие или другое», и общая приставка
@@ -204,6 +205,47 @@ def record_invoice(
     return Recorded(
         document_id=document_id, fact_id=str(fact_id), action=action, landing=landing,
     )
+
+
+def mark_not_ours(who, document, *, why: str) -> int:
+    """Признать бумагу чужой: строки сторнируются, документ остаётся (T205).
+
+    Модуль 15 эталона ставит эту кнопку рядом с разбором: документ чужого
+    юрлица, ошибка почты поставщика, накладная соседнего арендатора. Без неё
+    такую бумагу либо разбирают как свою — и она навсегда остаётся в P&L
+    неверной суммой, — либо оставляют в очереди, и очередь перестаёт быть
+    рабочим списком.
+
+    **Строки уходят сторно, а не удалением** (D020): июнь сегодня и июнь через
+    полгода обязаны давать одно число, а исчезнувшая строка это правило нарушает
+    тише всего.
+
+    **Документ остаётся с причиной.** Стёртый документ через месяц принесут
+    второй раз и разберут как новый, а объяснить, почему его нет, будет нечем.
+    Причина обязательна и на уровне схемы: «не наша» без слов через полгода не
+    отличить от «не разбирались».
+    """
+    reason = (why or "").strip()
+    if not reason:
+        # `BadInput` (400), а не отказ по состоянию дел (409): с положением дел
+        # всё в порядке, не заполнено поле формы.
+        raise BadInput(_(
+            "Напишите, почему бумага чужая: через полгода «не наша» без "
+            "объяснения не отличить от «не разбирались»."
+        ))
+    if document.not_ours_at is not None:
+        return 0    # уже помечена: повторное нажатие ничего не меняет
+
+    reversed_lines = 0
+    for row in invoice_lines(document):
+        storno_line(who, row)
+        reversed_lines += 1
+
+    document.not_ours_at = timezone.now()
+    document.not_ours_by = getattr(who, "user_id", None)
+    document.not_ours_why = reason
+    document.save(update_fields=["not_ours_at", "not_ours_by", "not_ours_why"])
+    return reversed_lines
 
 
 def add_position(who, document, *, entry_key: str, item, unit_id, amount,
@@ -578,6 +620,11 @@ def invoices(who, chosen: dict) -> list[Listed]:
             dedup_key__startswith=INVOICE_PREFIX,
             superseded_at__isnull=True,
             document__isnull=False,
+            # Бумага, признанная чужой, уходит из очереди (T205): список счетов
+            # рабочий, и документ, по которому решение принято, в нём только
+            # мешает. Сам документ при этом жив и открывается по прямой ссылке —
+            # со следом, кто и почему так решил.
+            document__not_ours_at__isnull=True,
         )
         .exclude(allocation="allocated")
         .order_by("-doc_date", "created_at")

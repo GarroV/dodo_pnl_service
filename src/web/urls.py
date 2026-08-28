@@ -312,6 +312,12 @@ urlpatterns = [
         suppliers_views.invoice_positions,
         name="invoice-positions",
     ),
+    # «Не наша» (T205): бумага чужого юрлица уходит из очереди со следом.
+    path(
+        "invoices/<uuid:document_id>/not-ours/",
+        suppliers_views.invoice_not_ours,
+        name="invoice-not-ours",
+    ),
     path("inbox/", suppliers_views.inbox, name="inbox"),
     path(
         "inbox/<uuid:fact_id>/classify/",

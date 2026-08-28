@@ -382,7 +382,40 @@ def invoice(request, document_id=None):
         "summary": _summary(document, fact) if document is not None else None,
         # Позиции документа и сходятся ли они с суммой на бумаге (T204).
         **(_positions_block(who, document) if document is not None else {}),
+        **(_not_ours_block(document) if document is not None else {}),
     }, status=status)
+
+
+@login_required
+def invoice_not_ours(request, document_id):
+    """Признать бумагу чужой (T205, модуль эталона 15 «Не наша»).
+
+    Только POST: это запись денег — строки документа сторнируются. Причина
+    обязательна, и требует её не форма, а сама схема: «не наша» без слов через
+    полгода не отличить от «не разбирались».
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        return _no_membership(request, _(
+            "Вас ещё не завели ни к одному партнёру, поэтому вносить счёт некуда. "
+            "Попросите администратора сети добавить вас."
+        ))
+
+    document = suppliers.document_or_none(document_id)
+    # Видимость — по строке, а не по шапке: иначе по ответу видно, что чужой
+    # счёт существует (D023). Тот же довод, что у позиций.
+    if document is None or suppliers.invoice_fact(document) is None:
+        raise Http404("счёт не найден")
+
+    try:
+        suppliers.mark_not_ours(who, document, why=request.POST.get("why", ""))
+    except (BadInput, cash.CashRefused) as refused:
+        return _refused_card(request, who, document, refused)
+
+    return redirect(reverse("invoice", args=[document.id]) + "?not_ours=1")
 
 
 @login_required
@@ -447,6 +480,7 @@ def _refused_card(request, who, document, refused):
         "pay_url": reverse("invoice-pay", args=[document.id]),
         "summary": _summary(document, fact),
         **_positions_block(who, document),
+        **_not_ours_block(document),
     }, status=getattr(refused, "http_status", 400))
 
 
@@ -477,6 +511,21 @@ def _positions_block(who, document) -> dict:
         "balanced": difference == 0,
         "positions_url": reverse("invoice-positions", args=[document.id]),
         "position_fields": _position_fields(who, document),
+    }
+
+
+def _not_ours_block(document) -> dict:
+    """Признана ли бумага чужой — и если да, то почему и когда (T205).
+
+    Причина показывается на самой карточке, а не только в базе: человек,
+    открывший документ через полгода, обязан прочитать, почему в отчёте его нет,
+    не спрашивая никого.
+    """
+    return {
+        "not_ours": document.not_ours_at is not None,
+        "not_ours_why": document.not_ours_why or "",
+        "not_ours_at": day(document.not_ours_at.date()) if document.not_ours_at else "",
+        "not_ours_url": reverse("invoice-not-ours", args=[document.id]),
     }
 
 

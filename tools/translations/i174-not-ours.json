@@ -1,0 +1,26 @@
+{
+  "Бумага признана чужой — «не наша»": {
+    "en": "The paper is marked as not ours",
+    "sr": "Papir je označen kao tuđi"
+  },
+  "%(on)s: %(why)s. Строки этого документа сторнированы, в P&L его денег нет. Сам документ остался, чтобы ту же бумагу не разобрали второй раз как новую.": {
+    "en": "%(on)s: %(why)s. The lines of this document have been reversed, its money is not in the P&L. The document itself stays so that the same paper is not sorted out a second time as new.",
+    "sr": "%(on)s: %(why)s. Redovi ovog dokumenta su stornirani, njegovog novca nema u P&L-u. Sam dokument ostaje da se isti papir ne bi po drugi put obradio kao nov."
+  },
+  "Почему бумага чужая": {
+    "en": "Why the paper is not ours",
+    "sr": "Zašto papir nije naš"
+  },
+  "Например: накладная соседнего арендатора": {
+    "en": "For example: a delivery note of the neighbouring tenant",
+    "sr": "Na primer: otpremnica susednog zakupca"
+  },
+  "Не наша": {
+    "en": "Not ours",
+    "sr": "Nije naša"
+  },
+  "Напишите, почему бумага чужая: через полгода «не наша» без объяснения не отличить от «не разбирались».": {
+    "en": "State why the paper is not ours: half a year from now «not ours» without an explanation is indistinguishable from «nobody looked».",
+    "sr": "Napišite zašto papir nije naš: za pola godine «nije naša» bez objašnjenja se ne razlikuje od «niko nije pogledao»."
+  }
+}

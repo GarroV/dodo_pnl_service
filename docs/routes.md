@@ -73,6 +73,7 @@
 | `/inbox/classify/` | `inbox-batch` | `web.suppliers_views.inbox_batch` |
 | `/invoices/` | `invoices` | `web.suppliers_views.invoices` |
 | `/invoices/<uuid:document_id>/` | `invoice` | `web.suppliers_views.invoice` |
+| `/invoices/<uuid:document_id>/not-ours/` | `invoice-not-ours` | `web.suppliers_views.invoice_not_ours` |
 | `/invoices/<uuid:document_id>/pay/` | `invoice-pay` | `web.suppliers_views.invoice_pay` |
 | `/invoices/<uuid:document_id>/positions/` | `invoice-positions` | `web.suppliers_views.invoice_positions` |
 | `/invoices/new/` | `invoice-new` | `web.suppliers_views.invoice` |
