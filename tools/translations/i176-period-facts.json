@@ -1,0 +1,42 @@
+{
+  "Часы": {
+    "en": "Hours",
+    "sr": "Sati"
+  },
+  "ФОТ": {
+    "en": "Payroll cost",
+    "sr": "Fond zarada"
+  },
+  "Доля от выручки": {
+    "en": "Share of revenue",
+    "sr": "Udeo u prihodu"
+  },
+  "Что можно делать": {
+    "en": "What can be done",
+    "sr": "Šta se može raditi"
+  },
+  "переоткрывали": {
+    "en": "was reopened",
+    "sr": "ponovo otvarano"
+  },
+  "Вносить часы и расходы, считать": {
+    "en": "Enter hours and expenses, calculate",
+    "sr": "Unositi sate i troškove, obračunavati"
+  },
+  "Считать, править, закрыть": {
+    "en": "Calculate, edit, close",
+    "sr": "Obračunati, ispraviti, zatvoriti"
+  },
+  "Только смотреть и выгружать": {
+    "en": "View and export only",
+    "sr": "Samo pregled i izvoz"
+  },
+  "Пересчитать и утвердить заново": {
+    "en": "Recalculate and approve again",
+    "sr": "Ponovo obračunati i odobriti"
+  },
+  "Смотреть": {
+    "en": "View",
+    "sr": "Pregled"
+  }
+}

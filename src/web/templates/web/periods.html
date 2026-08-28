@@ -29,20 +29,44 @@
 
 {% if periods %}
 <p class="note">{% translate "Откройте месяц — работа идёт внутри него." %}</p>
-<table>
+{% comment %}
+Числа месяца прямо в списке (issue #176, модуль 4 эталона). Список периодов —
+место, где человек решает, готов месяц или нет; без часов и ФОТ это оглавление
+без страниц, и «посчитан ли месяц» выясняется заходом внутрь.
+
+Доля от выручки стоит прочерком, пока выручки в продукте нет вовсе: ноль читался
+бы как посчитанный ответ «расходы съели ноль процентов».
+{% endcomment %}
+{% scroll %}<table>
   <thead>
-    <tr><th>{% translate "Месяц" %}</th><th>{% translate "Состояние" %}</th><th>{% translate "Партнёр" %}</th></tr>
+    <tr>
+      <th>{% translate "Месяц" %}</th>
+      <th>{% translate "Состояние" %}</th>
+      <th class="num">{% translate "Часы" %}</th>
+      <th class="num">{% translate "ФОТ" %}</th>
+      <th class="num">{% translate "Доля от выручки" %}</th>
+      <th>{% translate "Что можно делать" %}</th>
+      <th>{% translate "Партнёр" %}</th>
+    </tr>
   </thead>
   <tbody>
     {% for period in periods %}
-    <tr>
+    <tr data-period="{{ period.id }}">
       <td><a href="{% url 'period' period.id %}">{{ period.title }}</a></td>
-      <td>{{ period.status }}</td>
+      <td>{{ period.status }}{% if period.reopened %} <span class="chip">{% translate "переоткрывали" %}</span>{% endif %}</td>
+      {% comment %}
+      Класс числа считает фильтр, а не разметка: прочерк обязан читаться как
+      пустое место, а не как число (сторож `test_numbers_read_as_a_column`).
+      {% endcomment %}
+      <td class="{{ period.hours|numclass }}">{{ period.hours }}</td>
+      <td class="{{ period.payroll|numclass }}">{{ period.payroll }}</td>
+      <td class="{{ period.share|numclass }}">{{ period.share }}</td>
+      <td>{{ period.may_do }}</td>
       <td>{{ period.tenant }}</td>
     </tr>
     {% endfor %}
   </tbody>
-</table>
+</table>{% endscroll %}
 {% else %}
 {% comment %}
 Пустое состояние объясняет следующий шаг, а не показывает пустоту (T077).

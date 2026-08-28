@@ -51,7 +51,17 @@ from reports.trace import TraceNotFound, build_trace
 from reports.variance import ThresholdsMissing, build_variance
 
 from . import auth, onboarding, permissions, runslice
-from .format import CodedTitle, cut_title, exact, hours, ledger_title, money, percent, threshold
+from .format import (
+    EMPTY,
+    CodedTitle,
+    cut_title,
+    exact,
+    hours,
+    ledger_title,
+    money,
+    percent,
+    threshold,
+)
 from .i18n import month_title
 from .labels import labeller
 from .principal import get_current_principal
@@ -99,15 +109,7 @@ def index(request):
 
 @login_required
 def periods(request):
-    rows = [
-        {
-            "id": period.id,
-            "title": month_title(period.period),
-            "status": status_title(period.status),
-            "tenant": period.tenant.title,
-        }
-        for period in Period.objects.select_related("tenant").order_by("-period")
-    ]
+    rows = _period_rows()
     return render(
         request,
         "web/periods.html",
@@ -126,6 +128,111 @@ def periods(request):
             "next_month": _next_month_hint(),
         },
     )
+
+
+def _period_rows() -> list[dict]:
+    """Месяцы со своими числами: часы, ФОТ, доля от выручки (issue #176, T183).
+
+    Модуль 4 эталона показывает эти числа прямо в списке, и это не украшение:
+    список периодов — место, где человек решает, готов месяц или нет. Без чисел
+    он оглавление без страниц, и «этот месяц уже посчитан?» выясняется заходом
+    внутрь.
+
+    Считается всё **одним проходом на всю таблицу**, а не запросом на строку:
+    месяцев у партнёра десятки, и запрос в цикле дал бы столько же обращений к
+    базе ровно за тем, чтобы нарисовать колонку.
+    """
+    from decimal import Decimal
+
+    from django.db.models import Sum
+
+    from core.models import Payrun, PayslipTotals, Timesheet
+
+    # Часы берутся из `timesheets.hours` — словаря по типам часов, а не из
+    # дней табеля: дни заполняются только там, где часы вносили по датам, а
+    # итог месяца есть у КАЖДОГО табеля. По дням картина выглядела бы пустой
+    # ровно там, где данные внесены импортом, — проверено на стенде: 35
+    # табелей и ноль дней.
+    worked: dict = {}
+    for period_of, by_type in Timesheet.objects.values_list("period", "hours"):
+        total = sum(Decimal(str(value or 0)) for value in (by_type or {}).values())
+        worked[period_of] = worked.get(period_of, Decimal("0")) + total
+    payroll = {
+        row["payslip__payrun__period"]: row["total"]
+        for row in PayslipTotals.objects
+        .values("payslip__payrun__period")
+        .annotate(total=Sum("gross"))
+    }
+    revenue = _revenue_by_period()
+    # «Переоткрывали» — свойство РАСЧЁТА, а не учётного месяца: у периода
+    # состояния три (`open`, `review`, `closed`), а откат утверждения живёт в
+    # `payruns.status = reopened`. Метка обязана остаться навсегда — эталон
+    # говорит об этом прямо: «тот, кто через год увидит расхождение в
+    # отчётности, должен знать, что месяц пересчитывали».
+    reopened = set(
+        Payrun.objects.filter(status="reopened").values_list("period", flat=True)
+    )
+
+    return [
+        {
+            "id": period.id,
+            "title": month_title(period.period),
+            "status": status_title(period.status),
+            "reopened": period.period in reopened,
+            "tenant": period.tenant.title,
+            "hours": hours(worked[period.period]) if period.period in worked else EMPTY,
+            "payroll": money(payroll[period.period]) if period.period in payroll else EMPTY,
+            "share": _share_of_revenue(payroll.get(period.period),
+                                       revenue.get(period.period)),
+            "may_do": _what_can_be_done(period.status),
+        }
+        for period in Period.objects.select_related("tenant").order_by("-period")
+    ]
+
+
+def _revenue_by_period() -> dict:
+    """Выручка по месяцам. Пока её нет вовсе — словарь пустой, и это честно.
+
+    Выручка появится с коннектором Dodo IS (шестая очередь). До тех пор доля от
+    выручки показывается прочерком, а не нулём: ноль читался бы как посчитанный
+    ответ «расходы съели ноль процентов», то есть как неправда.
+    """
+    from django.db.models import Sum
+
+    from core.models import Fact
+
+    return {
+        row["period"]: row["total"]
+        for row in Fact.objects
+        .filter(pnl_item__kind="revenue", superseded_at__isnull=True)
+        .exclude(allocation="split")
+        .values("period")
+        .annotate(total=Sum("amount"))
+        if row["total"]
+    }
+
+
+def _share_of_revenue(payroll, revenue) -> str:
+    """Доля ФОТ от выручки. Нет одного из двух — прочерк, а не ноль."""
+    if not payroll or not revenue:
+        return EMPTY
+    return f"{abs(payroll) / abs(revenue) * 100:.1f} %"
+
+
+def _what_can_be_done(status: str) -> str:
+    """Что можно делать с месяцем в этом состоянии (модуль 4 эталона).
+
+    Состояние периода решает, что вообще доступно на его экранах, и человек
+    должен прочитать это словами, а не выводить из названия состояния.
+    """
+    return {
+        # Слова эталона (модуль 4, колонка «Что можно делать»), а не пересказ:
+        # человек читает их рядом с состоянием и должен понять, что доступно.
+        "open": _("Вносить часы и расходы, считать"),
+        "review": _("Считать, править, закрыть"),
+        "closed": _("Только смотреть и выгружать"),
+        "reopened": _("Пересчитать и утвердить заново"),
+    }.get(status, _("Смотреть"))
 
 
 @login_required
