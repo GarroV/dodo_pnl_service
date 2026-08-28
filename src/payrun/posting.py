@@ -113,32 +113,96 @@ def _lines_of(payrun) -> dict:
         # Начисления — по компонентам: у каждого свой регистр, и это
         # единственное место, где регистр известен точно.
         cursor.execute(
-            """select p.unit_id, c.ledger::text, sum(c.amount)
+            """select p.employee_id, p.unit_id, c.ledger::text, sum(c.amount)
                  from pay_components c
                  join payslips p on p.id = c.payslip_id
                 where p.payrun_id = %s
-                group by p.unit_id, c.ledger""",
+                group by p.employee_id, p.unit_id, c.ledger""",
             [str(payrun.id)],
         )
-        for unit_id, ledger, amount in cursor.fetchall():
-            lines[(unit_id, ledger, LABOUR)] = lines.get((unit_id, ledger, LABOUR),
-                                                         Decimal("0")) + amount
+        accruals = cursor.fetchall()
 
         # Налоги и взносы — разница между полной стоимостью и тем, что дошло до
         # людей. Регистр официальный: налог с неофициальной части не платится
         # по определению, а не по выбору партнёра.
         cursor.execute(
-            """select p.unit_id, sum(t.total_cost - t.net)
+            """select p.employee_id, p.unit_id, sum(t.total_cost - t.net)
                  from payslip_totals t
                  join payslips p on p.id = t.payslip_id
                 where p.payrun_id = %s
-                group by p.unit_id""",
+                group by p.employee_id, p.unit_id""",
             [str(payrun.id)],
         )
-        for unit_id, amount in cursor.fetchall():
-            lines[(unit_id, "official", TAXES)] = lines.get((unit_id, "official", TAXES),
-                                                            Decimal("0")) + amount
+        taxes = cursor.fetchall()
+
+    across = _units_of(payrun)
+    for employee_id, unit_id, ledger, amount in accruals:
+        for unit, part in _shares(across, employee_id, unit_id, amount):
+            key = (unit, ledger, LABOUR)
+            lines[key] = lines.get(key, Decimal("0")) + part
+    for employee_id, unit_id, amount in taxes:
+        for unit, part in _shares(across, employee_id, unit_id, amount):
+            key = (unit, "official", TAXES)
+            lines[key] = lines.get(key, Decimal("0")) + part
     return lines
+
+
+def _units_of(payrun) -> dict:
+    """Точки каждого человека на этот период (D055).
+
+    Спрашивается одним запросом на весь расчёт: людей три десятка, и запрос на
+    каждого дал бы столько же обращений к базе за тем же ответом.
+    """
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """select employee_id, unit_id, share
+                 from employee_units
+                where tenant_id = %s
+                  and valid_from <= %s
+                  and (valid_to is null or valid_to > %s)""",
+            [str(payrun.tenant_id), payrun.period, payrun.period],
+        )
+        found: dict = {}
+        for employee_id, unit_id, share in cursor.fetchall():
+            found.setdefault(employee_id, []).append((unit_id, share))
+    return found
+
+
+def _shares(across: dict, employee_id, unit_id, amount: Decimal) -> list:
+    """Как разделить сумму человека между его точками (D055).
+
+    Три случая, и все три названы владельцем:
+
+    * точек несколько — делим между ними (умолчание «поровну», доля у строки
+      переопределяет);
+    * точка одна (или привязок нет, но ведомость знает точку) — всё туда;
+    * точек нет вовсе — это офис: сумма уходит без точки и разносится общим
+      правилом, «потому что офис на всех работает, вне зависимости».
+
+    Копейки раскладываются накопленной суммой — тем же приёмом, что в
+    `allocation_plan` и в ручном разнесении: иначе на трёх точках сумма долей
+    не сойдётся с целым.
+    """
+    mine = across.get(employee_id) or []
+    if not mine:
+        return [(unit_id, amount)]
+    if len(mine) == 1:
+        return [(mine[0][0], amount)]
+
+    weights = [(unit, share if share is not None else Decimal("1")) for unit, share in mine]
+    total = sum(weight for _unit, weight in weights)
+    if total <= 0:
+        return [(unit_id, amount)]
+
+    parts, done, carried = [], Decimal("0"), Decimal("0")
+    for unit, weight in sorted(weights, key=lambda row: str(row[0])):
+        carried += weight
+        upto = (amount * carried / total).quantize(Decimal("0.01"))
+        parts.append((unit, upto - done))
+        done = upto
+    return parts
 
 
 def _line(code: str):

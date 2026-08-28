@@ -972,6 +972,52 @@ class EmploymentTerm(models.Model):
         ]
 
 
+class EmployeeUnit(models.Model):
+    """Точки, на которых работает человек (D055, issue #194).
+
+    **Зачем это отдельно от условий найма.** У человека может быть НЕСКОЛЬКО
+    точек: управляющий ведёт две-три пиццерии, территориальный — город. Условия
+    найма отвечают на вопрос «сколько платим», а эта таблица — «чьи это
+    затраты»; складывать их в одну строку значило бы либо запретить вторую
+    точку, либо дублировать всю запись найма ради неё.
+
+    **Точек нет вовсе — это офис.** Владелец 27.08.2026: «офис на всех
+    работает, вне зависимости». Такие деньги уходят на разнесение общим
+    правилом, как любой расход юрлица, а не падают на точку, где человек
+    случайно числится.
+
+    **Версионируется по датам** — как и всё, что влияет на закрытый месяц
+    (D020): перевод человека в другую пиццерию в сентябре не должен менять
+    июньский P&L.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    employee = models.ForeignKey(
+        "Employee", on_delete=models.CASCADE, db_column="employee_id",
+        related_name="units",
+    )
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, db_column="unit_id")
+    # Доля этой точки. Пусто — «поровну со всеми остальными»: умолчание названо
+    # владельцем прямо, и хранить у каждой строки одинаковое число значило бы
+    # заставлять партнёра пересчитывать доли при каждом добавлении точки.
+    share = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    valid_from = models.DateField()
+    valid_to = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = "employee_units"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["employee", "unit", "valid_from"],
+                name="employee_units_no_repeat",
+            ),
+        ]
+        indexes = [
+            models.Index("tenant", "employee", name="employee_units_person"),
+        ]
+
+
 class Timesheet(models.Model):
     """Часы за период. Сначала руками, позже из Dodo IS."""
 
