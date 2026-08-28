@@ -511,6 +511,12 @@ def wipe_payruns(dsn: str) -> None:
         conn.execute(f"delete from pay_components where tenant_id in {tenants}")
         conn.execute(f"delete from payslip_totals where tenant_id in {tenants}")
         conn.execute(f"delete from payslips where tenant_id in {tenants}")
+        # Факты, порождённые утверждением ведомости (issue #201), уходят вместе
+        # с расчётом: иначе следующий тест считает свою сумму поверх чужого ФОТ
+        # и падает удвоением. Ключ у них выводится из периода, поэтому находятся
+        # они приставкой.
+        conn.execute(f"delete from facts where tenant_id in {tenants} "
+                     "and dedup_key like 'payrun:%'")
         conn.execute(f"delete from payruns where tenant_id in {tenants}")
 
 

@@ -385,11 +385,15 @@ def test_a_closed_month_lands_in_the_current_one_through_the_api_too(
     login_as(client, "manager")
     assert client.post(NEW, payload(item, units, entry_key=entry_key())).status_code == 302
     client.post("/logout/")
-    before = june_total(sql)
-    assert before > 0, "нечему двигаться: в июне нет ни одного расхода"
+    assert june_total(sql) > 0, "нечему двигаться: в июне нет ни одного расхода"
 
     approve_june(client, web_env)
     client.post("/logout/")
+
+    # Слепок — ПОСЛЕ утверждения: оно само пополняет месяц, перенося ведомость в
+    # факты (issue #201). Иначе разница на величину ФОТ выглядела бы сдвигом
+    # закрытого месяца от расхода, который тут ни при чём.
+    before = june_total(sql)
 
     login_as(client, "director")
     key = entry_key()

@@ -357,11 +357,16 @@ def test_an_expense_dated_in_a_closed_month_lands_beside_it(
     assert client.post(URL, payload(item, units, entry_key=first)).status_code == 302
     client.post("/logout/")
 
-    before = june_total(sql)
-    assert before > 0, "нечему двигаться: в июне нет ни одного расхода"
+    assert june_total(sql) > 0, "нечему двигаться: в июне нет ни одного расхода"
 
     approve_june(client, web_env)
     client.post("/logout/")
+
+    # Слепок делается ПОСЛЕ утверждения, а не до: утверждение само пополняет
+    # месяц — переносит ведомость в факты (issue #201). Сравнение «до
+    # утверждения против после» показывало бы разницу на величину ФОТ и
+    # обвиняло в ней расход, который к ней не имеет отношения.
+    before = june_total(sql)
 
     login_as(client, "manager")
     try:

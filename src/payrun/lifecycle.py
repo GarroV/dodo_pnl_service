@@ -184,6 +184,16 @@ def approve(payrun: Payrun | None, *, actor_id) -> None:
     refuse_if_cycle_forbids(payrun, APPROVED)
     refuse_if_not_ready(payrun)
     with transaction.atomic():
+        # Ведомость становится строками P&L (issue #201) — ДО смены статуса и в
+        # той же транзакции. Порядок не косметический: закрытый период база не
+        # даёт пополнять фактами (`facts_guard`), и перенос после утверждения
+        # отвергается ею же — проверено, отказ приходит из схемы. А в одной
+        # транзакции с утверждением он обязан быть потому, что расчёт,
+        # утверждённый без переноса, означал бы P&L без самой большой статьи
+        # расходов, и заметили бы это на сборке отчёта.
+        from . import posting
+
+        posting.post(payrun)
         _switch(payrun, APPROVED, approved_by=actor_id)
 
 
