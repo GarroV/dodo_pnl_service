@@ -41,6 +41,61 @@
   <p class="actions"><button type="submit" class="primary">{% translate "Сохранить счёт" %}</button></p>
 </form>
 
+{% if positions %}
+{% comment %}
+Разбор документа на позиции (T204, модуль эталона 3).
+
+Одна бумага — несколько статей: накладная из Метро это еда и канцелярия, и в
+P&L это разные строки. Внизу таблицы стоит сверка суммы позиций с суммой на
+бумаге: без неё разложить можно, а потерянную позицию заметить нечем —
+расхождение всплывёт на сборке P&L, когда сходиться уже поздно.
+{% endcomment %}
+<h2>{% translate "Позиции документа" %}</h2>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "№" %}</th>
+      <th>{% translate "Что это" %}</th>
+      <th>{% translate "Точка" %}</th>
+      <th class="num">{% translate "Сумма" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in positions %}
+    <tr>
+      <td>{{ row.line_no }}</td>
+      <td>{{ row.title }}</td>
+      <td>{{ row.unit }}</td>
+      <td class="{{ row.amount_text|numclass }}">{{ row.amount_text }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr data-difference="{{ difference_raw }}">
+      <th colspan="3">{% translate "Сумма позиций" %}</th>
+      <th class="{{ positions_text|numclass }}">{{ positions_text }}</th>
+    </tr>
+    <tr>
+      <th colspan="3">{% translate "По бумаге" %}</th>
+      <th class="{{ stated_text|numclass }}">{{ stated_text }}</th>
+    </tr>
+  </tfoot>
+</table>{% endscroll %}
+
+{% if balanced %}
+<p class="note">{% translate "Сумма позиций сходится с суммой на бумаге." %}</p>
+{% else %}
+{% translate "Позиции не сходятся с бумагой" as not_balanced %}
+{% notice "alert" title=not_balanced %}{% blocktranslate with left=difference_text %}Не сходится с позициями на {{ left }}: значит позицию потеряли или сумма в шапке набрана неверно.{% endblocktranslate %}{% endnotice %}
+{% endif %}
+
+<form class="card wide" method="post" action="{{ positions_url }}">{% csrf_token %}
+  <h3>{% translate "Добавить позицию" %}</h3>
+  {% include "web/directory/fields.html" with fields=position_fields %}
+  <p class="actions"><button type="submit" class="primary">{% translate "Добавить позицию" %}</button></p>
+</form>
+{% endif %}
+
 {% if payments %}
 <h2>{% translate "Платежи по счёту" %}</h2>
 {% scroll %}<table>

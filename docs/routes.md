@@ -74,6 +74,7 @@
 | `/invoices/` | `invoices` | `web.suppliers_views.invoices` |
 | `/invoices/<uuid:document_id>/` | `invoice` | `web.suppliers_views.invoice` |
 | `/invoices/<uuid:document_id>/pay/` | `invoice-pay` | `web.suppliers_views.invoice_pay` |
+| `/invoices/<uuid:document_id>/positions/` | `invoice-positions` | `web.suppliers_views.invoice_positions` |
 | `/invoices/new/` | `invoice-new` | `web.suppliers_views.invoice` |
 | `/login/` | `login` | `web.views.login_page` |
 | `/logout/` | `logout` | `web.views.logout_page` |

@@ -1,0 +1,38 @@
+{
+  "Позиции документа": {
+    "en": "Line items of the document",
+    "sr": "Stavke dokumenta"
+  },
+  "№": {
+    "en": "No.",
+    "sr": "Br."
+  },
+  "Сумма позиций": {
+    "en": "Sum of the line items",
+    "sr": "Zbir stavki"
+  },
+  "По бумаге": {
+    "en": "On the paper",
+    "sr": "Po papiru"
+  },
+  "Сумма позиций сходится с суммой на бумаге.": {
+    "en": "The sum of the line items matches the amount on the paper.",
+    "sr": "Zbir stavki se poklapa sa iznosom na papiru."
+  },
+  "Позиции не сходятся с бумагой": {
+    "en": "The line items do not match the paper",
+    "sr": "Stavke se ne poklapaju sa papirom"
+  },
+  "Не сходится с позициями на %(left)s: значит позицию потеряли или сумма в шапке набрана неверно.": {
+    "en": "Off by %(left)s against the line items: either a line item is missing or the amount in the header is wrong.",
+    "sr": "Razlika u odnosu na stavke je %(left)s: ili stavka nedostaje ili je iznos u zaglavlju pogrešan."
+  },
+  "Добавить позицию": {
+    "en": "Add a line item",
+    "sr": "Dodaj stavku"
+  },
+  "Сколько из этой бумаги приходится на эту статью.": {
+    "en": "How much of this paper belongs to this item.",
+    "sr": "Koliko od ovog papira pripada ovoj stavci."
+  }
+}

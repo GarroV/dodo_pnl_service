@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-28 00:00+0000\n"
+"POT-Creation-Date: 2026-08-28 00:35+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -331,7 +331,7 @@ msgstr ""
 msgid "Ведомость к выплате · %(sub)s"
 msgstr "Obračunska lista za isplatu · %(sub)s"
 
-#: reports/export.py:217
+#: reports/export.py:217 web/templates/web/suppliers/invoice.html:57
 msgid "№"
 msgstr "Br."
 
@@ -350,12 +350,13 @@ msgstr "Zaposleni"
 #: web/directory_views.py:990 web/directory_views.py:1141
 #: web/directory_views.py:1230 web/expenses_views.py:175
 #: web/expenses_views.py:329 web/papers_views.py:253 web/papers_views.py:314
-#: web/suppliers_views.py:616 web/templates/web/cash/expenses.html:55
+#: web/suppliers_views.py:734 web/templates/web/cash/expenses.html:55
 #: web/templates/web/cash/split.html:39
 #: web/templates/web/directory/employee.html:130
 #: web/templates/web/period.html:425 web/templates/web/person_pay.html:71
 #: web/templates/web/suppliers/inbox.html:43
 #: web/templates/web/suppliers/inbox.html:148
+#: web/templates/web/suppliers/invoice.html:59
 #: web/templates/web/suppliers/invoices.html:47
 #: web/templates/web/suppliers/paper.html:79
 #: web/templates/web/suppliers/papers.html:39
@@ -368,8 +369,8 @@ msgstr "Objekat"
 #: web/templates/web/cash/expenses.html:60 web/templates/web/period.html:255
 #: web/templates/web/period.html:425 web/templates/web/period.html:505
 #: web/templates/web/suppliers/inbox.html:61
-#: web/templates/web/suppliers/invoice.html:54 web/templates/web/trace.html:146
-#: web/templates/web/variance.html:39
+#: web/templates/web/suppliers/invoice.html:109
+#: web/templates/web/trace.html:146 web/templates/web/variance.html:39
 msgid "Регистр"
 msgstr "Knjiga"
 
@@ -466,15 +467,17 @@ msgid "Компонент"
 msgstr "Komponenta"
 
 #: reports/export.py:556 web/bulk_raise_views.py:63 web/cash_views.py:112
-#: web/cash_views.py:114 web/cash_views.py:301 web/suppliers_views.py:419
-#: web/suppliers_views.py:421 web/suppliers_views.py:591
-#: web/suppliers_views.py:820 web/suppliers_views.py:822
-#: web/suppliers_views.py:862 web/templates/web/cash/expenses.html:57
+#: web/cash_views.py:114 web/cash_views.py:301 web/suppliers_views.py:420
+#: web/suppliers_views.py:492 web/suppliers_views.py:537
+#: web/suppliers_views.py:539 web/suppliers_views.py:709
+#: web/suppliers_views.py:938 web/suppliers_views.py:940
+#: web/suppliers_views.py:980 web/templates/web/cash/expenses.html:57
 #: web/templates/web/cash/split.html:28
 #: web/templates/web/cash/unallocated.html:34
 #: web/templates/web/directory/employee.html:104
 #: web/templates/web/period.html:505 web/templates/web/suppliers/inbox.html:59
-#: web/templates/web/suppliers/invoice.html:51
+#: web/templates/web/suppliers/invoice.html:60
+#: web/templates/web/suppliers/invoice.html:106
 #: web/templates/web/suppliers/invoices.html:50
 #: web/templates/web/suppliers/paper.html:81 web/templates/web/trace.html:92
 #: web/templates/web/trace.html:146 web/templates/web/trace.html:178
@@ -1130,7 +1133,7 @@ msgid "Правило у статьи есть — нажмите «Разнес
 msgstr "Stavka ima pravilo — kliknite „Raspodeli po pravilima“."
 
 #: web/allocation.py:149 web/cash_views.py:207 web/directory_views.py:377
-#: web/suppliers_views.py:129 web/suppliers_views.py:513
+#: web/suppliers_views.py:129 web/suppliers_views.py:631
 #, python-format
 msgid "«%(label)s»: такого варианта нет."
 msgstr "„%(label)s“: takva opcija ne postoji."
@@ -1310,16 +1313,16 @@ msgstr "Datum troška"
 msgid "«%(label)s»: расход на ноль не вносится."
 msgstr "„%(label)s“: trošak sa iznosom nula se ne unosi."
 
-#: web/cash_views.py:125 web/cash_views.py:335 web/suppliers_views.py:433
-#: web/suppliers_views.py:598 web/suppliers_views.py:740
-#: web/suppliers_views.py:769 web/suppliers_views.py:831
-#: web/suppliers_views.py:866 web/templates/web/cash/expenses.html:61
-#: web/templates/web/suppliers/invoice.html:55
+#: web/cash_views.py:125 web/cash_views.py:335 web/suppliers_views.py:551
+#: web/suppliers_views.py:716 web/suppliers_views.py:858
+#: web/suppliers_views.py:887 web/suppliers_views.py:949
+#: web/suppliers_views.py:984 web/templates/web/cash/expenses.html:61
+#: web/templates/web/suppliers/invoice.html:110
 msgid "Комментарий"
 msgstr "Komentar"
 
-#: web/cash_views.py:142 web/cash_views.py:145 web/suppliers_views.py:594
-#: web/suppliers_views.py:864
+#: web/cash_views.py:142 web/cash_views.py:145 web/suppliers_views.py:712
+#: web/suppliers_views.py:982
 msgid "Ставка НДС"
 msgstr "Stopa PDV-a"
 
@@ -1332,26 +1335,26 @@ msgstr "„%(label)s“: stopa preko 100%% nije moguća."
 #: web/directory_views.py:329 web/directory_views.py:344
 #: web/directory_views.py:372 web/directory_views.py:1876
 #: web/papers_views.py:230 web/papers_views.py:253 web/suppliers_api.py:258
-#: web/suppliers_views.py:440 web/suppliers_views.py:473
-#: web/suppliers_views.py:1034 web/suppliers_views.py:1106
+#: web/suppliers_views.py:558 web/suppliers_views.py:591
+#: web/suppliers_views.py:1152 web/suppliers_views.py:1224
 #, python-format
 msgid "Поле «%(label)s» обязательно."
 msgstr "Polje „%(label)s“ je obavezno."
 
 #: web/cash_views.py:185 web/cash_views.py:189 web/cash_views.py:314
 #: web/dbrefusal.py:113 web/expenses_views.py:175 web/expenses_views.py:333
-#: web/suppliers_api.py:258 web/suppliers_views.py:513
-#: web/suppliers_views.py:576 web/suppliers_views.py:849
-#: web/suppliers_views.py:1034 web/suppliers_views.py:1106
-#: web/templates/web/suppliers/inbox.html:43
+#: web/suppliers_api.py:258 web/suppliers_views.py:495
+#: web/suppliers_views.py:631 web/suppliers_views.py:694
+#: web/suppliers_views.py:967 web/suppliers_views.py:1152
+#: web/suppliers_views.py:1224 web/templates/web/suppliers/inbox.html:43
 msgid "Статья расхода"
 msgstr "Stavka troška"
 
-#: web/cash_views.py:191 web/suppliers_views.py:518
+#: web/cash_views.py:191 web/suppliers_views.py:636
 msgid "Статья не найдена."
 msgstr "Stavka troška nije pronađena."
 
-#: web/cash_views.py:195 web/suppliers_views.py:521
+#: web/cash_views.py:195 web/suppliers_views.py:639
 #, python-format
 msgid ""
 "Статья «%(title)s» на %(date)s не действует: выберите другую или поправьте "
@@ -1380,8 +1383,8 @@ msgstr ""
 #: web/directory_views.py:1337 web/directory_views.py:1379
 #: web/directory_views.py:1446 web/expense_items_views.py:356
 #: web/expenses_views.py:176 web/suppliers_views.py:61
-#: web/suppliers_views.py:585 web/suppliers_views.py:762
-#: web/suppliers_views.py:857 web/templates/web/directory/employee.html:144
+#: web/suppliers_views.py:703 web/suppliers_views.py:880
+#: web/suppliers_views.py:975 web/templates/web/directory/employee.html:144
 #: web/templates/web/person_pay.html:143 web/tills_views.py:68
 #: web/tills_views.py:119 web/tills_views.py:155
 msgid "Регистр учёта"
@@ -1434,9 +1437,9 @@ msgid "Зачем потратили. Через месяц это единст�
 msgstr ""
 "Zašto je potrošeno. Za mesec dana to je jedino po čemu će se red prepoznati."
 
-#: web/cash_views.py:365 web/suppliers_views.py:756
+#: web/cash_views.py:365 web/suppliers_views.py:874
 #: web/templates/web/cash/expenses.html:58
-#: web/templates/web/suppliers/invoice.html:53
+#: web/templates/web/suppliers/invoice.html:108
 msgid "Касса"
 msgstr "Kasa"
 
@@ -1462,8 +1465,9 @@ msgstr ""
 "uz njega."
 
 #: web/cash_views.py:425 web/expenses_views.py:272 web/papers_views.py:493
-#: web/suppliers_views.py:237 web/suppliers_views.py:614
-#: web/suppliers_views.py:939 web/suppliers_views.py:988
+#: web/suppliers_views.py:237 web/suppliers_views.py:467
+#: web/suppliers_views.py:732 web/suppliers_views.py:1057
+#: web/suppliers_views.py:1106
 msgid "Вся сеть"
 msgstr "Cela mreža"
 
@@ -1712,8 +1716,8 @@ msgstr "Grupa"
 msgid "Строка P&L"
 msgstr "P&L red"
 
-#: web/dbrefusal.py:114 web/suppliers_views.py:60 web/suppliers_views.py:473
-#: web/suppliers_views.py:567 web/suppliers_views.py:843
+#: web/dbrefusal.py:114 web/suppliers_views.py:60 web/suppliers_views.py:591
+#: web/suppliers_views.py:685 web/suppliers_views.py:961
 #: web/templates/web/suppliers/inbox.html:57
 #: web/templates/web/suppliers/invoices.html:46
 msgid "Контрагент"
@@ -1949,7 +1953,7 @@ msgid "Норма часов и рабочие дни месяца — отсю�
 msgstr "Norma časova i radni dani meseca — odavde ih uzima stranica meseca"
 
 #: web/directory_views.py:335 web/expenses_views.py:185
-#: web/suppliers_views.py:140 web/suppliers_views.py:445
+#: web/suppliers_views.py:140 web/suppliers_views.py:563
 #, python-format
 msgid "«%(label)s»: дата пишется как 2026-06-01, а не «%(value)s»."
 msgstr "„%(label)s“: datum se piše kao 2026-06-01, a ne „%(value)s“."
@@ -2436,7 +2440,7 @@ msgid ""
 "«%(label)s»: в месяце %(month)s столько дней не бывает — их всего %(limit)s."
 msgstr "„%(label)s“: mesec %(month)s nema toliko dana — ima ih %(limit)s."
 
-#: web/directory_views.py:1881 web/suppliers_views.py:464
+#: web/directory_views.py:1881 web/suppliers_views.py:582
 #, python-format
 msgid "«%(label)s»: месяц пишется как 2026-06, а не «%(value)s»."
 msgstr "„%(label)s“: mesec se piše kao 2026-06, a ne „%(value)s“."
@@ -2729,7 +2733,9 @@ msgstr "Sve knjige"
 msgid ""
 "Разнести эту сумму может только тот, кто ведёт все точки партнёра: строки "
 "разнесения ложатся и на чужие точки."
-msgstr "Ovaj iznos može da rasporedi samo onaj ko vodi sve objekte partnera: nastali redovi padaju i na tuđe objekte."
+msgstr ""
+"Ovaj iznos može da rasporedi samo onaj ko vodi sve objekte partnera: nastali "
+"redovi padaju i na tuđe objekte."
 
 #: web/expenses_views.py:468
 msgid "Нет ни одной точки, на которую можно разнести."
@@ -2752,7 +2758,9 @@ msgstr "Udeo mora biti broj."
 msgid ""
 "Выручки за этот месяц в продукте нет, поэтому по выручке разносить нечего: "
 "поставьте доли руками или разнесите поровну."
-msgstr "Za ovaj mesec u proizvodu nema prihoda, pa nema po čemu da se raspoređuje: zadajte udele ručno ili rasporedite podjednako."
+msgstr ""
+"Za ovaj mesec u proizvodu nema prihoda, pa nema po čemu da se raspoređuje: "
+"zadajte udele ručno ili rasporedite podjednako."
 
 #: web/expenses_views.py:659
 #, python-format
@@ -2975,8 +2983,8 @@ msgstr ""
 msgid "У бумаги должна быть точка: укажите, с какой она пришла."
 msgstr "Papir mora imati objekat: navedite sa kog je stigao."
 
-#: web/papers.py:236 web/suppliers.py:274 web/suppliers_views.py:479
-#: web/suppliers_views.py:483
+#: web/papers.py:236 web/suppliers.py:366 web/suppliers_views.py:597
+#: web/suppliers_views.py:601
 msgid "Контрагент не найден."
 msgstr "Partner nije pronađen."
 
@@ -3018,6 +3026,7 @@ msgstr ""
 #: web/templates/web/cash/unallocated.html:33
 #: web/templates/web/suppliers/inbox.html:58
 #: web/templates/web/suppliers/inbox.html:150
+#: web/templates/web/suppliers/invoice.html:58
 #: web/templates/web/suppliers/paper.html:78
 #: web/templates/web/suppliers/papers.html:41
 msgid "Что это"
@@ -3616,16 +3625,16 @@ msgstr ""
 "Ko tačno nije prošao proveru vidi onaj kome je dat ceo obračun partnera — "
 "pitajte računovođu ili operativnog direktora."
 
-#: web/suppliers.py:369
+#: web/suppliers.py:461
 msgid "У счёта нет ни одной строки: оплачивать нечего."
 msgstr "Faktura nema nijednu stavku: nema šta da se plati."
 
-#: web/suppliers.py:401
+#: web/suppliers.py:493
 #, python-format
 msgid "Оплата счёта %(number)s"
 msgstr "Plaćanje fakture %(number)s"
 
-#: web/suppliers.py:402
+#: web/suppliers.py:494
 msgid "Оплата поставщику"
 msgstr "Plaćanje dobavljaču"
 
@@ -3696,7 +3705,7 @@ msgstr ""
 msgid "Оплата записана в период %(month)s."
 msgstr "Plaćanje je zavedeno u period %(month)s."
 
-#: web/suppliers_views.py:345
+#: web/suppliers_views.py:345 web/suppliers_views.py:406
 msgid ""
 "Вас ещё не завели ни к одному партнёру, поэтому вносить счёт некуда. "
 "Попросите администратора сети добавить вас."
@@ -3704,12 +3713,13 @@ msgstr ""
 "Još niste dodati nijednom partneru, pa nema gde da se unese faktura. "
 "Zamolite administratora mreže da vas doda."
 
-#: web/suppliers_views.py:372 web/suppliers_views.py:708
+#: web/suppliers_views.py:372 web/suppliers_views.py:440
+#: web/suppliers_views.py:826
 #, python-format
 msgid "Счёт %(number)s"
 msgstr "Faktura %(number)s"
 
-#: web/suppliers_views.py:374
+#: web/suppliers_views.py:374 web/suppliers_views.py:441
 msgid "Счёт"
 msgstr "Faktura"
 
@@ -3717,30 +3727,39 @@ msgstr "Faktura"
 msgid "Новый счёт"
 msgstr "Nova faktura"
 
-#: web/suppliers_views.py:418 web/suppliers_views.py:559
+#: web/suppliers_views.py:493
+msgid "Сколько из этой бумаги приходится на эту статью."
+msgstr "Koliko od ovog papira pripada ovoj stavci."
+
+#: web/suppliers_views.py:498 web/suppliers_views.py:697
+#: web/suppliers_views.py:970
+msgid "Пока не разобрано"
+msgstr "Još nije razvrstano"
+
+#: web/suppliers_views.py:536 web/suppliers_views.py:677
 #: web/templates/web/suppliers/invoices.html:44
 msgid "Дата документа"
 msgstr "Datum dokumenta"
 
-#: web/suppliers_views.py:421
+#: web/suppliers_views.py:539
 #, python-format
 msgid "«%(label)s»: счёт на ноль не вносится."
 msgstr "„%(label)s“: faktura na nulu se ne unosi."
 
-#: web/suppliers_views.py:432 web/suppliers_views.py:572
+#: web/suppliers_views.py:550 web/suppliers_views.py:690
 msgid "Номер счёта"
 msgstr "Broj fakture"
 
-#: web/suppliers_views.py:465 web/suppliers_views.py:562
+#: web/suppliers_views.py:583 web/suppliers_views.py:680
 #: web/templates/web/cash/split.html:27
 #: web/templates/web/suppliers/inbox.html:60
-#: web/templates/web/suppliers/invoice.html:50
+#: web/templates/web/suppliers/invoice.html:105
 #: web/templates/web/suppliers/invoices.html:49
 #: web/templates/web/suppliers/paper.html:80
 msgid "Период учёта"
 msgstr "Obračunski period"
 
-#: web/suppliers_views.py:486
+#: web/suppliers_views.py:604
 #, python-format
 msgid ""
 "Контрагент «%(title)s» на %(date)s не действует: выберите другого или "
@@ -3749,11 +3768,11 @@ msgstr ""
 "Partner „%(title)s“ ne važi na dan %(date)s: izaberite drugog ili ispravite "
 "datume u šifarniku."
 
-#: web/suppliers_views.py:561
+#: web/suppliers_views.py:679
 msgid "Дата на самом счёте."
 msgstr "Datum koji stoji na samoj fakturi."
 
-#: web/suppliers_views.py:564
+#: web/suppliers_views.py:682
 msgid ""
 "Месяц, к которому счёт относится. Счёт за июнь приходит в июле — в P&L он "
 "должен попасть в июнь. Пусто — месяц документа."
@@ -3761,19 +3780,15 @@ msgstr ""
 "Mesec na koji se faktura odnosi. Faktura za jun stiže u julu — u P&L mora da "
 "uđe u jun. Prazno znači mesec dokumenta."
 
-#: web/suppliers_views.py:570
+#: web/suppliers_views.py:688
 msgid "Кому платим. Нет в списке — заведите его в справочнике контрагентов."
 msgstr "Kome plaćamo. Nema ga na spisku — dodajte ga u šifarnik partnera."
 
-#: web/suppliers_views.py:574
+#: web/suppliers_views.py:692
 msgid "Как счёт назван у поставщика. По нему его найдут в переписке."
 msgstr "Broj koji je dao dobavljač. Po njemu se faktura pronalazi u prepisci."
 
-#: web/suppliers_views.py:579 web/suppliers_views.py:852
-msgid "Пока не разобрано"
-msgstr "Još nije razvrstano"
-
-#: web/suppliers_views.py:580
+#: web/suppliers_views.py:698
 msgid ""
 "Можно не выбирать: счёт встанет в инбокс, и статью назначат там. Сумма при "
 "этом видна в P&L, а не пропадает."
@@ -3781,15 +3796,15 @@ msgstr ""
 "Ne morate birati: faktura ide u prijemno sanduče i stavka se dodeljuje tamo. "
 "Iznos je i dalje vidljiv u P&L, ne nestaje."
 
-#: web/suppliers_views.py:589
+#: web/suppliers_views.py:707
 msgid "Куда отнести расход. Регистр платежа приезжает из кассы отдельно."
 msgstr "Gde trošak pripada. Registar plaćanja dolazi iz kase posebno."
 
-#: web/suppliers_views.py:593
+#: web/suppliers_views.py:711
 msgid "Сумма документа, как она в счёте — с налогом, если он в нём есть."
 msgstr "Iznos kako stoji na fakturi — sa porezom ako ga faktura sadrži."
 
-#: web/suppliers_views.py:596
+#: web/suppliers_views.py:714
 msgid ""
 "В процентах. Пусто — налог не выделен. В P&L по умолчанию едет сумма без "
 "налога."
@@ -3797,7 +3812,7 @@ msgstr ""
 "U procentima. Prazno znači da porez nije izdvojen. U P&L podrazumevano ide "
 "iznos bez poreza."
 
-#: web/suppliers_views.py:617
+#: web/suppliers_views.py:735
 msgid ""
 "Чей это расход. «Вся сеть» — счёт на юрлицо целиком: его разнесёт правило "
 "контрагента."
@@ -3805,7 +3820,7 @@ msgstr ""
 "Čiji je to trošak. „Cela mreža“ znači da je faktura na pravno lice u celini: "
 "raspodeliće je pravilo partnera."
 
-#: web/suppliers_views.py:635
+#: web/suppliers_views.py:753
 #, python-format
 msgid ""
 "Месяц %(month)s закрыт. Правка не тронет его: в открытом периоде появятся "
@@ -3814,40 +3829,40 @@ msgstr ""
 "Mesec %(month)s je zatvoren. Izmena ga ne dira: u otvorenom periodu pojaviće "
 "se dva reda — storno starog iznosa i ispravljeni unos."
 
-#: web/suppliers_views.py:668
+#: web/suppliers_views.py:786
 msgid "наличными"
 msgstr "gotovinom"
 
-#: web/suppliers_views.py:668
+#: web/suppliers_views.py:786
 msgid "банком"
 msgstr "preko banke"
 
-#: web/suppliers_views.py:684
+#: web/suppliers_views.py:802
 msgid "Вас ещё не завели ни к одному партнёру, поэтому отмечать оплату нечему."
 msgstr ""
 "Još niste dodati nijednom partneru, pa nema šta da se označi kao plaćeno."
 
-#: web/suppliers_views.py:707 web/templates/web/suppliers/invoice.html:35
+#: web/suppliers_views.py:825 web/templates/web/suppliers/invoice.html:35
 msgid "Отметить оплату"
 msgstr "Označi plaćanje"
 
-#: web/suppliers_views.py:729 web/suppliers_views.py:732
-#: web/suppliers_views.py:751
+#: web/suppliers_views.py:847 web/suppliers_views.py:850
+#: web/suppliers_views.py:869
 msgid "Сумма оплаты"
 msgstr "Iznos plaćanja"
 
-#: web/suppliers_views.py:732 web/suppliers_views.py:822
+#: web/suppliers_views.py:850 web/suppliers_views.py:940
 #, python-format
 msgid "«%(label)s»: оплата на ноль не вносится."
 msgstr "„%(label)s“: plaćanje na nulu se ne unosi."
 
-#: web/suppliers_views.py:736 web/suppliers_views.py:747
-#: web/suppliers_views.py:819 web/suppliers_views.py:839
-#: web/templates/web/suppliers/invoice.html:49
+#: web/suppliers_views.py:854 web/suppliers_views.py:865
+#: web/suppliers_views.py:937 web/suppliers_views.py:957
+#: web/templates/web/suppliers/invoice.html:104
 msgid "Дата оплаты"
 msgstr "Datum plaćanja"
 
-#: web/suppliers_views.py:749
+#: web/suppliers_views.py:867
 msgid ""
 "Когда деньги ушли. Это своя дата: она не обязана совпадать ни с датой счёта, "
 "ни с периодом учёта."
@@ -3855,7 +3870,7 @@ msgstr ""
 "Kada je novac otišao. To je zaseban datum: ne mora da se poklapa ni sa "
 "datumom fakture ni sa obračunskim periodom."
 
-#: web/suppliers_views.py:753
+#: web/suppliers_views.py:871
 msgid ""
 "Меньше остатка — частичная оплата: остаток по счёту уменьшится на неё, а не "
 "закроется."
@@ -3863,45 +3878,45 @@ msgstr ""
 "Manje od preostalog iznosa znači delimično plaćanje: saldo se umanjuje, a ne "
 "zatvara."
 
-#: web/suppliers_views.py:758
+#: web/suppliers_views.py:876
 msgid "Оплачено банком"
 msgstr "Plaćeno preko banke"
 
-#: web/suppliers_views.py:759
+#: web/suppliers_views.py:877
 msgid "Если платили наличными. Регистр учёта тогда приезжает из кассы."
 msgstr "Ako je plaćeno gotovinom. Registar tada dolazi iz kase."
 
-#: web/suppliers_views.py:766
+#: web/suppliers_views.py:884
 msgid "Как у кассы"
 msgstr "Kao kod kase"
 
-#: web/suppliers_views.py:767
+#: web/suppliers_views.py:885
 msgid "Пусто — регистр берётся из кассы, а без кассы остаётся официальным."
 msgstr "Prazno znači da se registar uzima iz kase, a bez kase ostaje zvanični."
 
-#: web/suppliers_views.py:783
+#: web/suppliers_views.py:901
 msgid "Вас ещё не завели ни к одному партнёру, поэтому вносить оплату некуда."
 msgstr "Još niste dodati nijednom partneru, pa nema gde da se unese plaćanje."
 
-#: web/suppliers_views.py:841
+#: web/suppliers_views.py:959
 msgid "Когда деньги ушли. Счёта нет, поэтому расход признаётся этой датой."
 msgstr "Kada je novac otišao. Fakture nema, pa se trošak priznaje tim datumom."
 
-#: web/suppliers_views.py:846
+#: web/suppliers_views.py:964
 msgid "Кому заплатили. Нет в списке — заведите его в справочнике."
 msgstr "Kome je plaćeno. Nema ga na spisku — dodajte ga u šifarnik."
 
-#: web/suppliers_views.py:853
+#: web/suppliers_views.py:971
 msgid "Можно не выбирать: строка встанет в инбокс и будет видна числом."
 msgstr ""
 "Ne morate birati: red ide u prijemno sanduče i ostaje vidljiv kao broj."
 
-#: web/suppliers_views.py:898 web/suppliers_views.py:1021
-#: web/suppliers_views.py:1079
+#: web/suppliers_views.py:1016 web/suppliers_views.py:1139
+#: web/suppliers_views.py:1197
 msgid "Вас ещё не завели ни к одному партнёру, поэтому разбирать нечего."
 msgstr "Još niste dodati nijednom partneru, pa nema šta da se razvrstava."
 
-#: web/suppliers_views.py:1087
+#: web/suppliers_views.py:1205
 msgid ""
 "Отметьте строки, которым присваивается статья: без отметки присваивать "
 "нечему."
@@ -3909,7 +3924,7 @@ msgstr ""
 "Označite redove kojima se dodeljuje stavka: bez oznake nema čemu da se "
 "dodeli."
 
-#: web/suppliers_views.py:1166
+#: web/suppliers_views.py:1284
 msgid ""
 "Строка не разобрана: выберите статью и точку и попробуйте ещё раз. Строка "
 "осталась в списке."
@@ -3917,17 +3932,17 @@ msgstr ""
 "Red nije razvrstan: izaberite stavku i objekat pa pokušajte ponovo. Red je "
 "ostao na spisku."
 
-#: web/suppliers_views.py:1175
+#: web/suppliers_views.py:1293
 #, python-format
 msgid "Разобрано строк: %(count)d."
 msgstr "Rešenih redova: %(count)d."
 
-#: web/suppliers_views.py:1178
+#: web/suppliers_views.py:1296
 #, python-format
 msgid "Строка разобрана и учтена в периоде %(month)s."
 msgstr "Red je razvrstan i zaveden u period %(month)s."
 
-#: web/suppliers_views.py:1183
+#: web/suppliers_views.py:1301
 #, python-format
 msgid ""
 "Месяц %(month)s закрыт, поэтому разбор лёг в открытый период двумя строками: "
@@ -4103,7 +4118,9 @@ msgstr "Udeo, %%"
 msgid ""
 "Доли должны дать ровно 100%%: остаток, оставшийся без точки, — это сумма, "
 "которой нет ни в одном отчёте по точкам."
-msgstr "Udeli moraju dati tačno 100%%: ostatak bez objekta je iznos kojeg nema ni u jednom izveštaju po objektima."
+msgstr ""
+"Udeli moraju dati tačno 100%%: ostatak bez objekta je iznos kojeg nema ni u "
+"jednom izveštaju po objektima."
 
 #: web/templates/web/cash/split.html:57
 #: web/templates/web/cash/unallocated.html:37
@@ -6131,19 +6148,51 @@ msgstr "Iznos %(amount)s · plaćeno %(paid)s · preostalo %(left)s"
 msgid "Сохранить счёт"
 msgstr "Sačuvaj fakturu"
 
-#: web/templates/web/suppliers/invoice.html:45
+#: web/templates/web/suppliers/invoice.html:53
+msgid "Позиции документа"
+msgstr "Stavke dokumenta"
+
+#: web/templates/web/suppliers/invoice.html:75
+msgid "Сумма позиций"
+msgstr "Zbir stavki"
+
+#: web/templates/web/suppliers/invoice.html:79
+msgid "По бумаге"
+msgstr "Po papiru"
+
+#: web/templates/web/suppliers/invoice.html:86
+msgid "Сумма позиций сходится с суммой на бумаге."
+msgstr "Zbir stavki se poklapa sa iznosom na papiru."
+
+#: web/templates/web/suppliers/invoice.html:88
+msgid "Позиции не сходятся с бумагой"
+msgstr "Stavke se ne poklapaju sa papirom"
+
+#: web/templates/web/suppliers/invoice.html:89
+#, python-format
+msgid ""
+"Не сходится с позициями на %(left)s: значит позицию потеряли или сумма в "
+"шапке набрана неверно."
+msgstr "Razlika u odnosu na stavke je %(left)s: ili stavka nedostaje ili je iznos u zaglavlju pogrešan."
+
+#: web/templates/web/suppliers/invoice.html:93
+#: web/templates/web/suppliers/invoice.html:95
+msgid "Добавить позицию"
+msgstr "Dodaj stavku"
+
+#: web/templates/web/suppliers/invoice.html:100
 msgid "Платежи по счёту"
 msgstr "Plaćanja po fakturi"
 
-#: web/templates/web/suppliers/invoice.html:52
+#: web/templates/web/suppliers/invoice.html:107
 msgid "Чем"
 msgstr "Čime"
 
-#: web/templates/web/suppliers/invoice.html:73
+#: web/templates/web/suppliers/invoice.html:128
 msgid "Оплат ещё не было."
 msgstr "Još nema plaćanja."
 
-#: web/templates/web/suppliers/invoice.html:74
+#: web/templates/web/suppliers/invoice.html:129
 msgid ""
 "Счёт выставлен и висит в обязательствах: расход в P&L уже есть, деньги ещё "
 "не ушли."

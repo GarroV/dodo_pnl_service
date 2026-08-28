@@ -58,7 +58,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.db import Error as DatabaseError
-from django.db import connection, transaction
+from django.db import connection, models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -204,6 +204,98 @@ def record_invoice(
     return Recorded(
         document_id=document_id, fact_id=str(fact_id), action=action, landing=landing,
     )
+
+
+def add_position(who, document, *, entry_key: str, item, unit_id, amount,
+                 vat_rate=None, note: str = "") -> Recorded:
+    """Дописать в счёт ещё одну позицию — со своей статьёй и своей точкой (T204).
+
+    Накладная из Метро — это еда и канцелярия в одной бумаге, и это **разные
+    строки P&L**. До этой задачи документ можно было отнести только к одной
+    статье: либо одна на всё (и отчёт врёт), либо два счёта на одну бумагу (и
+    оплата разъезжается с документом).
+
+    Отдельной таблицы позиций нет намеренно: позиция и есть факт (`document_id`
+    + `line_no`, разбор в `0230_facts`). Поэтому здесь нет ничего нового — та же
+    запись факта, что в `record_invoice`, только номер строки следующий, а шапка
+    документа уже есть и не трогается: сумма в шапке — это то, что написано на
+    бумаге, а сумма позиций — то, как её разложили. Разойтись они могут, и
+    именно это расхождение показывает карточка.
+
+    Закрытый месяц не переписывается (D020): позиция ложится в открытый период
+    вместе с исходной датой документа, как и всякая правка задним числом.
+    """
+    landing = cash.landing_for(who.tenant_id, document.period or document.doc_date)
+    pnl_item, title = _article(item, document.counterparty)
+    # Знак позиции — такой же, как у первой строки документа. Спрашивать его у
+    # человека нечего: позиция это часть той же бумаги, и половина счёта с
+    # обратным знаком означала бы возврат, а не позицию.
+    amount = abs(Decimal(str(amount))) * _sign_of(document)
+    existing = Fact.objects.filter(
+        document_id=document.id, superseded_at__isnull=True,
+    ).exclude(allocation="allocated").aggregate(last=models.Max("line_no"))["last"]
+
+    payload = {
+        "tenant_id": str(who.tenant_id),
+        "period": landing.period.isoformat(),
+        "doc_date": document.doc_date.isoformat(),
+        "unit_id": str(unit_id) if unit_id else None,
+        "pnl_item_id": str(pnl_item.id),
+        "expense_item_id": str(item.id) if item is not None else None,
+        "counterparty_id": str(document.counterparty_id) if document.counterparty_id else None,
+        "ledger": _ledger_of(document),
+        "amount": str(amount),
+        "vat_rate": str(vat_rate) if vat_rate is not None else None,
+        "title": title,
+        "note": note or None,
+        "source": MANUAL_SOURCE,
+        "document_id": str(document.id),
+        "line_no": (existing or 0) + 1,
+        # Ключ позиции — ключ счёта плюс номер строки: устойчив между
+        # отправками, поэтому повторное нажатие не плодит позиций.
+        "dedup_key": INVOICE_PREFIX + entry_key,
+        "allocation": "direct" if unit_id else "pending",
+    }
+    fact_id, action = cash.write_fact(_filled(payload))
+    return Recorded(
+        document_id=str(document.id), fact_id=str(fact_id),
+        action=action, landing=landing,
+    )
+
+
+def _sign_of(document) -> int:
+    """Знак сумм этого документа: как у его первой строки."""
+    first = invoice_fact(document)
+    return -1 if first is not None and first.amount < 0 else 1
+
+
+def _ledger_of(document) -> str:
+    """Регистр позиции — тот же, что у первой строки документа.
+
+    Спрашивать его отдельно значило бы позволить одной бумаге лечь в два
+    регистра: половина в официальный, половина в дополнительный. Такое бывает,
+    но это не позиция, а два разных документа, и заводятся они отдельно.
+    """
+    first = invoice_fact(document)
+    return first.ledger if first is not None else "official"
+
+
+def positions_balance(document) -> tuple[Decimal, Decimal, Decimal]:
+    """Сумма по бумаге, сумма позиций и их разница.
+
+    Сумма по бумаге — `total_amount` шапки: то, что напечатано в документе.
+    Сумма позиций — сложение строк. Пока их две, они обязаны сходиться; когда
+    расходятся, значит позицию потеряли или сумму в шапке набрали неверно, — и
+    заметить это можно только вычитанием.
+    """
+    stated = document.total_amount
+    got = invoice_amount(document)
+    if stated is None:
+        return got, got, Decimal("0")
+    # Знак: расходы хранятся отрицательными, а в шапке человек пишет модуль
+    # суммы. Сравниваем по модулю, иначе «сходится» никогда не наступит.
+    stated = abs(stated)
+    return stated, abs(got), stated - abs(got)
 
 
 def _article(item, counterparty: Counterparty) -> tuple[PnlItem, str]:

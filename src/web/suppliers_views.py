@@ -380,7 +380,125 @@ def invoice(request, document_id=None):
         "payments": _payments(document) if document is not None else [],
         "pay_url": reverse("invoice-pay", args=[document.id]) if document is not None else "",
         "summary": _summary(document, fact) if document is not None else None,
+        # Позиции документа и сходятся ли они с суммой на бумаге (T204).
+        **(_positions_block(who, document) if document is not None else {}),
     }, status=status)
+
+
+@login_required
+def invoice_positions(request, document_id):
+    """Дописать в счёт ещё одну позицию: своя статья, своя точка (T204).
+
+    Только POST: это запись денег. Отдельным адресом, а не полем карточки,
+    потому что позиций может быть сколько угодно, а форма карточки правит
+    первую строку — смешивать эти два действия в одной форме значит однажды
+    переписать позицию вместо добавления.
+    """
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    who = get_current_principal(request)
+    if who is None or who.tenant_id is None:
+        # Фраза та же, что у карточки счёта: два текста об одном положении дел
+        # разъезжаются на первой же правке, и человек получает разные ответы на
+        # один вопрос в зависимости от того, куда нажал.
+        return _no_membership(request, _(
+            "Вас ещё не завели ни к одному партнёру, поэтому вносить счёт некуда. "
+            "Попросите администратора сети добавить вас."
+        ))
+
+    document = suppliers.document_or_none(document_id)
+    # Видимость проверяется по СТРОКЕ, а не по документу: политики режут строки
+    # по точке и регистру, а шапка документа видна шире. Без этой проверки
+    # чужой счёт отвечал бы «Поле „Точка“ обязательно» вместо 404 — то есть по
+    # ответу можно было бы понять, что счёт существует (D023). Та же проверка
+    # стоит в карточке счёта, и по той же причине.
+    if document is None or suppliers.invoice_fact(document) is None:
+        raise Http404("счёт не найден")
+
+    try:
+        amount = _number(request, "amount", _("Сумма"))
+        item = _item_or_none(request, document.doc_date)
+        recorded = suppliers.add_position(
+            who, document,
+            entry_key=(request.POST.get("entry_key") or cash.new_entry_key()),
+            item=item, unit_id=_unit(request, who), amount=amount,
+            vat_rate=_vat_rate(request), note=(request.POST.get("note") or ""),
+        )
+    except (BadInput, cash.UnitRefused, cash.CashRefused) as refused:
+        return _refused_card(request, who, document, refused)
+
+    landed = reverse("invoice", args=[document.id]) + f"?added={recorded.landing.period:%Y-%m}"
+    return redirect(landed)
+
+
+def _refused_card(request, who, document, refused):
+    """Отказ добавления позиции — на карточке счёта, с его же содержимым."""
+    fact = suppliers.invoice_fact(document)
+    return render(request, "web/suppliers/invoice.html", {
+        "error": refused.message,
+        "heading": (_("Счёт %(number)s") % {"number": document.doc_number}
+                    if document.doc_number else _("Счёт")),
+        "entry_key": suppliers.entry_key_of(fact) if fact is not None else cash.new_entry_key(),
+        "fields": invoice_fields(who, _entered(document, fact)),
+        "back_url": reverse("invoices"),
+        "closed_note": _closed_note(who, fact),
+        "payments": _payments(document),
+        "pay_url": reverse("invoice-pay", args=[document.id]),
+        "summary": _summary(document, fact),
+        **_positions_block(who, document),
+    }, status=getattr(refused, "http_status", 400))
+
+
+def _positions_block(who, document) -> dict:
+    """Позиции документа и сверка с суммой на бумаге (модуль 3, «Разбор документа»).
+
+    Сверка — половина смысла экрана. Разложить бумагу на статьи можно и без неё,
+    но потерянную позицию тогда нечем заметить: расхождение всплывёт на сборке
+    P&L, когда сходиться уже поздно. Поэтому разница показана числом, а не
+    выводится читателем из двух сумм в разных углах.
+    """
+    stated, got, difference = suppliers.positions_balance(document)
+    return {
+        "positions": [
+            {
+                "line_no": row.line_no or "",
+                "title": row.title,
+                "unit": row.unit.code if row.unit else _("Вся сеть"),
+                "amount_text": money(row.amount),
+                "amount_raw": f"{row.amount}",
+            }
+            for row in suppliers.invoice_lines(document)
+        ],
+        "stated_text": money(stated),
+        "positions_text": money(got),
+        "difference_raw": f"{difference}",
+        "difference_text": money(abs(difference)),
+        "balanced": difference == 0,
+        "positions_url": reverse("invoice-positions", args=[document.id]),
+        "position_fields": _position_fields(who, document),
+    }
+
+
+def _position_fields(who, document) -> list[dict]:
+    """Поля новой позиции: сумма, статья, точка. Регистр берётся у документа.
+
+    Регистра здесь нет намеренно: одна бумага не ложится половиной в
+    официальный, половиной в дополнительный. Такое бывает, но это два разных
+    документа, а не позиции одного.
+    """
+    on = document.doc_date or date.today()
+    return [
+        {"kind": "number", "name": "amount", "label": _("Сумма"), "required": True,
+         "value": "", "help": _("Сколько из этой бумаги приходится на эту статью.")},
+        _select(
+            "item", _("Статья расхода"),
+            [(item.id, cash.item_title(item.titles))
+             for item in cash.items_on(who.tenant_id, on)],
+            "", required=False, empty_label=_("Пока не разобрано"),
+        ),
+        _unit_field(who, {}),
+    ]
 
 
 def _save(request, who, document, fact) -> str:
