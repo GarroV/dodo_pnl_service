@@ -412,11 +412,23 @@
 {% include "web/components/exports.html" %}
 {% scroll %}
 <table class="sheet">
+  {% comment %}
+  Шапка в два яруса (issue #163, модуль 9 эталона): сверху группы колонок, под
+  ними сами колонки. Имя, точка, регистр, спор и «Итого» проходят через оба
+  яруса — иначе они окажутся под какой-нибудь группой и прочитаются как её
+  часть, ровно наоборот тому, ради чего ярус заведён.
+
+  Группы приходят готовыми из `payrun/sheet.py`: что чем считается — устройство
+  ведомости, а не решение разметки.
+  {% endcomment %}
   <thead>
     <tr>
-      <th>{% translate "Сотрудник" %}</th><th>{% translate "Точка" %}</th><th>{% translate "Регистр" %}</th><th>{% translate "Спор" %}</th>
+      <th rowspan="2">{% translate "Сотрудник" %}</th><th rowspan="2">{% translate "Точка" %}</th><th rowspan="2">{% translate "Регистр" %}</th><th rowspan="2">{% translate "Спор" %}</th>
+      {% for group in sheet.groups %}<th class="grouphead" colspan="{{ group.span }}">{{ group.title }}</th>{% endfor %}
+      <th rowspan="2" class="num">{% translate "Итого" %}</th>
+    </tr>
+    <tr>
       {% for column in sheet.columns %}<th class="num">{{ column }}</th>{% endfor %}
-      <th class="num">{% translate "Итого" %}</th>
     </tr>
   </thead>
   <tbody>

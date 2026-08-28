@@ -130,6 +130,15 @@ def periods(request):
     )
 
 
+# Названия групп колонок ведомости (issue #163). Литералами, а не через
+# переменную: `makemessages` извлекает в каталог только литералы, и перевод
+# `_(group.title)` не попал бы в него вовсе — проверено первым прогоном.
+GROUP_TITLES = {
+    "hours": _("Оплата часов"),
+    "other": _("Надбавки и корректировки"),
+}
+
+
 def _period_rows() -> list[dict]:
     """Месяцы со своими числами: часы, ФОТ, доля от выручки (issue #176, T183).
 
@@ -539,6 +548,15 @@ def period_page(
             "readiness": _readiness_of(period),
             "sheet": {
                 "columns": [label(column.code, column.title) for column in sheet.columns],
+                # Ярус групп над колонками (issue #163). Названия переводятся
+                # здесь, а не в сборке ведомости: `payrun/sheet.py` — чистый
+                # Python без Django, и обращаться из него к каталогу переводов
+                # значило бы втащить туда веб.
+                "groups": [
+                    {"title": GROUP_TITLES.get(group.code, group.code),
+                     "span": group.span}
+                    for group in sheet.groups
+                ],
                 "rows": [
                     {
                         "employee": row.employee,

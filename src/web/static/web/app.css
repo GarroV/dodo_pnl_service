@@ -888,6 +888,19 @@ table.sheet th {
   position: sticky; top: 0; z-index: 3;
   box-shadow: 0 1px 0 var(--line-strong);
 }
+/* Ярус групп над колонками ведомости — модуль 9 эталона. Он тише самих
+   заголовков: его дело — разделить пятнадцать колонок на смысловые куски, а не
+   спорить с ними за внимание. Отсюда мелкий кегль вразрядку и фон на тон
+   темнее шапки. */
+table.sheet th.grouphead {
+  height: 21px; padding: 0 var(--space-4);
+  background: var(--surface-3);
+  font-size: var(--fs-micro); font-weight: var(--w-bold);
+  letter-spacing: var(--tracking-micro); text-transform: uppercase;
+  text-align: left; color: var(--ink-2);
+  border-right: 1px solid var(--line-strong);
+}
+
 /* Разделители колонок. Горизонтальные линии у нас были, вертикальных нет —
    и глаз в плотном ряду чисел уезжает на соседнюю колонку. Линия тоньше
    строчной (--line-2), чтобы сетка читалась, но не рябила. */

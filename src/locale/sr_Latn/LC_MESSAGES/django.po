@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-28 02:13+0000\n"
+"POT-Creation-Date: 2026-08-28 02:34+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -339,7 +339,7 @@ msgstr "Br."
 #: web/dbrefusal.py:110 web/directory_views.py:556
 #: web/templates/web/components/diff_table.html:21
 #: web/templates/web/directory/raise_preview.html:21
-#: web/templates/web/period.html:255 web/templates/web/period.html:425
+#: web/templates/web/period.html:255 web/templates/web/period.html:435
 #: web/templates/web/variance.html:39
 msgid "Сотрудник"
 msgstr "Zaposleni"
@@ -353,7 +353,7 @@ msgstr "Zaposleni"
 #: web/suppliers_views.py:783 web/templates/web/cash/expenses.html:55
 #: web/templates/web/cash/split.html:39
 #: web/templates/web/directory/employee.html:130
-#: web/templates/web/period.html:425 web/templates/web/person_pay.html:71
+#: web/templates/web/period.html:435 web/templates/web/person_pay.html:71
 #: web/templates/web/suppliers/inbox.html:43
 #: web/templates/web/suppliers/inbox.html:148
 #: web/templates/web/suppliers/invoice.html:78
@@ -367,7 +367,7 @@ msgstr "Objekat"
 
 #: reports/export.py:217 reports/export.py:556 reports/export.py:627
 #: web/templates/web/cash/expenses.html:60 web/templates/web/period.html:255
-#: web/templates/web/period.html:425 web/templates/web/period.html:505
+#: web/templates/web/period.html:435 web/templates/web/period.html:518
 #: web/templates/web/suppliers/inbox.html:61
 #: web/templates/web/suppliers/invoice.html:128
 #: web/templates/web/trace.html:146 web/templates/web/variance.html:39
@@ -377,7 +377,7 @@ msgstr "Knjiga"
 #: reports/export.py:219 reports/export.py:242
 #: timesheets/templates/timesheets/grid.html:205
 #: timesheets/templates/timesheets/grid.html:345
-#: web/templates/web/period.html:427 web/templates/web/period.html:512
+#: web/templates/web/period.html:437 web/templates/web/period.html:525
 #: web/templates/web/person_pay.html:145
 msgid "Итого"
 msgstr "Ukupno"
@@ -475,7 +475,7 @@ msgstr "Komponenta"
 #: web/templates/web/cash/split.html:28
 #: web/templates/web/cash/unallocated.html:34
 #: web/templates/web/directory/employee.html:104
-#: web/templates/web/period.html:505 web/templates/web/suppliers/inbox.html:59
+#: web/templates/web/period.html:518 web/templates/web/suppliers/inbox.html:59
 #: web/templates/web/suppliers/invoice.html:79
 #: web/templates/web/suppliers/invoice.html:125
 #: web/templates/web/suppliers/invoices.html:50
@@ -493,7 +493,7 @@ msgstr "Obračunato"
 msgid "Расход"
 msgstr "Trošak"
 
-#: reports/export.py:591 web/templates/web/person_pay.html:76 web/views.py:1094
+#: reports/export.py:591 web/templates/web/person_pay.html:76 web/views.py:1112
 msgid "Налог"
 msgstr "Porez"
 
@@ -502,7 +502,7 @@ msgid "Налог на доход"
 msgstr "Porez na dohodak"
 
 #: reports/export.py:592 web/reports_views.py:49
-#: web/templates/web/person_pay.html:77 web/views.py:1095
+#: web/templates/web/person_pay.html:77 web/views.py:1113
 msgid "Взносы"
 msgstr "Doprinosi"
 
@@ -3378,11 +3378,11 @@ msgid "К выплате (нето)"
 msgstr "Za isplatu (neto)"
 
 #: web/reports_views.py:48 web/templates/web/person_pay.html:75
-#: web/views.py:1093
+#: web/views.py:1111
 msgid "Бруто"
 msgstr "Bruto"
 
-#: web/reports_views.py:50 web/views.py:1096
+#: web/reports_views.py:50 web/views.py:1114
 msgid "Полная стоимость"
 msgstr "Ukupan trošak"
 
@@ -3548,7 +3548,7 @@ msgstr "pravila zemlje"
 msgid "настройка партнёра"
 msgstr "podešavanje partnera"
 
-#: web/rules.py:105 web/views.py:1188
+#: web/rules.py:105 web/views.py:1206
 msgid "переопределение группы"
 msgstr "izmena grupe"
 
@@ -5347,45 +5347,45 @@ msgstr "mimo aplikacije"
 msgid "Разрез ведомости по регистрам"
 msgstr "Prikaz obračunske liste po knjigama"
 
-#: web/templates/web/period.html:425
+#: web/templates/web/period.html:435
 msgid "Спор"
 msgstr "Spor"
 
-#: web/templates/web/period.html:447 web/templates/web/person_pay.html:152
+#: web/templates/web/period.html:460 web/templates/web/person_pay.html:152
 #, python-format
 msgid "Перерасчёт за %(title)s"
 msgstr "Ponovni obračun za %(title)s"
 
-#: web/templates/web/period.html:459 web/templates/web/person_pay.html:86
+#: web/templates/web/period.html:472 web/templates/web/person_pay.html:86
 msgid "Заморожена"
 msgstr "Zamrznut"
 
-#: web/templates/web/period.html:464
+#: web/templates/web/period.html:477
 msgid "Снять заморозку"
 msgstr "Ukini zamrzavanje"
 
-#: web/templates/web/period.html:470
+#: web/templates/web/period.html:483
 msgid "Заморозить"
 msgstr "Zamrzni"
 
-#: web/templates/web/period.html:471
+#: web/templates/web/period.html:484
 msgid "из-за чего спор"
 msgstr "zbog čega je spor"
 
-#: web/templates/web/period.html:484 web/templates/web/trace.html:13
+#: web/templates/web/period.html:497 web/templates/web/trace.html:13
 msgid "Как получилась эта сумма"
 msgstr "Kako je dobijen ovaj iznos"
 
-#: web/templates/web/period.html:490
+#: web/templates/web/period.html:503
 #, python-format
 msgid "Итого · %(employees)s чел."
 msgstr "Ukupno · %(employees)s zaposlenih"
 
-#: web/templates/web/period.html:503
+#: web/templates/web/period.html:516
 msgid "Итоги по регистрам"
 msgstr "Ukupno po knjigama"
 
-#: web/templates/web/period.html:517
+#: web/templates/web/period.html:530
 msgid ""
 "Итог посчитан по тому, что видно вашей роли: строки чужих регистров не "
 "доезжают до страницы и не входят в сумму."
@@ -5393,7 +5393,7 @@ msgstr ""
 "Zbir je izračunat na osnovu onoga što je vidljivo vašoj ulozi: redovi iz "
 "tuđih knjiga ne stižu do stranice i ne ulaze u zbir."
 
-#: web/templates/web/period.html:518
+#: web/templates/web/period.html:531
 #, python-format
 msgid ""
 "Сейчас показан один регистр — %(title)s;\n"
@@ -5402,11 +5402,11 @@ msgstr ""
 "Trenutno je prikazana jedna knjiga — %(title)s;\n"
 "  zbir je izračunat na osnovu nje."
 
-#: web/templates/web/period.html:537
+#: web/templates/web/period.html:550
 msgid "Ведомости пока нет"
 msgstr "Obračunske liste još nema"
 
-#: web/templates/web/period.html:540
+#: web/templates/web/period.html:553
 msgid ""
 "Месяц начинается с часов: без них считать нечего. Внесите их в табеле\n"
 "    руками или загрузите таблицей партнёра, а потом вернитесь сюда и "
@@ -5419,11 +5419,11 @@ msgstr ""
 "obračunajte\n"
 "    period."
 
-#: web/templates/web/period.html:543
+#: web/templates/web/period.html:556
 msgid "Перейти к табелю"
 msgstr "Idi na evidenciju sati"
 
-#: web/templates/web/period.html:545
+#: web/templates/web/period.html:558
 msgid ""
 "Часы за месяц уже внесены — осталось посчитать период. Ведомость появится\n"
 "    здесь же: строка на каждого сотрудника в каждом регистре, который видно\n"
@@ -6879,50 +6879,58 @@ msgstr ""
 "celini, a obračun tog reda vašoj ulozi nije ustupljen u celini. Sporni red "
 "zamrzava onaj ko vodi mesec u celini. Odobravanju perioda to ne smeta."
 
-#: web/views.py:231
+#: web/views.py:137
+msgid "Оплата часов"
+msgstr "Plaćanje sati"
+
+#: web/views.py:138
+msgid "Надбавки и корректировки"
+msgstr "Dodaci i korekcije"
+
+#: web/views.py:240
 msgid "Вносить часы и расходы, считать"
 msgstr "Unositi sate i troškove, obračunavati"
 
-#: web/views.py:232
+#: web/views.py:241
 msgid "Считать, править, закрыть"
 msgstr "Obračunati, ispraviti, zatvoriti"
 
-#: web/views.py:233
+#: web/views.py:242
 msgid "Только смотреть и выгружать"
 msgstr "Samo pregled i izvoz"
 
-#: web/views.py:234
+#: web/views.py:243
 msgid "Пересчитать и утвердить заново"
 msgstr "Ponovo obračunati i odobriti"
 
-#: web/views.py:235
+#: web/views.py:244
 msgid "Смотреть"
 msgstr "Pregled"
 
-#: web/views.py:272
+#: web/views.py:281
 #, python-format
 msgid "Месяц пишется как 2026-06, а не «%(value)s»."
 msgstr "Mesec se piše kao 2026-06, a ne «%(value)s»."
 
-#: web/views.py:627
+#: web/views.py:645
 #, python-format
 msgid "производственный календарь %(country)s"
 msgstr "proizvodni kalendar %(country)s"
 
-#: web/views.py:629
+#: web/views.py:647
 #, python-format
 msgid "календарь %(country)s на этот месяц не заведён"
 msgstr "kalendar za %(country)s za ovaj mesec nije unet"
 
-#: web/views.py:644
+#: web/views.py:662
 msgid "Расчёт не выполнен."
 msgstr "Obračun nije izvršen."
 
-#: web/views.py:879
+#: web/views.py:897
 msgid "Период не утверждён."
 msgstr "Period nije odobren."
 
-#: web/views.py:911
+#: web/views.py:929
 msgid ""
 "Отложить находку можно только с причиной: напишите, почему закрываем месяц, "
 "зная о ней."
@@ -6930,218 +6938,218 @@ msgstr ""
 "Nalaz se može odložiti samo uz razlog: napišite zašto zatvaramo mesec i "
 "pored njega."
 
-#: web/views.py:934
+#: web/views.py:952
 msgid "Период не открыт."
 msgstr "Period nije otvoren."
 
-#: web/views.py:969 web/views.py:977
+#: web/views.py:987 web/views.py:995
 msgid "Разница не перенесена."
 msgstr "Razlika nije preneta."
 
-#: web/views.py:1071
+#: web/views.py:1089
 msgid "Строка не заморожена."
 msgstr "Red nije zamrznut."
 
-#: web/views.py:1083
+#: web/views.py:1101
 msgid "Заморозка не снята."
 msgstr "Zamrzavanje nije ukinuto."
 
-#: web/views.py:1102
+#: web/views.py:1120
 msgid "часов"
 msgstr "sati"
 
-#: web/views.py:1103
+#: web/views.py:1121
 msgid "ставка за час"
 msgstr "stopa po satu"
 
-#: web/views.py:1104
+#: web/views.py:1122
 msgid "процент оплаты"
 msgstr "procenat plaćanja"
 
-#: web/views.py:1105
+#: web/views.py:1123
 msgid "минимум за час"
 msgstr "minimum po satu"
 
-#: web/views.py:1106
+#: web/views.py:1124
 msgid "типы часов"
 msgstr "tipovi sati"
 
-#: web/views.py:1107
+#: web/views.py:1125
 msgid "пропорция"
 msgstr "proporcija"
 
-#: web/views.py:1108
+#: web/views.py:1126
 msgid "за полную норму"
 msgstr "za punu normu"
 
-#: web/views.py:1109
+#: web/views.py:1127
 msgid "отработано дней"
 msgstr "odrađeni dani"
 
-#: web/views.py:1110
+#: web/views.py:1128
 msgid "рабочих дней в месяце"
 msgstr "radnih dana u mesecu"
 
-#: web/views.py:1111
+#: web/views.py:1129
 msgid "отработано часов"
 msgstr "odrađeni sati"
 
-#: web/views.py:1112
+#: web/views.py:1130
 msgid "норма часов"
 msgstr "norma sati"
 
-#: web/views.py:1113
+#: web/views.py:1131
 msgid "способ"
 msgstr "način"
 
-#: web/views.py:1114
+#: web/views.py:1132
 msgid "база"
 msgstr "osnovica"
 
-#: web/views.py:1115
+#: web/views.py:1133
 msgid "база взносов, часов"
 msgstr "osnovica doprinosa, sati"
 
-#: web/views.py:1119
+#: web/views.py:1137
 msgid "базовая ставка"
 msgstr "osnovna stopa"
 
-#: web/views.py:1120
+#: web/views.py:1138
 msgid "коэффициент"
 msgstr "koeficijent"
 
-#: web/views.py:1124
+#: web/views.py:1142
 msgid "нето"
 msgstr "neto"
 
-#: web/views.py:1125
+#: web/views.py:1143
 msgid "бруто"
 msgstr "bruto"
 
-#: web/views.py:1126
+#: web/views.py:1144
 msgid "налог"
 msgstr "porez"
 
-#: web/views.py:1127
+#: web/views.py:1145
 msgid "взносы"
 msgstr "doprinosi"
 
-#: web/views.py:1128
+#: web/views.py:1146
 msgid "зачтено"
 msgstr "uračunato"
 
-#: web/views.py:1129
+#: web/views.py:1147
 msgid "удержано с работника"
 msgstr "odbijeno od zaposlenog"
 
-#: web/views.py:1130
+#: web/views.py:1148
 msgid "доля"
 msgstr "udeo"
 
-#: web/views.py:1131
+#: web/views.py:1149
 msgid "ставка налога"
 msgstr "poreska stopa"
 
-#: web/views.py:1132
+#: web/views.py:1150
 msgid "взносы работника"
 msgstr "doprinosi zaposlenog"
 
-#: web/views.py:1133
+#: web/views.py:1151
 msgid "взносы работодателя"
 msgstr "doprinosi poslodavca"
 
-#: web/views.py:1134
+#: web/views.py:1152
 msgid "взносы вместе"
 msgstr "doprinosi zajedno"
 
-#: web/views.py:1135
+#: web/views.py:1153
 msgid "множитель нето → бруто"
 msgstr "množitelj neto → bruto"
 
-#: web/views.py:1136
+#: web/views.py:1154
 msgid "необлагаемый минимум в месяц"
 msgstr "neoporezivi minimum mesečno"
 
-#: web/views.py:1137
+#: web/views.py:1155
 msgid "половина необлагаемого"
 msgstr "polovina neoporezivog"
 
-#: web/views.py:1138
+#: web/views.py:1156
 msgid "минимальная база взносов"
 msgstr "minimalna osnovica doprinosa"
 
-#: web/views.py:1139
+#: web/views.py:1157
 msgid "эталонная норма часов"
 msgstr "referentna norma sati"
 
-#: web/views.py:1140
+#: web/views.py:1158
 msgid "делитель часов"
 msgstr "delilac sati"
 
-#: web/views.py:1141
+#: web/views.py:1159
 msgid "часов в рабочем дне"
 msgstr "sati u radnom danu"
 
-#: web/views.py:1142
+#: web/views.py:1160
 msgid "какая ставка"
 msgstr "koja stopa"
 
-#: web/views.py:1145
+#: web/views.py:1163
 msgid "мера работы"
 msgstr "mera rada"
 
-#: web/views.py:1146
+#: web/views.py:1164
 msgid "величина из табеля"
 msgstr "vrednost iz evidencije sati"
 
-#: web/views.py:1147
+#: web/views.py:1165
 msgid "как считается"
 msgstr "kako se obračunava"
 
-#: web/views.py:1149
+#: web/views.py:1167
 msgid "сумма"
 msgstr "iznos"
 
-#: web/views.py:1158
+#: web/views.py:1176
 msgid "цена единицы"
 msgstr "cena jedinice"
 
-#: web/views.py:1159
+#: web/views.py:1177
 msgid "количество"
 msgstr "količina"
 
-#: web/views.py:1167
+#: web/views.py:1185
 msgid "ставка взносов"
 msgstr "stopa doprinosa"
 
-#: web/views.py:1173
+#: web/views.py:1191
 msgid "сумма из табеля"
 msgstr "iznos iz evidencije sati"
 
-#: web/views.py:1179
+#: web/views.py:1197
 msgid "количество × цена единицы"
 msgstr "količina × cena jedinice"
 
-#: web/views.py:1180
+#: web/views.py:1198
 msgid "сумма из табеля как есть"
 msgstr "iznos iz evidencije sati, kakav jeste"
 
-#: web/views.py:1186
+#: web/views.py:1204
 msgid "правило страны"
 msgstr "pravilo zemlje"
 
-#: web/views.py:1187
+#: web/views.py:1205
 msgid "переопределение партнёра"
 msgstr "izmena partnera"
 
-#: web/views.py:1189
+#: web/views.py:1207
 msgid "переопределение по сотруднику"
 msgstr "izmena zaposlenog"
 
-#: web/views.py:1190
+#: web/views.py:1208
 msgid "введено руками"
 msgstr "ručno uneto"
 
-#: web/views.py:1597
+#: web/views.py:1615
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"

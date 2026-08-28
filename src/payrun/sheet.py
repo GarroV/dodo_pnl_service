@@ -93,8 +93,32 @@ class Row:
 
 
 @dataclass(frozen=True)
+class ColumnGroup:
+    """Ярус групп в шапке ведомости (issue #163, модуль 9 эталона).
+
+    Эталон рисует над колонками группы — «Начисления», «Удержания», — и это не
+    украшение: в ведомости полтора десятка колонок, и без иерархии человек ищет
+    нужную пересчётом слева направо.
+
+    Наши группы другие, чем в макете, и это осознанно. Удержаний в расчёте нет
+    ни одного компонента: налог и взносы производные и колонками не приходят.
+    Пустая группа «Удержания» обещала бы колонки, которых нет. Поэтому
+    группируется то, что есть: оплата часов отдельно от надбавок и
+    корректировок; третья группа появится вместе с первым удержанием.
+    """
+
+    # Код, а не готовое название: `payrun/sheet.py` — чистый Python без Django,
+    # и каталог переводов ему недоступен. Слова для человека живут в вебе
+    # (`web/views.py`), и там же они извлекаются в каталог — переводить строку
+    # из переменной `makemessages` не умеет, что и вскрылось на первом прогоне.
+    code: str
+    span: int
+
+
+@dataclass(frozen=True)
 class Sheet:
     columns: list[Column]
+    groups: list[ColumnGroup]
     rows: list[Row]
     ledger_totals: list[tuple[str, Decimal]]
     column_totals: dict[str, Decimal]
@@ -115,6 +139,30 @@ def _column_key(code: str) -> tuple[int, str]:
     if code == "hours.regular":
         return (0, "")
     return (0 if code.startswith("hours.") else 1, code)
+
+
+# Коды групп — здесь: что чем считается, решает устройство ведомости, а не
+# разметка. Слова для человека — в вебе.
+HOURS_GROUP = "hours"
+OTHER_GROUP = "other"
+
+
+def _groups_of(columns: list[Column]) -> list[ColumnGroup]:
+    """Ярус групп над колонками. Пустых групп не бывает.
+
+    Границы совпадают с порядком колонок (`_column_key`): часы идут первыми,
+    поэтому группа — это отрезок, а не набор вразнобой. Если однажды порядок
+    поменяется, группы поедут вместе с ним, а не разъедутся молча: и то и
+    другое считается одной функцией сортировки.
+    """
+    groups: list[ColumnGroup] = []
+    for column in columns:
+        code = HOURS_GROUP if column.code.startswith("hours.") else OTHER_GROUP
+        if groups and groups[-1].code == code:
+            groups[-1] = ColumnGroup(code, groups[-1].span + 1)
+        else:
+            groups.append(ColumnGroup(code, 1))
+    return groups
 
 
 def _ledger_key(ledger: str) -> tuple[int, str]:
@@ -141,6 +189,7 @@ def assemble(cells: list[Cell]) -> Sheet:
         amounts[cell.code] = amounts.get(cell.code, Decimal(0)) + cell.amount
 
     columns = [Column(code, titles[code]) for code in sorted(titles, key=_column_key)]
+    groups = _groups_of(columns)
 
     rows = [
         Row(
@@ -172,6 +221,7 @@ def assemble(cells: list[Cell]) -> Sheet:
 
     return Sheet(
         columns=columns,
+        groups=groups,
         rows=rows,
         ledger_totals=sorted(ledger_totals.items(), key=lambda item: _ledger_key(item[0])),
         column_totals=column_totals,
