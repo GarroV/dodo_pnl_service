@@ -13,6 +13,7 @@ from . import (
     papers_views,
     person_views,
     positions_views,
+    printing_views,
     reports_views,
     roles_views,
     rules_views,
@@ -48,6 +49,15 @@ urlpatterns = [
     # Отчёт расхождений с прошлым месяцем (T030). Только чтение, поэтому GET;
     # разрез по регистру приезжает тем же `?ledger=`, что у ведомости.
     path("periods/<uuid:period_id>/variance/", views.period_variance, name="period-variance"),
+    # Платёжная ведомость на бумагу (T187, issue #184). Только чтение, поэтому
+    # GET. Разрез по регистру этот адрес не принимает: «к выплате» считается по
+    # строке ведомости целиком и регистру не принадлежит — подобранный руками
+    # `?ledger=` получает отказ словами, а не документ всего расчёта молча.
+    path(
+        "periods/<uuid:period_id>/print/payout/",
+        printing_views.payout,
+        name="period-print-payout",
+    ),
     # Цикл периода: утверждение и откат. Оба только POST — это запись, а не
     # просмотр, и по ссылке из письма или из истории браузера случиться не должны.
     path("periods/<uuid:period_id>/approve/", views.period_approve, name="period-approve"),
@@ -69,6 +79,13 @@ urlpatterns = [
     # Разрез приезжает тем же `?ledger=`, что у ведомости, — человек приходит
     # сюда из разреза и обязан остаться в нём.
     path("payslips/<uuid:payslip_id>/trace/", views.payslip_trace, name="payslip-trace"),
+    # Расчётный листок на бумагу (T187). Адрес по строке, как и у следа: листок
+    # объясняет сумму конкретной строки ведомости, а не «период вообще».
+    path(
+        "payslips/<uuid:payslip_id>/print/",
+        printing_views.payslip,
+        name="payslip-print",
+    ),
     # Вход: логин с паролем, выход, смена своего пароля.
     path("login/", views.login_page, name="login"),
     path("logout/", views.logout_page, name="logout"),

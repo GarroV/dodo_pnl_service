@@ -1,0 +1,142 @@
+{
+  "Печатная форма": {
+    "en": "Printable form",
+    "sr": "Forma za štampu"
+  },
+  "Платёжная ведомость": {
+    "en": "Payroll payment sheet",
+    "sr": "Platni spisak"
+  },
+  "Платёжная ведомость за %(month)s": {
+    "en": "Payroll payment sheet for %(month)s",
+    "sr": "Platni spisak za %(month)s"
+  },
+  "Расчётный листок": {
+    "en": "Payslip",
+    "sr": "Obračun zarade"
+  },
+  "Расчётный листок за %(month)s": {
+    "en": "Payslip for %(month)s",
+    "sr": "Obračun zarade za %(month)s"
+  },
+  "Ведомость на печать": {
+    "en": "Printable payroll sheet",
+    "sr": "Platni spisak za štampu"
+  },
+  "расчётный листок на печать": {
+    "en": "printable payslip",
+    "sr": "obračun zarade za štampu"
+  },
+  "Форма не собрана": {
+    "en": "The form was not built",
+    "sr": "Forma nije sastavljena"
+  },
+  "Вернуться": {
+    "en": "Go back",
+    "sr": "Vrati se"
+  },
+  "Ведомость печатается по всему расчёту, а не по разрезу: «начислено», «удержано» и «к выплате» считаются по строке ведомости целиком и регистру не принадлежат. Снимите разрез и откройте форму снова.": {
+    "en": "The sheet is printed for the whole calculation, not for a cut: “accrued”, “withheld” and “to be paid” are counted per payslip row as a whole and do not belong to a ledger. Remove the cut and open the form again.",
+    "sr": "Spisak se štampa za ceo obračun, a ne za presek: „obračunato“, „zadržano“ i „za isplatu“ računaju se po celom redu obračuna i ne pripadaju registru. Uklonite presek i ponovo otvorite formu."
+  },
+  "Эта форма не собирается для вашей роли: суммы «к выплате» считаются по строке ведомости целиком, а итоги расчёта вашей роли не отданы. Собранный документ показал бы часть людей и итог, который ни с чем не сходится, — возьмите форму у того, кому отдан весь расчёт.": {
+    "en": "This form is not built for your role: the “to be paid” amounts are counted per payslip row as a whole, and your role has not been given the calculation totals. The document would show only some of the people and a total that adds up to nothing — take the form from someone who has been given the whole calculation.",
+    "sr": "Ova forma se ne sastavlja za vašu ulogu: iznosi „za isplatu“ računaju se po celom redu obračuna, a zbirovi obračuna vašoj ulozi nisu dati. Sastavljen dokument prikazao bi samo deo ljudi i zbir koji se ni sa čim ne slaže — uzmite formu od onoga kome je dat ceo obračun."
+  },
+  "Печатать нечего: расчёт этого месяца ещё не выполнен. Посчитайте период, и форма соберётся.": {
+    "en": "There is nothing to print: this month has not been calculated yet. Calculate the period and the form will be built.",
+    "sr": "Nema šta da se štampa: obračun ovog meseca još nije urađen. Obračunajte period i forma će se sastaviti."
+  },
+  "ПИБ": {
+    "en": "Tax ID",
+    "sr": "PIB"
+  },
+  "Документ": {
+    "en": "Document number",
+    "sr": "Dokument"
+  },
+  "Сформирован": {
+    "en": "Generated",
+    "sr": "Sastavljen"
+  },
+  "Должность": {
+    "en": "Job title",
+    "sr": "Radno mesto"
+  },
+  "Удержано": {
+    "en": "Withheld",
+    "sr": "Zadržano"
+  },
+  "К выплате": {
+    "en": "To be paid",
+    "sr": "Za isplatu"
+  },
+  "Подпись": {
+    "en": "Signature",
+    "sr": "Potpis"
+  },
+  "Сумма прописью:": {
+    "en": "Amount in words:",
+    "sr": "Iznos slovima:"
+  },
+  "Расчёт составил": {
+    "en": "Calculated by",
+    "sr": "Obračun sastavio"
+  },
+  "Утвердил": {
+    "en": "Approved by",
+    "sr": "Odobrio"
+  },
+  "Дата подписания": {
+    "en": "Date signed",
+    "sr": "Datum potpisa"
+  },
+  "Лист %(number)s из %(of)s": {
+    "en": "Sheet %(number)s of %(of)s",
+    "sr": "List %(number)s od %(of)s"
+  },
+  "документ выведен из данных периода, правка бумажной копии силы не имеет": {
+    "en": "the document is derived from the period data; editing the paper copy has no force",
+    "sr": "dokument je izveden iz podataka perioda, ispravka papirne kopije nema važnost"
+  },
+  "начислено — сумма расчёта на руки, удержано — вычтенное при выплате, к выплате — на счёт и наличными вместе": {
+    "en": "accrued — the calculated take-home amount, withheld — deducted on payment, to be paid — to the account and in cash together",
+    "sr": "obračunato — iznos obračuna na ruke, zadržano — oduzeto pri isplati, za isplatu — na račun i gotovinom zajedno"
+  },
+  "Часы в месяце": {
+    "en": "Hours in the month",
+    "sr": "Sati u mesecu"
+  },
+  "норма %(norm)s": {
+    "en": "norm %(norm)s",
+    "sr": "norma %(norm)s"
+  },
+  "Сумма, %(currency)s": {
+    "en": "Amount, %(currency)s",
+    "sr": "Iznos, %(currency)s"
+  },
+  "сумма позиций выше": {
+    "en": "sum of the items above",
+    "sr": "zbir stavki iznad"
+  },
+  "Удержано при выплате": {
+    "en": "Withheld on payment",
+    "sr": "Zadržano pri isplati"
+  },
+  "Бруто %(gross)s · налог %(tax)s · взносы %(contributions)s": {
+    "en": "Gross %(gross)s · tax %(tax)s · contributions %(contributions)s",
+    "sr": "Bruto %(gross)s · porez %(tax)s · doprinosi %(contributions)s"
+  },
+  "Эти суммы посчитаны от выплаты и платятся сверх неё: из того, что вы получаете на руки, они не удерживаются.": {
+    "en": "These amounts are calculated from the payment and are paid on top of it: they are not withheld from what you receive.",
+    "sr": "Ovi iznosi se računaju od isplate i plaćaju se povrh nje: ne zadržavaju se od onoga što dobijate na ruke."
+  },
+  "На счёт %(bank)s, наличными %(cash)s.": {
+    "en": "To the account %(bank)s, in cash %(cash)s.",
+    "sr": "Na račun %(bank)s, gotovinom %(cash)s."
+  },
+  "Сотрудник · получил расчётный листок": {
+    "en": "Employee · payslip received",
+    "sr": "Zaposleni · primio obračun"
+  }
+}

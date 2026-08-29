@@ -47,5 +47,11 @@
   {% endcomment %}
   {% if report_url %}<a class="cut page" href="{{ report_url }}">{% translate "Отчёт P&L" %}</a>{% endif %}
   <a class="cut page" href="{{ reconcile_url }}">{% translate "Сверка с таблицей" %}</a>
+  {% comment %}
+  Печатная ведомость (T187) — экран, а не файл: она открывается листами А4 и
+  печатается из браузера, ничего не скачивая. Разрез в её адрес не уезжает —
+  «к выплате» считается по строке целиком и регистру не принадлежит.
+  {% endcomment %}
+  {% if print_payout_url %}<a class="cut page" href="{{ print_payout_url }}">{% translate "Ведомость на печать" %}</a>{% endif %}
 </nav>
 {% if exports_note %}<p class="hint">{{ exports_note }}</p>{% endif %}

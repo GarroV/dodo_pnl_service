@@ -26,6 +26,10 @@ TEMPLATES = sorted(ROOT.glob("src/*/templates/**/*.html"))
 STYLESHEETS = (
     ROOT / "src/web/static/web/app.css",
     ROOT / "src/web/static/web/tokens.css",
+    # Печатные формы (T187) идут своим листом и намеренно не тянут `app.css`: на
+    # бумаге нет ни шапки продукта, ни кнопок, ни прокрутки. Сторож обязан о нём
+    # знать, иначе он объявил бы «голым HTML» всю печатную разметку сразу.
+    ROOT / "src/web/static/web/print.css",
     ROOT / "src/timesheets/static/timesheets/grid.css",
 )
 
