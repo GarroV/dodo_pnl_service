@@ -22,9 +22,24 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pytest
+
 from conftest import login_as
 from test_closing_readiness import calculated  # noqa: F401
 from test_directory import sql  # noqa: F401
+
+
+@pytest.fixture(autouse=True)
+def units_of_people_removed(sql):  # noqa: F811
+    """Привязки к точкам не переживают тест.
+
+    Без этой уборки они остаются в базе и меняют расчёт у **соседних** файлов:
+    ведомость начинает делиться по точкам там, где тест этого не заводил, и
+    сорок девять проверок расчёта падают, не понимая почему. Поймано полным
+    прогоном: по отдельности каждый файл зелёный, вместе — нет.
+    """
+    yield
+    sql.execute("delete from employee_units")
 
 
 def approve(client, url):

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-28 19:53+0000\n"
+"POT-Creation-Date: 2026-08-29 06:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1632,7 +1632,8 @@ msgstr ""
 #: web/counterparties_views.py:156
 #, python-format
 msgid "«%(label)s»: дата закрытия должна быть позже даты начала (%(from)s)."
-msgstr "«%(label)s»: the closing date must be later than the start date (%(from)s)."
+msgstr ""
+"«%(label)s»: the closing date must be later than the start date (%(from)s)."
 
 #: web/counterparties_views.py:180
 msgid "Новый контрагент"
@@ -1911,7 +1912,7 @@ msgstr ""
 "You have not been added to any partner yet, so you have no employees. Ask "
 "the network administrator to add you."
 
-#: web/directory_views.py:228 web/directory_views.py:568 web/navigation.py:80
+#: web/directory_views.py:228 web/directory_views.py:568 web/navigation.py:113
 msgid "Сотрудники"
 msgstr "Employees"
 
@@ -2536,7 +2537,9 @@ msgid ""
 "«%(label)s»: отметьте хотя бы одну форму. Статья, которую нигде не "
 "предлагают, не выбирается вовсе — а чтобы вывести её из оборота, есть поле "
 "«Закрыта»."
-msgstr "“%(label)s”: tick at least one form. An item offered nowhere cannot be picked at all — and to retire one there is the “Closed” field."
+msgstr ""
+"“%(label)s”: tick at least one form. An item offered nowhere cannot be "
+"picked at all — and to retire one there is the “Closed” field."
 
 #: web/expense_items_views.py:141 web/expense_items_views.py:257
 #: web/expense_items_views.py:376
@@ -2620,7 +2623,10 @@ msgid ""
 "В каких формах статью предлагают выбрать. Это не право её видеть: выбрать "
 "статью может любая роль, и в справочнике видны все. Управляющий на телефоне "
 "читает короткий список — сорок строк не читает никто."
-msgstr "Which forms offer this item for selection. This is not permission to see it: any role can pick any item, and the directory shows them all. The manager on a phone reads a short list — nobody reads forty lines."
+msgstr ""
+"Which forms offer this item for selection. This is not permission to see it: "
+"any role can pick any item, and the directory shows them all. The manager on "
+"a phone reads a short list — nobody reads forty lines."
 
 #: web/expense_items_views.py:394
 msgid ""
@@ -2890,7 +2896,10 @@ msgstr ""
 msgid ""
 "Расход записан и деньги из кассы ушли — чек этого не меняет. Он нужен, чтобы "
 "через месяц трату было чем подтвердить."
-msgstr "The expense is recorded and the money has left the till — a receipt does not change that. It is there so that a month from now the spending can be backed up."
+msgstr ""
+"The expense is recorded and the money has left the till — a receipt does not "
+"change that. It is there so that a month from now the spending can be backed "
+"up."
 
 #: web/expenses_views.py:901 web/papers_views.py:501
 #, python-format
@@ -3005,7 +3014,7 @@ msgstr "Supplementary"
 msgid "Внутренний"
 msgstr "Internal"
 
-#: web/format.py:106 web/navigation.py:69
+#: web/format.py:106 web/navigation.py:102
 msgid "Наличные расходы"
 msgstr "Cash expenses"
 
@@ -3058,20 +3067,20 @@ msgstr "Regional Manager"
 msgid "role.shift_manager"
 msgstr "Shift Manager"
 
-#: web/navigation.py:64
+#: web/navigation.py:97
 msgid "Сбор данных"
 msgstr "Data collection"
 
-#: web/navigation.py:68 web/templates/web/guide.html:80
+#: web/navigation.py:101 web/templates/web/guide.html:80
 #: web/templates/web/period.html:175
 msgid "Табель"
 msgstr "Timesheet"
 
-#: web/navigation.py:74
+#: web/navigation.py:107
 msgid "Инбокс документов"
 msgstr "Document inbox"
 
-#: web/navigation.py:76 web/navigation.py:81
+#: web/navigation.py:109 web/navigation.py:114
 #: web/templates/web/directory/denied.html:13
 #: web/templates/web/directory/denied.html:15
 #: web/templates/web/directory/index.html:15
@@ -3079,17 +3088,17 @@ msgstr "Document inbox"
 msgid "Справочники"
 msgstr "Directories"
 
-#: web/navigation.py:82 web/rules_views.py:187 web/rules_views.py:200
+#: web/navigation.py:115 web/rules_views.py:187 web/rules_views.py:200
 #: web/templates/web/rules/denied.html:14
 #: web/templates/web/rules/denied.html:16
 msgid "Правила расчёта"
 msgstr "Calculation rules"
 
-#: web/navigation.py:84
+#: web/navigation.py:117
 msgid "Настройки"
 msgstr "Settings"
 
-#: web/navigation.py:85 web/templates/web/roles/denied.html:10
+#: web/navigation.py:118 web/templates/web/roles/denied.html:10
 #: web/templates/web/roles/denied.html:12 web/templates/web/roles/index.html:18
 #: web/templates/web/roles/index.html:20
 msgid "Роли и права"
@@ -3512,7 +3521,9 @@ msgstr "No file attached: there is nothing to attach."
 #, python-format
 msgid ""
 "Файл больше %(limit)s МБ. Сфотографируйте чек ещё раз или уменьшите снимок."
-msgstr "The file is larger than %(limit)s MB. Photograph the receipt again or shrink the picture."
+msgstr ""
+"The file is larger than %(limit)s MB. Photograph the receipt again or shrink "
+"the picture."
 
 #: web/receipts.py:97
 msgid "К этому расходу чек приложить нельзя."
@@ -4187,7 +4198,9 @@ msgstr "Not recorded."
 #: web/templates/web/cash/expense.html:48
 msgid ""
 "Фотография бумажки. Без неё расход всё равно запишется — деньги уже отданы."
-msgstr "A photo of the slip. The expense is recorded without it too — the money is already handed over."
+msgstr ""
+"A photo of the slip. The expense is recorded without it too — the money is "
+"already handed over."
 
 #: web/templates/web/cash/expense.html:51
 msgid "Записать расход"
@@ -4450,6 +4463,11 @@ msgid "Все расходы лежат на точках: закрывать м
 msgstr ""
 "All expenses are sitting on units: nothing is holding up closing the month."
 
+#: web/templates/web/components/appnav_item.html:24
+#: web/templates/web/components/header.html:110
+msgid "ждёт работы"
+msgstr "work waiting"
+
 #: web/templates/web/components/diff_table.html:21
 msgid "В таблице"
 msgstr "In the table"
@@ -4495,54 +4513,54 @@ msgstr "P&L report"
 msgid "Сверка с таблицей"
 msgstr "Reconciliation with the table"
 
-#: web/templates/web/components/header.html:92
+#: web/templates/web/components/header.html:111
 msgid "Основная навигация"
 msgstr "Main navigation"
 
-#: web/templates/web/components/header.html:118
+#: web/templates/web/components/header.html:148
 msgid "как это работает"
 msgstr "how this works"
 
-#: web/templates/web/components/header.html:134
+#: web/templates/web/components/header.html:164
 msgid "Как в системе"
 msgstr "Follow the system"
 
-#: web/templates/web/components/header.html:135
+#: web/templates/web/components/header.html:165
 msgid "Светлая тема"
 msgstr "Light theme"
 
-#: web/templates/web/components/header.html:136
+#: web/templates/web/components/header.html:166
 msgid "Тёмная тема"
 msgstr "Dark theme"
 
-#: web/templates/web/components/header.html:161
+#: web/templates/web/components/header.html:191
 msgid ""
 "На странице входа есть кнопки быстрого входа учётками сида (DEV_LOGIN=1)"
 msgstr ""
 "The login page has quick sign-in buttons for seed accounts (DEV_LOGIN=1)"
 
-#: web/templates/web/components/header.html:161
+#: web/templates/web/components/header.html:191
 msgid "dev-вход"
 msgstr "dev login"
 
-#: web/templates/web/components/header.html:174
+#: web/templates/web/components/header.html:204
 msgid "Данные и итоги на всех страницах — только по этой точке"
 msgstr "Data and totals on all pages — for this unit only"
 
-#: web/templates/web/components/header.html:174
+#: web/templates/web/components/header.html:204
 #, python-format
 msgid "точка: %(code)s"
 msgstr "unit: %(code)s"
 
-#: web/templates/web/components/header.html:177
+#: web/templates/web/components/header.html:207
 msgid "пароль"
 msgstr "password"
 
-#: web/templates/web/components/header.html:179
+#: web/templates/web/components/header.html:209
 msgid "выйти"
 msgstr "log out"
 
-#: web/templates/web/components/header.html:182 web/templates/web/login.html:61
+#: web/templates/web/components/header.html:212 web/templates/web/login.html:61
 msgid "войти"
 msgstr "log in"
 
@@ -5189,7 +5207,14 @@ msgid ""
 "      из-за неудачного снимка нельзя. Строка без бумаги помечена в реестре, "
 "а\n"
 "      сумма таких строк стоит там же числом."
-msgstr "The photo of the slip is attached to the expense itself — there is no second pass.\n      Without a receipt the expense is still recorded: the money is already gone, and losing\n      the record because of a bad photo is worse. A line without paper is marked in the\n      register, and the sum of such lines stands right there as a number."
+msgstr ""
+"The photo of the slip is attached to the expense itself — there is no second "
+"pass.\n"
+"      Without a receipt the expense is still recorded: the money is already "
+"gone, and losing\n"
+"      the record because of a bad photo is worse. A line without paper is "
+"marked in the\n"
+"      register, and the sum of such lines stands right there as a number."
 
 #: web/templates/web/guide.html:186
 msgid "Касса и P&L — два разных числа."
@@ -5205,7 +5230,16 @@ msgid ""
 "      названной причиной. Переводы и инкассация в P&amp;L не входят вовсе, а "
 "расход\n"
 "      закрытого месяца учитывается в текущем."
-msgstr "Money leaves the till on the day of the spend, while the report takes it by the\n      report's own rules. That is why three numbers stand at the top of the register: how much\n      left the till, how much of it the P&amp;L accepted for the same month, and the gap between\n      them — with the reason named. Transfers and collection do not enter the P&amp;L at all, and\n      an expense of a closed month is counted in the current one."
+msgstr ""
+"Money leaves the till on the day of the spend, while the report takes it by "
+"the\n"
+"      report's own rules. That is why three numbers stand at the top of the "
+"register: how much\n"
+"      left the till, how much of it the P&amp;L accepted for the same month, "
+"and the gap between\n"
+"      them — with the reason named. Transfers and collection do not enter "
+"the P&amp;L at all, and\n"
+"      an expense of a closed month is counted in the current one."
 
 #: web/templates/web/guide.html:194
 msgid "Список статей у управляющего короткий."
@@ -5219,7 +5253,14 @@ msgid ""
 "      «наличные расходы» — сорок строк никто не читает. Право видеть статью "
 "это\n"
 "      не ограничивает: в справочнике видны все."
-msgstr "Every item in the directory says where it is offered: cash expenses, invoice\n      allocation, statement sorting. Only those marked «cash expenses» reach the phone —\n      nobody reads forty lines. This does not limit the right to see an item: all of them are\n      visible in the directory."
+msgstr ""
+"Every item in the directory says where it is offered: cash expenses, "
+"invoice\n"
+"      allocation, statement sorting. Only those marked «cash expenses» reach "
+"the phone —\n"
+"      nobody reads forty lines. This does not limit the right to see an "
+"item: all of them are\n"
+"      visible in the directory."
 
 #: web/templates/web/guide.html:201
 msgid "Счёт и платёж — разные события."
