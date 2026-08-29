@@ -81,19 +81,49 @@
   названия были набраны здесь, они не сверялись ни с чем — расхождение с
   макетом видел только тот, кто помнил обе картинки.
 
+  **Навигация — областями учёта, а не рядом пунктов** (T207, модуль 10). Эталон
+  собирает разделы по фазам работы: человек приходит «занести расходы», а не
+  «открыть справочник контрагентов». Плоский ряд этого не говорит — шесть слов
+  подряд без единой границы, и на телефоне они разваливались на три одинаковых
+  ряда.
+
+  Меню открывается `<details>`, а не скриптом. Довод не про вкус: раскрытие —
+  единственная часть шапки, которая обязана работать до того, как приедет любой
+  скрипт, и браузер умеет её сам — с клавиатурой, с диктором («свёрнуто» /
+  «развёрнуто») и с тем, что пункты закрытого меню не ловят табуляцию. Своя
+  реализация на скрипте была бы хуже во всех трёх местах.
+
+  Счётчик — число работы, которая ждёт человека; у области это сумма по её
+  пунктам. Ноль не рисуется вовсе (правило эталона дословно), поэтому и условие
+  здесь на само число, а не на его наличие.
+
   Раздел, которого роль не ведёт, в ПРОДУКТЕ не показывается; в ДЕМО на его
   месте стоит предложение открыть его подходящей ролью (T163) — посетитель
   видит продукт впервые и отсутствие раздела читает как отсутствие
-  функциональности. Права при этом не меняются ни на копейку.
+  функциональности. Права при этом не меняются ни на копейку. Область, где не
+  ведут ни одного пункта, целиком заменяется таким предложением: пустое меню
+  обещало бы больше, чем за ним есть.
   {% endcomment %}
+  {% translate "ждёт работы" as waiting_hint %}
   <nav class="appnav" aria-label="{% translate "Основная навигация" %}">
-    {% for section in nav_sections %}
-      {% if section.allowed %}
-        {% with section_url=section.url section_label=section.title %}
-          {% include "web/components/appnav_item.html" %}
-        {% endwith %}
-      {% elif principal and section.offer %}
-        {% demo_switch section.needs section.route section.title %}
+    {% for area in nav_areas %}
+      {% if area.offer %}
+        {% demo_switch area.offer.needs area.offer.route area.title %}
+      {% else %}
+      <details class="appnav__area{% if area.here %} appnav__area--here{% endif %}">
+        <summary class="appnav__area-name"{% if area.here %} aria-current="true"{% endif %}>{{ area.title }}{% if area.waiting %}<span class="appnav__count" title="{{ waiting_hint }}">{{ area.waiting }}</span>{% endif %}</summary>
+        <div class="appnav__menu">
+          {% for section in area.items %}
+            {% if section.allowed %}
+              {% with section_url=section.url section_label=section.title section_waiting=section.waiting %}
+                {% include "web/components/appnav_item.html" %}
+              {% endwith %}
+            {% elif principal and section.offer %}
+              {% demo_switch section.needs section.route section.title %}
+            {% endif %}
+          {% endfor %}
+        </div>
+      </details>
       {% endif %}
     {% endfor %}
   </nav>
