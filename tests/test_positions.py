@@ -101,7 +101,9 @@ def test_editing_the_position_does_not_touch_those_already_hired(client, a_posit
 
 def test_the_screen_refuses_the_one_who_does_not_keep_directories(client, a_position):
     """Право то же, что у остальных справочников: ведёт администратор сети."""
-    login_as(client, "accountant")
+        # Роль без права ведения справочников — теперь это управляющий точки:
+    # бухгалтер и оперативный директор их ведут с 28.08.2026 (D059).
+    login_as(client, "manager")
     response = client.post("/directory/positions/new/", {
         "code": "courier", "title": "Курьер", "group": str(a_position.group_id),
     })

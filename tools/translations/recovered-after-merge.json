@@ -1,0 +1,47 @@
+{
+  "Период сейчас в состоянии «%(from_title)s», перевести его в «%(to_title)s» нельзя. Открытый заново период нужно пересчитать, прежде чем утверждать снова.": {
+    "sr": "Period je trenutno u stanju „%(from_title)s“, ne može se preneti u stanje „%(to_title)s“. Ponovo otvoren period treba ponovo obračunati pre nego što se opet odobri."
+  },
+  "типа часов «%(kind)s» нет в правилах страны — эти часы не загружены": {
+    "sr": "vrsta sati „%(kind)s“ ne postoji u pravilima zemlje — ovi sati nisu učitani"
+  },
+  "Не удалось сохранить «%%(value)s»: %%(reason)s. В ячейке прежнее значение.": {
+    "sr": "Nije uspelo čuvanje „%%(value)s“: %%(reason)s. U ćeliji je prethodna vrednost."
+  },
+  "«Пропорционально выручке» пока не разносит ничего: выручки в продукте нет — она появится с коннектором Dodo IS.": {
+    "sr": "„Proporcionalno prihodu“ trenutno ne raspodeljuje ništa: prihoda u proizvodu nema — pojaviće se sa konektorom Dodo IS."
+  },
+  "«Спрашивать каждый раз» означает, что точку у такого расхода выбирают руками, в самом расходе: отдельного экрана вопроса нет.": {
+    "sr": "„Pitaj svaki put“ znači da se objekat za takav trošak bira ručno, u samom trošku: posebnog ekrana za pitanje nema."
+  },
+  "Правило статьи — «Спрашивать каждый раз»: точку у такого расхода выбирают руками. Откройте расход и укажите её.": {
+    "sr": "Pravilo stavke je „Pitaj svaki put“: objekat za takav trošak se bira ručno. Otvorite trošak i navedite ga."
+  },
+  "Правило статьи — «Пропорционально выручке», но выручки в продукте пока нет: она появится с коннектором Dodo IS. Пока укажите точку руками или смените правило.": {
+    "sr": "Pravilo stavke je „Proporcionalno prihodu“, ali prihoda u proizvodu još nema: pojaviće se sa konektorom Dodo IS. Za sada navedite objekat ručno ili promenite pravilo."
+  },
+  "Статья «%(title)s» на %(date)s не действует: выберите другую или поправьте её в справочнике.": {
+    "sr": "Stavka troška „%(title)s“ nije važeća na %(date)s: izaberite drugu ili je ispravite u imeniku."
+  },
+  "Касса «%(till)s» стоит на точке %(unit)s — выберите её или уберите кассу.": {
+    "sr": "Kasa „%(till)s“ je na objektu %(unit)s — izaberite ga ili uklonite kasu."
+  },
+  "«Вся сеть» — расход юрлица целиком (аренда офиса, реклама): он разойдётся по точкам правилом статьи.": {
+    "sr": "„Cela mreža“ — trošak celog pravnog lica (kirija kancelarije, reklama): raspodeliće se po objektima pravilom stavke."
+  },
+  "«%(label)s»: в месяце %(month)s столько дней не бывает — их всего %(limit)s.": {
+    "sr": "„%(label)s“: mesec %(month)s nema toliko dana — ima ih %(limit)s."
+  },
+  "В файле не нашлась колонка с названием статьи. Назовите её «Название», «Naziv» или «Name» — по остальным колонкам продукт разберётся сам.": {
+    "sr": "U fajlu nije pronađena kolona sa nazivom stavke. Nazovite je „Название“, „Naziv“ ili „Name“ — ostale kolone će proizvod sam prepoznati."
+  },
+  "дата «Действует с» не разобрана: «%(value)s». Пишите её как 01.06.2026 или 2026-06-01": {
+    "sr": "datum „Važi od“ nije pročitan: „%(value)s“. Pišite ga kao 01.06.2026. ili 2026-06-01"
+  },
+  "%(action)s не входит в права вашей роли «%(role)s». Попросите того, у кого это право есть.": {
+    "sr": "%(action)s nije u ovlašćenjima vaše uloge „%(role)s“. Zamolite nekoga ko ima to ovlašćenje."
+  },
+  "«%(label)s»: значения «%(value)s» нет в правилах страны. Допустимо: %(allowed)s.": {
+    "sr": "„%(label)s“: vrednost „%(value)s“ ne postoji u pravilima zemlje. Dozvoljeno: %(allowed)s."
+  }
+}

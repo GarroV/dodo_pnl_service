@@ -1,0 +1,18 @@
+{
+  "«%(label)s»: дата закрытия должна быть позже даты начала (%(from)s).": {
+    "en": "«%(label)s»: the closing date must be later than the start date (%(from)s).",
+    "sr": "«%(label)s»: datum zatvaranja mora biti kasniji od datuma početka (%(from)s)."
+  },
+  "Чек прикладывается тем же движением.": {
+    "en": "The receipt is attached in the same motion.",
+    "sr": "Račun se prilaže istim pokretom."
+  },
+  "Касса и P&L — два разных числа.": {
+    "en": "The till and the P&L are two different numbers.",
+    "sr": "Kasa i P&L su dva različita broja."
+  },
+  "Список статей у управляющего короткий.": {
+    "en": "The manager's list of items is short.",
+    "sr": "Spisak stavki kod menadžera je kratak."
+  }
+}

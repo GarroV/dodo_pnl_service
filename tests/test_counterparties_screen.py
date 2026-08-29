@@ -48,17 +48,26 @@ def test_every_role_reads_the_directory(client, no_counterparties, role):
 
 
 def test_only_the_network_admin_is_offered_the_button(client, no_counterparties):
-    """Кнопка «Завести» есть у того, кто ведёт справочники, и только у него."""
+    """Кнопка «Завести» есть у тех, кто ведёт справочники, и только у них.
+
+    С 28.08.2026 это администратор сети, бухгалтер и оперативный директор
+    (D059). Управляющему точки кнопка не показывается: кнопка на отказ хуже
+    отсутствующей.
+    """
     login_as(client, "admin")
     assert "Завести контрагента" in body(client.get(LIST))
 
-    login_as(client, "accountant")
+    # Роль без права ведения справочников — теперь это управляющий точки:
+    # бухгалтер и оперативный директор их ведут с 28.08.2026 (D059).
+    login_as(client, "manager")
     assert "Завести контрагента" not in body(client.get(LIST))
 
 
 def test_the_form_refuses_with_words(client, no_counterparties):
     """Адрес формы не спрятан: он отвечает отказом, который можно прочитать."""
-    login_as(client, "accountant")
+    # Роль без права ведения справочников — теперь это управляющий точки:
+    # бухгалтер и оперативный директор их ведут с 28.08.2026 (D059).
+    login_as(client, "manager")
     answer = client.get(NEW)
     assert answer.status_code == 403
     assert "Ведение справочников" in body(answer)

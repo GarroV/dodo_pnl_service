@@ -117,7 +117,9 @@ def test_nothing_happens_without_the_right(client, kitchen):
     """Право то же, что у справочников: у бухгалтера его нет."""
     from core.models import EmploymentTerm
 
-    login_as(client, "accountant")
+    # Роль без права ведения справочников — теперь это управляющий точки:
+    # бухгалтер и оперативный директор их ведут с 28.08.2026 (D059).
+    login_as(client, "manager")
     response = client.post("/directory/groups/raise/", {
         "group": str(kitchen.id), "valid_from": "2026-07-01", "percent": "10",
     })
