@@ -223,3 +223,87 @@ def test_the_guide_explains_the_second_half_of_the_primary_data(stranger):
     html = body(stranger.get(GUIDE))
     assert "нбокс" in html, "инбокс классификации не объяснён"
     assert "аличны" in html, "наличные расходы не объяснены"
+
+
+# --- путь до первой ведомости -----------------------------------------------
+
+
+def test_the_guide_walks_the_seven_steps_to_the_first_payslip(stranger):
+    """Гайд ведёт по месяцу шагами, а не описывает экраны (T195, issue #187).
+
+    Первая версия страницы рассказывала устройство продукта — что такое регистр,
+    кто такие роли, из чего собирается P&L. Всё верно и всё бесполезно тому, кто
+    сел и не знает, с чего начать. Эталон «Онбординг» требует пути: семь шагов до
+    первой ведомости, и следующий невозможен без предыдущего.
+
+    Проверяется не число «семь» в тексте, а что показаны ровно те шаги, что лежат
+    в `web.guide.STEPS`: список в разметке был бы вторым, и разошёлся бы молча.
+    """
+    from web.guide import STEPS
+
+    html = body(stranger.get(GUIDE))
+    for step in STEPS:
+        assert str(step.title) in html, f"шага «{step.title}» нет на странице"
+
+
+def test_every_step_says_why_where_done_and_where_people_stumble(stranger):
+    """У каждого шага четыре вещи, и без любой из них шаг бесполезен.
+
+    «Зачем» — иначе шаг выполняют не понимая; «где это» — иначе его негде
+    сделать; «готово, когда» — проверяемый признак вместо «настроено»; «где
+    спотыкаются» — то, на чём спотыкаются все одинаково. Требование эталона, и
+    оно легко теряется при следующей правке текста: абзац выкинули, страница
+    осталась связной.
+    """
+    from django.utils.html import escape
+
+    from web.guide import STEPS
+
+    html = body(stranger.get(GUIDE))
+    for step in STEPS:
+        for field in (step.why, step.done, step.trap):
+            # `escape`, а не сырая строка: «P&L» на странице живёт как «P&amp;L»,
+            # и сравнение без экранирования краснело бы на верном тексте.
+            assert escape(str(field)) in html, (
+                f"шаг «{step.title}»: потеряно «{field}»"
+            )
+
+
+def test_every_step_points_at_a_real_screen(stranger):
+    """«Где это» — настоящий адрес продукта, а не написанный руками путь.
+
+    Выдуманный адрес в гайде хуже отсутствующего: он выглядит проверенным. Здесь
+    он собирается из маршрута, поэтому переименование экрана его не ломает, — и
+    проверка следит, что маршрут вообще существует и адрес попал на страницу.
+    """
+    from django.urls import reverse
+
+    from web.guide import STEPS
+
+    html = body(stranger.get(GUIDE))
+    for step in STEPS:
+        url = reverse(step.route)
+        assert f'href="{url}"' in html, f"шаг «{step.title}» никуда не ведёт"
+
+
+def test_the_guide_names_the_sections_the_way_the_header_does(stranger):
+    """Раздел в гайде называется так же, как в шапке.
+
+    Куплено разрывом: разделы переименовали по словарю эталона (issue #162, было
+    «Периоды · Расходы · Счета», стало «Табель · Наличные расходы · Инбокс
+    документов»), а гайд остался со старыми именами. Человек читал про «Счета»,
+    искал их в шапке и не находил — и решал, что сломался он.
+
+    Список берётся из `web.navigation`, то есть оттуда же, откуда собирается
+    шапка: переименуют раздел — покраснеет здесь, а не у читателя.
+    """
+    from web.navigation import GROUPS
+
+    html = body(stranger.get(GUIDE))
+    missing = [
+        str(item.title)
+        for group in GROUPS
+        for item in group.items
+        if str(item.title) not in html
+    ]
+    assert not missing, f"гайд не называет разделы продукта: {missing}"

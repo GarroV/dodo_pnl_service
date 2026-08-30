@@ -7,6 +7,14 @@
  * пересъёмка обязана стоить одну команду, иначе после второй правки интерфейса
  * её перестанут делать (глобальное правило про пользовательские материалы).
  *
+ * «Одна команда» здесь в буквальном смысле: скрипт САМ приводит стенд в то
+ * состояние, которое показывает гайд, — на свежем сиде месяц не посчитан и не
+ * утверждён, наличных расходов, счетов и статей расходов нет вовсе, и добрая
+ * половина снимков вышла бы пустыми экранами. Заметил бы это только человек,
+ * которому гайд уже показали, — поэтому подготовка (`guide_prepare.mjs`) идёт
+ * первым шагом сама. `SKIP_PREPARE=1` пропускает её — нужно, когда стенд уже
+ * подготовлен и человек просто переснимает во второй раз.
+ *
  * Снимает с ЛОКАЛЬНОГО продукта, а не с демо: демо всегда англоязычное (D035),
  * а материалы для команды — на русском.
  *
@@ -20,125 +28,165 @@
  * Дальше снимки сжимаются и встраиваются в страницу как data:-адреса —
  * внешние картинки в опубликованном артефакте не грузятся.
  *
- * Список экранов лежит в `docs/guides/screens.json` — один и тот же на съёмку и
- * на сборку страницы. Добавили экран в гайд — впишите его туда; забыть нельзя,
- * это стережёт `tests/test_guide_screens.py`.
+ * Список экранов лежит в `docs/guides/screens.json` — один и тот же на съёмку
+ * и на сборку страницы. Добавили экран в гайд — впишите его туда; забыть
+ * нельзя, это стережёт `tests/test_guide_screens.py`.
+ *
+ * Подстановок в адресах пять, и все ищутся на стенде сами:
+ *   {period}       id утверждённого месяца — меняется ВНУТРИ пути;
+ *   {employee}     полный адрес карточки человека;
+ *   {open_period}  полный адрес только что заведённого месяца;
+ *   {trace}        полный адрес следа расчёта одной суммы;
+ *   {invoice}      полный адрес карточки счёта.
+ * Правило подстановки: если значение из `screens.json` целиком начинается с
+ * `{`, оно само по себе один из четырёх готовых полных адресов выше (не
+ * считая {period}, который сам по себе адресом не бывает). Иначе это путь, и
+ * внутри него меняются `{period}` и `{employee}`.
  */
-const APP = process.env.APP || "http://127.0.0.1:8000";
+import { readFile, writeFile } from "node:fs/promises";
+import { APP, evalIn, goto, login, send } from "./guide_browser.mjs";
+import { prepare } from "./guide_prepare.mjs";
+
 const OUT = process.argv[2];
-const PORT = process.env.CDP_PORT || 9341;
+if (!OUT) {
+  console.error("нужен путь: node tools/guide_shots.mjs <куда-складывать>");
+  process.exit(1);
+}
 
-const res = await fetch(`http://127.0.0.1:${PORT}/json/new?about:blank`, { method: "PUT" });
-const target = await res.json();
-const ws = new WebSocket(target.webSocketDebuggerUrl);
-await new Promise((ok) => ws.addEventListener("open", ok));
+if (!process.env.SKIP_PREPARE) {
+  await prepare();
+}
 
-let seq = 0;
-const waiting = new Map();
-ws.addEventListener("message", (e) => {
-  const m = JSON.parse(e.data);
-  if (m.id && waiting.has(m.id)) {
-    const { ok, fail } = waiting.get(m.id);
-    waiting.delete(m.id);
-    m.error ? fail(new Error(JSON.stringify(m.error))) : ok(m.result);
-  }
-});
-const send = (method, params = {}) => new Promise((ok, fail) => {
-  const id = ++seq; waiting.set(id, { ok, fail });
-  ws.send(JSON.stringify({ id, method, params }));
-});
-const evalIn = async (expr) => {
-  const r = await send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true });
-  if (r.exceptionDetails) throw new Error(r.exceptionDetails.text);
-  return r.result.value;
-};
-const goto = async (url) => {
-  await send("Page.navigate", { url });
-  for (let i = 0; i < 80; i++) {
-    await new Promise((r) => setTimeout(r, 150));
-    if (await evalIn("document.readyState === 'complete'").catch(() => false)) {
-      await new Promise((r) => setTimeout(r, 400));
-      return;
-    }
-  }
-  throw new Error("не загрузилось: " + url);
-};
+// Вход и переключение языка — своим шагом, а не только внутри `prepare()`:
+// `SKIP_PREPARE=1` пропускает подготовку целиком, и без этого вызова съёмка
+// читала бы страницу входа вместо продукта. Повторный вход, если подготовка
+// уже вошла, безвреден.
+await login();
 
-await send("Page.enable");
-await send("Runtime.enable");
-await send("Emulation.setDeviceMetricsOverride", {
-  width: 1280, height: 900, deviceScaleFactor: 2, mobile: false,
-});
+/** Строка периода на `/periods/` несёт свой id атрибутом `data-period`. */
+async function periodIdByTitle(monthTitle) {
+  await goto("/periods/");
+  return await evalIn(`
+    (() => {
+      const row = [...document.querySelectorAll('tr[data-period]')]
+        .find(tr => (tr.querySelector('a')?.textContent || '').trim() === ${JSON.stringify(monthTitle)});
+      return row ? row.getAttribute('data-period') : '';
+    })()
+  `);
+}
 
-// вход: ждём форму, потом заполняем
-await goto(`${APP}/login/`);
-await evalIn(`(() => {
-  const forms = [...document.querySelectorAll('form')];
-  const f = forms.find(x => (x.getAttribute('action') || '').endsWith('/login/'));
-  if (!f) throw new Error('формы входа нет');
-  f.querySelector('[name=username]').value = '${process.env.USER_NAME || "admin"}';
-  f.querySelector('[name=password]').value = '${process.env.USER_PASS || "admin"}';
-  f.submit();
-})()`);
-await new Promise((r) => setTimeout(r, 2500));
+const periodId = await periodIdByTitle("Июнь 2026");
+const openPeriodId = await periodIdByTitle("Июль 2026");
+if (!periodId || !openPeriodId) {
+  throw new Error(
+    "утверждённый или открытый месяц не найден на /periods/ — прогоните " +
+      "подготовку стенда (запустите без SKIP_PREPARE)",
+  );
+}
+const openPeriodHref = `/periods/${openPeriodId}/`;
 
-// Демо всегда англоязычное (D035), а гайд для русской команды — переключаем
-// язык штатным переключателем Django, как это делает человек в шапке.
-await goto(`${APP}/periods/`);
-await evalIn(`(() => {
-  const form = document.createElement('form');
-  form.method = 'post';
-  form.action = '/i18n/setlang/';
-  const csrf = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
-  form.innerHTML = '<input name="csrfmiddlewaretoken" value="' + csrf + '">' +
-                   '<input name="language" value="ru">' +
-                   '<input name="next" value="/periods/">';
-  document.body.appendChild(form);
-  form.submit();
-})()`);
-await new Promise((r) => setTimeout(r, 2000));
-
-const periodId = await (async () => {
-  await goto(`${APP}/periods/`);
-  return await evalIn(`(() => {
-    const links = [...document.querySelectorAll('a[href^="/periods/"]')].map(a => a.getAttribute('href'));
-    const withId = links.find(h => /\\/periods\\/[0-9a-f-]{36}\\//.test(h));
-    return withId ? withId.split('/')[2] : '';
-  })()`);
-})();
-
-const employeeUrl = await (async () => {
-  await goto(`${APP}/directory/employees/`);
+const employeeHref = await (async () => {
+  await goto("/directory/employees/");
   return await evalIn(`(() => {
     const links = [...document.querySelectorAll('a[href^="/directory/employees/"]')].map(a => a.getAttribute('href'));
     return links.find(h => /[0-9a-f-]{36}/.test(h)) || '';
   })()`);
 })();
 
-console.log("период:", periodId, "| карточка:", employeeUrl);
+const traceHref = await (async () => {
+  await goto(`/periods/${periodId}/`);
+  return await evalIn(`(() => {
+    const a = document.querySelector('a[href*="/trace/"]');
+    return a ? a.getAttribute('href') : '';
+  })()`);
+})();
+
+const invoiceHref = await (async () => {
+  await goto("/invoices/");
+  return await evalIn(`(() => {
+    const links = [...document.querySelectorAll('a[href^="/invoices/"]')].map(a => a.getAttribute('href'));
+    return links.find(h => /^\\/invoices\\/[0-9a-f-]{36}\\/$/.test(h)) || '';
+  })()`);
+})();
+
+for (const [label, href] of [
+  ["карточка человека", employeeHref],
+  ["след расчёта", traceHref],
+  ["карточка счёта", invoiceHref],
+]) {
+  if (!href) {
+    throw new Error(
+      `не нашлось: ${label} — прогоните подготовку стенда (запустите без SKIP_PREPARE)`,
+    );
+  }
+}
+
+console.log(
+  "период:", periodId, "| открытый месяц:", openPeriodId, "| карточка:", employeeHref,
+);
+
+const FULL_ADDRESS = {
+  "{employee}": APP + employeeHref,
+  "{open_period}": APP + openPeriodHref,
+  "{trace}": APP + traceHref,
+  "{invoice}": APP + invoiceHref,
+};
+
 // Список экранов — один на съёмку и на сборку гайда: `docs/guides/screens.json`.
 // Своя копия здесь означала бы дубль, который разъезжается молча — гайд
 // поправили, список поправили, а снимают по старому. Сторож этого не допустит
 // (tests/test_guide_screens.py).
-const fsSync = await import("node:fs/promises");
-const listRaw = await fsSync.readFile(new URL("../docs/guides/screens.json", import.meta.url), "utf8");
+const listRaw = await readFile(new URL("../docs/guides/screens.json", import.meta.url), "utf8");
 const shots = Object.entries(JSON.parse(listRaw))
   .filter(([name]) => !name.startsWith("_"))
-  .map(([name, path]) => [
-    name,
-    APP + path.replace("{period}", periodId).replace("{employee}", employeeUrl),
-  ]);
+  .map(([name, raw]) => {
+    if (raw.startsWith("{")) {
+      if (!(raw in FULL_ADDRESS)) {
+        throw new Error(`неизвестная подстановка ${raw} у экрана ${name}`);
+      }
+      return [name, FULL_ADDRESS[raw]];
+    }
+    return [name, APP + raw.replace("{period}", periodId).replace("{employee}", employeeHref)];
+  });
 
+// Снимок обрезается по СОДЕРЖИМОМУ, а не по окну. Причина видна на любом
+// коротком экране: `captureBeyondViewport` берёт не меньше высоты окна, и
+// страница календаря на четыре строки приезжала картинкой, у которой две трети
+// — пустой фон. В гайде это выглядит как обрезанный экран или как пустое место,
+// то есть как дефект продукта, которого нет.
+//
+// Верхний предел нужен с другой стороны: реестр правил — это шесть тысяч
+// пикселей таблицы, полтора мегабайта в одном снимке, из которых читатель
+// видит верхние пятьсот (`figure img { max-height }` в самом гайде). Платить
+// мегабайтами за невидимое незачем.
+const WIDTH = 1280;
+const MAX_HEIGHT = 2400;
 
-const fs = await import("node:fs/promises");
+let failed = 0;
 for (const [name, url] of shots) {
   try {
     await goto(url);
-    const shot = await send("Page.captureScreenshot", { format: "jpeg", quality: 72, captureBeyondViewport: true });
-    await fs.writeFile(`${OUT}/${name}.jpg`, Buffer.from(shot.data, "base64"));
-    console.log("снято", name);
+    const height = await evalIn(`Math.ceil(Math.max(
+      document.documentElement.scrollHeight,
+      document.body ? document.body.scrollHeight : 0,
+      320
+    ))`);
+    const shot = await send("Page.captureScreenshot", {
+      format: "jpeg",
+      quality: 72,
+      captureBeyondViewport: true,
+      // `scale: 2` повторяет `deviceScaleFactor` окна: с явным `clip` окно уже
+      // не решает, и без этого снимки стали бы вдвое мельче остальных.
+      clip: { x: 0, y: 0, width: WIDTH, height: Math.min(height, MAX_HEIGHT), scale: 2 },
+    });
+    await writeFile(`${OUT}/${name}.jpg`, Buffer.from(shot.data, "base64"));
+    console.log("снято", name, `(${Math.min(height, MAX_HEIGHT)} px)`);
   } catch (e) {
+    failed += 1;
     console.log("НЕ снято", name, String(e).slice(0, 90));
   }
 }
-process.exit(0);
+// Дыра в снимках обязана быть видна тому, кто гоняет команду, а не только
+// тому, кто потом открыл собранный гайд и нашёл пустое место (T098 — та же
+// логика, что у смоуков: молчаливый провал дороже красного кода возврата).
+process.exit(failed ? 1 : 0);
