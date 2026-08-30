@@ -1,0 +1,109 @@
+{% extends "web/print/base.html" %}{% load i18n %}
+{% block content %}
+{% comment %}
+Расчётный листок (T187, issue #184, эталон «Печатные формы»).
+
+Один человек — один лист: позиций у строки ведомости единицы, и делить их по
+листам не приходится. Если однажды схем станет столько, что позиции не влезут,
+это увидит смоук печати — он проверяет не «страница открылась», а что ни один
+элемент не вышел за край листа.
+
+Главное здесь — оговорка про бруто. В Сербии договариваются о сумме на руки, а
+бруто, налог и взносы считаются от неё: у человека их не забирают. Числа без
+этой фразы читаются как удержание из зарплаты, и человек приходит спрашивать,
+куда делись деньги, которых он не терял.
+
+Номера банковского счёта на листке нет намеренно: в схеме его нет, а выдуманный
+счёт хуже отсутствующего — по нему пойдут искать деньги. См. журнал блока.
+{% endcomment %}
+<div class="desk">
+  <section class="paper">
+  <div class="paper__body">
+    <header class="doc-head">
+      <div class="doc-head__main">
+        <div class="doc-who">{{ head.entity }}{% if head.tax_number %} · {% translate "ПИБ" %} {{ head.tax_number }}{% endif %}</div>
+        <div class="doc-title">{{ head.title }}</div>
+        <div class="doc-sub">{{ head.sub }}</div>
+      </div>
+      <div class="doc-head__aside">
+        <div class="doc-label">{% translate "Документ" %}</div>
+        <div class="doc-num">{{ head.number }}</div>
+        <div class="doc-label" style="margin-top: 2mm">{% translate "Сформирован" %}</div>
+        <div class="doc-when">{{ head.stamp }}</div>
+      </div>
+    </header>
+
+    <div class="slip-who">
+      <div>
+        <div class="doc-label">{% translate "Сотрудник" %}</div>
+        <div class="slip-name">{{ employee }}</div>
+        <div class="slip-role">{{ position }}</div>
+      </div>
+      <div>
+        <div class="doc-label">{% translate "Часы в месяце" %}</div>
+        <div class="slip-hours">{{ hours }}</div>
+        <div class="slip-role">{% blocktranslate with norm=norm_hours %}норма {{ norm }}{% endblocktranslate %}</div>
+      </div>
+    </div>
+
+    <table class="slip">
+      <colgroup><col><col class="c-how"><col class="c-sum"></colgroup>
+      <thead>
+        <tr>
+          <th>{% translate "Статья" %}</th>
+          <th>{% translate "Расчёт" %}</th>
+          <th class="num">{% blocktranslate with currency=currency %}Сумма, {{ currency }}{% endblocktranslate %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in lines %}
+        <tr class="item"><td class="what">{{ line.title }}</td><td class="how">{{ line.formula }}</td><td class="num sum">{{ line.amount }}</td></tr>
+        {% endfor %}
+        {% comment %}
+        Начислено — сумма показанных позиций, а не отдельное число рядом: листок
+        обязан объяснять собственный итог, иначе объяснять нечего.
+        {% endcomment %}
+        <tr class="sum"><td>{% translate "Начислено" %}</td><td class="how">{% translate "сумма позиций выше" %}</td><td class="num accrued-sum">{{ accrued }}</td></tr>
+        {% if held %}
+        <tr class="item"><td class="what">{% translate "Удержано при выплате" %}</td><td class="how"></td><td class="num sum">−{{ held }}</td></tr>
+        {% endif %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="2">{% translate "К выплате" %}</th>
+          <td class="num">{{ paid }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="gross-note">
+      {% blocktranslate with gross=gross tax=tax contributions=contributions %}Бруто {{ gross }} · налог {{ tax }} · взносы {{ contributions }}{% endblocktranslate %}
+      <div>{% translate "Эти суммы посчитаны от выплаты и платятся сверх неё: из того, что вы получаете на руки, они не удерживаются." %}</div>
+      {% if to_cash %}
+      <div>{% blocktranslate with bank=to_bank cash=to_cash %}На счёт {{ bank }}, наличными {{ cash }}.{% endblocktranslate %}</div>
+      {% endif %}
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="signatures">
+      <div>
+        <div class="sign-line"></div>
+        <div class="sign-who">{% translate "Расчёт составил" %}</div>
+        <div class="sign-name"></div>
+      </div>
+      <div>
+        <div class="sign-line"></div>
+        <div class="sign-who">{% translate "Сотрудник · получил расчётный листок" %}</div>
+        <div class="sign-name"></div>
+      </div>
+    </div>
+
+    <p class="fine">
+      <span>{% translate "документ выведен из данных периода, правка бумажной копии силы не имеет" %}</span>
+      <span class="right">{{ head.number }}</span>
+    </p>
+  </div>
+  </section>
+</div>
+{% endblock %}

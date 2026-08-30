@@ -1,0 +1,27 @@
+{% comment %}
+Каркас печатной формы (T187, issue #184).
+
+Свой, а не `web/base.html`, и это главное решение шаблона: на бумаге нет ни
+шапки продукта, ни навигации, ни кнопок — с листа на них не нажать, а
+напечатанная кнопка читается как предложение что-то сделать. Наследоваться от
+экранного каркаса и прятать половину его `@media print` значило бы держать в
+согласии две разметки вместо одной.
+
+Оформление тоже своё: `print.css` вместо `app.css`. У продукта есть тёмная
+тема, у бумаги её не бывает — палитра здесь бумажная, из эталона «Печатные
+формы», и `data-theme` на странице не ставится вовсе.
+{% endcomment %}{% load i18n static %}{% get_current_language as page_language %}<!doctype html>
+<html lang="{{ page_language }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ title }}{% endblock %} · Dodo P&amp;L</title>
+{% comment %}
+Значения дизайн-системы нужны ради шрифтов: `@font-face` объявлены там, и без
+них печать ушла бы системным шрифтом, не похожим на экран.
+{% endcomment %}
+<link rel="stylesheet" href="{% static 'web/tokens.css' %}">
+<link rel="stylesheet" href="{% static 'web/print.css' %}">
+</head>
+<body>{% block content %}{% endblock %}</body>
+</html>

@@ -1,0 +1,123 @@
+{% extends "web/print/base.html" %}{% load i18n %}
+{% block content %}
+{% comment %}
+Платёжная ведомость (T187, issue #184, эталон «Печатные формы»).
+
+Листы приходят готовыми из `reports.printing`: сколько строк на каком листе —
+решено там, потому что только так на бумаге может стоять честное «Лист 2 из 3».
+Разметка их не делит и не досыпает; её дело — не выйти за миллиметры, под
+которые лист посчитан (`web/print.css`).
+
+Три денежные колонки сходятся между собой по построению: удержанное выведено из
+тех же итогов строки, что и «к выплате». Что означает каждая из них, сказано
+мелким шрифтом внизу: «начислено» в бухгалтерском обиходе значит бруто, а здесь
+это сумма расчёта на руки — в Сербии договариваются о ней, и бруто считается от
+неё, а не наоборот.
+{% endcomment %}
+<div class="desk">
+{% for leaf in leaves %}
+  <section class="paper">
+  <div class="paper__body">
+    {% if leaf.first %}
+    <header class="doc-head">
+      <div class="doc-head__main">
+        <div class="doc-who">{{ head.entity }}{% if head.tax_number %} · {% translate "ПИБ" %} {{ head.tax_number }}{% endif %}</div>
+        <div class="doc-title">{{ head.title }}</div>
+        <div class="doc-sub">{{ head.sub }}</div>
+      </div>
+      <div class="doc-head__aside">
+        <div class="doc-label">{% translate "Документ" %}</div>
+        <div class="doc-num">{{ head.number }}</div>
+        <div class="doc-label" style="margin-top: 2mm">{% translate "Сформирован" %}</div>
+        <div class="doc-when">{{ head.stamp }}</div>
+      </div>
+    </header>
+    {% else %}
+    {% comment %}
+    Лист продолжения напоминает, чей это документ и какой он по счёту: лист,
+    выпавший из пачки, иначе не опознать.
+    {% endcomment %}
+    <header class="doc-head doc-head--next">
+      <div class="doc-head__main"><div class="doc-who">{{ head.entity }} · {{ head.title }}</div></div>
+      <div class="doc-head__aside"><div class="doc-num">{{ head.number }}</div></div>
+    </header>
+    {% endif %}
+
+    <table class="payout">
+      <colgroup>
+        <col class="c-num"><col><col class="c-role"><col class="c-hours">
+        <col class="c-accrued"><col class="c-held"><col class="c-paid"><col class="c-sign">
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="num">{% translate "№" %}</th>
+          <th>{% translate "Сотрудник" %}</th>
+          <th>{% translate "Должность" %}</th>
+          <th class="num">{% translate "Часы" %}</th>
+          <th class="num">{% translate "Начислено" %}</th>
+          <th class="num">{% translate "Удержано" %}</th>
+          <th class="num">{% translate "К выплате" %}</th>
+          <th>{% translate "Подпись" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in leaf.rows %}
+        <tr class="line"><td class="n num">{{ row.number }}</td><td class="who">{{ row.employee }}</td><td class="role">{{ row.position }}</td><td class="num hours">{{ row.hours }}</td><td class="num accrued">{{ row.accrued }}</td><td class="num held">{{ row.held }}</td><td class="num paid">{{ row.paid }}</td><td class="sign"></td></tr>
+        {% endfor %}
+      </tbody>
+      {% if leaf.last %}
+      <tfoot>
+        {% comment %}
+        Формулировка итога дословно та же, что в ведомости на экране, и это не
+        совпадение: одна строка в каталоге переводов вместо двух похожих —
+        меньше на один повод им разъехаться.
+        {% endcomment %}
+        <tr class="grand"><td colspan="3">{% blocktranslate with employees=totals.people %}Итого · {{ employees }} чел.{% endblocktranslate %}</td><td class="num hours">{{ totals.hours }}</td><td class="num accrued">{{ totals.accrued }}</td><td class="num held">{{ totals.held }}</td><td class="num paid">{{ totals.paid }}</td><td></td></tr>
+      </tfoot>
+      {% endif %}
+    </table>
+
+    <div class="spacer"></div>
+
+    {% if leaf.last %}
+    <div class="foot">
+      <p class="in-words">{% translate "Сумма прописью:" %} {{ in_words }}</p>
+      {% comment %}
+      Подписи: кто посчитал, кто утвердил, когда подписано. Имена стоят под
+      линией, если продукт их знает; не знает — линия остаётся пустой, и её
+      заполняют от руки. Выдуманное имя на подписном документе хуже пустой
+      строки: по нему ищут человека, который ничего не подписывал.
+      {% endcomment %}
+      <div class="signatures">
+        <div>
+          <div class="sign-line"></div>
+          <div class="sign-who">{% translate "Расчёт составил" %}</div>
+          <div class="sign-name">{{ calculated_by }}</div>
+        </div>
+        <div>
+          <div class="sign-line"></div>
+          <div class="sign-who">{% translate "Утвердил" %}</div>
+          <div class="sign-name">{{ approved_by }}</div>
+        </div>
+        <div class="narrow">
+          <div class="sign-line"></div>
+          <div class="sign-who">{% translate "Дата подписания" %}</div>
+          <div class="sign-name"></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <p class="fine">
+      <span>
+        {% blocktranslate with number=leaf.number of=leaf.of %}Лист {{ number }} из {{ of }}{% endblocktranslate %} ·
+        {% translate "документ выведен из данных периода, правка бумажной копии силы не имеет" %}{% if leaf.last %} ·
+        {% translate "начислено — сумма расчёта на руки, удержано — вычтенное при выплате, к выплате — на счёт и наличными вместе" %}{% endif %}
+      </span>
+      <span class="right">{{ head.number }}</span>
+    </p>
+  </div>
+  </section>
+{% endfor %}
+</div>
+{% endblock %}

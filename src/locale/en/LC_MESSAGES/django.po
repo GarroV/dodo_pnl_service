@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-29 06:12+0000\n"
+"POT-Creation-Date: 2026-08-29 06:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -349,7 +349,7 @@ msgstr "No."
 #: web/dbrefusal.py:110 web/directory_views.py:556
 #: web/templates/web/components/diff_table.html:21
 #: web/templates/web/directory/raise_preview.html:21
-#: web/templates/web/period.html:255 web/templates/web/period.html:436
+#: web/templates/web/period.html:255 web/templates/web/period.html:442
 #: web/templates/web/variance.html:39
 msgid "Сотрудник"
 msgstr "Employee"
@@ -363,7 +363,7 @@ msgstr "Employee"
 #: web/suppliers_views.py:788 web/templates/web/cash/expenses.html:126
 #: web/templates/web/cash/split.html:39
 #: web/templates/web/directory/employee.html:130
-#: web/templates/web/period.html:436 web/templates/web/person_pay.html:71
+#: web/templates/web/period.html:442 web/templates/web/person_pay.html:71
 #: web/templates/web/reports/pnl_line.html:18
 #: web/templates/web/suppliers/inbox.html:43
 #: web/templates/web/suppliers/inbox.html:148
@@ -378,17 +378,17 @@ msgstr "Unit"
 
 #: reports/export.py:217 reports/export.py:556 reports/export.py:627
 #: web/templates/web/cash/expenses.html:131 web/templates/web/period.html:255
-#: web/templates/web/period.html:436 web/templates/web/period.html:519
+#: web/templates/web/period.html:442 web/templates/web/period.html:525
 #: web/templates/web/suppliers/inbox.html:61
 #: web/templates/web/suppliers/invoice.html:128
-#: web/templates/web/trace.html:146 web/templates/web/variance.html:39
+#: web/templates/web/trace.html:152 web/templates/web/variance.html:39
 msgid "Регистр"
 msgstr "Ledger"
 
 #: reports/export.py:219 reports/export.py:242
 #: timesheets/templates/timesheets/grid.html:205
 #: timesheets/templates/timesheets/grid.html:345
-#: web/templates/web/period.html:438 web/templates/web/period.html:526
+#: web/templates/web/period.html:444 web/templates/web/period.html:532
 #: web/templates/web/person_pay.html:145
 msgid "Итого"
 msgstr "Total"
@@ -474,7 +474,7 @@ msgid "Тип строки"
 msgstr "Row type"
 
 #: reports/export.py:556 web/templates/web/period.html:255
-#: web/templates/web/trace.html:146 web/templates/web/variance.html:39
+#: web/templates/web/trace.html:152 web/templates/web/variance.html:39
 msgid "Компонент"
 msgstr "Component"
 
@@ -487,13 +487,13 @@ msgstr "Component"
 #: web/templates/web/cash/split.html:28
 #: web/templates/web/cash/unallocated.html:34
 #: web/templates/web/directory/employee.html:104
-#: web/templates/web/period.html:519 web/templates/web/reports/pnl_line.html:21
+#: web/templates/web/period.html:525 web/templates/web/reports/pnl_line.html:21
 #: web/templates/web/suppliers/inbox.html:59
 #: web/templates/web/suppliers/invoice.html:79
 #: web/templates/web/suppliers/invoice.html:125
 #: web/templates/web/suppliers/invoices.html:50
-#: web/templates/web/suppliers/paper.html:81 web/templates/web/trace.html:92
-#: web/templates/web/trace.html:146 web/templates/web/trace.html:178
+#: web/templates/web/suppliers/paper.html:81 web/templates/web/trace.html:98
+#: web/templates/web/trace.html:152 web/templates/web/trace.html:184
 msgid "Сумма"
 msgstr "Amount"
 
@@ -529,6 +529,27 @@ msgstr ""
 #: reports/own_export.py:130
 msgid "у строки нет имени — она не загружена"
 msgstr "the row has no name — it was not loaded"
+
+#: reports/printing.py:138
+msgid ""
+"Ведомость печатается по всему расчёту, а не по разрезу: «начислено», "
+"«удержано» и «к выплате» считаются по строке ведомости целиком и регистру не "
+"принадлежат. Снимите разрез и откройте форму снова."
+msgstr "The sheet is printed for the whole calculation, not for a cut: “accrued”, “withheld” and “to be paid” are counted per payslip row as a whole and do not belong to a ledger. Remove the cut and open the form again."
+
+#: reports/printing.py:145
+msgid ""
+"Эта форма не собирается для вашей роли: суммы «к выплате» считаются по "
+"строке ведомости целиком, а итоги расчёта вашей роли не отданы. Собранный "
+"документ показал бы часть людей и итог, который ни с чем не сходится, — "
+"возьмите форму у того, кому отдан весь расчёт."
+msgstr "This form is not built for your role: the “to be paid” amounts are counted per payslip row as a whole, and your role has not been given the calculation totals. The document would show only some of the people and a total that adds up to nothing — take the form from someone who has been given the whole calculation."
+
+#: reports/printing.py:151
+msgid ""
+"Печатать нечего: расчёт этого месяца ещё не выполнен. Посчитайте период, и "
+"форма соберётся."
+msgstr "There is nothing to print: this month has not been calculated yet. Calculate the period and the form will be built."
 
 #: reports/reconcile.py:478
 msgid "не входит в доступную вам часть расчёта этого периода"
@@ -3513,6 +3534,28 @@ msgstr ""
 msgid "Часов за этот месяц нет — начислять пока нечего."
 msgstr "There are no hours for this month yet — nothing to accrue."
 
+#: web/printing_views.py:55
+msgid "Печатная форма"
+msgstr "Printable form"
+
+#: web/printing_views.py:94
+msgid "Платёжная ведомость"
+msgstr "Payroll payment sheet"
+
+#: web/printing_views.py:99
+#, python-format
+msgid "Платёжная ведомость за %(month)s"
+msgstr "Payroll payment sheet for %(month)s"
+
+#: web/printing_views.py:175
+msgid "Расчётный листок"
+msgstr "Payslip"
+
+#: web/printing_views.py:180
+#, python-format
+msgid "Расчётный листок за %(month)s"
+msgstr "Payslip for %(month)s"
+
 #: web/receipts.py:68
 msgid "Файл не приложен: прикладывать нечего."
 msgstr "No file attached: there is nothing to attach."
@@ -4512,6 +4555,10 @@ msgstr "P&L report"
 #: web/templates/web/components/exports.html:51
 msgid "Сверка с таблицей"
 msgstr "Reconciliation with the table"
+
+#: web/templates/web/components/exports.html:58
+msgid "Ведомость на печать"
+msgstr "Printable payroll sheet"
 
 #: web/templates/web/components/header.html:111
 msgid "Основная навигация"
@@ -5710,45 +5757,45 @@ msgstr "outside the app"
 msgid "Разрез ведомости по регистрам"
 msgstr "Payroll sheet view by ledger"
 
-#: web/templates/web/period.html:436
+#: web/templates/web/period.html:442
 msgid "Спор"
 msgstr "Dispute"
 
-#: web/templates/web/period.html:461 web/templates/web/person_pay.html:152
+#: web/templates/web/period.html:467 web/templates/web/person_pay.html:152
 #, python-format
 msgid "Перерасчёт за %(title)s"
 msgstr "Recalculation for %(title)s"
 
-#: web/templates/web/period.html:473 web/templates/web/person_pay.html:86
+#: web/templates/web/period.html:479 web/templates/web/person_pay.html:86
 msgid "Заморожена"
 msgstr "Frozen"
 
-#: web/templates/web/period.html:478
+#: web/templates/web/period.html:484
 msgid "Снять заморозку"
 msgstr "Unfreeze"
 
-#: web/templates/web/period.html:484
+#: web/templates/web/period.html:490
 msgid "Заморозить"
 msgstr "Freeze"
 
-#: web/templates/web/period.html:485
+#: web/templates/web/period.html:491
 msgid "из-за чего спор"
 msgstr "what the dispute is about"
 
-#: web/templates/web/period.html:498 web/templates/web/trace.html:13
+#: web/templates/web/period.html:504 web/templates/web/trace.html:13
 msgid "Как получилась эта сумма"
 msgstr "How this amount was calculated"
 
-#: web/templates/web/period.html:504
+#: web/templates/web/period.html:510
 #, python-format
 msgid "Итого · %(employees)s чел."
 msgstr "Total · %(employees)s employees"
 
-#: web/templates/web/period.html:517
+#: web/templates/web/period.html:523
 msgid "Итоги по регистрам"
 msgstr "Totals by ledger"
 
-#: web/templates/web/period.html:531
+#: web/templates/web/period.html:537
 msgid ""
 "Итог посчитан по тому, что видно вашей роли: строки чужих регистров не "
 "доезжают до страницы и не входят в сумму."
@@ -5756,7 +5803,7 @@ msgstr ""
 "The total is calculated based on what your role can see: rows from other "
 "ledgers never reach the page and are not included in the sum."
 
-#: web/templates/web/period.html:532
+#: web/templates/web/period.html:538
 #, python-format
 msgid ""
 "Сейчас показан один регистр — %(title)s;\n"
@@ -5765,11 +5812,11 @@ msgstr ""
 "Right now only one ledger is shown — %(title)s;\n"
 "  the total is calculated from it."
 
-#: web/templates/web/period.html:551
+#: web/templates/web/period.html:557
 msgid "Ведомости пока нет"
 msgstr "There is no payroll sheet yet"
 
-#: web/templates/web/period.html:554
+#: web/templates/web/period.html:560
 msgid ""
 "Месяц начинается с часов: без них считать нечего. Внесите их в табеле\n"
 "    руками или загрузите таблицей партнёра, а потом вернитесь сюда и "
@@ -5782,11 +5829,11 @@ msgstr ""
 "calculate the\n"
 "    period."
 
-#: web/templates/web/period.html:557
+#: web/templates/web/period.html:563
 msgid "Перейти к табелю"
 msgstr "Go to timesheet"
 
-#: web/templates/web/period.html:559
+#: web/templates/web/period.html:565
 msgid ""
 "Часы за месяц уже внесены — осталось посчитать период. Ведомость появится\n"
 "    здесь же: строка на каждого сотрудника в каждом регистре, который видно\n"
@@ -6339,7 +6386,7 @@ msgid "Действующие на"
 msgstr "As of"
 
 #: web/templates/web/rules/index.html:34 web/templates/web/rules/index.html:52
-#: web/templates/web/trace.html:91
+#: web/templates/web/trace.html:97
 msgid "Правило"
 msgstr "Rule"
 
@@ -6947,15 +6994,19 @@ msgstr "view: %(cut)s"
 msgid "вернуться в ведомость"
 msgstr "back to the payroll sheet"
 
-#: web/templates/web/trace.html:32
+#: web/templates/web/trace.html:23
+msgid "расчётный листок на печать"
+msgstr "printable payslip"
+
+#: web/templates/web/trace.html:38
 msgid "Объяснить эту сумму нечем."
 msgstr "There is nothing to explain this amount with."
 
-#: web/templates/web/trace.html:34
+#: web/templates/web/trace.html:40
 msgid "Сохранённые числа ниже показаны как есть."
 msgstr "The saved numbers below are shown as is."
 
-#: web/templates/web/trace.html:38
+#: web/templates/web/trace.html:44
 #, python-format
 msgid ""
 "\n"
@@ -6973,7 +7024,7 @@ msgstr ""
 "  to the cent (%(total)s).\n"
 "  "
 
-#: web/templates/web/trace.html:46
+#: web/templates/web/trace.html:52
 #, python-format
 msgid ""
 "\n"
@@ -6992,7 +7043,7 @@ msgstr ""
 "  made outside the product. Rows where it diverges are marked below.\n"
 "  "
 
-#: web/templates/web/trace.html:55
+#: web/templates/web/trace.html:61
 #, python-format
 msgid ""
 "\n"
@@ -7013,7 +7064,7 @@ msgstr ""
 "calculation.\n"
 "  "
 
-#: web/templates/web/trace.html:64
+#: web/templates/web/trace.html:70
 #, python-format
 msgid ""
 "\n"
@@ -7039,7 +7090,7 @@ msgstr ""
 "change it.\n"
 "  "
 
-#: web/templates/web/trace.html:77
+#: web/templates/web/trace.html:83
 msgid ""
 "Период утверждён: его числа неизменны, и объяснение выше — то самое, "
 "которым\n"
@@ -7049,7 +7100,7 @@ msgstr ""
 "the very one\n"
 "  that was used to calculate them."
 
-#: web/templates/web/trace.html:80
+#: web/templates/web/trace.html:86
 msgid ""
 "Период утверждён. Его числа неизменны, а объяснение — нет: оно "
 "пересобирается\n"
@@ -7059,52 +7110,52 @@ msgstr ""
 "it is rebuilt\n"
 "  from scratch every time, which is why the reconciliation above is needed."
 
-#: web/templates/web/trace.html:91
+#: web/templates/web/trace.html:97
 msgid "Шаг"
 msgstr "Step"
 
-#: web/templates/web/trace.html:91 web/templates/web/trace.html:178
+#: web/templates/web/trace.html:97 web/templates/web/trace.html:184
 msgid "Из чего собрано"
 msgstr "Built from"
 
-#: web/templates/web/trace.html:111
+#: web/templates/web/trace.html:117
 msgid "шага не было в расчёте"
 msgstr "step was not in the calculation"
 
-#: web/templates/web/trace.html:111
+#: web/templates/web/trace.html:117
 #, python-format
 msgid "было %(stored)s"
 msgstr "was %(stored)s"
 
-#: web/templates/web/trace.html:121
+#: web/templates/web/trace.html:127
 msgid "Итого по следу"
 msgstr "Trace total"
 
-#: web/templates/web/trace.html:128
+#: web/templates/web/trace.html:134
 msgid "Объяснять нечего"
 msgstr "Nothing to explain"
 
-#: web/templates/web/trace.html:131
+#: web/templates/web/trace.html:137
 msgid "Шагов расчёта нет: посчитать заново нечем."
 msgstr "There are no calculation steps: there is nothing to recalculate."
 
-#: web/templates/web/trace.html:133
+#: web/templates/web/trace.html:139
 msgid "По этой строке нет ни одного шага, доступного вашей роли."
 msgstr "There is not a single step on this row available to your role."
 
-#: web/templates/web/trace.html:143
+#: web/templates/web/trace.html:149
 msgid "Перенос из закрытого месяца"
 msgstr "Carryover from a closed month"
 
-#: web/templates/web/trace.html:146
+#: web/templates/web/trace.html:152
 msgid "За какой месяц"
 msgstr "For which month"
 
-#: web/templates/web/trace.html:159
+#: web/templates/web/trace.html:165
 msgid "Итого строки ведомости"
 msgstr "Payslip total"
 
-#: web/templates/web/trace.html:163
+#: web/templates/web/trace.html:169
 msgid ""
 "Разница посчитана правилами того месяца, из которого приехала. Её след — на\n"
 "  странице периода-источника, а не здесь: показать её шагами этого месяца\n"
@@ -7115,15 +7166,15 @@ msgstr ""
 "  the source period's page, not here: showing it through this month's steps\n"
 "  would mean explaining the amount with the wrong calculation."
 
-#: web/templates/web/trace.html:175
+#: web/templates/web/trace.html:181
 msgid "Производные величины"
 msgstr "Derived values"
 
-#: web/templates/web/trace.html:178
+#: web/templates/web/trace.html:184
 msgid "Величина"
 msgstr "Value"
 
-#: web/templates/web/trace.html:194
+#: web/templates/web/trace.html:200
 msgid ""
 "Это не слагаемые строки, а следствия: складывать их с начислениями нельзя."
 msgstr ""
@@ -7587,6 +7638,6 @@ msgstr "employee override"
 msgid "введено руками"
 msgstr "entered manually"
 
-#: web/views.py:1615
+#: web/views.py:1621
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"

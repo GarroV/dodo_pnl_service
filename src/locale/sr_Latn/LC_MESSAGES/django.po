@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-29 06:12+0000\n"
+"POT-Creation-Date: 2026-08-29 06:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -339,7 +339,7 @@ msgstr "Br."
 #: web/dbrefusal.py:110 web/directory_views.py:556
 #: web/templates/web/components/diff_table.html:21
 #: web/templates/web/directory/raise_preview.html:21
-#: web/templates/web/period.html:255 web/templates/web/period.html:436
+#: web/templates/web/period.html:255 web/templates/web/period.html:442
 #: web/templates/web/variance.html:39
 msgid "Сотрудник"
 msgstr "Zaposleni"
@@ -353,7 +353,7 @@ msgstr "Zaposleni"
 #: web/suppliers_views.py:788 web/templates/web/cash/expenses.html:126
 #: web/templates/web/cash/split.html:39
 #: web/templates/web/directory/employee.html:130
-#: web/templates/web/period.html:436 web/templates/web/person_pay.html:71
+#: web/templates/web/period.html:442 web/templates/web/person_pay.html:71
 #: web/templates/web/reports/pnl_line.html:18
 #: web/templates/web/suppliers/inbox.html:43
 #: web/templates/web/suppliers/inbox.html:148
@@ -368,17 +368,17 @@ msgstr "Objekat"
 
 #: reports/export.py:217 reports/export.py:556 reports/export.py:627
 #: web/templates/web/cash/expenses.html:131 web/templates/web/period.html:255
-#: web/templates/web/period.html:436 web/templates/web/period.html:519
+#: web/templates/web/period.html:442 web/templates/web/period.html:525
 #: web/templates/web/suppliers/inbox.html:61
 #: web/templates/web/suppliers/invoice.html:128
-#: web/templates/web/trace.html:146 web/templates/web/variance.html:39
+#: web/templates/web/trace.html:152 web/templates/web/variance.html:39
 msgid "Регистр"
 msgstr "Knjiga"
 
 #: reports/export.py:219 reports/export.py:242
 #: timesheets/templates/timesheets/grid.html:205
 #: timesheets/templates/timesheets/grid.html:345
-#: web/templates/web/period.html:438 web/templates/web/period.html:526
+#: web/templates/web/period.html:444 web/templates/web/period.html:532
 #: web/templates/web/person_pay.html:145
 msgid "Итого"
 msgstr "Ukupno"
@@ -463,7 +463,7 @@ msgid "Тип строки"
 msgstr "Tip reda"
 
 #: reports/export.py:556 web/templates/web/period.html:255
-#: web/templates/web/trace.html:146 web/templates/web/variance.html:39
+#: web/templates/web/trace.html:152 web/templates/web/variance.html:39
 msgid "Компонент"
 msgstr "Komponenta"
 
@@ -476,13 +476,13 @@ msgstr "Komponenta"
 #: web/templates/web/cash/split.html:28
 #: web/templates/web/cash/unallocated.html:34
 #: web/templates/web/directory/employee.html:104
-#: web/templates/web/period.html:519 web/templates/web/reports/pnl_line.html:21
+#: web/templates/web/period.html:525 web/templates/web/reports/pnl_line.html:21
 #: web/templates/web/suppliers/inbox.html:59
 #: web/templates/web/suppliers/invoice.html:79
 #: web/templates/web/suppliers/invoice.html:125
 #: web/templates/web/suppliers/invoices.html:50
-#: web/templates/web/suppliers/paper.html:81 web/templates/web/trace.html:92
-#: web/templates/web/trace.html:146 web/templates/web/trace.html:178
+#: web/templates/web/suppliers/paper.html:81 web/templates/web/trace.html:98
+#: web/templates/web/trace.html:152 web/templates/web/trace.html:184
 msgid "Сумма"
 msgstr "Iznos"
 
@@ -517,6 +517,27 @@ msgstr ""
 #: reports/own_export.py:130
 msgid "у строки нет имени — она не загружена"
 msgstr "red nema ime — nije učitan"
+
+#: reports/printing.py:138
+msgid ""
+"Ведомость печатается по всему расчёту, а не по разрезу: «начислено», "
+"«удержано» и «к выплате» считаются по строке ведомости целиком и регистру не "
+"принадлежат. Снимите разрез и откройте форму снова."
+msgstr "Spisak se štampa za ceo obračun, a ne za presek: „obračunato“, „zadržano“ i „za isplatu“ računaju se po celom redu obračuna i ne pripadaju registru. Uklonite presek i ponovo otvorite formu."
+
+#: reports/printing.py:145
+msgid ""
+"Эта форма не собирается для вашей роли: суммы «к выплате» считаются по "
+"строке ведомости целиком, а итоги расчёта вашей роли не отданы. Собранный "
+"документ показал бы часть людей и итог, который ни с чем не сходится, — "
+"возьмите форму у того, кому отдан весь расчёт."
+msgstr "Ova forma se ne sastavlja za vašu ulogu: iznosi „za isplatu“ računaju se po celom redu obračuna, a zbirovi obračuna vašoj ulozi nisu dati. Sastavljen dokument prikazao bi samo deo ljudi i zbir koji se ni sa čim ne slaže — uzmite formu od onoga kome je dat ceo obračun."
+
+#: reports/printing.py:151
+msgid ""
+"Печатать нечего: расчёт этого месяца ещё не выполнен. Посчитайте период, и "
+"форма соберётся."
+msgstr "Nema šta da se štampa: obračun ovog meseca još nije urađen. Obračunajte period i forma će se sastaviti."
 
 #: reports/reconcile.py:478
 msgid "не входит в доступную вам часть расчёта этого периода"
@@ -3458,6 +3479,28 @@ msgstr ""
 msgid "Часов за этот месяц нет — начислять пока нечего."
 msgstr "Za ovaj mesec još nema sati — nema šta da se obračuna."
 
+#: web/printing_views.py:55
+msgid "Печатная форма"
+msgstr "Forma za štampu"
+
+#: web/printing_views.py:94
+msgid "Платёжная ведомость"
+msgstr "Platni spisak"
+
+#: web/printing_views.py:99
+#, python-format
+msgid "Платёжная ведомость за %(month)s"
+msgstr "Platni spisak za %(month)s"
+
+#: web/printing_views.py:175
+msgid "Расчётный листок"
+msgstr "Obračun zarade"
+
+#: web/printing_views.py:180
+#, python-format
+msgid "Расчётный листок за %(month)s"
+msgstr "Obračun zarade za %(month)s"
+
 #: web/receipts.py:68
 msgid "Файл не приложен: прикладывать нечего."
 msgstr "Fajl nije priložen: nema šta da se priloži."
@@ -4433,6 +4476,10 @@ msgstr "P&L izveštaj"
 #: web/templates/web/components/exports.html:51
 msgid "Сверка с таблицей"
 msgstr "Usaglašavanje sa tabelom"
+
+#: web/templates/web/components/exports.html:58
+msgid "Ведомость на печать"
+msgstr "Platni spisak za štampu"
 
 #: web/templates/web/components/header.html:111
 msgid "Основная навигация"
@@ -5583,45 +5630,45 @@ msgstr "mimo aplikacije"
 msgid "Разрез ведомости по регистрам"
 msgstr "Prikaz obračunske liste po knjigama"
 
-#: web/templates/web/period.html:436
+#: web/templates/web/period.html:442
 msgid "Спор"
 msgstr "Spor"
 
-#: web/templates/web/period.html:461 web/templates/web/person_pay.html:152
+#: web/templates/web/period.html:467 web/templates/web/person_pay.html:152
 #, python-format
 msgid "Перерасчёт за %(title)s"
 msgstr "Ponovni obračun za %(title)s"
 
-#: web/templates/web/period.html:473 web/templates/web/person_pay.html:86
+#: web/templates/web/period.html:479 web/templates/web/person_pay.html:86
 msgid "Заморожена"
 msgstr "Zamrznut"
 
-#: web/templates/web/period.html:478
+#: web/templates/web/period.html:484
 msgid "Снять заморозку"
 msgstr "Ukini zamrzavanje"
 
-#: web/templates/web/period.html:484
+#: web/templates/web/period.html:490
 msgid "Заморозить"
 msgstr "Zamrzni"
 
-#: web/templates/web/period.html:485
+#: web/templates/web/period.html:491
 msgid "из-за чего спор"
 msgstr "zbog čega je spor"
 
-#: web/templates/web/period.html:498 web/templates/web/trace.html:13
+#: web/templates/web/period.html:504 web/templates/web/trace.html:13
 msgid "Как получилась эта сумма"
 msgstr "Kako je dobijen ovaj iznos"
 
-#: web/templates/web/period.html:504
+#: web/templates/web/period.html:510
 #, python-format
 msgid "Итого · %(employees)s чел."
 msgstr "Ukupno · %(employees)s zaposlenih"
 
-#: web/templates/web/period.html:517
+#: web/templates/web/period.html:523
 msgid "Итоги по регистрам"
 msgstr "Ukupno po knjigama"
 
-#: web/templates/web/period.html:531
+#: web/templates/web/period.html:537
 msgid ""
 "Итог посчитан по тому, что видно вашей роли: строки чужих регистров не "
 "доезжают до страницы и не входят в сумму."
@@ -5629,7 +5676,7 @@ msgstr ""
 "Zbir je izračunat na osnovu onoga što je vidljivo vašoj ulozi: redovi iz "
 "tuđih knjiga ne stižu do stranice i ne ulaze u zbir."
 
-#: web/templates/web/period.html:532
+#: web/templates/web/period.html:538
 #, python-format
 msgid ""
 "Сейчас показан один регистр — %(title)s;\n"
@@ -5638,11 +5685,11 @@ msgstr ""
 "Trenutno je prikazana jedna knjiga — %(title)s;\n"
 "  zbir je izračunat na osnovu nje."
 
-#: web/templates/web/period.html:551
+#: web/templates/web/period.html:557
 msgid "Ведомости пока нет"
 msgstr "Obračunske liste još nema"
 
-#: web/templates/web/period.html:554
+#: web/templates/web/period.html:560
 msgid ""
 "Месяц начинается с часов: без них считать нечего. Внесите их в табеле\n"
 "    руками или загрузите таблицей партнёра, а потом вернитесь сюда и "
@@ -5655,11 +5702,11 @@ msgstr ""
 "obračunajte\n"
 "    period."
 
-#: web/templates/web/period.html:557
+#: web/templates/web/period.html:563
 msgid "Перейти к табелю"
 msgstr "Idi na evidenciju sati"
 
-#: web/templates/web/period.html:559
+#: web/templates/web/period.html:565
 msgid ""
 "Часы за месяц уже внесены — осталось посчитать период. Ведомость появится\n"
 "    здесь же: строка на каждого сотрудника в каждом регистре, который видно\n"
@@ -6198,7 +6245,7 @@ msgid "Действующие на"
 msgstr "Na dan"
 
 #: web/templates/web/rules/index.html:34 web/templates/web/rules/index.html:52
-#: web/templates/web/trace.html:91
+#: web/templates/web/trace.html:97
 msgid "Правило"
 msgstr "Pravilo"
 
@@ -6800,15 +6847,19 @@ msgstr "prikaz: %(cut)s"
 msgid "вернуться в ведомость"
 msgstr "nazad na obračunsku listu"
 
-#: web/templates/web/trace.html:32
+#: web/templates/web/trace.html:23
+msgid "расчётный листок на печать"
+msgstr "obračun zarade za štampu"
+
+#: web/templates/web/trace.html:38
 msgid "Объяснить эту сумму нечем."
 msgstr "Nema čime da se objasni ovaj iznos."
 
-#: web/templates/web/trace.html:34
+#: web/templates/web/trace.html:40
 msgid "Сохранённые числа ниже показаны как есть."
 msgstr "Sačuvani brojevi ispod su prikazani onakvi kakvi jesu."
 
-#: web/templates/web/trace.html:38
+#: web/templates/web/trace.html:44
 #, python-format
 msgid ""
 "\n"
@@ -6826,7 +6877,7 @@ msgstr ""
 "  (%(total)s).\n"
 "  "
 
-#: web/templates/web/trace.html:46
+#: web/templates/web/trace.html:52
 #, python-format
 msgid ""
 "\n"
@@ -6845,7 +6896,7 @@ msgstr ""
 "  proizvoda. Redovi gde je odstupilo označeni su ispod.\n"
 "  "
 
-#: web/templates/web/trace.html:55
+#: web/templates/web/trace.html:61
 #, python-format
 msgid ""
 "\n"
@@ -6865,7 +6916,7 @@ msgstr ""
 "  (%(total)s), što znači da se pravila od obračuna nisu menjala.\n"
 "  "
 
-#: web/templates/web/trace.html:64
+#: web/templates/web/trace.html:70
 #, python-format
 msgid ""
 "\n"
@@ -6892,7 +6943,7 @@ msgstr ""
 "menja.\n"
 "  "
 
-#: web/templates/web/trace.html:77
+#: web/templates/web/trace.html:83
 msgid ""
 "Период утверждён: его числа неизменны, и объяснение выше — то самое, "
 "которым\n"
@@ -6902,7 +6953,7 @@ msgstr ""
 "upravo ono\n"
 "  kojim su izračunati."
 
-#: web/templates/web/trace.html:80
+#: web/templates/web/trace.html:86
 msgid ""
 "Период утверждён. Его числа неизменны, а объяснение — нет: оно "
 "пересобирается\n"
@@ -6912,52 +6963,52 @@ msgstr ""
 "se ponovo sastavlja\n"
 "  svaki put iznova, zato je usaglašavanje iznad i potrebno."
 
-#: web/templates/web/trace.html:91
+#: web/templates/web/trace.html:97
 msgid "Шаг"
 msgstr "Korak"
 
-#: web/templates/web/trace.html:91 web/templates/web/trace.html:178
+#: web/templates/web/trace.html:97 web/templates/web/trace.html:184
 msgid "Из чего собрано"
 msgstr "Sastavljeno od"
 
-#: web/templates/web/trace.html:111
+#: web/templates/web/trace.html:117
 msgid "шага не было в расчёте"
 msgstr "koraka nije bilo u obračunu"
 
-#: web/templates/web/trace.html:111
+#: web/templates/web/trace.html:117
 #, python-format
 msgid "было %(stored)s"
 msgstr "bilo je %(stored)s"
 
-#: web/templates/web/trace.html:121
+#: web/templates/web/trace.html:127
 msgid "Итого по следу"
 msgstr "Ukupno po tragu"
 
-#: web/templates/web/trace.html:128
+#: web/templates/web/trace.html:134
 msgid "Объяснять нечего"
 msgstr "Nema šta da se objasni"
 
-#: web/templates/web/trace.html:131
+#: web/templates/web/trace.html:137
 msgid "Шагов расчёта нет: посчитать заново нечем."
 msgstr "Nema koraka obračuna: nema čime da se ponovo obračuna."
 
-#: web/templates/web/trace.html:133
+#: web/templates/web/trace.html:139
 msgid "По этой строке нет ни одного шага, доступного вашей роли."
 msgstr "Za ovaj red nema nijednog koraka dostupnog vašoj ulozi."
 
-#: web/templates/web/trace.html:143
+#: web/templates/web/trace.html:149
 msgid "Перенос из закрытого месяца"
 msgstr "Prenos iz zatvorenog meseca"
 
-#: web/templates/web/trace.html:146
+#: web/templates/web/trace.html:152
 msgid "За какой месяц"
 msgstr "Za koji mesec"
 
-#: web/templates/web/trace.html:159
+#: web/templates/web/trace.html:165
 msgid "Итого строки ведомости"
 msgstr "Ukupno obračunskog reda"
 
-#: web/templates/web/trace.html:163
+#: web/templates/web/trace.html:169
 msgid ""
 "Разница посчитана правилами того месяца, из которого приехала. Её след — на\n"
 "  странице периода-источника, а не здесь: показать её шагами этого месяца\n"
@@ -6967,15 +7018,15 @@ msgstr ""
 "  stranici izvornog perioda, a ne ovde: prikazati je koracima ovog meseca\n"
 "  značilo bi objasniti iznos pogrešnim obračunom."
 
-#: web/templates/web/trace.html:175
+#: web/templates/web/trace.html:181
 msgid "Производные величины"
 msgstr "Izvedene vrednosti"
 
-#: web/templates/web/trace.html:178
+#: web/templates/web/trace.html:184
 msgid "Величина"
 msgstr "Vrednost"
 
-#: web/templates/web/trace.html:194
+#: web/templates/web/trace.html:200
 msgid ""
 "Это не слагаемые строки, а следствия: складывать их с начислениями нельзя."
 msgstr ""
@@ -7432,6 +7483,6 @@ msgstr "izmena zaposlenog"
 msgid "введено руками"
 msgstr "ručno uneto"
 
-#: web/views.py:1615
+#: web/views.py:1621
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
