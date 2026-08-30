@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-29 06:16+0000\n"
+"POT-Creation-Date: 2026-08-30 11:29+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -331,7 +331,8 @@ msgstr ""
 msgid "Ведомость к выплате · %(sub)s"
 msgstr "Obračunska lista za isplatu · %(sub)s"
 
-#: reports/export.py:217 web/templates/web/suppliers/invoice.html:76
+#: reports/export.py:217 web/templates/web/print/payout.html:54
+#: web/templates/web/suppliers/invoice.html:76
 msgid "№"
 msgstr "Br."
 
@@ -340,7 +341,8 @@ msgstr "Br."
 #: web/templates/web/components/diff_table.html:21
 #: web/templates/web/directory/raise_preview.html:21
 #: web/templates/web/period.html:255 web/templates/web/period.html:442
-#: web/templates/web/variance.html:39
+#: web/templates/web/print/payout.html:55
+#: web/templates/web/print/payslip.html:38 web/templates/web/variance.html:39
 msgid "Сотрудник"
 msgstr "Zaposleni"
 
@@ -1756,7 +1758,8 @@ msgstr "Uloga"
 msgid "Пользователь"
 msgstr "Korisnik"
 
-#: web/dbrefusal.py:118 web/templates/web/guide.html:88
+#: web/dbrefusal.py:118 web/templates/web/guide.html:127
+#: web/templates/web/print/payslip.html:54
 msgid "Расчёт"
 msgstr "Obračun"
 
@@ -1919,7 +1922,7 @@ msgid "Схема расчёта и регистр учёта по умолча�
 msgstr "Podrazumevana šema obračuna i knjiga"
 
 #: web/directory_views.py:240 web/directory_views.py:1560
-#: web/templates/web/guide.html:150
+#: web/templates/web/guide.html:189
 msgid "Точки"
 msgstr "Objekti"
 
@@ -1967,7 +1970,8 @@ msgstr "Kutije iz kojih se plaća gotovinom: objekat i knjiga"
 msgid "Поставщики и получатели платежей: название, номера, ключ Dodo IS"
 msgstr "Dobavljači i primaoci uplata: naziv, brojevi, Dodo IS ključ"
 
-#: web/directory_views.py:285 web/directory_views.py:1736 web/rules.py:97
+#: web/directory_views.py:285 web/directory_views.py:1736 web/guide.py:148
+#: web/rules.py:97
 msgid "Производственный календарь"
 msgstr "Proizvodni kalendar"
 
@@ -3015,6 +3019,181 @@ msgstr "Obrada bankovnog izvoda."
 msgid "%(percent)s и %(amount)s"
 msgstr "%(percent)s i %(amount)s"
 
+#: web/guide.py:90
+msgid "Партнёр и юрлица"
+msgstr "Partner i pravna lica"
+
+#: web/guide.py:91
+msgid "Справочники → Юрлица"
+msgstr "Imenici → Pravna lica"
+
+#: web/guide.py:93
+msgid ""
+"Юрлицо — то, с чем работает бухгалтерия: зарплата, налоги и отчётность "
+"считаются по каждому отдельно."
+msgstr "Pravno lice je ono sa čim radi računovodstvo: zarada, porezi i izveštavanje računaju se za svako posebno."
+
+#: web/guide.py:95
+msgid ""
+"В шапке написано название партнёра, а в справочнике юрлиц есть хотя бы одна "
+"строка."
+msgstr "U zaglavlju piše naziv partnera, a u imeniku pravnih lica postoji bar jedan red."
+
+#: web/guide.py:97
+msgid "Самого партнёра заводит инженер — экрана для этого в продукте нет."
+msgstr "Samog partnera kreira inženjer — u proizvodu za to nema ekrana."
+
+#: web/guide.py:101
+msgid "Точки и кассы"
+msgstr "Objekti i kase"
+
+#: web/guide.py:102
+msgid "Справочники → Точки"
+msgstr "Imenici → Objekti"
+
+#: web/guide.py:104
+msgid ""
+"На точку вешаются часы, наличные расходы и строки P&L. Касса задаёт регистр "
+"учёта расхода, чтобы его не выбирали руками каждый раз."
+msgstr "Sati, gotovinski troškovi i redovi P&L-a vezuju se za objekat. Kasa određuje knjigu troška da se ona ne bi birala ručno svaki put."
+
+#: web/guide.py:106
+msgid "У каждой работающей точки есть касса, а у кассы — регистр учёта."
+msgstr "Svaki objekat koji radi ima kasu, a svaka kasa ima knjigu."
+
+#: web/guide.py:107
+msgid ""
+"Точку не удаляют, а закрывают датой: в прошлых месяцах лежат её зарплаты."
+msgstr "Objekat se ne briše nego zatvara datumom: u prošlim mesecima leže njegove zarade."
+
+#: web/guide.py:112
+msgid "Правила страны"
+msgstr "Pravila zemlje"
+
+#: web/guide.py:113 web/navigation.py:115 web/rules_views.py:187
+#: web/rules_views.py:200 web/templates/web/rules/denied.html:14
+#: web/templates/web/rules/denied.html:16
+msgid "Правила расчёта"
+msgstr "Pravila obračuna"
+
+#: web/guide.py:115
+msgid ""
+"Правило — это версия с датой, а не число в коде. Поэтому правка ставки в "
+"июле не переписывает уже закрытый июнь."
+msgstr "Pravilo je verzija sa datumom, a ne broj u kodu. Zato izmena stope u julu ne prepisuje već zatvoreni jun."
+
+#: web/guide.py:117
+msgid ""
+"Реестр открывается, и у каждого правила видно значение, уровень и дату "
+"начала действия."
+msgstr "Registar se otvara i kod svakog pravila vide se vrednost, nivo i datum od kada važi."
+
+#: web/guide.py:119
+msgid ""
+"Переопределение ставят на человека там, где нужно на группу. Уровень написан "
+"в строке правила — смотреть надо здесь, а не потом."
+msgstr "Izuzetak se postavlja na osobu tamo gde treba na grupu. Nivo piše u redu pravila — proveriti ga ovde, a ne kasnije."
+
+#: web/guide.py:124
+msgid "Группы и должности"
+msgstr "Grupe i radna mesta"
+
+#: web/guide.py:125
+msgid "Справочники → Группы сотрудников"
+msgstr "Imenici → Grupe zaposlenih"
+
+#: web/guide.py:127
+msgid ""
+"Группа отвечает, как считается работа и в какую строку затрат она попадёт. "
+"Должность — кого нанимаем и в какую группу он попадёт."
+msgstr "Grupa odgovara kako se rad obračunava i u koji red troška ulazi. Radno mesto odgovara koga zapošljavamo i u koju grupu on ulazi."
+
+#: web/guide.py:129
+msgid ""
+"У группы задана схема расчёта и регистр учёта, у должности — группа и часы "
+"по договору."
+msgstr "Grupa ima šemu obračuna i knjigu, a radno mesto ima grupu i ugovorene sate."
+
+#: web/guide.py:131
+msgid ""
+"Пропущенный регистр учёта группы — отказ формы: продукт не угадывает, в "
+"каком контуре живут эти деньги."
+msgstr "Izostavljena knjiga kod grupe je odbijanje forme: proizvod ne pogađa u kom krugu taj novac živi."
+
+#: web/guide.py:136
+msgid "Люди и условия найма"
+msgstr "Ljudi i uslovi zapošljavanja"
+
+#: web/guide.py:137
+msgid "Справочники → Сотрудники"
+msgstr "Imenici → Zaposleni"
+
+#: web/guide.py:139
+msgid ""
+"Расчёт берёт условия найма по версии на дату — поэтому у ставки есть "
+"«действует с», а не просто значение."
+msgstr "Obračun uzima uslove zapošljavanja po verziji na datum — zato stopa ima „od“, a ne samo vrednost."
+
+#: web/guide.py:141
+msgid ""
+"У каждого работающего есть версия условий, действующая на первое число "
+"вашего первого месяца."
+msgstr "Svako ko radi ima verziju uslova koja važi na prvi dan vašeg prvog meseca."
+
+#: web/guide.py:143
+msgid ""
+"Человек без условий найма не появляется в табеле вовсе — не «с нулями», а "
+"отсутствует: считать его нечем."
+msgstr "Osoba bez uslova zapošljavanja uopšte se ne pojavljuje u evidenciji sati — ne „sa nulama“, nego je nema: nema se čime obračunati."
+
+#: web/guide.py:149
+msgid "Справочники → Производственный календарь"
+msgstr "Imenici → Proizvodni kalendar"
+
+#: web/guide.py:151
+msgid ""
+"Отсюда берётся норма часов и число рабочих дней: на них опираются доплата до "
+"минимума и половина остальных правил."
+msgstr "Odavde se uzimaju norma sati i broj radnih dana: na njima počivaju doplata do minimuma i polovina ostalih pravila."
+
+#: web/guide.py:153
+msgid ""
+"У месяца, с которого вы начинаете, есть норма часов и число рабочих дней."
+msgstr "Mesec od kojeg počinjete ima normu sati i broj radnih dana."
+
+#: web/guide.py:155
+msgid ""
+"Месяц заводят раньше календаря — тогда вместо нормы часов страница месяца "
+"прямо пишет, что календарь на него не заведён."
+msgstr "Mesec se otvori pre kalendara — tada, umesto norme sati, stranica meseca otvoreno piše da kalendar za njega nije unet."
+
+#: web/guide.py:160
+msgid "Первый настоящий месяц"
+msgstr "Prvi pravi mesec"
+
+#: web/guide.py:161 web/navigation.py:101 web/templates/web/guide.html:119
+#: web/templates/web/period.html:175
+msgid "Табель"
+msgstr "Evidencija sati"
+
+#: web/guide.py:163
+msgid ""
+"Онбординг заканчивается не обучением, а первой утверждённой ведомостью. "
+"Дальше месяц повторяется по той же полосе из трёх шагов."
+msgstr "Uvođenje se ne završava obukom nego prvom odobrenom obračunskom listom. Dalje se mesec ponavlja po istoj traci od tri koraka."
+
+#: web/guide.py:165
+msgid ""
+"Период утверждён, в истории видно, кто и когда это сделал, а в P&L появились "
+"строки."
+msgstr "Period je odobren, u istoriji se vidi ko je to uradio i kada, a u P&L-u su se pojavili redovi."
+
+#: web/guide.py:167
+msgid ""
+"Ждут, что расчёт пройдёт и без закрытых часов по точкам. Что мешает "
+"утвердить месяц, продукт перечисляет до утверждения, а не после."
+msgstr "Očekuje se da će obračun proći i bez zatvorenih sati po objektima. Šta smeta odobravanju meseca, proizvod nabraja pre odobravanja, a ne posle."
+
 #: web/i18n.py:54
 msgid "role.director"
 msgstr "Operativni direktor"
@@ -3043,11 +3222,6 @@ msgstr "Menadžer smene"
 msgid "Сбор данных"
 msgstr "Prikupljanje podataka"
 
-#: web/navigation.py:101 web/templates/web/guide.html:80
-#: web/templates/web/period.html:175
-msgid "Табель"
-msgstr "Evidencija sati"
-
 #: web/navigation.py:107
 msgid "Инбокс документов"
 msgstr "Prijemno sanduče dokumenata"
@@ -3059,12 +3233,6 @@ msgstr "Prijemno sanduče dokumenata"
 #: web/templates/web/directory/index.html:17
 msgid "Справочники"
 msgstr "Imenici"
-
-#: web/navigation.py:115 web/rules_views.py:187 web/rules_views.py:200
-#: web/templates/web/rules/denied.html:14
-#: web/templates/web/rules/denied.html:16
-msgid "Правила расчёта"
-msgstr "Pravila obračuna"
 
 #: web/navigation.py:117
 msgid "Настройки"
@@ -4274,6 +4442,7 @@ msgid "Дата"
 msgstr "Datum"
 
 #: web/templates/web/cash/expenses.html:127
+#: web/templates/web/print/payslip.html:53
 #: web/templates/web/suppliers/invoices.html:48
 msgid "Статья"
 msgstr "Stavka"
@@ -4810,7 +4979,7 @@ msgid ""
 msgstr ""
 "Proverite adresu: možda ima greške u kucanju ili se stranica više ne otvara."
 
-#: web/templates/web/errors/404.html:38 web/templates/web/guide.html:254
+#: web/templates/web/errors/404.html:38 web/templates/web/guide.html:300
 msgid "К списку периодов"
 msgstr "Na spisak perioda"
 
@@ -4904,10 +5073,53 @@ msgstr ""
 "listova, a različite valute — u jednu valutu konsolidacije."
 
 #: web/templates/web/guide.html:66
+msgid "Семь шагов до первой ведомости"
+msgstr "Sedam koraka do prve obračunske liste"
+
+#: web/templates/web/guide.html:67
+msgid ""
+"Это не тур по кнопкам, а проход по настоящему месяцу. Первые шесть шагов\n"
+"  делаются один раз, когда партнёра заводят; седьмой повторяется каждый "
+"месяц.\n"
+"  Порядок не декоративный: каждый следующий шаг физически невозможен без\n"
+"  предыдущего, и продукт скажет об этом отказом, если попробовать иначе."
+msgstr "Ovo nije obilazak dugmadi nego prolazak kroz stvarni mesec. Prvih šest koraka radi se jednom, kada se partner uvodi; sedmi se ponavlja svakog meseca. Redosled nije ukras: svaki sledeći korak fizički je nemoguć bez prethodnog, a proizvod će to reći odbijanjem ako pokušate drugačije."
+
+#: web/templates/web/guide.html:86
+msgid "Где это"
+msgstr "Gde je to"
+
+#: web/templates/web/guide.html:88
+msgid "Готово, когда"
+msgstr "Gotovo kada"
+
+#: web/templates/web/guide.html:90
+msgid "Здесь спотыкаются"
+msgstr "Ovde se spotiču"
+
+#: web/templates/web/guide.html:97
+msgid ""
+"Шаги с первого по шестой партнёр проходит вместе с внедренцем — на это "
+"уходит\n"
+"  день. Седьмой партнёр делает сам: это и есть проверка, что онбординг\n"
+"  сработал."
+msgstr "Korake od prvog do šestog partner prolazi zajedno sa implementatorom — na to ode dan. Sedmi partner radi sam: to i jeste provera da je uvođenje uspelo."
+
+#: web/templates/web/guide.html:104
 msgid "Месяц от начала до конца"
 msgstr "Mesec od početka do kraja"
 
-#: web/templates/web/guide.html:81
+#: web/templates/web/guide.html:105
+msgid ""
+"Седьмой шаг крупным планом — то, что повторяется каждый месяц. Порядок в "
+"нём\n"
+"  обязательный: каждое следующее действие невозможно без предыдущего. На "
+"экранах\n"
+"  месяца тот же порядок показан полосой шагов, чтобы было видно, где вы\n"
+"  сейчас."
+msgstr "Sedmi korak izbliza — ono što se ponavlja svakog meseca. Redosled u njemu je obavezan: svaka sledeća radnja nemoguća je bez prethodne. Na ekranima meseca isti redosled prikazan je trakom koraka, da se vidi gde ste sada."
+
+#: web/templates/web/guide.html:120
 msgid ""
 "Часы за месяц по каждой точке. Основная часть приезжает из Dodo IS;\n"
 "      управляющий проверяет свою точку и правит то, что разошлось. Когда "
@@ -4921,14 +5133,14 @@ msgstr ""
 "gotovi, zatvaraju se — po svakom objektu odvojeno, i mesec ne čeka "
 "najsporiji."
 
-#: web/templates/web/guide.html:85
+#: web/templates/web/guide.html:124
 msgid ""
 "Ведут: управляющие точек. Заканчивается тем, что часы всех точек закрыты."
 msgstr ""
 "Vode: menadžeri objekata. Završava se time što su sati svih objekata "
 "zatvoreni."
 
-#: web/templates/web/guide.html:89
+#: web/templates/web/guide.html:128
 msgid ""
 "Расчёт берёт условия найма и правила, действующие на дату периода, и\n"
 "      считает каждому человеку начисления, надбавки и удержания. Идёт в "
@@ -4939,16 +5151,16 @@ msgstr ""
 "svakoj osobi obračunava primanja, dodatke i odbitke. Ide u pozadini: sa "
 "stranice se može otići i vratiti, obračun se neće prekinuti."
 
-#: web/templates/web/guide.html:92
+#: web/templates/web/guide.html:131
 msgid "Ведёт: тот, кто считает месяц. Заканчивается тем, что период посчитан."
 msgstr ""
 "Vodi: onaj ko obračunava mesec. Završava se time što je period obračunat."
 
-#: web/templates/web/guide.html:95 web/templates/web/period.html:392
+#: web/templates/web/guide.html:134 web/templates/web/period.html:392
 msgid "Ведомость"
 msgstr "Obračunska lista"
 
-#: web/templates/web/guide.html:96
+#: web/templates/web/guide.html:135
 msgid ""
 "Итог расчёта построчно: человек, компоненты выплаты, итого к выплате.\n"
 "      Любую сумму можно раскрыть до правил и входов. Спорную строку — "
@@ -4962,7 +5174,7 @@ msgstr ""
 "zamrznuti, da ne drži ceo mesec; razliku za već zatvoreni mesec — preneti u "
 "tekući."
 
-#: web/templates/web/guide.html:100
+#: web/templates/web/guide.html:139
 msgid ""
 "Здесь же сверка с таблицей бухгалтера: расчёт продукта рядом с его "
 "собственным."
@@ -4970,11 +5182,11 @@ msgstr ""
 "Tu je i usaglašavanje sa tabelom knjigovođe: obračun proizvoda pored "
 "njegovog sopstvenog."
 
-#: web/templates/web/guide.html:103
+#: web/templates/web/guide.html:142
 msgid "Закрытие"
 msgstr "Zatvaranje"
 
-#: web/templates/web/guide.html:104
+#: web/templates/web/guide.html:143
 msgid ""
 "Период утверждают. До утверждения продукт сам перечисляет, что мешает:\n"
 "      незакрытые часы, замороженные строки, расходы без точки. Утверждённый "
@@ -4988,7 +5200,7 @@ msgstr ""
 "dalje samo čita — ispravka ide vraćanjem uz razlog, i razlog ostaje u "
 "istoriji."
 
-#: web/templates/web/guide.html:108
+#: web/templates/web/guide.html:147
 msgid ""
 "Заканчивается тем, что месяц утверждён, а файлы к выплате и для P&L "
 "выгружены."
@@ -4996,11 +5208,11 @@ msgstr ""
 "Završava se time što je mesec odobren, a datoteke za isplatu i za P&L "
 "izvezene."
 
-#: web/templates/web/guide.html:115
+#: web/templates/web/guide.html:154
 msgid "Кто в нём работает"
 msgstr "Ko u njemu radi"
 
-#: web/templates/web/guide.html:116
+#: web/templates/web/guide.html:155
 msgid ""
 "Роль — это набор прав, и у каждого набора своя работа и свой первый\n"
 "  экран. Один и тот же экран показывает разным людям разные числа, поэтому "
@@ -5011,7 +5223,7 @@ msgstr ""
 "ekran prikazuje različitim ljudima različite brojeve, zato u zaglavlju uvek "
 "stoji čijim očima gledate."
 
-#: web/templates/web/guide.html:132
+#: web/templates/web/guide.html:171
 msgid ""
 "За компьютером и подолгу, привык к Excel. Первым делом идёт не на витрину,\n"
 "        а в список месяцев: ему нужно понять, в каком они состоянии и что от "
@@ -5025,7 +5237,7 @@ msgstr ""
 "očekuje. Pravo poverenje u proizvod dobija na ekranu usaglašavanja, gde "
 "njegova sopstvena tabela stoji pored obračuna."
 
-#: web/templates/web/guide.html:136
+#: web/templates/web/guide.html:175
 msgid ""
 "С телефона, стоя на точке, заходит на две минуты. Его экран — несколько\n"
 "        крупных действий и ничего больше: отметить часы, внести расход из "
@@ -5039,7 +5251,7 @@ msgstr ""
 "fotografisati otpremnicu. Iznose obračuna ne vidi, i to nije skraćivanje "
 "prava, nego njegov posao: doneti primarni dokument, a ne obračunati ga."
 
-#: web/templates/web/guide.html:140
+#: web/templates/web/guide.html:179
 msgid ""
 "Компьютер и телефон, урывками, между точками. Смотрит состояние сети "
 "целиком:\n"
@@ -5051,7 +5263,7 @@ msgstr ""
 "gde sati nisu zatvoreni, gde obračun nije pokrenut, gde mesec visi "
 "neodobren, šta je izašlo iz granica i koji su redovi zamrznuti kao sporni."
 
-#: web/templates/web/guide.html:143
+#: web/templates/web/guide.html:182
 msgid ""
 "Тот, кто отвечает деньгами. Заходит редко, но каждая его правка меняет\n"
 "        расчёт, поэтому справочники и правила показывают даты действия и "
@@ -5064,23 +5276,23 @@ msgstr ""
 "verzija. Podaci obračuna mu pri tome nisu otvoreni: on upravlja ustrojstvom "
 "evidencije, a ne iznosima."
 
-#: web/templates/web/guide.html:151
+#: web/templates/web/guide.html:190
 msgid "только своя"
 msgstr "samo svoj"
 
-#: web/templates/web/guide.html:151
+#: web/templates/web/guide.html:190
 msgid "все точки партнёра"
 msgstr "svi objekti partnera"
 
-#: web/templates/web/guide.html:152
+#: web/templates/web/guide.html:191
 msgid "Что ведёт"
 msgstr "Šta vodi"
 
-#: web/templates/web/guide.html:153
+#: web/templates/web/guide.html:192
 msgid "только чтение"
 msgstr "samo čitanje"
 
-#: web/templates/web/guide.html:159
+#: web/templates/web/guide.html:198
 msgid ""
 "Права режет сама база, а не экран. Строку, которой роль не видит, она не\n"
 "  получит ни на странице, ни в выгрузке, ни через API — поэтому раздел, "
@@ -5092,11 +5304,17 @@ msgstr ""
 "na stranici, ni u izvozu, ni preko API-ja — zato se odeljak koji uloga nema "
 "u zaglavlju ne prikazuje uopšte, a ne odgovara odbijanjem na klik."
 
-#: web/templates/web/guide.html:166
+#: web/templates/web/guide.html:202
+msgid ""
+"Кому что выдано и что из этого следует — раздел «Роли и права». Он открыт\n"
+"  тому, у кого есть право вести роли; остальным его в шапке не видно."
+msgstr "Kome je šta dodeljeno i šta iz toga sledi — odeljak „Uloge i prava“. Otvoren je onome ko ima pravo da vodi uloge; ostalima se u zaglavlju uopšte ne vidi."
+
+#: web/templates/web/guide.html:208
 msgid "Наличные, расходы и поставщики"
 msgstr "Gotovina, troškovi i dobavljači"
 
-#: web/templates/web/guide.html:167
+#: web/templates/web/guide.html:209
 msgid ""
 "Зарплата — не единственная первичка. Вторая половина P&amp;L собирается из\n"
 "  того, что тратят на точках и платят поставщикам, и эта половина приходит "
@@ -5107,11 +5325,18 @@ msgstr ""
 "onoga što se troši na objektima i plaća dobavljačima, i ta polovina ne "
 "dolazi datotekom jednom mesečno, nego po jednom zapisu svakog dana."
 
-#: web/templates/web/guide.html:173
+#: web/templates/web/guide.html:213
+msgid ""
+"В шапке это два раздела: «Наличные расходы» — то, что вышло из кассы точки,\n"
+"  и «Инбокс документов» — очередь того, что продукт не смог отнести сам.\n"
+"  Список счетов открывается из инбокса и живёт в том же разделе."
+msgstr "U zaglavlju su to dva odeljka: „Gotovinski troškovi“ — ono što je izašlo iz kase objekta — i „Prijemno sanduče dokumenata“ — red onoga što proizvod nije uspeo sam da razvrsta. Spisak računa otvara se iz sandučeta i živi u istom odeljku."
+
+#: web/templates/web/guide.html:219
 msgid "Расход из кассы."
 msgstr "Trošak iz kase."
 
-#: web/templates/web/guide.html:174
+#: web/templates/web/guide.html:220
 msgid ""
 "Управляющий вносит его с телефона за минуту: дата, сумма, статья, точка.\n"
 "      Расход, у которого точки нет, попадает в нераспределённое — это трата\n"
@@ -5121,11 +5346,11 @@ msgstr ""
 "Trošak koji nema objekat ide u neraspoređeno — to je trošak pravnog lica u "
 "celini, i raspodeljuje se po objektima pravilom, a ne na oko."
 
-#: web/templates/web/guide.html:179
+#: web/templates/web/guide.html:225
 msgid "Чек прикладывается тем же движением."
 msgstr "Račun se prilaže istim pokretom."
 
-#: web/templates/web/guide.html:180
+#: web/templates/web/guide.html:226
 msgid ""
 "Фотография бумажки цепляется прямо к расходу — второго захода не будет.\n"
 "      Без чека расход всё равно запишется: деньги уже отданы, и терять "
@@ -5141,11 +5366,11 @@ msgstr ""
 "redova stoji\n"
 "      tu isto kao broj."
 
-#: web/templates/web/guide.html:186
+#: web/templates/web/guide.html:232
 msgid "Касса и P&L — два разных числа."
 msgstr "Kasa i P&L su dva različita broja."
 
-#: web/templates/web/guide.html:187
+#: web/templates/web/guide.html:233
 msgid ""
 "Деньги выходят из кассы в день траты, а в отчёт трата попадает по правилам\n"
 "      отчёта. Поэтому наверху реестра стоят три числа: сколько ушло из "
@@ -5165,11 +5390,11 @@ msgstr ""
 "zatvorenog meseca se\n"
 "      računa u tekućem."
 
-#: web/templates/web/guide.html:194
+#: web/templates/web/guide.html:240
 msgid "Список статей у управляющего короткий."
 msgstr "Spisak stavki kod menadžera je kratak."
 
-#: web/templates/web/guide.html:195
+#: web/templates/web/guide.html:241
 msgid ""
 "У каждой статьи в справочнике сказано, где её предлагают: наличные расходы,\n"
 "      разнесение накладных, разбор выписки. На телефон попадают только "
@@ -5186,11 +5411,11 @@ msgstr ""
 "ograničeno: u šifarniku\n"
 "      se vide sve."
 
-#: web/templates/web/guide.html:201
+#: web/templates/web/guide.html:247
 msgid "Счёт и платёж — разные события."
 msgstr "Faktura i plaćanje su različiti događaji."
 
-#: web/templates/web/guide.html:202
+#: web/templates/web/guide.html:248
 msgid ""
 "Счёт ставит расход в тот месяц, к которому относится, и виден в\n"
 "      обязательствах, пока не оплачен. Платёж — это движение денег. Поэтому\n"
@@ -5200,11 +5425,11 @@ msgstr ""
 "dok nije plaćena. Plaćanje je kretanje novca. Zato uplata koja je prošla "
 "kasnije ne prepisuje već zatvoreni mesec."
 
-#: web/templates/web/guide.html:207
+#: web/templates/web/guide.html:253
 msgid "Инбокс классификации."
 msgstr "Prijemno sanduče razvrstavanja."
 
-#: web/templates/web/guide.html:208
+#: web/templates/web/guide.html:254
 msgid ""
 "Всё, что продукт не смог отнести сам, собирается в одну очередь: платёж без\n"
 "      статьи, бумага с точки, неразобранное вложение. Человек разбирает это\n"
@@ -5214,11 +5439,11 @@ msgstr ""
 "plaćanje bez stavke, papir sa objekta, nerazvrstan prilog. Čovek to "
 "razvrstava u grupi na jednom mestu, a ne traži po ekranima."
 
-#: web/templates/web/guide.html:213
+#: web/templates/web/guide.html:259
 msgid "Бумага с точки."
 msgstr "Papir sa objekta."
 
-#: web/templates/web/guide.html:214
+#: web/templates/web/guide.html:260
 msgid ""
 "Управляющий фотографирует накладную или чек и скидывает — считать ему\n"
 "      ничего не нужно. В P&amp;L бумага попадёт после разбора, а не сразу: "
@@ -5229,11 +5454,11 @@ msgstr ""
 "obračunava. U P&amp;L papir stiže tek posle razvrstavanja, a ne odmah: do "
 "tada čeka u redu kao nerazvrstan."
 
-#: web/templates/web/guide.html:223
+#: web/templates/web/guide.html:269
 msgid "Регистры учёта"
 msgstr "Knjige"
 
-#: web/templates/web/guide.html:224
+#: web/templates/web/guide.html:270
 msgid ""
 "Один и тот же месяц собирается в нескольких параллельных регистрах сразу.\n"
 "  Регистр — свойство сотрудника, группы или отдельной операции, а не "
@@ -5246,7 +5471,7 @@ msgstr ""
 "jednoj obračunskoj listi redovi različitih knjiga stoje jedan pored drugog, "
 "i svaki nosi svoju oznaku."
 
-#: web/templates/web/guide.html:229
+#: web/templates/web/guide.html:275
 msgid ""
 "Что из этого видно вам, задаёт ваша роль, и срез делают политики базы, а не\n"
 "  фильтр на экране. Итоги всегда сходятся с тем, что вам видно: продукт не\n"
@@ -5257,7 +5482,7 @@ msgstr ""
 "vidljivo: proizvod ne prikazuje iznos sastavljen iz redova koje ne možete "
 "pročitati."
 
-#: web/templates/web/guide.html:241
+#: web/templates/web/guide.html:287
 #, python-format
 msgid ""
 "Вам сейчас видно: %(names)s. Тот же список стоит в шапке на каждой странице."
@@ -5265,16 +5490,16 @@ msgstr ""
 "Vama je sada vidljivo: %(names)s. Isti spisak stoji u zaglavlju na svakoj "
 "stranici."
 
-#: web/templates/web/guide.html:243
+#: web/templates/web/guide.html:289
 msgid "Какие регистры видны именно вам, будет написано в шапке после входа."
 msgstr ""
 "Koje su knjige vidljive upravo vama, biće napisano u zaglavlju nakon prijave."
 
-#: web/templates/web/guide.html:249
+#: web/templates/web/guide.html:295
 msgid "С чего начать"
 msgstr "Odakle početi"
 
-#: web/templates/web/guide.html:251
+#: web/templates/web/guide.html:297
 msgid ""
 "Работа идёт внутри месяца: откройте список периодов и выберите тот, который\n"
 "  ведёте. Если месяц ещё не начат, на его странице написано, что произойдёт "
@@ -5285,7 +5510,7 @@ msgstr ""
 "vodite. Ako mesec još nije počet, na njegovoj stranici je napisano šta će se "
 "dogoditi pri otvaranju i odakle početi."
 
-#: web/templates/web/guide.html:256
+#: web/templates/web/guide.html:302
 msgid ""
 "Пока вы не вошли, продукт не показывает ничего: без пользователя политики\n"
 "  доступа отдают пустой результат, а не чужие данные. Логин и пароль выдаёт\n"
@@ -5295,7 +5520,7 @@ msgstr ""
 "pristupa vraćaju prazan rezultat, a ne tuđe podatke. Login i lozinku izdaje "
 "administrator mreže — s njima ćete videti tačno ono što pripada vašoj ulozi."
 
-#: web/templates/web/guide.html:259 web/templates/web/login.html:34
+#: web/templates/web/guide.html:305 web/templates/web/login.html:34
 #: web/templates/web/periods.html:104
 msgid "Войти"
 msgstr "Prijavi se"
@@ -5648,7 +5873,7 @@ msgstr "zbog čega je spor"
 msgid "Как получилась эта сумма"
 msgstr "Kako je dobijen ovaj iznos"
 
-#: web/templates/web/period.html:510
+#: web/templates/web/period.html:510 web/templates/web/print/payout.html:77
 #, python-format
 msgid "Итого · %(employees)s чел."
 msgstr "Ukupno · %(employees)s zaposlenih"
@@ -5719,6 +5944,7 @@ msgid "Завести"
 msgstr "Dodaj"
 
 #: web/templates/web/periods.html:51 web/templates/web/person_pay.html:72
+#: web/templates/web/print/payout.html:57
 msgid "Часы"
 msgstr "Sati"
 
@@ -5797,7 +6023,8 @@ msgstr "Kako je teklo"
 msgid "Месяц за месяцем"
 msgstr "Mesec po mesec"
 
-#: web/templates/web/person_pay.html:74
+#: web/templates/web/person_pay.html:74 web/templates/web/print/payout.html:58
+#: web/templates/web/print/payslip.html:67
 msgid "Начислено"
 msgstr "Obračunati iznos"
 
@@ -5832,6 +6059,121 @@ msgid ""
 msgstr ""
 "Mesec se ovde pojavljuje nakon obračuna — i to samo oni meseci čije redove "
 "vidi vaša uloga. Mesec možete obračunati na stranici perioda."
+
+#: web/templates/web/print/payout.html:24
+#: web/templates/web/print/payslip.html:24
+msgid "ПИБ"
+msgstr "PIB"
+
+#: web/templates/web/print/payout.html:29
+#: web/templates/web/print/payslip.html:29
+msgid "Документ"
+msgstr "Dokument"
+
+#: web/templates/web/print/payout.html:31
+#: web/templates/web/print/payslip.html:31
+msgid "Сформирован"
+msgstr "Sastavljen"
+
+#: web/templates/web/print/payout.html:56
+msgid "Должность"
+msgstr "Radno mesto"
+
+#: web/templates/web/print/payout.html:59
+msgid "Удержано"
+msgstr "Zadržano"
+
+#: web/templates/web/print/payout.html:60
+#: web/templates/web/print/payslip.html:74
+msgid "К выплате"
+msgstr "Za isplatu"
+
+#: web/templates/web/print/payout.html:61
+msgid "Подпись"
+msgstr "Potpis"
+
+#: web/templates/web/print/payout.html:86
+msgid "Сумма прописью:"
+msgstr "Iznos slovima:"
+
+#: web/templates/web/print/payout.html:97
+#: web/templates/web/print/payslip.html:93
+msgid "Расчёт составил"
+msgstr "Obračun sastavio"
+
+#: web/templates/web/print/payout.html:102
+msgid "Утвердил"
+msgstr "Odobrio"
+
+#: web/templates/web/print/payout.html:107
+msgid "Дата подписания"
+msgstr "Datum potpisa"
+
+#: web/templates/web/print/payout.html:116
+#, python-format
+msgid "Лист %(number)s из %(of)s"
+msgstr "List %(number)s od %(of)s"
+
+#: web/templates/web/print/payout.html:117
+#: web/templates/web/print/payslip.html:104
+msgid "документ выведен из данных периода, правка бумажной копии силы не имеет"
+msgstr "dokument je izveden iz podataka perioda, ispravka papirne kopije nema važnost"
+
+#: web/templates/web/print/payout.html:118
+msgid ""
+"начислено — сумма расчёта на руки, удержано — вычтенное при выплате, к "
+"выплате — на счёт и наличными вместе"
+msgstr "obračunato — iznos obračuna na ruke, zadržano — oduzeto pri isplati, za isplatu — na račun i gotovinom zajedno"
+
+#: web/templates/web/print/payslip.html:43
+msgid "Часы в месяце"
+msgstr "Sati u mesecu"
+
+#: web/templates/web/print/payslip.html:45
+#, python-format
+msgid "норма %(norm)s"
+msgstr "norma %(norm)s"
+
+#: web/templates/web/print/payslip.html:55
+#, python-format
+msgid "Сумма, %(currency)s"
+msgstr "Iznos, %(currency)s"
+
+#: web/templates/web/print/payslip.html:67
+msgid "сумма позиций выше"
+msgstr "zbir stavki iznad"
+
+#: web/templates/web/print/payslip.html:69
+msgid "Удержано при выплате"
+msgstr "Zadržano pri isplati"
+
+#: web/templates/web/print/payslip.html:81
+#, python-format
+msgid "Бруто %(gross)s · налог %(tax)s · взносы %(contributions)s"
+msgstr "Bruto %(gross)s · porez %(tax)s · doprinosi %(contributions)s"
+
+#: web/templates/web/print/payslip.html:82
+msgid ""
+"Эти суммы посчитаны от выплаты и платятся сверх неё: из того, что вы "
+"получаете на руки, они не удерживаются."
+msgstr "Ovi iznosi se računaju od isplate i plaćaju se povrh nje: ne zadržavaju se od onoga što dobijate na ruke."
+
+#: web/templates/web/print/payslip.html:84
+#, python-format
+msgid "На счёт %(bank)s, наличными %(cash)s."
+msgstr "Na račun %(bank)s, gotovinom %(cash)s."
+
+#: web/templates/web/print/payslip.html:98
+msgid "Сотрудник · получил расчётный листок"
+msgstr "Zaposleni · primio obračun"
+
+#: web/templates/web/print/refused.html:12
+msgid "Форма не собрана"
+msgstr "Forma nije sastavljena"
+
+#: web/templates/web/print/refused.html:14
+msgid "Вернуться"
+msgstr "Vrati se"
 
 #: web/templates/web/reconcile.html:14
 #, python-format
@@ -7475,126 +7817,3 @@ msgstr "ručno uneto"
 #: web/views.py:1621
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
-
-msgid "Партнёр и юрлица"
-msgstr "Partner i pravna lica"
-
-msgid "Справочники → Юрлица"
-msgstr "Imenici → Pravna lica"
-
-msgid "Юрлицо — то, с чем работает бухгалтерия: зарплата, налоги и отчётность считаются по каждому отдельно."
-msgstr "Pravno lice je ono sa čim radi računovodstvo: zarada, porezi i izveštavanje računaju se za svako posebno."
-
-msgid "В шапке написано название партнёра, а в справочнике юрлиц есть хотя бы одна строка."
-msgstr "U zaglavlju piše naziv partnera, a u imeniku pravnih lica postoji bar jedan red."
-
-msgid "Самого партнёра заводит инженер — экрана для этого в продукте нет."
-msgstr "Samog partnera kreira inženjer — u proizvodu za to nema ekrana."
-
-msgid "Точки и кассы"
-msgstr "Objekti i kase"
-
-msgid "Справочники → Точки"
-msgstr "Imenici → Objekti"
-
-msgid "На точку вешаются часы, наличные расходы и строки P&L. Касса задаёт регистр учёта расхода, чтобы его не выбирали руками каждый раз."
-msgstr "Sati, gotovinski troškovi i redovi P&L-a vezuju se za objekat. Kasa određuje knjigu troška da se ona ne bi birala ručno svaki put."
-
-msgid "У каждой работающей точки есть касса, а у кассы — регистр учёта."
-msgstr "Svaki objekat koji radi ima kasu, a svaka kasa ima knjigu."
-
-msgid "Точку не удаляют, а закрывают датой: в прошлых месяцах лежат её зарплаты."
-msgstr "Objekat se ne briše nego zatvara datumom: u prošlim mesecima leže njegove zarade."
-
-msgid "Правила страны"
-msgstr "Pravila zemlje"
-
-msgid "Правило — это версия с датой, а не число в коде. Поэтому правка ставки в июле не переписывает уже закрытый июнь."
-msgstr "Pravilo je verzija sa datumom, a ne broj u kodu. Zato izmena stope u julu ne prepisuje već zatvoreni jun."
-
-msgid "Реестр открывается, и у каждого правила видно значение, уровень и дату начала действия."
-msgstr "Registar se otvara i kod svakog pravila vide se vrednost, nivo i datum od kada važi."
-
-msgid "Переопределение ставят на человека там, где нужно на группу. Уровень написан в строке правила — смотреть надо здесь, а не потом."
-msgstr "Izuzetak se postavlja na osobu tamo gde treba na grupu. Nivo piše u redu pravila — proveriti ga ovde, a ne kasnije."
-
-msgid "Группы и должности"
-msgstr "Grupe i radna mesta"
-
-msgid "Справочники → Группы сотрудников"
-msgstr "Imenici → Grupe zaposlenih"
-
-msgid "Группа отвечает, как считается работа и в какую строку затрат она попадёт. Должность — кого нанимаем и в какую группу он попадёт."
-msgstr "Grupa odgovara kako se rad obračunava i u koji red troška ulazi. Radno mesto odgovara koga zapošljavamo i u koju grupu on ulazi."
-
-msgid "У группы задана схема расчёта и регистр учёта, у должности — группа и часы по договору."
-msgstr "Grupa ima šemu obračuna i knjigu, a radno mesto ima grupu i ugovorene sate."
-
-msgid "Пропущенный регистр учёта группы — отказ формы: продукт не угадывает, в каком контуре живут эти деньги."
-msgstr "Izostavljena knjiga kod grupe je odbijanje forme: proizvod ne pogađa u kom krugu taj novac živi."
-
-msgid "Люди и условия найма"
-msgstr "Ljudi i uslovi zapošljavanja"
-
-msgid "Справочники → Сотрудники"
-msgstr "Imenici → Zaposleni"
-
-msgid "Расчёт берёт условия найма по версии на дату — поэтому у ставки есть «действует с», а не просто значение."
-msgstr "Obračun uzima uslove zapošljavanja po verziji na datum — zato stopa ima „od“, a ne samo vrednost."
-
-msgid "У каждого работающего есть версия условий, действующая на первое число вашего первого месяца."
-msgstr "Svako ko radi ima verziju uslova koja važi na prvi dan vašeg prvog meseca."
-
-msgid "Человек без условий найма не появляется в табеле вовсе — не «с нулями», а отсутствует: считать его нечем."
-msgstr "Osoba bez uslova zapošljavanja uopšte se ne pojavljuje u evidenciji sati — ne „sa nulama“, nego je nema: nema se čime obračunati."
-
-msgid "Справочники → Производственный календарь"
-msgstr "Imenici → Proizvodni kalendar"
-
-msgid "Отсюда берётся норма часов и число рабочих дней: на них опираются доплата до минимума и половина остальных правил."
-msgstr "Odavde se uzimaju norma sati i broj radnih dana: na njima počivaju doplata do minimuma i polovina ostalih pravila."
-
-msgid "У месяца, с которого вы начинаете, есть норма часов и число рабочих дней."
-msgstr "Mesec od kojeg počinjete ima normu sati i broj radnih dana."
-
-msgid "Месяц заводят раньше календаря — тогда вместо нормы часов страница месяца прямо пишет, что календарь на него не заведён."
-msgstr "Mesec se otvori pre kalendara — tada, umesto norme sati, stranica meseca otvoreno piše da kalendar za njega nije unet."
-
-msgid "Первый настоящий месяц"
-msgstr "Prvi pravi mesec"
-
-msgid "Онбординг заканчивается не обучением, а первой утверждённой ведомостью. Дальше месяц повторяется по той же полосе из трёх шагов."
-msgstr "Uvođenje se ne završava obukom nego prvom odobrenom obračunskom listom. Dalje se mesec ponavlja po istoj traci od tri koraka."
-
-msgid "Период утверждён, в истории видно, кто и когда это сделал, а в P&L появились строки."
-msgstr "Period je odobren, u istoriji se vidi ko je to uradio i kada, a u P&L-u su se pojavili redovi."
-
-msgid "Ждут, что расчёт пройдёт и без закрытых часов по точкам. Что мешает утвердить месяц, продукт перечисляет до утверждения, а не после."
-msgstr "Očekuje se da će obračun proći i bez zatvorenih sati po objektima. Šta smeta odobravanju meseca, proizvod nabraja pre odobravanja, a ne posle."
-
-msgid "Семь шагов до первой ведомости"
-msgstr "Sedam koraka do prve obračunske liste"
-
-msgid "Это не тур по кнопкам, а проход по настоящему месяцу. Первые шесть шагов\n  делаются один раз, когда партнёра заводят; седьмой повторяется каждый месяц.\n  Порядок не декоративный: каждый следующий шаг физически невозможен без\n  предыдущего, и продукт скажет об этом отказом, если попробовать иначе."
-msgstr "Ovo nije obilazak dugmadi nego prolazak kroz stvarni mesec. Prvih šest koraka radi se jednom, kada se partner uvodi; sedmi se ponavlja svakog meseca. Redosled nije ukras: svaki sledeći korak fizički je nemoguć bez prethodnog, a proizvod će to reći odbijanjem ako pokušate drugačije."
-
-msgid "Где это"
-msgstr "Gde je to"
-
-msgid "Готово, когда"
-msgstr "Gotovo kada"
-
-msgid "Здесь спотыкаются"
-msgstr "Ovde se spotiču"
-
-msgid "Шаги с первого по шестой партнёр проходит вместе с внедренцем — на это уходит\n  день. Седьмой партнёр делает сам: это и есть проверка, что онбординг\n  сработал."
-msgstr "Korake od prvog do šestog partner prolazi zajedno sa implementatorom — na to ode dan. Sedmi partner radi sam: to i jeste provera da je uvođenje uspelo."
-
-msgid "Седьмой шаг крупным планом — то, что повторяется каждый месяц. Порядок в нём\n  обязательный: каждое следующее действие невозможно без предыдущего. На экранах\n  месяца тот же порядок показан полосой шагов, чтобы было видно, где вы\n  сейчас."
-msgstr "Sedmi korak izbliza — ono što se ponavlja svakog meseca. Redosled u njemu je obavezan: svaka sledeća radnja nemoguća je bez prethodne. Na ekranima meseca isti redosled prikazan je trakom koraka, da se vidi gde ste sada."
-
-msgid "Кому что выдано и что из этого следует — раздел «Роли и права». Он открыт\n  тому, у кого есть право вести роли; остальным его в шапке не видно."
-msgstr "Kome je šta dodeljeno i šta iz toga sledi — odeljak „Uloge i prava“. Otvoren je onome ko ima pravo da vodi uloge; ostalima se u zaglavlju uopšte ne vidi."
-
-msgid "В шапке это два раздела: «Наличные расходы» — то, что вышло из кассы точки,\n  и «Инбокс документов» — очередь того, что продукт не смог отнести сам.\n  Список счетов открывается из инбокса и живёт в том же разделе."
-msgstr "U zaglavlju su to dva odeljka: „Gotovinski troškovi“ — ono što je izašlo iz kase objekta — i „Prijemno sanduče dokumenata“ — red onoga što proizvod nije uspeo sam da razvrsta. Spisak računa otvara se iz sandučeta i živi u istom odeljku."

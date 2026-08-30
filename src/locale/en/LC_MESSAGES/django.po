@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dodo-pnl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-29 06:16+0000\n"
+"POT-Creation-Date: 2026-08-30 11:29+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -341,7 +341,8 @@ msgstr ""
 msgid "Ведомость к выплате · %(sub)s"
 msgstr "Payroll sheet for payout · %(sub)s"
 
-#: reports/export.py:217 web/templates/web/suppliers/invoice.html:76
+#: reports/export.py:217 web/templates/web/print/payout.html:54
+#: web/templates/web/suppliers/invoice.html:76
 msgid "№"
 msgstr "No."
 
@@ -350,7 +351,8 @@ msgstr "No."
 #: web/templates/web/components/diff_table.html:21
 #: web/templates/web/directory/raise_preview.html:21
 #: web/templates/web/period.html:255 web/templates/web/period.html:442
-#: web/templates/web/variance.html:39
+#: web/templates/web/print/payout.html:55
+#: web/templates/web/print/payslip.html:38 web/templates/web/variance.html:39
 msgid "Сотрудник"
 msgstr "Employee"
 
@@ -1787,7 +1789,8 @@ msgstr "Role"
 msgid "Пользователь"
 msgstr "User"
 
-#: web/dbrefusal.py:118 web/templates/web/guide.html:88
+#: web/dbrefusal.py:118 web/templates/web/guide.html:127
+#: web/templates/web/print/payslip.html:54
 msgid "Расчёт"
 msgstr "Calculation"
 
@@ -1950,7 +1953,7 @@ msgid "Схема расчёта и регистр учёта по умолча�
 msgstr "Default calculation scheme and ledger"
 
 #: web/directory_views.py:240 web/directory_views.py:1560
-#: web/templates/web/guide.html:150
+#: web/templates/web/guide.html:189
 msgid "Точки"
 msgstr "Units"
 
@@ -1998,7 +2001,8 @@ msgstr "Boxes cash is paid from: unit and ledger"
 msgid "Поставщики и получатели платежей: название, номера, ключ Dodo IS"
 msgstr "Suppliers and payees: name, numbers, Dodo IS key"
 
-#: web/directory_views.py:285 web/directory_views.py:1736 web/rules.py:97
+#: web/directory_views.py:285 web/directory_views.py:1736 web/guide.py:148
+#: web/rules.py:97
 msgid "Производственный календарь"
 msgstr "Production calendar"
 
@@ -3064,6 +3068,181 @@ msgstr "Sorting out the bank statement."
 msgid "%(percent)s и %(amount)s"
 msgstr "%(percent)s and %(amount)s"
 
+#: web/guide.py:90
+msgid "Партнёр и юрлица"
+msgstr "Partner and legal entities"
+
+#: web/guide.py:91
+msgid "Справочники → Юрлица"
+msgstr "Directories → Legal entities"
+
+#: web/guide.py:93
+msgid ""
+"Юрлицо — то, с чем работает бухгалтерия: зарплата, налоги и отчётность "
+"считаются по каждому отдельно."
+msgstr "A legal entity is what accounting works with: payroll, taxes and reporting are calculated for each one separately."
+
+#: web/guide.py:95
+msgid ""
+"В шапке написано название партнёра, а в справочнике юрлиц есть хотя бы одна "
+"строка."
+msgstr "The header shows the partner's name and the legal entities directory has at least one row."
+
+#: web/guide.py:97
+msgid "Самого партнёра заводит инженер — экрана для этого в продукте нет."
+msgstr "The partner itself is created by an engineer — there is no screen for that in the product."
+
+#: web/guide.py:101
+msgid "Точки и кассы"
+msgstr "Units and tills"
+
+#: web/guide.py:102
+msgid "Справочники → Точки"
+msgstr "Directories → Units"
+
+#: web/guide.py:104
+msgid ""
+"На точку вешаются часы, наличные расходы и строки P&L. Касса задаёт регистр "
+"учёта расхода, чтобы его не выбирали руками каждый раз."
+msgstr "Hours, cash expenses and P&L rows all hang on a unit. A till sets the ledger of an expense so that nobody has to pick it by hand every time."
+
+#: web/guide.py:106
+msgid "У каждой работающей точки есть касса, а у кассы — регистр учёта."
+msgstr "Every working unit has a till, and every till has a ledger."
+
+#: web/guide.py:107
+msgid ""
+"Точку не удаляют, а закрывают датой: в прошлых месяцах лежат её зарплаты."
+msgstr "A unit is not deleted but closed with a date: past months hold its payroll."
+
+#: web/guide.py:112
+msgid "Правила страны"
+msgstr "Country rules"
+
+#: web/guide.py:113 web/navigation.py:115 web/rules_views.py:187
+#: web/rules_views.py:200 web/templates/web/rules/denied.html:14
+#: web/templates/web/rules/denied.html:16
+msgid "Правила расчёта"
+msgstr "Calculation rules"
+
+#: web/guide.py:115
+msgid ""
+"Правило — это версия с датой, а не число в коде. Поэтому правка ставки в "
+"июле не переписывает уже закрытый июнь."
+msgstr "A rule is a version with a date, not a number in the code. That is why changing a rate in July does not rewrite an already closed June."
+
+#: web/guide.py:117
+msgid ""
+"Реестр открывается, и у каждого правила видно значение, уровень и дату "
+"начала действия."
+msgstr "The registry opens and every rule shows its value, its level and the date it starts to apply."
+
+#: web/guide.py:119
+msgid ""
+"Переопределение ставят на человека там, где нужно на группу. Уровень написан "
+"в строке правила — смотреть надо здесь, а не потом."
+msgstr "An override is put on a person where it belongs on a group. The level is written in the rule's row — check it here, not later."
+
+#: web/guide.py:124
+msgid "Группы и должности"
+msgstr "Groups and positions"
+
+#: web/guide.py:125
+msgid "Справочники → Группы сотрудников"
+msgstr "Directories → Employee groups"
+
+#: web/guide.py:127
+msgid ""
+"Группа отвечает, как считается работа и в какую строку затрат она попадёт. "
+"Должность — кого нанимаем и в какую группу он попадёт."
+msgstr "A group answers how the work is calculated and which cost row it lands in. A position answers who we hire and which group they land in."
+
+#: web/guide.py:129
+msgid ""
+"У группы задана схема расчёта и регистр учёта, у должности — группа и часы "
+"по договору."
+msgstr "A group has a calculation scheme and a ledger; a position has a group and contract hours."
+
+#: web/guide.py:131
+msgid ""
+"Пропущенный регистр учёта группы — отказ формы: продукт не угадывает, в "
+"каком контуре живут эти деньги."
+msgstr "A missing ledger on a group is a refusal from the form: the product does not guess which circuit this money lives in."
+
+#: web/guide.py:136
+msgid "Люди и условия найма"
+msgstr "People and employment terms"
+
+#: web/guide.py:137
+msgid "Справочники → Сотрудники"
+msgstr "Directories → Employees"
+
+#: web/guide.py:139
+msgid ""
+"Расчёт берёт условия найма по версии на дату — поэтому у ставки есть "
+"«действует с», а не просто значение."
+msgstr "The calculation takes employment terms by their version on a date — that is why a rate has a “from” and not just a value."
+
+#: web/guide.py:141
+msgid ""
+"У каждого работающего есть версия условий, действующая на первое число "
+"вашего первого месяца."
+msgstr "Everyone who works has a version of the terms that applies on the first day of your first month."
+
+#: web/guide.py:143
+msgid ""
+"Человек без условий найма не появляется в табеле вовсе — не «с нулями», а "
+"отсутствует: считать его нечем."
+msgstr "A person without employment terms does not appear in the timesheet at all — not “with zeros”, but absent: there is nothing to calculate them with."
+
+#: web/guide.py:149
+msgid "Справочники → Производственный календарь"
+msgstr "Directories → Production calendar"
+
+#: web/guide.py:151
+msgid ""
+"Отсюда берётся норма часов и число рабочих дней: на них опираются доплата до "
+"минимума и половина остальных правил."
+msgstr "Standard hours and the number of working days come from here: the top-up to the minimum and half of the other rules rest on them."
+
+#: web/guide.py:153
+msgid ""
+"У месяца, с которого вы начинаете, есть норма часов и число рабочих дней."
+msgstr "The month you start from has standard hours and a number of working days."
+
+#: web/guide.py:155
+msgid ""
+"Месяц заводят раньше календаря — тогда вместо нормы часов страница месяца "
+"прямо пишет, что календарь на него не заведён."
+msgstr "A month is created before the calendar for it — then, instead of standard hours, the month's page says plainly that no calendar has been created for it."
+
+#: web/guide.py:160
+msgid "Первый настоящий месяц"
+msgstr "The first real month"
+
+#: web/guide.py:161 web/navigation.py:101 web/templates/web/guide.html:119
+#: web/templates/web/period.html:175
+msgid "Табель"
+msgstr "Timesheet"
+
+#: web/guide.py:163
+msgid ""
+"Онбординг заканчивается не обучением, а первой утверждённой ведомостью. "
+"Дальше месяц повторяется по той же полосе из трёх шагов."
+msgstr "Onboarding ends not with training but with the first approved payroll sheet. After that the month repeats along the same strip of three steps."
+
+#: web/guide.py:165
+msgid ""
+"Период утверждён, в истории видно, кто и когда это сделал, а в P&L появились "
+"строки."
+msgstr "The period is approved, the history shows who did it and when, and rows have appeared in the P&L."
+
+#: web/guide.py:167
+msgid ""
+"Ждут, что расчёт пройдёт и без закрытых часов по точкам. Что мешает "
+"утвердить месяц, продукт перечисляет до утверждения, а не после."
+msgstr "People expect the calculation to go through without hours being closed per unit. What stands in the way of approving the month, the product lists before approval, not after."
+
 #: web/i18n.py:54
 msgid "role.director"
 msgstr "Operations Director"
@@ -3092,11 +3271,6 @@ msgstr "Shift Manager"
 msgid "Сбор данных"
 msgstr "Data collection"
 
-#: web/navigation.py:101 web/templates/web/guide.html:80
-#: web/templates/web/period.html:175
-msgid "Табель"
-msgstr "Timesheet"
-
 #: web/navigation.py:107
 msgid "Инбокс документов"
 msgstr "Document inbox"
@@ -3108,12 +3282,6 @@ msgstr "Document inbox"
 #: web/templates/web/directory/index.html:17
 msgid "Справочники"
 msgstr "Directories"
-
-#: web/navigation.py:115 web/rules_views.py:187 web/rules_views.py:200
-#: web/templates/web/rules/denied.html:14
-#: web/templates/web/rules/denied.html:16
-msgid "Правила расчёта"
-msgstr "Calculation rules"
 
 #: web/navigation.py:117
 msgid "Настройки"
@@ -4352,6 +4520,7 @@ msgid "Дата"
 msgstr "Date"
 
 #: web/templates/web/cash/expenses.html:127
+#: web/templates/web/print/payslip.html:53
 #: web/templates/web/suppliers/invoices.html:48
 msgid "Статья"
 msgstr "Item"
@@ -4892,7 +5061,7 @@ msgid ""
 msgstr ""
 "Check the address: it may have a typo, or the page is no longer available."
 
-#: web/templates/web/errors/404.html:38 web/templates/web/guide.html:254
+#: web/templates/web/errors/404.html:38 web/templates/web/guide.html:300
 msgid "К списку периодов"
 msgstr "To the list of periods"
 
@@ -4995,10 +5164,53 @@ msgstr ""
 "      currency."
 
 #: web/templates/web/guide.html:66
+msgid "Семь шагов до первой ведомости"
+msgstr "Seven steps to the first payroll sheet"
+
+#: web/templates/web/guide.html:67
+msgid ""
+"Это не тур по кнопкам, а проход по настоящему месяцу. Первые шесть шагов\n"
+"  делаются один раз, когда партнёра заводят; седьмой повторяется каждый "
+"месяц.\n"
+"  Порядок не декоративный: каждый следующий шаг физически невозможен без\n"
+"  предыдущего, и продукт скажет об этом отказом, если попробовать иначе."
+msgstr "This is not a tour of buttons but a walk through a real month. The first six steps are done once, when the partner is set up; the seventh repeats every month. The order is not decorative: each next step is physically impossible without the previous one, and the product will say so with a refusal if you try otherwise."
+
+#: web/templates/web/guide.html:86
+msgid "Где это"
+msgstr "Where it is"
+
+#: web/templates/web/guide.html:88
+msgid "Готово, когда"
+msgstr "Done when"
+
+#: web/templates/web/guide.html:90
+msgid "Здесь спотыкаются"
+msgstr "Where people stumble"
+
+#: web/templates/web/guide.html:97
+msgid ""
+"Шаги с первого по шестой партнёр проходит вместе с внедренцем — на это "
+"уходит\n"
+"  день. Седьмой партнёр делает сам: это и есть проверка, что онбординг\n"
+"  сработал."
+msgstr "Steps one through six the partner walks together with the implementer — it takes a day. The seventh the partner does alone: that is the very check that the onboarding worked."
+
+#: web/templates/web/guide.html:104
 msgid "Месяц от начала до конца"
 msgstr "The month from start to finish"
 
-#: web/templates/web/guide.html:81
+#: web/templates/web/guide.html:105
+msgid ""
+"Седьмой шаг крупным планом — то, что повторяется каждый месяц. Порядок в "
+"нём\n"
+"  обязательный: каждое следующее действие невозможно без предыдущего. На "
+"экранах\n"
+"  месяца тот же порядок показан полосой шагов, чтобы было видно, где вы\n"
+"  сейчас."
+msgstr "The seventh step close up — the part that repeats every month. Its order is mandatory: each next action is impossible without the previous one. On the month's screens the same order is shown as a strip of steps, so you can see where you are."
+
+#: web/templates/web/guide.html:120
 msgid ""
 "Часы за месяц по каждой точке. Основная часть приезжает из Dodo IS;\n"
 "      управляющий проверяет свою точку и правит то, что разошлось. Когда "
@@ -5013,12 +5225,12 @@ msgstr ""
 "      unit's hours are ready, they are closed — unit by unit, and the month\n"
 "      does not wait for the slowest one."
 
-#: web/templates/web/guide.html:85
+#: web/templates/web/guide.html:124
 msgid ""
 "Ведут: управляющие точек. Заканчивается тем, что часы всех точек закрыты."
 msgstr "Run by: unit managers. Ends when the hours for all units are closed."
 
-#: web/templates/web/guide.html:89
+#: web/templates/web/guide.html:128
 msgid ""
 "Расчёт берёт условия найма и правила, действующие на дату периода, и\n"
 "      считает каждому человеку начисления, надбавки и удержания. Идёт в "
@@ -5031,16 +5243,16 @@ msgstr ""
 "come\n"
 "      back, and the calculation will not be interrupted."
 
-#: web/templates/web/guide.html:92
+#: web/templates/web/guide.html:131
 msgid "Ведёт: тот, кто считает месяц. Заканчивается тем, что период посчитан."
 msgstr ""
 "Run by: whoever is calculating the month. Ends when the period is calculated."
 
-#: web/templates/web/guide.html:95 web/templates/web/period.html:392
+#: web/templates/web/guide.html:134 web/templates/web/period.html:392
 msgid "Ведомость"
 msgstr "Payroll sheet"
 
-#: web/templates/web/guide.html:96
+#: web/templates/web/guide.html:135
 msgid ""
 "Итог расчёта построчно: человек, компоненты выплаты, итого к выплате.\n"
 "      Любую сумму можно раскрыть до правил и входов. Спорную строку — "
@@ -5055,7 +5267,7 @@ msgstr ""
 "      difference from an already closed month can be carried over into the\n"
 "      current one."
 
-#: web/templates/web/guide.html:100
+#: web/templates/web/guide.html:139
 msgid ""
 "Здесь же сверка с таблицей бухгалтера: расчёт продукта рядом с его "
 "собственным."
@@ -5063,11 +5275,11 @@ msgstr ""
 "This is also where the reconciliation with the accountant's spreadsheet "
 "happens: the product's calculation sits next to their own."
 
-#: web/templates/web/guide.html:103
+#: web/templates/web/guide.html:142
 msgid "Закрытие"
 msgstr "Closing"
 
-#: web/templates/web/guide.html:104
+#: web/templates/web/guide.html:143
 msgid ""
 "Период утверждают. До утверждения продукт сам перечисляет, что мешает:\n"
 "      незакрытые часы, замороженные строки, расходы без точки. Утверждённый "
@@ -5081,7 +5293,7 @@ msgstr ""
 "      approved month is read-only from then on — a change goes through a\n"
 "      revert with a reason, and the reason stays in the history."
 
-#: web/templates/web/guide.html:108
+#: web/templates/web/guide.html:147
 msgid ""
 "Заканчивается тем, что месяц утверждён, а файлы к выплате и для P&L "
 "выгружены."
@@ -5089,11 +5301,11 @@ msgstr ""
 "Ends with the month approved and the files for payout and for the P&L "
 "exported."
 
-#: web/templates/web/guide.html:115
+#: web/templates/web/guide.html:154
 msgid "Кто в нём работает"
 msgstr "Who works in it"
 
-#: web/templates/web/guide.html:116
+#: web/templates/web/guide.html:155
 msgid ""
 "Роль — это набор прав, и у каждого набора своя работа и свой первый\n"
 "  экран. Один и тот же экран показывает разным людям разные числа, поэтому "
@@ -5104,7 +5316,7 @@ msgstr ""
 "  screen. The same screen shows different numbers to different people, so\n"
 "  the header always says whose eyes you are looking through."
 
-#: web/templates/web/guide.html:132
+#: web/templates/web/guide.html:171
 msgid ""
 "За компьютером и подолгу, привык к Excel. Первым делом идёт не на витрину,\n"
 "        а в список месяцев: ему нужно понять, в каком они состоянии и что от "
@@ -5121,7 +5333,7 @@ msgstr ""
 "        right now. Real trust in the product comes on the reconciliation\n"
 "        screen, where their own spreadsheet sits next to the calculation."
 
-#: web/templates/web/guide.html:136
+#: web/templates/web/guide.html:175
 msgid ""
 "С телефона, стоя на точке, заходит на две минуты. Его экран — несколько\n"
 "        крупных действий и ничего больше: отметить часы, внести расход из "
@@ -5137,7 +5349,7 @@ msgstr ""
 "        figures, and that is not a cut in their rights — it is their job:\n"
 "        deliver the primary data, not calculate it."
 
-#: web/templates/web/guide.html:140
+#: web/templates/web/guide.html:179
 msgid ""
 "Компьютер и телефон, урывками, между точками. Смотрит состояние сети "
 "целиком:\n"
@@ -5151,7 +5363,7 @@ msgstr ""
 "        not been started, where a month is hanging unapproved, what has\n"
 "        crossed a threshold, and which rows are frozen as disputed."
 
-#: web/templates/web/guide.html:143
+#: web/templates/web/guide.html:182
 msgid ""
 "Тот, кто отвечает деньгами. Заходит редко, но каждая его правка меняет\n"
 "        расчёт, поэтому справочники и правила показывают даты действия и "
@@ -5165,23 +5377,23 @@ msgstr ""
 "        and version history. The calculation's data is not open to them,\n"
 "        though: they manage how the ledger is set up, not the amounts."
 
-#: web/templates/web/guide.html:151
+#: web/templates/web/guide.html:190
 msgid "только своя"
 msgstr "own unit only"
 
-#: web/templates/web/guide.html:151
+#: web/templates/web/guide.html:190
 msgid "все точки партнёра"
 msgstr "all of the partner's units"
 
-#: web/templates/web/guide.html:152
+#: web/templates/web/guide.html:191
 msgid "Что ведёт"
 msgstr "What they manage"
 
-#: web/templates/web/guide.html:153
+#: web/templates/web/guide.html:192
 msgid "только чтение"
 msgstr "view only"
 
-#: web/templates/web/guide.html:159
+#: web/templates/web/guide.html:198
 msgid ""
 "Права режет сама база, а не экран. Строку, которой роль не видит, она не\n"
 "  получит ни на странице, ни в выгрузке, ни через API — поэтому раздел, "
@@ -5195,11 +5407,17 @@ msgstr ""
 "rather\n"
 "  than refusing you after you click it."
 
-#: web/templates/web/guide.html:166
+#: web/templates/web/guide.html:202
+msgid ""
+"Кому что выдано и что из этого следует — раздел «Роли и права». Он открыт\n"
+"  тому, у кого есть право вести роли; остальным его в шапке не видно."
+msgstr "Who has been given what, and what follows from it, lives in the “Roles and rights” section. It is open to whoever has the right to manage roles; others do not see it in the header at all."
+
+#: web/templates/web/guide.html:208
 msgid "Наличные, расходы и поставщики"
 msgstr "Cash, expenses and suppliers"
 
-#: web/templates/web/guide.html:167
+#: web/templates/web/guide.html:209
 msgid ""
 "Зарплата — не единственная первичка. Вторая половина P&amp;L собирается из\n"
 "  того, что тратят на точках и платят поставщикам, и эта половина приходит "
@@ -5213,11 +5431,18 @@ msgstr ""
 "every\n"
 "  day."
 
-#: web/templates/web/guide.html:173
+#: web/templates/web/guide.html:213
+msgid ""
+"В шапке это два раздела: «Наличные расходы» — то, что вышло из кассы точки,\n"
+"  и «Инбокс документов» — очередь того, что продукт не смог отнести сам.\n"
+"  Список счетов открывается из инбокса и живёт в том же разделе."
+msgstr "In the header these are two sections: “Cash expenses” — what left a unit's till — and “Document inbox” — the queue of what the product could not classify by itself. The list of invoices opens from the inbox and lives in the same section."
+
+#: web/templates/web/guide.html:219
 msgid "Расход из кассы."
 msgstr "Cash expense."
 
-#: web/templates/web/guide.html:174
+#: web/templates/web/guide.html:220
 msgid ""
 "Управляющий вносит его с телефона за минуту: дата, сумма, статья, точка.\n"
 "      Расход, у которого точки нет, попадает в нераспределённое — это трата\n"
@@ -5230,11 +5455,11 @@ msgstr ""
 "a\n"
 "      rule, not by eye."
 
-#: web/templates/web/guide.html:179
+#: web/templates/web/guide.html:225
 msgid "Чек прикладывается тем же движением."
 msgstr "The receipt is attached in the same motion."
 
-#: web/templates/web/guide.html:180
+#: web/templates/web/guide.html:226
 msgid ""
 "Фотография бумажки цепляется прямо к расходу — второго захода не будет.\n"
 "      Без чека расход всё равно запишется: деньги уже отданы, и терять "
@@ -5251,11 +5476,11 @@ msgstr ""
 "marked in the\n"
 "      register, and the sum of such lines stands right there as a number."
 
-#: web/templates/web/guide.html:186
+#: web/templates/web/guide.html:232
 msgid "Касса и P&L — два разных числа."
 msgstr "The till and the P&L are two different numbers."
 
-#: web/templates/web/guide.html:187
+#: web/templates/web/guide.html:233
 msgid ""
 "Деньги выходят из кассы в день траты, а в отчёт трата попадает по правилам\n"
 "      отчёта. Поэтому наверху реестра стоят три числа: сколько ушло из "
@@ -5276,11 +5501,11 @@ msgstr ""
 "the P&amp;L at all, and\n"
 "      an expense of a closed month is counted in the current one."
 
-#: web/templates/web/guide.html:194
+#: web/templates/web/guide.html:240
 msgid "Список статей у управляющего короткий."
 msgstr "The manager's list of items is short."
 
-#: web/templates/web/guide.html:195
+#: web/templates/web/guide.html:241
 msgid ""
 "У каждой статьи в справочнике сказано, где её предлагают: наличные расходы,\n"
 "      разнесение накладных, разбор выписки. На телефон попадают только "
@@ -5297,11 +5522,11 @@ msgstr ""
 "item: all of them are\n"
 "      visible in the directory."
 
-#: web/templates/web/guide.html:201
+#: web/templates/web/guide.html:247
 msgid "Счёт и платёж — разные события."
 msgstr "An invoice and a payment are different events."
 
-#: web/templates/web/guide.html:202
+#: web/templates/web/guide.html:248
 msgid ""
 "Счёт ставит расход в тот месяц, к которому относится, и виден в\n"
 "      обязательствах, пока не оплачен. Платёж — это движение денег. Поэтому\n"
@@ -5312,11 +5537,11 @@ msgstr ""
 "      money. So a payment made later does not rewrite an already closed\n"
 "      month."
 
-#: web/templates/web/guide.html:207
+#: web/templates/web/guide.html:253
 msgid "Инбокс классификации."
 msgstr "Classification inbox."
 
-#: web/templates/web/guide.html:208
+#: web/templates/web/guide.html:254
 msgid ""
 "Всё, что продукт не смог отнести сам, собирается в одну очередь: платёж без\n"
 "      статьи, бумага с точки, неразобранное вложение. Человек разбирает это\n"
@@ -5327,11 +5552,11 @@ msgstr ""
 "      attachment. A person sorts through it in one batch, in one place,\n"
 "      rather than hunting across screens."
 
-#: web/templates/web/guide.html:213
+#: web/templates/web/guide.html:259
 msgid "Бумага с точки."
 msgstr "Paper from the unit."
 
-#: web/templates/web/guide.html:214
+#: web/templates/web/guide.html:260
 msgid ""
 "Управляющий фотографирует накладную или чек и скидывает — считать ему\n"
 "      ничего не нужно. В P&amp;L бумага попадёт после разбора, а не сразу: "
@@ -5345,11 +5570,11 @@ msgstr ""
 "queue\n"
 "      as unclassified."
 
-#: web/templates/web/guide.html:223
+#: web/templates/web/guide.html:269
 msgid "Регистры учёта"
 msgstr "Ledgers"
 
-#: web/templates/web/guide.html:224
+#: web/templates/web/guide.html:270
 msgid ""
 "Один и тот же месяц собирается в нескольких параллельных регистрах сразу.\n"
 "  Регистр — свойство сотрудника, группы или отдельной операции, а не "
@@ -5362,7 +5587,7 @@ msgstr ""
 "  of the company — so in one payroll sheet, rows from different ledgers sit\n"
 "  side by side, and each one carries its own label."
 
-#: web/templates/web/guide.html:229
+#: web/templates/web/guide.html:275
 msgid ""
 "Что из этого видно вам, задаёт ваша роль, и срез делают политики базы, а не\n"
 "  фильтр на экране. Итоги всегда сходятся с тем, что вам видно: продукт не\n"
@@ -5373,7 +5598,7 @@ msgstr ""
 "  you can see: the product never shows a sum built from rows you cannot\n"
 "  read."
 
-#: web/templates/web/guide.html:241
+#: web/templates/web/guide.html:287
 #, python-format
 msgid ""
 "Вам сейчас видно: %(names)s. Тот же список стоит в шапке на каждой странице."
@@ -5381,17 +5606,17 @@ msgstr ""
 "You can currently see: %(names)s. The same list is shown in the header on\n"
 "every page."
 
-#: web/templates/web/guide.html:243
+#: web/templates/web/guide.html:289
 msgid "Какие регистры видны именно вам, будет написано в шапке после входа."
 msgstr ""
 "Which ledgers are visible to you specifically will be shown in the header "
 "once you log in."
 
-#: web/templates/web/guide.html:249
+#: web/templates/web/guide.html:295
 msgid "С чего начать"
 msgstr "Where to start"
 
-#: web/templates/web/guide.html:251
+#: web/templates/web/guide.html:297
 msgid ""
 "Работа идёт внутри месяца: откройте список периодов и выберите тот, который\n"
 "  ведёте. Если месяц ещё не начат, на его странице написано, что произойдёт "
@@ -5403,7 +5628,7 @@ msgstr ""
 "explains\n"
 "  what will happen when it is opened and where to start."
 
-#: web/templates/web/guide.html:256
+#: web/templates/web/guide.html:302
 msgid ""
 "Пока вы не вошли, продукт не показывает ничего: без пользователя политики\n"
 "  доступа отдают пустой результат, а не чужие данные. Логин и пароль выдаёт\n"
@@ -5415,7 +5640,7 @@ msgstr ""
 "exactly\n"
 "  what your role is entitled to."
 
-#: web/templates/web/guide.html:259 web/templates/web/login.html:34
+#: web/templates/web/guide.html:305 web/templates/web/login.html:34
 #: web/templates/web/periods.html:104
 msgid "Войти"
 msgstr "Log in"
@@ -5774,7 +5999,7 @@ msgstr "what the dispute is about"
 msgid "Как получилась эта сумма"
 msgstr "How this amount was calculated"
 
-#: web/templates/web/period.html:510
+#: web/templates/web/period.html:510 web/templates/web/print/payout.html:77
 #, python-format
 msgid "Итого · %(employees)s чел."
 msgstr "Total · %(employees)s employees"
@@ -5845,6 +6070,7 @@ msgid "Завести"
 msgstr "Add"
 
 #: web/templates/web/periods.html:51 web/templates/web/person_pay.html:72
+#: web/templates/web/print/payout.html:57
 msgid "Часы"
 msgstr "Hours"
 
@@ -5923,7 +6149,8 @@ msgstr "How it went"
 msgid "Месяц за месяцем"
 msgstr "Month by month"
 
-#: web/templates/web/person_pay.html:74
+#: web/templates/web/person_pay.html:74 web/templates/web/print/payout.html:58
+#: web/templates/web/print/payslip.html:67
 msgid "Начислено"
 msgstr "Accrued"
 
@@ -5958,6 +6185,121 @@ msgid ""
 msgstr ""
 "A month appears here after the calculation — and only months whose rows your "
 "role can see. You can calculate a month on the period page."
+
+#: web/templates/web/print/payout.html:24
+#: web/templates/web/print/payslip.html:24
+msgid "ПИБ"
+msgstr "Tax ID"
+
+#: web/templates/web/print/payout.html:29
+#: web/templates/web/print/payslip.html:29
+msgid "Документ"
+msgstr "Document number"
+
+#: web/templates/web/print/payout.html:31
+#: web/templates/web/print/payslip.html:31
+msgid "Сформирован"
+msgstr "Generated"
+
+#: web/templates/web/print/payout.html:56
+msgid "Должность"
+msgstr "Job title"
+
+#: web/templates/web/print/payout.html:59
+msgid "Удержано"
+msgstr "Withheld"
+
+#: web/templates/web/print/payout.html:60
+#: web/templates/web/print/payslip.html:74
+msgid "К выплате"
+msgstr "To be paid"
+
+#: web/templates/web/print/payout.html:61
+msgid "Подпись"
+msgstr "Signature"
+
+#: web/templates/web/print/payout.html:86
+msgid "Сумма прописью:"
+msgstr "Amount in words:"
+
+#: web/templates/web/print/payout.html:97
+#: web/templates/web/print/payslip.html:93
+msgid "Расчёт составил"
+msgstr "Calculated by"
+
+#: web/templates/web/print/payout.html:102
+msgid "Утвердил"
+msgstr "Approved by"
+
+#: web/templates/web/print/payout.html:107
+msgid "Дата подписания"
+msgstr "Date signed"
+
+#: web/templates/web/print/payout.html:116
+#, python-format
+msgid "Лист %(number)s из %(of)s"
+msgstr "Sheet %(number)s of %(of)s"
+
+#: web/templates/web/print/payout.html:117
+#: web/templates/web/print/payslip.html:104
+msgid "документ выведен из данных периода, правка бумажной копии силы не имеет"
+msgstr "the document is derived from the period data; editing the paper copy has no force"
+
+#: web/templates/web/print/payout.html:118
+msgid ""
+"начислено — сумма расчёта на руки, удержано — вычтенное при выплате, к "
+"выплате — на счёт и наличными вместе"
+msgstr "accrued — the calculated take-home amount, withheld — deducted on payment, to be paid — to the account and in cash together"
+
+#: web/templates/web/print/payslip.html:43
+msgid "Часы в месяце"
+msgstr "Hours in the month"
+
+#: web/templates/web/print/payslip.html:45
+#, python-format
+msgid "норма %(norm)s"
+msgstr "norm %(norm)s"
+
+#: web/templates/web/print/payslip.html:55
+#, python-format
+msgid "Сумма, %(currency)s"
+msgstr "Amount, %(currency)s"
+
+#: web/templates/web/print/payslip.html:67
+msgid "сумма позиций выше"
+msgstr "sum of the items above"
+
+#: web/templates/web/print/payslip.html:69
+msgid "Удержано при выплате"
+msgstr "Withheld on payment"
+
+#: web/templates/web/print/payslip.html:81
+#, python-format
+msgid "Бруто %(gross)s · налог %(tax)s · взносы %(contributions)s"
+msgstr "Gross %(gross)s · tax %(tax)s · contributions %(contributions)s"
+
+#: web/templates/web/print/payslip.html:82
+msgid ""
+"Эти суммы посчитаны от выплаты и платятся сверх неё: из того, что вы "
+"получаете на руки, они не удерживаются."
+msgstr "These amounts are calculated from the payment and are paid on top of it: they are not withheld from what you receive."
+
+#: web/templates/web/print/payslip.html:84
+#, python-format
+msgid "На счёт %(bank)s, наличными %(cash)s."
+msgstr "To the account %(bank)s, in cash %(cash)s."
+
+#: web/templates/web/print/payslip.html:98
+msgid "Сотрудник · получил расчётный листок"
+msgstr "Employee · payslip received"
+
+#: web/templates/web/print/refused.html:12
+msgid "Форма не собрана"
+msgstr "The form was not built"
+
+#: web/templates/web/print/refused.html:14
+msgid "Вернуться"
+msgstr "Go back"
 
 #: web/templates/web/reconcile.html:14
 #, python-format
@@ -7629,126 +7971,3 @@ msgstr "entered manually"
 #: web/views.py:1621
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
-
-msgid "Партнёр и юрлица"
-msgstr "Partner and legal entities"
-
-msgid "Справочники → Юрлица"
-msgstr "Directories → Legal entities"
-
-msgid "Юрлицо — то, с чем работает бухгалтерия: зарплата, налоги и отчётность считаются по каждому отдельно."
-msgstr "A legal entity is what accounting works with: payroll, taxes and reporting are calculated for each one separately."
-
-msgid "В шапке написано название партнёра, а в справочнике юрлиц есть хотя бы одна строка."
-msgstr "The header shows the partner's name and the legal entities directory has at least one row."
-
-msgid "Самого партнёра заводит инженер — экрана для этого в продукте нет."
-msgstr "The partner itself is created by an engineer — there is no screen for that in the product."
-
-msgid "Точки и кассы"
-msgstr "Units and tills"
-
-msgid "Справочники → Точки"
-msgstr "Directories → Units"
-
-msgid "На точку вешаются часы, наличные расходы и строки P&L. Касса задаёт регистр учёта расхода, чтобы его не выбирали руками каждый раз."
-msgstr "Hours, cash expenses and P&L rows all hang on a unit. A till sets the ledger of an expense so that nobody has to pick it by hand every time."
-
-msgid "У каждой работающей точки есть касса, а у кассы — регистр учёта."
-msgstr "Every working unit has a till, and every till has a ledger."
-
-msgid "Точку не удаляют, а закрывают датой: в прошлых месяцах лежат её зарплаты."
-msgstr "A unit is not deleted but closed with a date: past months hold its payroll."
-
-msgid "Правила страны"
-msgstr "Country rules"
-
-msgid "Правило — это версия с датой, а не число в коде. Поэтому правка ставки в июле не переписывает уже закрытый июнь."
-msgstr "A rule is a version with a date, not a number in the code. That is why changing a rate in July does not rewrite an already closed June."
-
-msgid "Реестр открывается, и у каждого правила видно значение, уровень и дату начала действия."
-msgstr "The registry opens and every rule shows its value, its level and the date it starts to apply."
-
-msgid "Переопределение ставят на человека там, где нужно на группу. Уровень написан в строке правила — смотреть надо здесь, а не потом."
-msgstr "An override is put on a person where it belongs on a group. The level is written in the rule's row — check it here, not later."
-
-msgid "Группы и должности"
-msgstr "Groups and positions"
-
-msgid "Справочники → Группы сотрудников"
-msgstr "Directories → Employee groups"
-
-msgid "Группа отвечает, как считается работа и в какую строку затрат она попадёт. Должность — кого нанимаем и в какую группу он попадёт."
-msgstr "A group answers how the work is calculated and which cost row it lands in. A position answers who we hire and which group they land in."
-
-msgid "У группы задана схема расчёта и регистр учёта, у должности — группа и часы по договору."
-msgstr "A group has a calculation scheme and a ledger; a position has a group and contract hours."
-
-msgid "Пропущенный регистр учёта группы — отказ формы: продукт не угадывает, в каком контуре живут эти деньги."
-msgstr "A missing ledger on a group is a refusal from the form: the product does not guess which circuit this money lives in."
-
-msgid "Люди и условия найма"
-msgstr "People and employment terms"
-
-msgid "Справочники → Сотрудники"
-msgstr "Directories → Employees"
-
-msgid "Расчёт берёт условия найма по версии на дату — поэтому у ставки есть «действует с», а не просто значение."
-msgstr "The calculation takes employment terms by their version on a date — that is why a rate has a “from” and not just a value."
-
-msgid "У каждого работающего есть версия условий, действующая на первое число вашего первого месяца."
-msgstr "Everyone who works has a version of the terms that applies on the first day of your first month."
-
-msgid "Человек без условий найма не появляется в табеле вовсе — не «с нулями», а отсутствует: считать его нечем."
-msgstr "A person without employment terms does not appear in the timesheet at all — not “with zeros”, but absent: there is nothing to calculate them with."
-
-msgid "Справочники → Производственный календарь"
-msgstr "Directories → Production calendar"
-
-msgid "Отсюда берётся норма часов и число рабочих дней: на них опираются доплата до минимума и половина остальных правил."
-msgstr "Standard hours and the number of working days come from here: the top-up to the minimum and half of the other rules rest on them."
-
-msgid "У месяца, с которого вы начинаете, есть норма часов и число рабочих дней."
-msgstr "The month you start from has standard hours and a number of working days."
-
-msgid "Месяц заводят раньше календаря — тогда вместо нормы часов страница месяца прямо пишет, что календарь на него не заведён."
-msgstr "A month is created before the calendar for it — then, instead of standard hours, the month's page says plainly that no calendar has been created for it."
-
-msgid "Первый настоящий месяц"
-msgstr "The first real month"
-
-msgid "Онбординг заканчивается не обучением, а первой утверждённой ведомостью. Дальше месяц повторяется по той же полосе из трёх шагов."
-msgstr "Onboarding ends not with training but with the first approved payroll sheet. After that the month repeats along the same strip of three steps."
-
-msgid "Период утверждён, в истории видно, кто и когда это сделал, а в P&L появились строки."
-msgstr "The period is approved, the history shows who did it and when, and rows have appeared in the P&L."
-
-msgid "Ждут, что расчёт пройдёт и без закрытых часов по точкам. Что мешает утвердить месяц, продукт перечисляет до утверждения, а не после."
-msgstr "People expect the calculation to go through without hours being closed per unit. What stands in the way of approving the month, the product lists before approval, not after."
-
-msgid "Семь шагов до первой ведомости"
-msgstr "Seven steps to the first payroll sheet"
-
-msgid "Это не тур по кнопкам, а проход по настоящему месяцу. Первые шесть шагов\n  делаются один раз, когда партнёра заводят; седьмой повторяется каждый месяц.\n  Порядок не декоративный: каждый следующий шаг физически невозможен без\n  предыдущего, и продукт скажет об этом отказом, если попробовать иначе."
-msgstr "This is not a tour of buttons but a walk through a real month. The first six steps are done once, when the partner is set up; the seventh repeats every month. The order is not decorative: each next step is physically impossible without the previous one, and the product will say so with a refusal if you try otherwise."
-
-msgid "Где это"
-msgstr "Where it is"
-
-msgid "Готово, когда"
-msgstr "Done when"
-
-msgid "Здесь спотыкаются"
-msgstr "Where people stumble"
-
-msgid "Шаги с первого по шестой партнёр проходит вместе с внедренцем — на это уходит\n  день. Седьмой партнёр делает сам: это и есть проверка, что онбординг\n  сработал."
-msgstr "Steps one through six the partner walks together with the implementer — it takes a day. The seventh the partner does alone: that is the very check that the onboarding worked."
-
-msgid "Седьмой шаг крупным планом — то, что повторяется каждый месяц. Порядок в нём\n  обязательный: каждое следующее действие невозможно без предыдущего. На экранах\n  месяца тот же порядок показан полосой шагов, чтобы было видно, где вы\n  сейчас."
-msgstr "The seventh step close up — the part that repeats every month. Its order is mandatory: each next action is impossible without the previous one. On the month's screens the same order is shown as a strip of steps, so you can see where you are."
-
-msgid "Кому что выдано и что из этого следует — раздел «Роли и права». Он открыт\n  тому, у кого есть право вести роли; остальным его в шапке не видно."
-msgstr "Who has been given what, and what follows from it, lives in the “Roles and rights” section. It is open to whoever has the right to manage roles; others do not see it in the header at all."
-
-msgid "В шапке это два раздела: «Наличные расходы» — то, что вышло из кассы точки,\n  и «Инбокс документов» — очередь того, что продукт не смог отнести сам.\n  Список счетов открывается из инбокса и живёт в том же разделе."
-msgstr "In the header these are two sections: “Cash expenses” — what left a unit's till — and “Document inbox” — the queue of what the product could not classify by itself. The list of invoices opens from the inbox and lives in the same section."
