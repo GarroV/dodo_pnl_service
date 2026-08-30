@@ -99,7 +99,7 @@ is published in the Dodo IS Marketplace and passes moderation», но в раз�
 | `accounting:read` | Учёт: сырьё, списания, остатки, питание команды | да |
 | `accounting` | Устаревшая общая область, оставлена для совместимости | нет |
 | `sales` | Продажи (`/accounting/sales`) | да |
-| `incentives` | Вознаграждения и премии сотрудников | позже, для сверки |
+| `incentives` | Вознаграждения и премии сотрудников | **нет — зарплату из Dodo IS не берём (D061)** |
 | `unit:read` / `:write` | Заведения, цели на месяц | да (чтение) |
 | `unitshifts:read` | Смены заведений | да |
 | `organizationstructure` | Юрлица и их типы | да |
@@ -317,7 +317,7 @@ receipt(s)`, `Manufactures → Unit orders`, `Delivered orders`. То есть
 | Питание персонала | `accounting/staff-meals` | Прямо про открытый вопрос Q007: топли оброк в зарплате и списанный продукт в статье «Питание персонала» — двойной учёт видно только если обе цифры рядом |
 | Юрлица и точки | `organization-structure/legal-entities`, `legal-entity-types`, `units/shifts`, `units/work-stations` | Наполнение наших справочников и ключ сопоставления вместо ручного ввода |
 | Люди, должности, история должностей | `staff/members`, `members/search`, `staff/positions`, `positions/history` | Заведение сотрудника из интерфейса (T164) и версионирование условий: история должностей уже датирована — ложится на наши версии по датам |
-| Начисленное в Dodo IS | `staff/incentives-by-members`, `staff/incentives/premium` | Сверка: их премии против нашего расчёта. Не замена движку — налогов и схем Сербии там нет |
+| ~~Начисленное в Dodo IS~~ | ~~`staff/incentives-by-members`~~ | **Не берём (D061).** Метод отдаёт готовые суммы по сменам — дневные, ночные, за заказы, за километраж, за стаж, итог. Соблазн «взять для сверки» отвергнут владельцем: второй источник истины по зарплате обесценивает движок, ради которого продукт и строится. При расхождении непонятно, какая цифра правильная |
 | Цели на месяц | `units/month-goals` (GET, PATCH) | План выручки → план-факт в P&L. Единственное место, куда мы могли бы и **писать** план |
 | Себестоимость целиком | `accounting/stock-consumptions-by-period`, `incoming-stock-items` (+`/by-supply`), `inventory-stocks`, `stock-transfers`, `inventory/revisions`, `dough-consumption` | COGS считается не только списаниями: приход минус остаток с ревизией — то, что бухгалтер сводит руками |
 | Потери | `accounting/write-offs/products`, `write-offs/stock-items`, `defective-products`, `cancelled-sales` | Отдельные строки P&L и объяснение расхождений выручки |

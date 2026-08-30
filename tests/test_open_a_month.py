@@ -27,7 +27,13 @@ def test_the_empty_list_offers_to_open_a_month(client, web_env):
     """Пустое состояние предлагает действие, а не команду в терминале."""
     from core.models import Period
 
-    saved = list(Period.objects.values_list("id", flat=True))
+    # Сохраняем месяц ЦЕЛИКОМ, а не один его номер. Раньше здесь запоминались
+    # только id, а восстанавливались все как июнь — пока период был один, это
+    # сходило с рук. С появлением второго месяца (продукт умеет заводить их с
+    # экрана) восстановление делало из июля второй июнь, и дальше сыпалась
+    # половина прогона: сорок восемь проверок расчёта падали, а каждая по
+    # отдельности была зелёной. Найдено бинарным поиском по прогону.
+    saved = list(Period.objects.values("id", "tenant_id", "period", "status"))
     Period.objects.all().delete()
     try:
         login_as(client, "director")
@@ -38,9 +44,7 @@ def test_the_empty_list_offers_to_open_a_month(client, web_env):
         assert "Завести месяц" in html or "Open a month" in html
     finally:
         # Периоды сида нужны соседним тестам: без них рушится половина прогона.
-        Period.objects.bulk_create(
-            [Period(id=pk, tenant_id=_tenant(), period=JUNE) for pk in saved]
-        )
+        Period.objects.bulk_create([Period(**row) for row in saved])
 
 
 def test_a_month_is_opened_from_the_screen(client, web_env):
