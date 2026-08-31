@@ -1,0 +1,65 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Список пространств — первый экран платформенной админки.
+
+Счётчик людей стоит в таблице не для красоты: пустое пространство и живое
+выглядят одинаково, а разница между ними — «партнёра подключили» и «завели и
+забыли». Это же место, куда встанет остальная статистика, когда она понадобится
+(заходы, активность): колонка добавляется, а экран не переделывается.
+
+Форма заведения — на этом же экране, а не отдельной страницей. Заводят партнёра
+редко, но всегда глядя на список: не появился ли он уже.
+{% endcomment %}
+{% block title %}{% translate "Пространства" %}{% endblock %}
+{% block content %}
+<h1>{% translate "Пространства" %}</h1>
+<p class="sub">{% blocktranslate %}Партнёры, заведённые в продукте. Пространство и первого человека заводит администратор платформы — сам себя партнёр создать не может.{% endblocktranslate %}</p>
+
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+{% if error %}{% notice "alert" %}{{ error }}{% endnotice %}{% endif %}
+
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Пространство" %}</th>
+      <th>{% translate "Код" %}</th>
+      <th>{% translate "Страна" %}</th>
+      <th>{% translate "Валюта учёта" %}</th>
+      <th class="num">{% translate "Людей" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for space in spaces %}
+    <tr>
+      <td><a href="{% url 'platform-space' tenant_id=space.id %}">{{ space.title }}</a></td>
+      <td>{{ space.code }}</td>
+      <td>{{ space.country_code }}</td>
+      <td>{{ space.base_currency }}</td>
+      <td class="num">{{ space.people }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">{% translate "Ни одного пространства ещё нет." %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+
+<h2>{% translate "Завести пространство" %}</h2>
+<p class="sub">{% blocktranslate %}Вместе с пространством заводятся его роли и первый человек — иначе войти в него будет некому. Точки, юрлица и статьи расходов партнёр заводит сам.{% endblocktranslate %}</p>
+<form class="card" method="post" action="{% url 'platform-space-create' %}">
+  {% csrf_token %}
+  {% translate "Название" as f_title %}{% translate "Код" as f_code %}
+  {% include "web/components/field.html" with id="id_title" name="title" label=f_title placeholder="Dodo Serbia" required=1 stacked=1 %}
+  {% include "web/components/field.html" with id="id_code" name="code" label=f_code placeholder="rs-dodo" required=1 stacked=1 %}
+  {% translate "Страна" as f_country %}{% translate "Валюта учёта" as f_base %}{% translate "Валюта отчёта" as f_report %}
+  {% include "web/components/field.html" with id="id_country" name="country_code" label=f_country value="RS" required=1 stacked=1 %}
+  {% include "web/components/field.html" with id="id_base" name="base_currency" label=f_base value="RSD" required=1 stacked=1 %}
+  {% include "web/components/field.html" with id="id_report" name="report_currency" label=f_report value="EUR" required=1 stacked=1 %}
+  {% translate "Логин первого человека" as f_login %}{% translate "Как его зовут" as f_name %}{% translate "Пароль" as f_pass %}
+  {% include "web/components/field.html" with id="id_login" name="admin_username" label=f_login required=1 stacked=1 %}
+  {% include "web/components/field.html" with id="id_name" name="admin_full_name" label=f_name stacked=1 %}
+  {% include "web/components/field.html" with id="id_pass" name="admin_password" label=f_pass type="password" required=1 stacked=1 %}
+  {% translate "Его роль" as f_role %}
+  {% include "web/components/select.html" with id="id_role" name="role_code" label=f_role options=role_options stacked=1 %}
+  <button type="submit" class="primary">{% translate "Завести пространство" %}</button>
+</form>
+{% endblock %}

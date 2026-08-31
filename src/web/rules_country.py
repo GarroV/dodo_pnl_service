@@ -42,7 +42,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from core.models import PlatformAdmin, RulePreset
+from core.models import RulePreset
+from core.spaces import is_platform_admin
 from payroll.presets import LOCALIZED_KEYS, set_path, to_jsonable
 
 __all__ = [
@@ -83,7 +84,7 @@ def may_edit(who) -> bool:
     человеку видна политикой, чужие — нет, поэтому вопрос честный и без
     обхода RLS.
     """
-    return who is not None and PlatformAdmin.objects.filter(user_id=who.user_id).exists()
+    return is_platform_admin(who.user_id if who is not None else None)
 
 
 def explain_refusal() -> str:

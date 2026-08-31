@@ -15,6 +15,7 @@ from . import (
     positions_views,
     printing_views,
     reports_views,
+    platform_views,
     roles_views,
     rules_views,
     suppliers_api,
@@ -87,6 +88,17 @@ urlpatterns = [
         name="payslip-print",
     ),
     # Вход: логин с паролем, выход, смена своего пароля.
+    # Платформенная админка (D065, issue #193). Отдельный префикс, а не раздел
+    # админки партнёра: право не партнёрское, и по адресу это должно быть видно
+    # так же, как видно по правам.
+    path("platform/", platform_views.index, name="platform-index"),
+    path("platform/new/", platform_views.space_create, name="platform-space-create"),
+    path("platform/<uuid:tenant_id>/", platform_views.space, name="platform-space"),
+    path(
+        "platform/<uuid:tenant_id>/roles/",
+        platform_views.member_role,
+        name="platform-member-role",
+    ),
     path("login/", views.login_page, name="login"),
     path("logout/", views.logout_page, name="logout"),
     path("account/password/", views.password_change, name="password-change"),

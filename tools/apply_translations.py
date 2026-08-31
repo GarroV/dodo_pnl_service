@@ -12,8 +12,20 @@
 
     python tools/apply_translations.py перевод1.json перевод2.json ...
 
-Каталоги перед этим должны быть собраны `manage.py makemessages`: скрипт только
-заполняет `msgstr`, но не заводит записей — иначе каталог разошёлся бы с кодом.
+По умолчанию скрипт только заполняет `msgstr` у записей, которые уже есть в
+каталоге. Ключ `--add` разрешает **дописать** отсутствующие записи в конец файла.
+
+Зачем ключ понадобился. Прежде записи заводил `manage.py makemessages`, но
+запускать его по рабочему каталогу нельзя: он переписывает файл целиком, тасует
+порядок, подставляет угаданные `fuzzy`-переводы и вычищает всё, чего не нашёл в
+своём обходе. Проверено дважды — T102 и 31.08.2026, когда один прогон молча снёс
+30 живых переводов. Инструмент, который требовал запрещённого шага, оставлял
+единственный законный путь — правку `.po` руками, а это тридцать записей за раз
+с ручным экранированием.
+
+`--add` только добавляет: существующие записи не трогаются, порядок не меняется,
+ничего не удаляется. Проверить это можно тем же способом, каким находят беду, —
+`git diff --stat` обязан показать одни добавления.
 """
 from __future__ import annotations
 
@@ -152,7 +164,66 @@ def apply(po: Path, table: dict[str, str]) -> tuple[int, list[str]]:
     return filled, problems
 
 
+def existing(po: Path) -> set[str]:
+    """Ключи, которые в каталоге уже есть — многострочные тоже."""
+    lines = po.read_text(encoding="utf-8").splitlines()
+    found: set[str] = set()
+    index = 0
+    while index < len(lines):
+        if not lines[index].startswith("msgid "):
+            index += 1
+            continue
+        parts = [lines[index][len("msgid "):]]
+        index += 1
+        while index < len(lines) and lines[index].startswith('"'):
+            parts.append(lines[index])
+            index += 1
+        found.add(unquote(parts))
+    return found
+
+
+def wrap(prefix: str, text: str, width: int = 72) -> str:
+    """Запись `.po`: короткая в одну строку, длинная — как её пишет gettext."""
+    if len(text) + len(prefix) + 3 <= width and "\n" not in text:
+        return f"{prefix} {quote(text)}"
+    parts: list[str] = []
+    line = ""
+    for word in text.split(" "):
+        if line and len(line) + len(word) + 1 > width:
+            parts.append(line + " ")
+            line = word
+        else:
+            line = f"{line} {word}" if line else word
+    parts.append(line)
+    body = "\n".join(quote(part) for part in parts)
+    return f'{prefix} ""\n{body}'
+
+
+def add(po: Path, table: dict[str, str], source_hint: str) -> tuple[int, list[str]]:
+    """Дописать записи, которых в каталоге нет. Только добавление."""
+    known = existing(po)
+    problems: list[str] = []
+    blocks: list[str] = []
+    for source, translated in sorted(table.items()):
+        if source in known:
+            continue
+        broken = check(source, translated)
+        if broken:
+            problems.append(f"{'; '.join(broken)}: {source[:60]}")
+            continue
+        marker = "#, python-format\n" if PLACEHOLDER.search(source) else ""
+        blocks.append(f"#: {source_hint}\n{marker}" + wrap("msgid", source) + "\n" + wrap("msgstr", translated))
+    if not blocks:
+        return 0, problems
+    with po.open("a", encoding="utf-8") as handle:
+        handle.write("\n" + "\n\n".join(blocks) + "\n")
+    return len(blocks), problems
+
+
 def main(argv: list[str]) -> int:
+    allow_add = "--add" in argv
+    argv = [name for name in argv if name != "--add"]
+
     table: dict[str, dict[str, str]] = {}
     for name in argv:
         part = json.loads(Path(name).read_text(encoding="utf-8"))
@@ -168,8 +239,16 @@ def main(argv: list[str]) -> int:
             print(f"нет каталога {po} — соберите makemessages")
             return 2
         column = {key: value[language] for key, value in table.items() if value.get(language)}
+        added = 0
+        if allow_add:
+            added, add_problems = add(po, column, "новые строки, добавлены tools/apply_translations.py")
+            problems_of_add = add_problems
+        else:
+            problems_of_add = []
         filled, problems = apply(po, column)
-        print(f"{language}: заполнено {filled} из {len(column)}")
+        problems = problems_of_add + problems
+        print(f"{language}: заполнено {filled} из {len(column)}"
+              + (f", добавлено записей {added}" if allow_add else ""))
         for problem in problems:
             failed = True
             print(f"  ОТКАЗ {problem}")

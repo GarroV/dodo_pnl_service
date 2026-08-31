@@ -1,0 +1,66 @@
+{% extends "web/base.html" %}{% load ui i18n %}
+{% comment %}
+Внутрь пространства: кто в нём состоит и с какими ролями.
+
+Строка — человек, а не членство. Ролей у человека может быть несколько сразу
+(T170), и разложив их по строкам, мы показали бы одного сотрудника дважды — как
+двоих однофамильцев.
+
+Роли этого экрана выдаёт администратор платформы, и это не дублирование экрана
+ролей партнёра: там партнёр ведёт своих людей внутри своего пространства, здесь
+платформа заводит первых и чинит доступ, когда партнёр себя запер.
+{% endcomment %}
+{% block title %}{{ space.title }}{% endblock %}
+{% block content %}
+<p class="note"><a href="{% url 'platform-index' %}">{% translate "← Все пространства" %}</a></p>
+<h1>{{ space.title }}</h1>
+<p class="sub">{{ space.code }} · {{ space.country_code }} · {% translate "учёт в" %} {{ space.base_currency }}, {% translate "отчёт в" %} {{ space.report_currency }}</p>
+
+{% if notice %}{% notice "ok" %}{{ notice }}{% endnotice %}{% endif %}
+{% if error %}{% notice "alert" %}{{ error }}{% endnotice %}{% endif %}
+
+<h2>{% translate "Люди пространства" %}</h2>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Человек" %}</th>
+      <th>{% translate "Логин" %}</th>
+      <th>{% translate "Роли" %}</th>
+      <th>{% translate "Снять роль" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for person in people %}
+    <tr>
+      <td>{{ person.name }}{% if not person.is_active %} <span class="muted">{% translate "(отключён)" %}</span>{% endif %}</td>
+      <td>{{ person.username }}</td>
+      <td>{% for role in person.roles %}{{ role.title }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+      <td>
+        <form method="post" action="{% url 'platform-member-role' tenant_id=space.id %}" class="inline">
+          {% csrf_token %}
+          <input type="hidden" name="user_id" value="{{ person.user_id }}">
+          <input type="hidden" name="action" value="revoke">
+          <select name="role_id">
+            {% for role in person.roles %}<option value="{{ role.id }}">{{ role.title }}</option>{% endfor %}
+          </select>
+          <button type="submit">{% translate "Снять" %}</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">{% translate "В пространстве нет ни одного человека." %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+
+<h2>{% translate "Выдать роль" %}</h2>
+<p class="sub">{% blocktranslate %}Логин человека должен уже существовать: одной учёткой можно работать у нескольких партнёров. Нового человека партнёр заводит сам на своём экране ролей.{% endblocktranslate %}</p>
+<form class="card" method="post" action="{% url 'platform-member-role' tenant_id=space.id %}">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="grant">
+  {% translate "Идентификатор человека" as f_person %}{% translate "Роль" as f_role %}
+  {% include "web/components/field.html" with id="id_person" name="user_id" label=f_person required=1 stacked=1 %}
+  {% include "web/components/select.html" with id="id_grant_role" name="role_id" label=f_role options=role_options stacked=1 %}
+  <button type="submit" class="primary">{% translate "Выдать" %}</button>
+</form>
+{% endblock %}

@@ -26,7 +26,7 @@ from django.utils.timezone import now
 
 from core import models
 from core.role_delivery import product_shape
-from core.roles import ROLE_ORDER, ROLE_SHAPES
+from core.roles import DEFAULT_TITLES, ROLE_ORDER, ROLE_SHAPES
 from core.rules import import_presets
 from payroll import load_preset
 from payroll.importers import read_plata
@@ -71,12 +71,9 @@ class SeedRole(NamedTuple):
 # что партнёр получит у себя. Пока списков было два, они разъехались у
 # администратора сети — молча и на полтора месяца. Названия при этом свои:
 # у продукта русские, у демо английские (D035).
-TITLES = {
-    "director": "Оперативный директор",
-    "accountant": "Бухгалтер",
-    "manager": "Управляющий точки",
-    "admin": "Администратор сети",
-}
+# Названия — из `core.roles`, а не свои: партнёра заводит не только сид, но и
+# платформенная админка (D065), и две копии словаря разъехались бы молча.
+TITLES = DEFAULT_TITLES
 
 ROLES = [
     SeedRole(

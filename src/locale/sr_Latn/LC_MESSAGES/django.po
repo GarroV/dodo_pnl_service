@@ -7827,3 +7827,164 @@ msgstr "ručno uneto"
 #: web/views.py:1621
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "(отключён)"
+msgstr "(isključen)"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "В пространстве нет ни одного человека."
+msgstr "U ovom prostoru još nema nijedne osobe."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Валюта отчёта"
+msgstr "Valuta izveštaja"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Валюта учёта"
+msgstr "Valuta knjiženja"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Вместе с пространством заводятся его роли и первый человек — иначе войти "
+"в него будет некому. Точки, юрлица и статьи расходов партнёр заводит "
+"сам."
+msgstr "Prostor se otvara zajedno sa svojim ulogama i prvom osobom — inače ne bi imao ko da se prijavi. Objekte, pravna lica i stavke troškova partner unosi sam."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Дайте пространству название: его увидят люди партнёра."
+msgstr "Dajte prostoru naziv: videće ga ljudi partnera."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Его роль"
+msgstr "Njihova uloga"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Завести пространство"
+msgstr "Otvori prostor"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Идентификатор человека"
+msgstr "Identifikator osobe"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Как его зовут"
+msgstr "Ime i prezime"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Логин «%(login)s» уже занят. Если это тот же человек, заведите "
+"пространство и выдайте ему роль отдельно."
+msgstr "Prijava „%(login)s“ je već zauzeta. Ako je to ista osoba, otvorite prostor pa joj posebno dodelite ulogu."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Логин первого человека"
+msgstr "Prijava prve osobe"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Логин человека должен уже существовать: одной учёткой можно работать у "
+"нескольких партнёров. Нового человека партнёр заводит сам на своём "
+"экране ролей."
+msgstr "Prijava osobe mora već postojati: jednim nalogom može se raditi kod više partnera. Novu osobu partner dodaje sam na svom ekranu uloga."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Людей"
+msgstr "Ljudi"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Люди пространства"
+msgstr "Ljudi u prostoru"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Ни одного пространства ещё нет."
+msgstr "Još nema nijednog prostora."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Партнёры, заведённые в продукте. Пространство и первого человека заводит "
+"администратор платформы — сам себя партнёр создать не может."
+msgstr "Partneri uvedeni u proizvod. Prostor i prvu osobu otvara administrator platforme — partner ne može sam sebe da kreira."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Первому человеку нужен логин — иначе в пространство некому войти."
+msgstr "Prvoj osobi treba prijava — inače nema ko da se prijavi u prostor."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Первому человеку нужен пароль."
+msgstr "Prvoj osobi treba lozinka."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Пространства"
+msgstr "Prostori"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Пространствами партнёров управляет администратор платформы. Это право не "
+"входит ни в одну роль партнёра и выдаётся вне продукта."
+msgstr "Prostorima partnera upravlja administrator platforme. To pravo ne pripada nijednoj ulozi partnera i dodeljuje se izvan proizvoda."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Пространство"
+msgstr "Prostor"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "Пространство «%(title)s» заведено. Первый человек может входить."
+msgstr "Prostor „%(title)s“ je otvoren. Prva osoba može da se prijavi."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "Пространство с кодом «%(code)s» уже есть."
+msgstr "Prostor sa šifrom „%(code)s“ već postoji."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "Роли «%(role)s» в продукте нет. Выберите одну из: %(known)s"
+msgstr "Uloga „%(role)s“ ne postoji u proizvodu. Izaberite jednu od: %(known)s"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Роль выдана."
+msgstr "Uloga je dodeljena."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Роль снята."
+msgstr "Uloga je uklonjena."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Снять"
+msgstr "Ukloni"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Такого пространства нет."
+msgstr "Takav prostor ne postoji."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Такого человека нет."
+msgstr "Takva osoba ne postoji."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Такой роли в этом пространстве нет."
+msgstr "Takva uloga ne postoji u ovom prostoru."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "У пространства должен быть код — по нему его находят в системе."
+msgstr "Prostor mora imati šifru — po njoj se pronalazi u sistemu."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Этой роли у человека и не было."
+msgstr "Osoba ionako nije imala tu ulogu."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "отчёт в"
+msgstr "izveštaj u"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "учёт в"
+msgstr "knjiženje u"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "← Все пространства"
+msgstr "← Svi prostori"
