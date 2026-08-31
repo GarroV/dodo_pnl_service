@@ -48,6 +48,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, PayslipTotals, Tenant
+from core.feeds import trusted_sources
 from core.models import Timesheet as TimesheetRow
 from payroll import (
     HOURS,
@@ -147,13 +148,26 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
     """Табели периода вместе с действующими условиями найма."""
     terms = terms_in_force(tenant_id, period)
 
+    # Какие источники часов партнёр берёт в расчёт (D063). Спрашивается один раз
+    # на весь сбор, а не у каждой строки: состояние потока за время одного
+    # расчёта не меняется, а запрос на строку превратил бы это в N+1.
+    allowed = set(trusted_sources(tenant_id))
+
     cases: list[Case] = []
     missing: list[str] = []
+    untrusted: list[str] = []
     for sheet in (
         TimesheetRow.objects.filter(tenant_id=tenant_id, period=period)
         .select_related("employee")
         .order_by("employee__last_name", "employee__first_name")
     ):
+        if (sheet.source or "manual") not in allowed:
+            # Часы приехали из потока, который партнёр ещё не взял в работу
+            # (режим сверки). Считать по ним нельзя, но и пропустить молча
+            # нельзя тем более: итог вышел бы неполным, и увидеть это было бы
+            # негде — человек решил бы, что столько и отработали.
+            untrusted.append(sheet.employee.external_id)
+            continue
         term = terms.get(sheet.employee_id)
         if term is None:
             missing.append(sheet.employee.external_id)
@@ -203,6 +217,13 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
             )
         )
 
+    if untrusted:
+        raise PayrunRefused(
+            _("часы этих людей пришли из источника, который ещё не взят в работу. "
+              "Пока источник в режиме сверки, расчёт по нему не делается — "
+              "включите источник или внесите часы обычным путём."),
+            details=sorted(untrusted),
+        )
     if missing:
         # Сколько их — в тексте не называется намеренно (T114). Число людей
         # расчёта — это счётчик строк по всему партнёру, и роли с неполным

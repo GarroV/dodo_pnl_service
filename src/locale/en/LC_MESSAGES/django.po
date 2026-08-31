@@ -61,6 +61,16 @@ msgstr ""
 "No employment terms for this month. A calculation without them would look "
 "correct, so it does not run."
 
+#: payrun/calc.py:206
+msgid ""
+"часы этих людей пришли из источника, который ещё не взят в работу. Пока "
+"источник в режиме сверки, расчёт по нему не делается — включите источник "
+"или внесите часы обычным путём."
+msgstr ""
+"the hours for these people came from a source that has not been put to "
+"work yet. While the source is in review mode, no payroll is calculated "
+"from it — switch the source on or enter the hours the usual way."
+
 #: payrun/calc.py:219
 msgid ""
 "за этот период нет ни одного табеля — считать нечего. Внесите часы и "
