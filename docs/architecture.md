@@ -181,7 +181,8 @@
 | Роли, сценарии, требования к интерфейсу | [design-brief.md](design-brief.md) |
 | Правила расчёта Сербии и что осталось неясным | [payroll-engine.md](payroll-engine.md) |
 | Разбор накладных: контракт и механики | [document-recognition.md](document-recognition.md) |
-| Внешний API Dodo IS | [dodo-is-api.md](dodo-is-api.md) |
+| Коннектор Dodo IS: состояние работ | [dodo-is.md](dodo-is.md) |
+| Внешний API Dodo IS: справочник | [dodo-is-api.md](dodo-is-api.md) |
 | Долги по схеме фактов | [backlog-facts.md](backlog-facts.md) |
 | Полный список адресов | [routes.md](routes.md) |
 | Спека, план, решения, вопросы владельцу | [forge/](forge/) |
