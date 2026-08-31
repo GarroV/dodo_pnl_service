@@ -1,0 +1,844 @@
+<title>Подключение к Dodo IS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+:root {
+  --ground: #F1F3F6;
+  --surface: #FFFFFF;
+  --surface-sunk: #E8ECF1;
+  --ink: #10141C;
+  --ink-soft: #3C4554;
+  --muted: #626C7E;
+  --line: #D6DCE4;
+  --line-soft: #E5E9EF;
+  --accent: #0F6268;
+  --accent-soft: #E0EFF0;
+  --signal: #9A5314;
+  --signal-soft: #F7EADC;
+  --ok: #2C6349;
+  --ok-soft: #E1EFE8;
+  --code-bg: #12181F;
+  --code-ink: #DCE3EC;
+  --code-dim: #7C8899;
+  --code-accent: #6BC6C9;
+
+  --step: clamp(1.35rem, 1.1rem + 0.9vw, 1.75rem);
+  --h2: clamp(1.6rem, 1.3rem + 1.2vw, 2.2rem);
+  --body: clamp(1rem, 0.97rem + 0.16vw, 1.09rem);
+  --small: 0.845rem;
+  --tiny: 0.735rem;
+
+  --rail: 2.75rem;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0C1017;
+    --surface: #141A22;
+    --surface-sunk: #1B222C;
+    --ink: #E7ECF3;
+    --ink-soft: #C2CAD6;
+    --muted: #8E99A9;
+    --line: #28313D;
+    --line-soft: #1F2731;
+    --accent: #56BFC4;
+    --accent-soft: #143135;
+    --signal: #DFA160;
+    --signal-soft: #33261A;
+    --ok: #63BC91;
+    --ok-soft: #16301F;
+    --code-bg: #0A0E14;
+    --code-ink: #D5DDE8;
+    --code-dim: #6B7789;
+    --code-accent: #6BC6C9;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #0C1017;
+  --surface: #141A22;
+  --surface-sunk: #1B222C;
+  --ink: #E7ECF3;
+  --ink-soft: #C2CAD6;
+  --muted: #8E99A9;
+  --line: #28313D;
+  --line-soft: #1F2731;
+  --accent: #56BFC4;
+  --accent-soft: #143135;
+  --signal: #DFA160;
+  --signal-soft: #33261A;
+  --ok: #63BC91;
+  --ok-soft: #16301F;
+  --code-bg: #0A0E14;
+  --code-ink: #D5DDE8;
+  --code-dim: #6B7789;
+  --code-accent: #6BC6C9;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: var(--body);
+  line-height: 1.62;
+  margin: 0;
+  padding: clamp(1.5rem, 1rem + 3vw, 4rem) clamp(1rem, 0.5rem + 3vw, 2rem) 6rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 54rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 2rem + 2vw, 4rem);
+}
+
+/* --- шапка --- */
+
+.masthead { display: flex; flex-direction: column; gap: 1.1rem; }
+
+.eyebrow {
+  font-family: var(--sans);
+  font-size: var(--tiny);
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+
+h1 {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(2.1rem, 1.5rem + 3vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.standfirst {
+  font-size: clamp(1.08rem, 1rem + 0.4vw, 1.25rem);
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 40rem;
+}
+
+.state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  padding: 0.9rem 1.15rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+.state div { display: flex; flex-direction: column; gap: 0.15rem; }
+.state dt {
+  font-family: var(--sans);
+  font-size: var(--tiny);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+.state dd {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: var(--small);
+  font-weight: 600;
+}
+
+/* --- общие блоки --- */
+
+h2 {
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: var(--h2);
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  text-wrap: balance;
+  margin: 0;
+}
+
+h3 {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.005em;
+  margin: 0 0 0.35rem;
+}
+
+p { margin: 0 0 0.85rem; }
+p:last-child { margin-bottom: 0; }
+
+a { color: var(--accent); text-underline-offset: 0.18em; }
+a:focus-visible, input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+strong { font-weight: 600; }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--surface-sunk);
+  padding: 0.1em 0.34em;
+  border-radius: 2px;
+  word-break: break-word;
+}
+
+.note {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 2px;
+  padding: 1.05rem 1.25rem;
+  font-size: 0.96rem;
+}
+.note.warn { border-left-color: var(--signal); }
+
+.note h3 { color: var(--accent); }
+.note.warn h3 { color: var(--signal); }
+
+/* --- части --- */
+
+.part { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.part-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 2px solid var(--ink);
+}
+.part-head .eyebrow { color: var(--muted); }
+.part-head p { color: var(--ink-soft); max-width: 42rem; }
+
+/* --- лента шагов --- */
+
+.steps { display: flex; flex-direction: column; gap: 1.25rem; list-style: none; padding: 0; margin: 0; }
+
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--rail) 1fr;
+  gap: 0 1.15rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1.35rem 1.4rem 1.45rem 0.9rem;
+}
+
+.step-num {
+  grid-row: 1 / span 3;
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+  padding-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.step-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 0.75rem; margin-bottom: 0.6rem; }
+
+.step-title {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: var(--step);
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  margin: 0;
+  flex: 1 1 18rem;
+}
+
+.who {
+  font-family: var(--sans);
+  font-size: var(--tiny);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.24rem 0.55rem;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.who.you { background: var(--signal-soft); color: var(--signal); }
+.who.me { background: var(--accent-soft); color: var(--accent); }
+
+.step-body { display: flex; flex-direction: column; gap: 0.85rem; }
+.step-body > :is(p, ul, ol) { margin: 0; }
+
+ul, ol { padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.4rem; margin: 0; }
+li { padding-left: 0.15rem; }
+li::marker { color: var(--muted); }
+
+/* --- код --- */
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-ink);
+  font-family: var(--mono);
+  font-size: 0.815rem;
+  line-height: 1.65;
+  padding: 0.95rem 1.1rem;
+  border-radius: 3px;
+  overflow-x: auto;
+  margin: 0;
+  border: 1px solid var(--line);
+}
+pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+pre .k { color: var(--code-accent); }
+pre .c { color: var(--code-dim); }
+
+/* --- развилка --- */
+
+.fork {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  background: var(--signal-soft);
+  border: 1px solid var(--signal);
+  border-radius: 3px;
+  padding: 1.4rem 1.5rem;
+}
+.fork > h2 { font-size: 1.35rem; }
+.fork > p { color: var(--ink-soft); }
+.branches { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.branch {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0.95rem 1.1rem;
+  font-size: 0.94rem;
+}
+.branch .verdict {
+  font-family: var(--mono);
+  font-size: var(--small);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+.branch.good .verdict { color: var(--ok); }
+.branch.bad .verdict { color: var(--signal); }
+
+/* --- чек-лист --- */
+
+.check {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  font-family: var(--sans);
+  font-size: 0.93rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--surface-sunk);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.check input {
+  margin: 0.2rem 0 0;
+  accent-color: var(--accent);
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+.check input:checked + span { color: var(--muted); text-decoration: line-through; }
+
+.checks { display: flex; flex-direction: column; gap: 0.4rem; }
+
+/* --- таблица --- */
+
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 0.55rem 0.8rem 0.55rem 0; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+th {
+  font-family: var(--sans);
+  font-size: var(--tiny);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+td code { font-size: 0.82em; }
+
+/* --- подвал --- */
+
+.colophon {
+  border-top: 1px solid var(--line);
+  padding-top: 1.4rem;
+  font-size: var(--small);
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 34rem) {
+  .step { grid-template-columns: 1fr; padding-left: 1.4rem; }
+  .step-num { grid-row: auto; text-align: left; margin-bottom: 0.2rem; }
+}
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Шестая очередь · коннектор</p>
+    <h1>Подключение к Dodo IS</h1>
+    <p class="standfirst">
+      Восемь шагов от пустого места до часов, которые приезжают в табель сами.
+      Первые четыре делаете вы, и до них ничего не начнётся.
+    </p>
+    <dl class="state">
+      <div><dt>Берём</dt><dd>Только отработанные часы</dd></div>
+      <div><dt>Метод</dt><dd><code>GET /staff/shifts</code></dd></div>
+      <div><dt>Есть сейчас</dt><dd>Ничего</dd></div>
+      <div><dt>Блокирует</dt><dd>Шаги 1–4</dd></div>
+    </dl>
+  </header>
+
+  <div class="note">
+    <h3>Почему только часы</h3>
+    <p>
+      Dodo IS отдаёт многое — выручку, себестоимость, готовые начисления. Всё это
+      мы считаем сами, ради этого продукт и строится: второй источник истины
+      обесценивает движок, а при расхождении непонятно, какая цифра правильная.
+      Часы — единственное, чего у нас нет и что вбивают руками каждый месяц.
+    </p>
+    <p>
+      Расширить объём потом можно без переписывания: каждый поток данных —
+      отдельный выключатель с режимом сверки, когда цифра видна, но в расчёт не идёт.
+    </p>
+  </div>
+
+  <section class="part">
+    <div class="part-head">
+      <p class="eyebrow">Часть первая</p>
+      <h2>Без кода</h2>
+      <p>
+        Четыре шага, которые нельзя ни автоматизировать, ни ускорить: их делает
+        человек с почтой, учёткой партнёра и десятью минутами в Postman. Писать
+        коннектор к API, ответа которого никто не видел, — гадание, поэтому до
+        конца четвёртого шага я к коду не притрагиваюсь.
+      </p>
+    </div>
+
+    <ol class="steps">
+
+      <li class="step">
+        <div class="step-num">01</div>
+        <div class="step-head">
+          <h3 class="step-title">Собрать три вещи</h3>
+          <span class="who you">Вы</span>
+        </div>
+        <div class="step-body">
+          <p>
+            Всё, что понадобится дальше. Третий пункт — не формальность, а решение,
+            которое стоит принять до, а не после.
+          </p>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-key="s1a"><span>Гугл-почта для кабинета разработчика — регистрация идёт через неё</span></label>
+            <label class="check"><input type="checkbox" data-key="s1b"><span>Учётка Dodo IS партнёра Сербии с ролью не ниже <strong>Store Manager</strong> (лучше Division administrator) — смены открыты только этим ролям</span></label>
+            <label class="check"><input type="checkbox" data-key="s1c"><span>Ответ партнёра: <strong>под чьей учёткой коннектор будет ходить постоянно</strong></span></label>
+          </div>
+          <div class="note warn">
+            <h3>Про третий пункт</h3>
+            <p>
+              Сервисного токена у Dodo IS фактически нет: он не привязан к
+              пользователю, а значит не имеет доступов по ролям и заведениям — и
+              62 метода из 78 ему просто не ответят. Коннектор всегда ходит от
+              имени живого человека.
+            </p>
+            <p>
+              Значит это не разовый вход, а постоянная зависимость: человек
+              уволился, сменил пароль или отозвал согласие — сбор часов встал.
+              Лучше сразу договориться, чья это будет учётка и кто предупредит,
+              если с ней что-то изменится.
+            </p>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-num">02</div>
+        <div class="step-head">
+          <h3 class="step-title">Завести приложение в кабинете</h3>
+          <span class="who you">Вы</span>
+        </div>
+        <div class="step-body">
+          <p>
+            Кабинет разработчика — <a href="https://marketplace.dodois.io/manage/apps">marketplace.dodois.io/manage/apps</a>.
+            В статье базы знаний тот же кабинет указан как <code>/dev/apps</code>;
+            расхождение не проверено, работает какой-то один — увидите на месте.
+          </p>
+          <p>Форма спросит немного:</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Поле</th><th>Что ставить</th></tr></thead>
+              <tbody>
+                <tr><td>Способ добавления</td><td>Создать новое</td></tr>
+                <tr><td>Название приложения</td><td><strong>Человеческое</strong> — его увидит партнёр в окне согласия. «Dodo P&amp;L», не «dodo_pnl_service»</td></tr>
+                <tr><td>Способ авторизации</td><td><strong>Device Flow</strong> — почему, ниже</td></tr>
+                <tr><td>Название организации</td><td>От чьего лица просим доступ. Тоже видно партнёру</td></tr>
+                <tr><td>Контакт</td><td>Telegram или WhatsApp</td></tr>
+                <tr><td>Публичная оферта</td><td>Галочка обязательна — прочитать до, а не после</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Полей адреса возврата и списка scope в форме нет: scope запрашиваются
+            в самом запросе токена, то есть расширять набор данных потом можно не
+            возвращаясь сюда.
+          </p>
+          <div class="note warn">
+            <h3>Почему Device Flow, а не Authorization Code</h3>
+            <p>
+              Authorization Code требует <code>redirect_uri</code>, а поля для
+              него в форме нет — адрес всплывёт дальше и должен совпадать
+              посимвольно. Наш публичный адрес сейчас временный и поменяется,
+              то есть приложение пришлось бы переделывать. Для фонового забора
+              часов вход человека через браузер не нужен вообще.
+            </p>
+            <p>
+              <strong>Client Id привязан к потоку.</strong> Клиент, выданный под
+              один способ, для другого не работает — сменить поток означает
+              завести второе приложение.
+            </p>
+          </div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-key="s2a"><span>Приложение создано, способ — Device Flow</span></label>
+            <label class="check"><input type="checkbox" data-key="s2b"><span><code>Client Id</code> и <code>Client Secret</code> сохранены — показываются <strong>один раз</strong>, сразу после создания</span></label>
+          </div>
+          <p>
+            Secret не пересылать в переписку и не коммитить: репозиторий у нас
+            публичный. Место ему — переменные окружения площадки.
+          </p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-num">03</div>
+        <div class="step-head">
+          <h3 class="step-title">Взять первый токен руками</h3>
+          <span class="who you">Вы</span>
+        </div>
+        <div class="step-body">
+          <p>
+            Десять минут в Postman или <code>curl</code>. У Dodo есть готовая
+            коллекция — <a href="https://github.com/dodobrands/dodo-api-postman-collection">dodobrands/dodo-api-postman-collection</a>,
+            в ней все шаги уже собраны, остаётся подставить своё.
+          </p>
+          <p><strong>Запрос кода:</strong></p>
+<pre><code><span class="k">POST</span> https://auth.dodois.io/connect/deviceauthorization
+Content-Type: application/x-www-form-urlencoded
+
+client_id=&lt;ваш&gt;
+client_secret=&lt;ваш&gt;
+scope=staffshifts:read user.role:read offline_access</code></pre>
+          <p>
+            В ответе — <code>user_code</code> и <code>verification_uri_complete</code>.
+            Живут пять минут. Открываете ссылку, входите учёткой из первого шага,
+            подтверждаете код. Это и есть момент, когда партнёр даёт приложению
+            доступ к своим данным.
+          </p>
+          <p><strong>Обмен на токен:</strong></p>
+<pre><code><span class="k">POST</span> https://auth.dodois.io/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id=&lt;ваш&gt;
+client_secret=&lt;ваш&gt;
+grant_type=urn:ietf:params:oauth:grant-type:device_code
+device_code=&lt;из предыдущего ответа&gt;</code></pre>
+          <div class="note warn">
+            <h3>Что смотреть в ответе</h3>
+            <p>
+              Не <code>access_token</code> — он придёт наверняка. Смотреть надо,
+              есть ли рядом <strong><code>refresh_token</code></strong>. От этого
+              зависит, годится ли выбранный поток вообще, и это единственное, чего
+              я не смог проверить по документации.
+            </p>
+          </div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-key="s3a"><span>Токен получен</span></label>
+            <label class="check"><input type="checkbox" data-key="s3b"><span>Проверено, пришёл ли <code>refresh_token</code></span></label>
+          </div>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-num">04</div>
+        <div class="step-head">
+          <h3 class="step-title">Достать настоящие часы за настоящий месяц</h3>
+          <span class="who you">Вы</span>
+        </div>
+        <div class="step-body">
+          <p>
+            Самый важный шаг: он один отвечает на три вопроса, которых нет в
+            документации, и показывает данные партнёра такими, какие они есть.
+          </p>
+          <p><strong>Сначала точки</strong> — их UUID понадобятся в следующем запросе:</p>
+<pre><code><span class="k">GET</span> https://api.dodois.com/auth/roles/units
+Authorization: Bearer &lt;access_token&gt;
+
+<span class="c"># отдаёт заведения, доступные этой учётке, с ролями в каждом</span></code></pre>
+          <p><strong>Потом часы:</strong></p>
+<pre><code><span class="k">GET</span> https://api.dodois.com/dodopizza/rs/staff/shifts
+      ?units=&lt;uuid,uuid&gt;
+      &amp;clockInFrom=2026-08-01T00:00:00
+      &amp;clockInTo=2026-08-31T23:59:59
+      &amp;take=1000
+Authorization: Bearer &lt;access_token&gt;</code></pre>
+          <div class="note">
+            <h3>Обратите внимание на адрес</h3>
+            <p>
+              У Сербии домен <strong><code>.com</code></strong>, а не <code>.io</code>:
+              все примеры в документации показывают Россию, и это первое, обо что
+              спотыкаются. Всего в спеке 40 стран, домен у каждой свой.
+            </p>
+          </div>
+          <p>Что проверить, пока токен на руках:</p>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-key="s4a"><span>Часы приезжают, и в них есть <code>dayShiftMinutes</code>, <code>nightShiftMinutes</code>, <code>holidayMinutes</code>, <code>staffPositionName</code></span></label>
+            <label class="check"><input type="checkbox" data-key="s4b"><span><strong>Лимиты по частоте</strong> — в спеке о них ни слова: посмотреть заголовки ответа и что будет на быстрых повторах</span></label>
+            <label class="check"><input type="checkbox" data-key="s4c"><span><strong>Глубина истории</strong> — попросить период годичной давности и посмотреть, отдадут ли</span></label>
+            <label class="check"><input type="checkbox" data-key="s4d"><span>Сверить часы одного человека за август с тем, что в вашей таблице</span></label>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="fork">
+      <h2>Развилка после четвёртого шага</h2>
+      <p>
+        Один ответ решает, каким будет весь остаток работы. Смотрим, пришёл ли
+        <code>refresh_token</code> на третьем шаге.
+      </p>
+      <div class="branches">
+        <div class="branch good">
+          <span class="verdict">→ пришёл</span>
+          Всё по плану. Человек авторизовался один раз, дальше коннектор обновляет
+          токен сам раз в три часа, и участие партнёра больше не требуется.
+        </div>
+        <div class="branch bad">
+          <span class="verdict">→ не пришёл</span>
+          Device Flow для фона не годится: подтверждать код пришлось бы каждые
+          сутки. Тогда нужен Authorization Code — а это <strong>второе приложение</strong>
+          (Client Id привязан к потоку) и постоянный адрес возврата, который надо
+          где-то взять. Плюс день работы.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="part">
+    <div class="part-head">
+      <p class="eyebrow">Часть вторая</p>
+      <h2>Код</h2>
+      <p>
+        Дальше моя работа. Порядок не случайный: сначала то, без чего коннектор
+        не проживёт и суток, потом сам забор, и только в самом конце — включение.
+      </p>
+    </div>
+
+    <ol class="steps" start="5">
+
+      <li class="step">
+        <div class="step-num">05</div>
+        <div class="step-head">
+          <h3 class="step-title">Хранение и обновление токенов</h3>
+          <span class="who me">Claude</span>
+        </div>
+        <div class="step-body">
+          <p>
+            <code>Client Id</code> и <code>Client Secret</code> — это приложение,
+            они общие и живут в окружении площадки. А вот токены привязаны к
+            учётке конкретного партнёра, поэтому их место — в базе рядом с
+            тенантом, а не в общем конфиге.
+          </p>
+          <p>
+            Обновление — с блокировкой и атомарной записью. Причина в неприятной
+            особенности: <strong><code>refresh_token</code> одноразовый</strong>, и
+            «даже после неудачного ответа перестаёт действовать». Две параллельные
+            попытки обновиться убьют цепочку, и понадобится живой человек, чтобы
+            заново подтвердить код.
+          </p>
+          <p>
+            Обновляемся раз в три часа фоном, а не по факту истечения: токен живёт
+            сутки, но так советует их же руководство — и запас нужен, потому что
+            вторая попытка бесплатной не будет.
+          </p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-num">06</div>
+        <div class="step-head">
+          <h3 class="step-title">Сопоставить точки и людей</h3>
+          <span class="who me">Claude</span>
+        </div>
+        <div class="step-body">
+          <p>
+            Единственное место, где придётся выбирать, и выбор ваш. Часы приходят
+            с <code>staffId</code> — то есть с UUID, а не с фамилией. Пока
+            <code>staffId</code> не привязан к нашему сотруднику, часы «ничьи».
+          </p>
+          <p>Места под ключи в схеме заведены заранее: <code>Unit.external_ids</code> и <code>Employee.external_ids</code>.</p>
+          <div class="branches">
+            <div class="branch good">
+              <span class="verdict">вариант A — привязать руками</span>
+              Экран, где человек один раз сопоставляет тридцать сотрудников. Полчаса
+              работы, и ни одной лишней персональной записи в нашей базе.
+            </div>
+            <div class="branch bad">
+              <span class="verdict">вариант B — тянуть справочник</span>
+              <code>GET /staff/members</code> отдаёт ФИО, телефон, дату рождения и
+              налоговый номер. Привязка автоматическая, но персональные данные живых
+              людей приезжают к нам — а репозиторий публичный, и отладка становится
+              минным полем.
+            </div>
+          </div>
+          <p>
+            Рекомендую <strong>A</strong>: мы договорились брать только часы, а
+            ручная привязка делается один раз. С оговоркой — новый сотрудник
+            появится, и его часы приедут непривязанными. Продукт обязан показать
+            их отдельной строкой «эти часы ничьи», а не потерять молча.
+          </p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-num">07</div>
+        <div class="step-head">
+          <h3 class="step-title">Сам забор часов</h3>
+          <span class="who me">Claude</span>
+        </div>
+        <div class="step-body">
+          <p>Три вещи, каждая из которых способна испортить месяц, если о ней не подумать:</p>
+          <ul>
+            <li>
+              <strong>Граница месяца.</strong> Смена возвращается целиком, если в
+              период попало её начало. Смена, начатая 31-го в 23:00, приедет вся —
+              резать надо по <code>dailyStatistics</code>, а не фильтром по датам,
+              иначе часы попадут не в тот месяц.
+            </li>
+            <li>
+              <strong>Повторный забор.</strong> Тянуть будем регулярно, и второй
+              проход не должен удваивать часы. Ключ идемпотентности — их
+              <code>id</code> смены.
+            </li>
+            <li>
+              <strong>Правки задним числом.</strong> У смены есть
+              <code>lastModifiedAt</code> и история изменений: часы могут поменяться
+              в Dodo IS <em>после</em> того, как мы посчитали и закрыли месяц. Что
+              с этим делать — пересчитывать, показывать расхождение или игнорировать
+              — решение, которого пока нет, и его надо будет принять.
+            </li>
+          </ul>
+          <p>
+            Часы ложатся в наш табель с пометкой источника. Табель никуда не
+            девается: он остаётся местом, где часы правят и подтверждают, а
+            коннектор становится ещё одним путём ввода, наравне с загрузкой таблицы.
+          </p>
+        </div>
+      </li>
+
+      <li class="step">
+        <div class="step-num">08</div>
+        <div class="step-head">
+          <h3 class="step-title">Включить — через месяц сверки</h3>
+          <span class="who me">Claude</span>
+        </div>
+        <div class="step-body">
+          <p>
+            Механизм для этого уже готов и лежит в продукте: у каждого потока
+            данных три состояния, а не флаг «включено».
+          </p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Состояние</th><th>Тянем</th><th>Идёт в расчёт</th></tr></thead>
+              <tbody>
+                <tr><td><code>off</code></td><td>нет</td><td>нет</td></tr>
+                <tr><td><code>trial</code></td><td>да</td><td><strong>нет</strong></td></tr>
+                <tr><td><code>on</code></td><td>да</td><td>да</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Порядок такой: ставим часы в <code>trial</code>, коннектор тянет их
+            месяц, они видны рядом с теми, что вбиты руками, — и ни на одну
+            ведомость не влияют. Сошлось — переводим в <code>on</code> и перестаём
+            вбивать руками. Не сошлось — разбираемся, ничего при этом не сломав.
+          </p>
+          <p>
+            Часы из невзятого источника расчёт не пропускает молча: он
+            останавливается и называет людей. Недосчитанная ведомость выглядит
+            точно так же, как правильная, — и это худшее, что могло бы случиться.
+          </p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section class="part">
+    <div class="part-head">
+      <p class="eyebrow">Честно</p>
+      <h2>Чего я не знаю до четвёртого шага</h2>
+    </div>
+    <div class="note warn">
+      <p>
+        Всё, что написано выше про адреса, scope, поля и ограничения, снято прямо
+        из спеки Dodo IS и проверяемо командой. Но три вещи спека не говорит, и
+        узнать их можно только живым вызовом:
+      </p>
+      <ul>
+        <li><strong>Даёт ли Device Flow обновляемый токен.</strong> Единственное, что способно поменять план — см. развилку.</li>
+        <li><strong>Лимиты по частоте запросов.</strong> В спеке нет ни заголовков лимита, ни ответа <code>429</code>. Первая же выкачка истории покажет.</li>
+        <li><strong>Глубина истории.</strong> Ни один метод не объявляет предела периода. Похоже, предела нет, но это надо увидеть.</li>
+      </ul>
+      <p>
+        Есть и четвёртое, помельче: на страницах методов висит фраза «доступ к API
+        выдаётся после публикации приложения в маркетплейсе и модерации». Разбор
+        говорит, что публикация — про распространение приложения другим франчайзи,
+        а не про доступ для себя. Логика сходится, но фактом это подтвердится
+        только на четвёртом шаге.
+      </p>
+    </div>
+  </section>
+
+  <footer class="colophon">
+    <span>Составлено 31 августа 2026 по документации <code>docs.dodois.io</code>, руководству «API → Авторизация» и спеке, снятой машинно.</span>
+    <span>Канон и полный разбор API — <code>docs/dodo-is-api.md</code> в репозитории. Каталог методов — <code>python tools/dodo_is_catalog.py</code>.</span>
+    <span>Отметки в чек-листах сохраняются в этом браузере.</span>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var KEY = 'dodo-is-connect';
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { saved = {}; }
+
+  var boxes = document.querySelectorAll('.check input[data-key]');
+  boxes.forEach(function (box) {
+    if (saved[box.dataset.key]) box.checked = true;
+    box.addEventListener('change', function () {
+      saved[box.dataset.key] = box.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { /* приватное окно — просто не запомним */ }
+    });
+  });
+})();
+</script>
