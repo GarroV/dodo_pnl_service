@@ -15,6 +15,7 @@
 |---|---|---|
 | `/` | `index` | `web.views.index` |
 | `/account/password/` | `password-change` | `web.views.password_change` |
+| `/analytics/people/` | `planned-people-analytics` | `web.planned_views.planned` |
 | `/api/expenses/` | `api-expenses` | `web.api.expenses` |
 | `/api/expenses/<uuid:fact_id>/` | `api-expense` | `web.api.expense` |
 | `/api/expenses/<uuid:fact_id>/delete/` | `api-expense-delete` | `web.api.expense_delete` |
@@ -85,6 +86,9 @@
 | `/papers/<uuid:document_id>/file/` | `paper-file` | `web.papers_views.paper_file` |
 | `/papers/new/` | `paper-new` | `web.papers_views.paper_new` |
 | `/payments/new/` | `payment-new` | `web.suppliers_views.payment_new` |
+| `/payouts/` | `planned-payouts` | `web.planned_views.planned` |
+| `/payroll/closing/` | `month-closing` | `web.planned_views.closing` |
+| `/payroll/sheet/` | `payroll-sheet` | `web.planned_views.payroll_sheet` |
 | `/payslips/<uuid:payslip_id>/freeze/` | `payslip-freeze` | `web.views.payslip_freeze` |
 | `/payslips/<uuid:payslip_id>/print/` | `payslip-print` | `web.printing_views.payslip` |
 | `/payslips/<uuid:payslip_id>/release/` | `payslip-release` | `web.views.payslip_release` |
@@ -105,11 +109,15 @@
 | `/periods/<uuid:period_id>/variance/` | `period-variance` | `web.views.period_variance` |
 | `/periods/open/` | `period-open` | `web.views.open_month` |
 | `/reconciliations/findings/<uuid:finding_id>/` | `reconciliation-decide` | `web.reports_views.reconciliation_decide` |
+| `/reports/pnl/` | `reports-pnl` | `web.planned_views.pnl` |
+| `/reports/reconcile/` | `reports-reconcile` | `web.planned_views.reconcile` |
 | `/roles/` | `roles` | `web.roles_views.index` |
 | `/roles/<uuid:role_id>/rights/` | `role-rights` | `web.roles_views.role_rights` |
 | `/roles/people/<uuid:user_id>/` | `person-roles` | `web.roles_views.person_roles` |
 | `/rules/` | `rules` | `web.rules_views.index` |
 | `/rules/<str:path>/` | `rule` | `web.rules_views.rule` |
+| `/settings/dodo-is/` | `planned-dodo-is` | `web.planned_views.planned` |
+| `/statement/` | `planned-statement` | `web.planned_views.planned` |
 | `/theme/` | `set-theme` | `web.theme.set_theme` |
 | `/timesheets/<uuid:period_id>/` | `timesheets` | `timesheets.views.grid` |
 | `/timesheets/<uuid:period_id>/cell/` | `timesheet-cell` | `timesheets.views.cell` |

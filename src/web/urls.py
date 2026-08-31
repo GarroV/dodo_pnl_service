@@ -1,6 +1,8 @@
 """Маршруты интерфейса."""
 from django.urls import path
 
+from . import stages
+
 from . import (
     api,
     bulk_raise_views,
@@ -12,6 +14,7 @@ from . import (
     guide,
     papers_views,
     person_views,
+    planned_views,
     positions_views,
     printing_views,
     reports_views,
@@ -439,4 +442,28 @@ urlpatterns = [
         directory_views.calendar_month,
         name="directory-calendar-month",
     ),
+    # ─────────────────────────────────────────────────────────
+    #  Входы из шапки в экраны, которые живут внутри месяца (D064)
+    #
+    #  Пункт меню обязан вести куда-то без выбора периода, а ведомость, закрытие,
+    #  P&L и сверка открываются из конкретного. Эти четыре адреса ведут в
+    #  последний заведённый месяц; месяцев нет — в их список, где стоит кнопка
+    #  «Завести месяц». Тупика не остаётся ни в одном случае.
+    # ─────────────────────────────────────────────────────────
+    path("payroll/sheet/", planned_views.payroll_sheet, name="payroll-sheet"),
+    path("payroll/closing/", planned_views.closing, name="month-closing"),
+    path("reports/pnl/", planned_views.pnl, name="reports-pnl"),
+    path("reports/reconcile/", planned_views.reconcile, name="reports-reconcile"),
+    # Экраны, которых ещё нет: маршруты собираются из того же списка, что и сами
+    # страницы (`web/stages.py`), — иначе экран заводился бы в двух местах и
+    # однажды был бы заведён в одном.
+    *[
+        path(
+            screen.url,
+            planned_views.planned,
+            {"code": screen.code},
+            name=f"planned-{screen.code}",
+        )
+        for screen in stages.planned_screens()
+    ],
 ]

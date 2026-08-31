@@ -1,0 +1,19 @@
+{% extends "web/base.html" %}{% load i18n %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% comment %}
+Экран, которого ещё нет (D064). Показывается не заглушкой «страница в
+разработке», а описанием замысла: что здесь будет и на каком месте очереди
+стоит. Разница существенная — первое читается как поломка, второе как план.
+
+Само состояние («Разработка в процессе») рисует плашка каркаса: она стоит на
+всех помеченных экранах одинаково, и повторять её здесь значило бы сказать
+одно и то же дважды.
+{% endcomment %}
+<div class="pagehead"><h1>{{ screen.title }}</h1></div>
+
+<section class="card">
+  <p>{{ screen.what }}</p>
+  <p class="note">{% blocktranslate with when=screen.when %}Очередь: {{ when }}{% endblocktranslate %}</p>
+</section>
+{% endblock %}
