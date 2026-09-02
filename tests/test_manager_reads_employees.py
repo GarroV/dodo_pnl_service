@@ -38,7 +38,7 @@ from decimal import Decimal
 
 import pytest
 
-from conftest import as_app_user, body, login_as
+from conftest import as_app_user, body, content, login_as
 
 LIST = "/directory/employees/"
 
@@ -329,7 +329,13 @@ def test_neither_screen_offers_the_payroll_of_the_person(client, web_env, sql):
     `trace.html`): проверка на выдуманное слово зеленела бы всегда.
     """
     login_as(client, "manager")
-    pages = {LIST: body(client.get(LIST)), "карточка": body(client.get(card(sql, MINE)))}
+    # `content`, а не `body`: с D064 «Ведомость» стоит пунктом шапки на каждой
+    # странице продукта, и проверка по целому документу ловила бы её вместо
+    # утечки. Предмет проверки — что отдаёт САМ экран.
+    pages = {
+        LIST: content(client.get(LIST)),
+        "карточка": content(client.get(card(sql, MINE))),
+    }
     client.post("/logout/")
 
     for where, page in pages.items():

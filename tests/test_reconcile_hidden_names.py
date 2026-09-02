@@ -42,7 +42,15 @@ from contextlib import contextmanager
 
 import pytest
 
-from conftest import JUNE, PLATA_SAMPLE, body, login_as, narrowed_ledgers, period_url, wipe_payruns
+from conftest import (
+    JUNE,
+    PLATA_SAMPLE,
+    content,
+    login_as,
+    narrowed_ledgers,
+    period_url,
+    wipe_payruns,
+)
 from test_reports_reconcile_db import section_rows, summary
 
 SECTION = "Есть в расчёте, нет в таблице"
@@ -96,7 +104,10 @@ def reconcile_page(client, user: str) -> str:
             period_url(client) + "reconcile/", {"table": handle}, follow=True
         )
     assert response.status_code == 200, f"{user}: сверка ответила {response.status_code}"
-    return body(response)
+    # Только содержимое: проверка ищет ИМЕНА подстрокой, а в шапке с D066 стоит
+    # «Аналитика по людям» — внутри неё нашлось имя «Ана», и утечкой это
+    # выглядело убедительно.
+    return content(response)
 
 
 def file_keys() -> set[str]:
