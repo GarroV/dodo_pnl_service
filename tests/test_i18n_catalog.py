@@ -331,3 +331,101 @@ def test_translation_tables_are_valid_json():
         assert isinstance(loaded, dict) and loaded, f"{table.name}: пусто"
         for key, value in loaded.items():
             assert set(value) <= {"en", "sr"}, f"{table.name}: чужой язык у {key!r}"
+
+
+# --- 4. инструмент не кладёт одиночный перевод в запись с формами -------------
+
+# Запись, какой её оставляет `makemessages`, встретив новую строку с
+# `{% blocktranslate count %}`: формы он переносит с похожей старой записи и
+# честно помечает `fuzzy` — «угадано, посмотри глазами».
+PLURAL_SAMPLE = '''# Каталог для проверки.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\\n"
+
+#, fuzzy, python-format
+#| msgid "Итого по %(counter)s счёту"
+msgid "Итого по %(counter)s строке"
+msgid_plural "Итого по %(counter)s строкам"
+msgstr[0] "Total for %(counter)s invoice"
+msgstr[1] "Total for %(counter)s invoices"
+
+msgid "Ведомость"
+msgstr "Payroll sheet"
+'''
+
+
+def test_apply_translations_refuses_to_fill_an_entry_with_plural_forms(tmp_path):
+    """Одиночный `msgstr` в записи с `msgid_plural` — это сломанный каталог.
+
+    Инструмент искал строку `msgstr` сразу за `msgid`, не находил её (у записи с
+    формами там стоит `msgid_plural`) и дописывал свою. Получалось
+
+        msgid "Итого по %(counter)s строке"
+        msgstr "Total for %(counter)s row"     <- дописано
+        msgid_plural "Итого по %(counter)s строкам"
+        msgstr[0] "Total for %(counter)s invoice"
+
+    то есть `msgstr` и `msgid_plural` в одной записи — для gettext это
+    синтаксическая ошибка, каталог не собирается вовсе. Хуже другое: заодно
+    снималась пометка `fuzzy`, и **угаданные формы** становились «проверенным
+    переводом». Инструмент при этом рапортовал «заполнено 1 из 1» и возвращал
+    ноль.
+
+    Правильное поведение — отказ: формы переводятся все сразу и вносятся руками
+    (формат — в шапке `tools/apply_translations.py`), а угадать за человека,
+    какая из форм ему предназначалась, инструмент не вправе.
+    """
+    sys.path.insert(0, str(ROOT / "tools"))
+    import apply_translations
+
+    po = tmp_path / "django.po"
+    po.write_text(PLURAL_SAMPLE, encoding="utf-8")
+    before = po.read_text(encoding="utf-8")
+
+    filled, problems = apply_translations.apply(
+        po,
+        {
+            "Итого по %(counter)s строке": "Total for %(counter)s row",
+            "Ведомость": "Payroll sheet",
+        },
+    )
+
+    assert filled == 1, (
+        "заполнена должна быть только обычная запись; запись с формами "
+        f"инструменту не по зубам, а он засчитал её себе (filled={filled})"
+    )
+    assert any("формы множественного числа" in problem for problem in problems), (
+        f"отказ обязан быть назван вслух, иначе беда молчаливая: {problems}"
+    )
+
+    after = po.read_text(encoding="utf-8")
+    assert "msgstr \"Total for %(counter)s row\"" not in after, (
+        "одиночный перевод всё-таки дописан в запись с формами — каталог "
+        "перестал собираться"
+    )
+    assert "#, fuzzy, python-format" in after, (
+        "пометка fuzzy снята с записи, которую инструмент не переводил: "
+        "угаданные формы выданы за проверенный перевод"
+    )
+    assert "#| msgid" in after, "подсказка о прежнем ключе потеряна"
+    # Запись с формами обязана уцелеть целиком, а не «почти».
+    assert before.split("msgid \"Ведомость\"")[0] == after.split("msgid \"Ведомость\"")[0]
+
+
+def test_apply_translations_still_fills_the_entry_next_to_a_plural_one(tmp_path):
+    """Отказ по одной записи не отменяет работу по остальным.
+
+    Иначе лечение вышло бы дороже болезни: одна строка с формами посреди файла
+    останавливала бы раскладку трёх сотен обычных.
+    """
+    sys.path.insert(0, str(ROOT / "tools"))
+    import apply_translations
+
+    po = tmp_path / "django.po"
+    po.write_text(PLURAL_SAMPLE, encoding="utf-8")
+    apply_translations.apply(po, {"Ведомость": "Payroll sheet"})
+
+    result = {item["msgid"]: item for item in read_po(po) if item["msgid"]}
+    assert result["Ведомость"]["msgstr"] == "Payroll sheet"
