@@ -8113,3 +8113,20 @@ msgstr "ručno uneto"
 #: web/views.py:1621
 msgid "Логин или пароль не подходят"
 msgstr "Korisničko ime ili lozinka nisu ispravni"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Галочка — право, которое партнёр выдаёт и снимает сам. Прочерк — "
+"право,\nкоторого у этого набора не бывает: его не выдать ни отсюда, ни в "
+"обход экрана.\nНужны права старшего набора — человеку выдают старшую "
+"роль."
+msgstr "Kvačica je pravo koje partner sam dodeljuje i oduzima. Crtica je pravo koje ovaj skup nikada nema: ne može se dodeliti ni odavde ni mimo ovog ekrana.\nAko su nekome potrebna prava starijeg skupa, dobija stariju ulogu."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "Права роли не изменены: «%(right)s» у этой роли не бывает."
+msgstr "Prava uloge nisu promenjena: „%(right)s“ ova uloga nikada nema."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Этого права у роли не бывает: набор не расширяется в эту сторону"
+msgstr "Ova uloga nikada nema ovo pravo: skup se ne širi u tom pravcu"

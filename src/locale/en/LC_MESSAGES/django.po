@@ -8279,3 +8279,20 @@ msgstr "entered manually"
 #: web/views.py:1621
 msgid "Логин или пароль не подходят"
 msgstr "Login or password is incorrect"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Галочка — право, которое партнёр выдаёт и снимает сам. Прочерк — "
+"право,\nкоторого у этого набора не бывает: его не выдать ни отсюда, ни в "
+"обход экрана.\nНужны права старшего набора — человеку выдают старшую "
+"роль."
+msgstr "A checkbox is a right the partner grants and revokes themselves. A dash is a right this set never has: it cannot be granted from here, nor around this screen.\nIf someone needs the rights of a senior set, they are given the senior role."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "Права роли не изменены: «%(right)s» у этой роли не бывает."
+msgstr "The rights of the role are unchanged: “%(right)s” is never available to this role."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Этого права у роли не бывает: набор не расширяется в эту сторону"
+msgstr "This role never has this right: the set does not extend in this direction"

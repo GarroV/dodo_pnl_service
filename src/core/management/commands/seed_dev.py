@@ -26,7 +26,7 @@ from django.utils.timezone import now
 
 from core import models
 from core.role_delivery import product_shape
-from core.roles import DEFAULT_TITLES, ROLE_ORDER, ROLE_SHAPES
+from core.roles import DEFAULT_TITLES, ROLE_ORDER, ROLE_SHAPES, permission_states
 from core.rules import import_presets
 from payroll import load_preset
 from payroll.importers import read_plata
@@ -355,6 +355,7 @@ class Command(BaseCommand):
                 id=det_id("role", role_def.code), tenant=tenant, code=role_def.code,
                 title=role_def.title, visible_ledgers=role_def.ledgers,
                 permissions=role_def.permissions,
+                permission_states=permission_states(role_def.code),
                 # Снимок формы пишется здесь же, потому что здесь она и
                 # ставится (T169). Сид — один из двух путей, которыми форма
                 # попадает в базу, и роль, заведённая без снимка, для доставки

@@ -207,6 +207,16 @@ class Role(models.Model):
     code = models.TextField()
     title = models.TextField()
     permissions = models.JSONField(db_default=[])
+    # Матрица роли: код права → `included` / `optional` / `never` (T203, D060).
+    # Не второе имя для `permissions`, а граница вокруг него: `permissions` —
+    # что роли выдано сейчас, матрица — что ей вообще позволено выдать. Стена
+    # (`never`) держится проверкой `check` в базе, то есть действует и на
+    # владельца таблиц; политики RLS он обходит, а `check` — нет.
+    #
+    # Пусто — стен не заведено, роль ведёт себя как раньше. Обратное умолчание
+    # («не сказано — нельзя») молча обесправило бы каждый стенд, поднятый до
+    # появления колонки.
+    permission_states = models.JSONField(db_default={})
     visible_ledgers = ArrayField(ledger_field(), db_default=["official"])
     # Снимок формы, которую последним ставил сам продукт — сид или доставка
     # (`core.role_delivery`, T169). Пусто — продукт не знает, что здесь стоит:

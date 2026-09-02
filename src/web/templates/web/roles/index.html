@@ -24,6 +24,9 @@
 {% if error %}{% notice "alert" %}{{ error }}{% endnotice %}{% endif %}
 
 <h2>{% translate "Что позволяет роль" %}</h2>
+<p class="note under">{% blocktranslate %}Галочка — право, которое партнёр выдаёт и снимает сам. Прочерк — право,
+которого у этого набора не бывает: его не выдать ни отсюда, ни в обход экрана.
+Нужны права старшего набора — человеку выдают старшую роль.{% endblocktranslate %}</p>
 {% scroll %}<table>
   <thead>
     <tr>
@@ -39,12 +42,14 @@
       <td>
         <form method="post" action="{% url 'role-rights' row.role.id %}" id="rights-{{ row.role.id }}">{% csrf_token %}
           <div class="rights">
-            {% for right in row.rights %}
+            {% for right in row.rights %}{% if right.walled %}
+            <span class="right note" title="{% translate "Этого права у роли не бывает: набор не расширяется в эту сторону" %}">— {{ right.title }}</span>
+            {% else %}
             <label class="right">
               <input type="checkbox" name="right:{{ right.code }}"{% if right.granted %} checked{% endif %}>
               {{ right.title }}
             </label>
-            {% endfor %}
+            {% endif %}{% endfor %}
           </div>
         </form>
       </td>

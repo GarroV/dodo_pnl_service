@@ -37,24 +37,26 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 
 from core.models import Membership, Role
+from core.roles import ALL_PERMISSIONS, NEVER, OPTIONAL
 
 from . import permissions
 from .principal import get_current_principal
 
-# Права, которые можно выдать с экрана. Порядок — от ежедневного к редкому:
-# табель правят каждый день, роли меняют раз в год.
-GRANTABLE = (
-    permissions.TIMESHEET_EDIT,
-    permissions.PAYRUN_CALCULATE,
-    permissions.PERIOD_APPROVE,
-    permissions.PERIOD_REOPEN,
-    permissions.UNIT_CLOSE,
-    permissions.PAYSLIP_FREEZE,
-    permissions.RETRO_POST,
-    permissions.DIRECTORY_MANAGE,
-    permissions.RULES_MANAGE,
-    permissions.ROLES_MANAGE,
-)
+# Права, которые можно выдать с экрана, — ВСЕ права продукта, а не их список
+# рядом (T203). Список здесь был своей копией, и она успела разъехаться: право
+# `suppliers.classify` появилось с разбором первички, а на экране ролей его не
+# было вовсе — то есть выдать или снять его было нечем ни одним способом.
+GRANTABLE = ALL_PERMISSIONS
+
+
+def _state_of(role, code: str) -> str:
+    """Состояние клетки «роль × право» по матрице роли (T203, D060).
+
+    Клетки нет — считаем `optional`. То же умолчание, что и в базе: пустая
+    матрица означает «стен не заведено», а не «нельзя ничего», иначе миграция
+    молча обесправила бы каждую роль, заведённую до её появления.
+    """
+    return (role.permission_states or {}).get(code, OPTIONAL)
 
 
 def _people(tenant_id):
@@ -103,6 +105,10 @@ def _page(request, who, *, notice: str = "", error: str = "", status: int = 200)
                     "code": code,
                     "title": permissions.title(code),
                     "granted": code in (role.permissions or []),
+                    # Стена рисуется прочерком, а не пустой галочкой: иначе она
+                    # выглядит как «просто не выдано», человек её жмёт и
+                    # получает отказ на то, что экран сам ему и предложил.
+                    "walled": _state_of(role, code) == NEVER,
                 }
                 for code in GRANTABLE
             ],
@@ -164,6 +170,18 @@ def role_rights(request, role_id):
         )
 
     chosen = [code for code in GRANTABLE if request.POST.get(f"right:{code}") == "on"]
+    # Стена проверяется ДО записи и называется словами. Молча выкинуть такое
+    # право из списка — худший из исходов: администратор уверен, что выдал его,
+    # а его нет. Гарантия при этом всё равно в базе (`check` из `0263`): она
+    # держится и на владельце таблиц, и на экране, который забудет спросить.
+    walled = [code for code in chosen if _state_of(role, code) == NEVER]
+    if walled:
+        return _page(
+            request, who,
+            error=_("Права роли не изменены: «%(right)s» у этой роли не бывает.")
+            % {"right": permissions.title(walled[0])},
+            status=409,
+        )
     changed = Role.objects.filter(pk=role.pk, tenant_id=who.tenant_id).update(permissions=chosen)
     if not changed:
         # Политика отказала молча — «изменено 0 строк». Такое молчание и есть
