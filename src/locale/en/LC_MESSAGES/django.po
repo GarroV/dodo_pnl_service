@@ -8403,3 +8403,127 @@ msgstr "What happened"
 #, python-format
 msgid "до %(day)s"
 msgstr "until %(day)s"
+
+#: web/stages.py
+msgid "Доработка"
+msgstr "Refining"
+
+#: web/stages.py
+msgid "Разработка в процессе"
+msgstr "In development"
+
+#: web/navigation.py
+msgid "Отчёты"
+msgstr "Reports"
+
+#: web/navigation.py
+msgid "Закрытие месяца"
+msgstr "Month closing"
+
+#: web/navigation.py
+msgid "Банковская выписка"
+msgstr "Bank statement"
+
+#: web/navigation.py
+msgid "Выплаты"
+msgstr "Payouts"
+
+#: web/navigation.py
+msgid "Аналитика по людям"
+msgstr "People analytics"
+
+#: web/navigation.py
+msgid "Интеграция с Dodo IS"
+msgstr "Dodo IS integration"
+
+#: web/templates/web/planned.html
+msgid "Очередь: %(when)s"
+msgstr "Planned for: %(when)s"
+
+
+#: web/stages.py
+msgid "Карточки находок, готовность в процентах, подтверждение закрытия"
+msgstr "Finding cards, readiness in percent, closing confirmation"
+
+#: web/stages.py
+msgid "Консолидация сети в EUR по курсу на конец периода"
+msgstr "Network consolidation in EUR at the period-end rate"
+
+
+#: web/stages.py
+msgid "Приглашение человека, история доступов, настраиваемые наборы прав"
+msgstr "Inviting a person, access history, configurable permission sets"
+
+
+
+#: web/stages.py
+msgid "Именованные надбавки и вилка ставки должности"
+msgstr "Named allowances and a rate range for the position"
+
+#: web/stages.py
+msgid "Рамка страны, за которую правило юрлица не выходит"
+msgstr "A country frame the legal entity rule cannot step outside"
+
+
+#: web/stages.py
+msgid "Шестая очередь продуктовой карты"
+msgstr "Sixth stage of the product map"
+
+#: web/stages.py
+msgid "Десятая очередь продуктовой карты"
+msgstr "Tenth stage of the product map"
+
+#: web/stages.py
+msgid "После того, как оплата труда закроется целиком"
+msgstr "Once payroll is complete"
+
+#: web/stages.py
+msgid "Седьмая очередь; ждёт доступа к API Dodo IS"
+msgstr "Seventh stage; waiting for Dodo IS API access"
+
+#: web/stages.py
+msgid "Загрузка выписки банка и сопоставление платежей со счетами поставщиков: что оплачено, что ждёт, что пришло без счёта."
+msgstr "Uploading the bank statement and matching payments to supplier invoices: what is paid, what is waiting, what arrived without an invoice."
+
+#: web/stages.py
+msgid "Что и когда ушло людям: ведомость к выплате, отметки о переводе, остаток задолженности по каждому человеку."
+msgstr "What went to people and when: the payout sheet, transfer marks, the remaining debt for each person."
+
+#: web/stages.py
+msgid "Стоимость труда и текучесть в динамике: как меняется ФОТ на точку, кто уходит и сколько стоит замена."
+msgstr "Labour cost and turnover over time: how payroll per unit changes, who leaves and what a replacement costs."
+
+#: web/stages.py
+msgid "Отработанные часы приезжают из Dodo IS вместо ручного ввода. Механизм подключения уже есть: каждый поток включается отдельно и по умолчанию выключен. Не хватает экрана и самого доступа к API."
+msgstr "Worked hours arrive from Dodo IS instead of manual entry. The connection mechanism already exists: each feed is switched on separately and is off by default. What is missing is the screen and the API access itself."
+
+#: web/stages.py
+msgid "Экрана ещё нет — ниже то, что здесь появится"
+msgstr "The screen does not exist yet — below is what will appear here"
+
+#: web/stages.py
+msgid "Подсказка статьи кнопкой, а не подстановкой в поле"
+msgstr "The article hint as a button, not filled into the field"
+
+#: web/stages.py
+msgid "Касса точки и расход, не дошедший до отчёта без документа"
+msgstr "The unit till and an expense that never reached the report without a document"
+
+#: web/stages.py
+msgid "Версии статьи: правка не меняет закрытый месяц"
+msgstr "Article versions: an edit does not change a closed month"
+
+#: web/stages.py
+msgid "Разбор в две руки: директор разносит, бухгалтер подтверждает"
+msgstr "Sorting in two hands: the director allocates, the accountant confirms"
+
+#: web/templates/web/guide.html
+msgid ""
+"Часть разделов помечена. «Доработка» — экран работает, но до задуманного\n"
+"  не дотягивает, и рядом написано, чего именно не хватает. «Разработка в\n"
+"  процессе» — экрана ещё нет, а вместо него страница с описанием, что здесь\n"
+"  будет: так устроены «Банковская выписка», «Выплаты», «Аналитика по людям» и\n"
+"  «Интеграция с Dodo IS». Пометка стоит и точкой у пункта в шапке, и плашкой\n"
+"  наверху самого экрана. Раздел без пометки готов."
+msgstr ""
+"Some sections are marked. “Refining” means the screen works but does not yet match what was designed, and the note beside it says what exactly is missing. “In development” means the screen does not exist yet — instead there is a page describing what will be here: that is how “Bank statement”, “Payouts”, “People analytics” and “Dodo IS integration” work. The mark appears both as a dot next to the item in the header and as a banner at the top of the screen itself. A section without a mark is ready."

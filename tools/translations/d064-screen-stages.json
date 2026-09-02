@@ -1,0 +1,114 @@
+{
+  "Доработка": {
+    "en": "Refining",
+    "sr": "Dorada"
+  },
+  "Разработка в процессе": {
+    "en": "In development",
+    "sr": "U izradi"
+  },
+  "Отчёты": {
+    "en": "Reports",
+    "sr": "Izveštaji"
+  },
+  "Закрытие месяца": {
+    "en": "Month closing",
+    "sr": "Zatvaranje meseca"
+  },
+  "Банковская выписка": {
+    "en": "Bank statement",
+    "sr": "Bankovni izvod"
+  },
+  "Выплаты": {
+    "en": "Payouts",
+    "sr": "Isplate"
+  },
+  "Аналитика по людям": {
+    "en": "People analytics",
+    "sr": "Analitika o ljudima"
+  },
+  "Интеграция с Dodo IS": {
+    "en": "Dodo IS integration",
+    "sr": "Integracija sa Dodo IS"
+  },
+  "Очередь: %(when)s": {
+    "en": "Planned for: %(when)s",
+    "sr": "Planirano za: %(when)s"
+  },
+  "Карточки находок, готовность в процентах, подтверждение закрытия": {
+    "en": "Finding cards, readiness in percent, closing confirmation",
+    "sr": "Kartice nalaza, spremnost u procentima, potvrda zatvaranja"
+  },
+  "Консолидация сети в EUR по курсу на конец периода": {
+    "en": "Network consolidation in EUR at the period-end rate",
+    "sr": "Konsolidacija mreže u EUR po kursu na kraju perioda"
+  },
+  "Приглашение человека, история доступов, настраиваемые наборы прав": {
+    "en": "Inviting a person, access history, configurable permission sets",
+    "sr": "Pozivanje osobe, istorija pristupa, podesivi skupovi prava"
+  },
+  "Именованные надбавки и вилка ставки должности": {
+    "en": "Named allowances and a rate range for the position",
+    "sr": "Imenovani dodaci i raspon stope radnog mesta"
+  },
+  "Рамка страны, за которую правило юрлица не выходит": {
+    "en": "A country frame the legal entity rule cannot step outside",
+    "sr": "Okvir zemlje koji pravilo pravnog lica ne prelazi"
+  },
+  "Шестая очередь продуктовой карты": {
+    "en": "Sixth stage of the product map",
+    "sr": "Šesta faza mape proizvoda"
+  },
+  "Десятая очередь продуктовой карты": {
+    "en": "Tenth stage of the product map",
+    "sr": "Deseta faza mape proizvoda"
+  },
+  "После того, как оплата труда закроется целиком": {
+    "en": "Once payroll is complete",
+    "sr": "Nakon što se obračun zarada završi u celini"
+  },
+  "Седьмая очередь; ждёт доступа к API Dodo IS": {
+    "en": "Seventh stage; waiting for Dodo IS API access",
+    "sr": "Sedma faza; čeka pristup Dodo IS API-ju"
+  },
+  "Загрузка выписки банка и сопоставление платежей со счетами поставщиков: что оплачено, что ждёт, что пришло без счёта.": {
+    "en": "Uploading the bank statement and matching payments to supplier invoices: what is paid, what is waiting, what arrived without an invoice.",
+    "sr": "Učitavanje bankovnog izvoda i uparivanje plaćanja sa fakturama dobavljača: šta je plaćeno, šta čeka, šta je stiglo bez fakture."
+  },
+  "Что и когда ушло людям: ведомость к выплате, отметки о переводе, остаток задолженности по каждому человеку.": {
+    "en": "What went to people and when: the payout sheet, transfer marks, the remaining debt for each person.",
+    "sr": "Šta je i kada isplaćeno ljudima: spisak za isplatu, oznake o prenosu, preostali dug za svakog čoveka."
+  },
+  "Стоимость труда и текучесть в динамике: как меняется ФОТ на точку, кто уходит и сколько стоит замена.": {
+    "en": "Labour cost and turnover over time: how payroll per unit changes, who leaves and what a replacement costs.",
+    "sr": "Trošak rada i fluktuacija kroz vreme: kako se menja fond zarada po objektu, ko odlazi i koliko košta zamena."
+  },
+  "Отработанные часы приезжают из Dodo IS вместо ручного ввода. Механизм подключения уже есть: каждый поток включается отдельно и по умолчанию выключен. Не хватает экрана и самого доступа к API.": {
+    "en": "Worked hours arrive from Dodo IS instead of manual entry. The connection mechanism already exists: each feed is switched on separately and is off by default. What is missing is the screen and the API access itself.",
+    "sr": "Odrađeni sati stižu iz Dodo IS umesto ručnog unosa. Mehanizam povezivanja već postoji: svaki tok se uključuje zasebno i podrazumevano je isključen. Nedostaje ekran i sam pristup API-ju."
+  },
+  "Экрана ещё нет — ниже то, что здесь появится": {
+    "en": "The screen does not exist yet — below is what will appear here",
+    "sr": "Ekran još ne postoji — ispod je ono što će se ovde pojaviti"
+  },
+  "Подсказка статьи кнопкой, а не подстановкой в поле": {
+    "en": "The article hint as a button, not filled into the field",
+    "sr": "Predlog stavke dugmetom, a ne upisom u polje"
+  },
+  "Касса точки и расход, не дошедший до отчёта без документа": {
+    "en": "The unit till and an expense that never reached the report without a document",
+    "sr": "Kasa objekta i trošak koji bez dokumenta nije stigao u izveštaj"
+  },
+  "Версии статьи: правка не меняет закрытый месяц": {
+    "en": "Article versions: an edit does not change a closed month",
+    "sr": "Verzije stavke: izmena ne menja zatvoreni mesec"
+  },
+  "Разбор в две руки: директор разносит, бухгалтер подтверждает": {
+    "en": "Sorting in two hands: the director allocates, the accountant confirms",
+    "sr": "Razvrstavanje u dve ruke: direktor raspoređuje, knjigovođa potvrđuje"
+  },
+  "Часть разделов помечена. «Доработка» — экран работает, но до задуманного\n  не дотягивает, и рядом написано, чего именно не хватает. «Разработка в\n  процессе» — экрана ещё нет, а вместо него страница с описанием, что здесь\n  будет: так устроены «Банковская выписка», «Выплаты», «Аналитика по людям» и\n  «Интеграция с Dodo IS». Пометка стоит и точкой у пункта в шапке, и плашкой\n  наверху самого экрана. Раздел без пометки готов.": {
+    "en": "Some sections are marked. “Refining” means the screen works but does not yet match what was designed, and the note beside it says what exactly is missing. “In development” means the screen does not exist yet — instead there is a page describing what will be here: that is how “Bank statement”, “Payouts”, “People analytics” and “Dodo IS integration” work. The mark appears both as a dot next to the item in the header and as a banner at the top of the screen itself. A section without a mark is ready.",
+    "sr": "Neki odeljci su označeni. „Dorada“ znači da ekran radi, ali ne dostiže ono što je zamišljeno, a pored piše šta tačno nedostaje. „U izradi“ znači da ekrana još nema — umesto njega stoji stranica sa opisom šta će ovde biti: tako su rešeni „Bankovni izvod“, „Isplate“, „Analitika o ljudima“ i „Integracija sa Dodo IS“. Oznaka stoji i kao tačka pored stavke u zaglavlju i kao traka na vrhu samog ekrana. Odeljak bez oznake je gotov."
+  }
+}

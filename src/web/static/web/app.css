@@ -1694,3 +1694,45 @@ table.sheet.person td .hint { display: block; margin-top: var(--space-1); }
   table.sheet th:last-child, table.sheet td:last-child { position: static; }
   body { background: var(--surface); }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Состояние экрана: «Доработка» и «Разработка в процессе» (D064).
+
+   Плашка стоит первой в <main>, до заголовка экрана: она отвечает на вопрос
+   «этому можно верить?», который смотрящий задаёт раньше, чем читает
+   содержимое. Ниже заголовка она бы отвечала на него с опозданием.
+
+   Два состояния разведены цветом, а не только словом: дорабатываемый экран
+   показывает настоящие данные и предупреждает (--warn), ненаписанный данных не
+   показывает вовсе и просто рассказывает о замысле (--accent, нейтральный).
+   Одинаковая плашка на обоих сливала бы «здесь неполно» и «здесь пусто».
+   ───────────────────────────────────────────────────────────── */
+.stage {
+  display: flex; align-items: baseline; gap: var(--space-5); flex-wrap: wrap;
+  margin: 0 0 var(--space-7);
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--line-2); border-radius: var(--r-block);
+  font-size: var(--fs-meta); line-height: var(--lh-meta);
+}
+.stage__name {
+  text-transform: uppercase; letter-spacing: var(--tracking-micro);
+  font-size: var(--fs-micro); font-weight: var(--w-semibold);
+  white-space: nowrap;
+}
+.stage__note { color: var(--ink-2); }
+
+.stage--refining { background: var(--warn-soft); border-color: var(--warn-line); }
+.stage--refining .stage__name { color: var(--warn-ink); }
+
+.stage--planned { background: var(--accent-soft); border-color: var(--accent-line); }
+.stage--planned .stage__name { color: var(--accent); }
+
+/* Значок у пункта меню. Точкой, а не словом: слово рядом с каждым вторым
+   пунктом сделало бы шапку нечитаемой, а состояние читается наведением
+   (`title`) и цветом — тем же, что у плашки самого экрана. */
+.appnav__stage {
+  display: inline-block; width: 5px; height: 5px; margin-left: var(--space-3);
+  border-radius: 50%; vertical-align: middle;
+}
+.appnav__stage--refining { background: var(--warn-mark); }
+.appnav__stage--planned { background: var(--accent); }

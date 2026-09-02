@@ -8237,3 +8237,127 @@ msgstr "Šta se dogodilo"
 #, python-format
 msgid "до %(day)s"
 msgstr "do %(day)s"
+
+#: web/stages.py
+msgid "Доработка"
+msgstr "Dorada"
+
+#: web/stages.py
+msgid "Разработка в процессе"
+msgstr "U izradi"
+
+#: web/navigation.py
+msgid "Отчёты"
+msgstr "Izveštaji"
+
+#: web/navigation.py
+msgid "Закрытие месяца"
+msgstr "Zatvaranje meseca"
+
+#: web/navigation.py
+msgid "Банковская выписка"
+msgstr "Bankovni izvod"
+
+#: web/navigation.py
+msgid "Выплаты"
+msgstr "Isplate"
+
+#: web/navigation.py
+msgid "Аналитика по людям"
+msgstr "Analitika o ljudima"
+
+#: web/navigation.py
+msgid "Интеграция с Dodo IS"
+msgstr "Integracija sa Dodo IS"
+
+#: web/templates/web/planned.html
+msgid "Очередь: %(when)s"
+msgstr "Planirano za: %(when)s"
+
+
+#: web/stages.py
+msgid "Карточки находок, готовность в процентах, подтверждение закрытия"
+msgstr "Kartice nalaza, spremnost u procentima, potvrda zatvaranja"
+
+#: web/stages.py
+msgid "Консолидация сети в EUR по курсу на конец периода"
+msgstr "Konsolidacija mreže u EUR po kursu na kraju perioda"
+
+
+#: web/stages.py
+msgid "Приглашение человека, история доступов, настраиваемые наборы прав"
+msgstr "Pozivanje osobe, istorija pristupa, podesivi skupovi prava"
+
+
+
+#: web/stages.py
+msgid "Именованные надбавки и вилка ставки должности"
+msgstr "Imenovani dodaci i raspon stope radnog mesta"
+
+#: web/stages.py
+msgid "Рамка страны, за которую правило юрлица не выходит"
+msgstr "Okvir zemlje koji pravilo pravnog lica ne prelazi"
+
+
+#: web/stages.py
+msgid "Шестая очередь продуктовой карты"
+msgstr "Šesta faza mape proizvoda"
+
+#: web/stages.py
+msgid "Десятая очередь продуктовой карты"
+msgstr "Deseta faza mape proizvoda"
+
+#: web/stages.py
+msgid "После того, как оплата труда закроется целиком"
+msgstr "Nakon što se obračun zarada završi u celini"
+
+#: web/stages.py
+msgid "Седьмая очередь; ждёт доступа к API Dodo IS"
+msgstr "Sedma faza; čeka pristup Dodo IS API-ju"
+
+#: web/stages.py
+msgid "Загрузка выписки банка и сопоставление платежей со счетами поставщиков: что оплачено, что ждёт, что пришло без счёта."
+msgstr "Učitavanje bankovnog izvoda i uparivanje plaćanja sa fakturama dobavljača: šta je plaćeno, šta čeka, šta je stiglo bez fakture."
+
+#: web/stages.py
+msgid "Что и когда ушло людям: ведомость к выплате, отметки о переводе, остаток задолженности по каждому человеку."
+msgstr "Šta je i kada isplaćeno ljudima: spisak za isplatu, oznake o prenosu, preostali dug za svakog čoveka."
+
+#: web/stages.py
+msgid "Стоимость труда и текучесть в динамике: как меняется ФОТ на точку, кто уходит и сколько стоит замена."
+msgstr "Trošak rada i fluktuacija kroz vreme: kako se menja fond zarada po objektu, ko odlazi i koliko košta zamena."
+
+#: web/stages.py
+msgid "Отработанные часы приезжают из Dodo IS вместо ручного ввода. Механизм подключения уже есть: каждый поток включается отдельно и по умолчанию выключен. Не хватает экрана и самого доступа к API."
+msgstr "Odrađeni sati stižu iz Dodo IS umesto ručnog unosa. Mehanizam povezivanja već postoji: svaki tok se uključuje zasebno i podrazumevano je isključen. Nedostaje ekran i sam pristup API-ju."
+
+#: web/stages.py
+msgid "Экрана ещё нет — ниже то, что здесь появится"
+msgstr "Ekran još ne postoji — ispod je ono što će se ovde pojaviti"
+
+#: web/stages.py
+msgid "Подсказка статьи кнопкой, а не подстановкой в поле"
+msgstr "Predlog stavke dugmetom, a ne upisom u polje"
+
+#: web/stages.py
+msgid "Касса точки и расход, не дошедший до отчёта без документа"
+msgstr "Kasa objekta i trošak koji bez dokumenta nije stigao u izveštaj"
+
+#: web/stages.py
+msgid "Версии статьи: правка не меняет закрытый месяц"
+msgstr "Verzije stavke: izmena ne menja zatvoreni mesec"
+
+#: web/stages.py
+msgid "Разбор в две руки: директор разносит, бухгалтер подтверждает"
+msgstr "Razvrstavanje u dve ruke: direktor raspoređuje, knjigovođa potvrđuje"
+
+#: web/templates/web/guide.html
+msgid ""
+"Часть разделов помечена. «Доработка» — экран работает, но до задуманного\n"
+"  не дотягивает, и рядом написано, чего именно не хватает. «Разработка в\n"
+"  процессе» — экрана ещё нет, а вместо него страница с описанием, что здесь\n"
+"  будет: так устроены «Банковская выписка», «Выплаты», «Аналитика по людям» и\n"
+"  «Интеграция с Dodo IS». Пометка стоит и точкой у пункта в шапке, и плашкой\n"
+"  наверху самого экрана. Раздел без пометки готов."
+msgstr ""
+"Neki odeljci su označeni. „Dorada“ znači da ekran radi, ali ne dostiže ono što je zamišljeno, a pored piše šta tačno nedostaje. „U izradi“ znači da ekrana još nema — umesto njega stoji stranica sa opisom šta će ovde biti: tako su rešeni „Bankovni izvod“, „Isplate“, „Analitika o ljudima“ i „Integracija sa Dodo IS“. Oznaka stoji i kao tačka pored stavke u zaglavlju i kao traka na vrhu samog ekrana. Odeljak bez oznake je gotov."

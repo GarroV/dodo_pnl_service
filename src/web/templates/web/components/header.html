@@ -115,7 +115,7 @@
         <div class="appnav__menu">
           {% for section in area.items %}
             {% if section.allowed %}
-              {% with section_url=section.url section_label=section.title section_waiting=section.waiting %}
+              {% with section_url=section.url section_label=section.title section_waiting=section.waiting section_stage=section.stage %}
                 {% include "web/components/appnav_item.html" %}
               {% endwith %}
             {% elif principal and section.offer %}
