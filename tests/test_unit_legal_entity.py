@@ -262,3 +262,26 @@ def test_the_first_link_of_a_unit_is_not_a_transfer(db):
         (T1, LE1),
     ).fetchone()[0]
     assert str(at(db, "2026-05-01", unit=fresh)) == LE1
+
+
+def test_the_wall_stands_for_the_role_that_actually_moves_units(db):
+    """Стену обязана встретить и та роль, которая переносит точки в продукте.
+
+    Проверки выше идут владельцем схемы намеренно — триггер одинаков для всех, —
+    но одного владельца мало: в продукт ходит `app_user`, и именно на нём проект
+    уже ловил обратное ожидаемому. У `unit_legal_entities` стоит `force row level
+    security`, а стена объявлена `security definer`; в этом сочетании
+    `security definer` политик НЕ обходит (журнал блока, пункт 1), и проверка
+    внутри стены («у точки уже есть версии») читает таблицу глазами роли. Пустой
+    ответ там означал бы, что перенос в закрытый месяц проходит именно тем путём,
+    ради которого стена и ставилась.
+    """
+    db.execute("delete from unit_legal_entities where unit_id = %s", (U_BG1,))
+    link(db, entity=LE1, since="2023-01-01")
+    close_month(db, "2026-05-01")
+
+    with as_app_user(db, USER_ADMIN) as conn:
+        with pytest.raises(psycopg.errors.RaiseException) as refused, conn.transaction():
+            link(conn, entity=LE2, since="2026-05-15")
+
+    assert "2026-05" in str(refused.value)
