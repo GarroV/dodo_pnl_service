@@ -42,6 +42,14 @@ class Employee:
     # Чем меряется работа этого человека: переопределяет меру группы (T164).
     # Пусто — как у группы, и до T164 иначе и не бывало.
     work_measure: str | None = None
+    # Именованные надбавки человека (issue #189): наставничество, старшинство,
+    # надбавка за точку. Список кортежей `(код, название, величина, способ,
+    # регистр)`. Пусто — надбавок нет, и это обычное состояние.
+    #
+    # Почему списком, а не словарём настроек: у надбавки есть **свой** регистр,
+    # и её нельзя свести к числу. В эталоне (модуль 16) у одного человека
+    # наставничество лежит в дополнительном регистре, а ночные — в официальном.
+    allowances: list = field(default_factory=list)
 
 
 @dataclass
@@ -443,15 +451,78 @@ class PayrollEngine:
             )
         return total
 
+    def personal_allowances(self, slip: Payslip, ts: Timesheet, worked: Decimal,
+                            earned: Decimal) -> Decimal:
+        """Именованные надбавки человека (issue #189).
+
+        Отдельно от надбавок страны намеренно: те — правило для всех
+        (топли оброк), эти — про конкретного человека, и живут они в его
+        условиях, а не в пресете.
+
+        Каждая приходит **своей строкой** со своим названием и своим регистром:
+        человек, читающий ведомость, должен видеть не сумму, а за что она.
+        Регистр берётся у надбавки, а не у человека, — иначе пара
+        «наставничество в дополнительном, ночные в официальном» стала бы
+        невозможной, а она обычная.
+
+        Порядок начисления: `percent` считается от того, что уже начислено, и
+        потому идёт последним. Иначе результат зависел бы от того, в каком
+        порядке надбавки лежат в списке, — то есть от случайности.
+        """
+        total = D(0)
+        by_basis = {"per_hour": [], "per_month": [], "percent": []}
+        for row in slip.employee.allowances:
+            by_basis.setdefault(row.basis, []).append(row)
+
+        for row in by_basis["per_hour"] + by_basis["per_month"]:
+            if row.basis == "per_hour":
+                amount = d(row.amount) * worked
+                inputs = {"за час": d(row.amount), "часов": worked}
+            else:
+                amount = d(row.amount)
+                inputs = {"за месяц": d(row.amount)}
+            total += amount
+            slip.add(
+                code=f"allowance.{row.code}", title=row.title, amount=amount,
+                ledger=row.ledger, taxable=True,
+                step=self.step(f"allowance.{row.code}", row.title, amount,
+                               rule_path=f"employee_allowances.{row.code}",
+                               inputs=inputs),
+            )
+
+        for row in by_basis["percent"]:
+            # От уже начисленного, включая надбавки выше: «15% к заработку»
+            # означает к тому, что человек заработал, а не к голой ставке.
+            amount = (earned + total) * d(row.amount) / D(100)
+            total += amount
+            slip.add(
+                code=f"allowance.{row.code}", title=row.title, amount=amount,
+                ledger=row.ledger, taxable=True,
+                step=self.step(f"allowance.{row.code}", row.title, amount,
+                               rule_path=f"employee_allowances.{row.code}",
+                               inputs={"процент": d(row.amount),
+                                       "от суммы": earned + total - amount}),
+            )
+        return total
+
+    def worked_hours(self, ts: Timesheet) -> Decimal:
+        """Отработанные часы: те типы часов, которые страна считает работой.
+
+        Одно место, потому что понятие одно: надбавки страны и надбавки
+        человека обязаны считать «отработанное» одинаково, а два одинаковых
+        выражения в разных методах разъезжаются на первой же правке пресета.
+        """
+        return sum(
+            (ts.get(k) for k, c in self.hour_types.items() if c.get("counts_as_worked")),
+            D(0),
+        )
+
     def allowances(self, slip: Payslip, ts: Timesheet, scheme: dict) -> Decimal:
         """Надбавки, не зависящие от ставки: топли оброк и подобные."""
         if scheme.get("allowances") == []:
             return D(0)
 
-        worked = sum(
-            (ts.get(k) for k, c in self.hour_types.items() if c.get("counts_as_worked")),
-            D(0),
-        )
+        worked = self.worked_hours(ts)
         full_day = self.const["full_day_hours"]
         norm_days = self.const["reference_norm_hours"] / full_day
 
@@ -663,6 +734,10 @@ class PayrollEngine:
             earned += self.minimum_guarantee(slip, ts)
 
         earned += self.allowances(slip, ts, scheme)
+        # Именованные надбавки человека — после надбавок страны и после
+        # доплаты до минимума: процентные считаются от того, что уже
+        # начислено, и потому обязаны идти последними (issue #189).
+        earned += self.personal_allowances(slip, ts, self.worked_hours(ts), earned)
 
         slip.net = earned
         self.gross_up(slip, ts, scheme)

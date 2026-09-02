@@ -1053,6 +1053,40 @@ def _preview_of(who, person: Employee):
     }
 
 
+# Как читается величина надбавки. Словами, а не ключом: `per_hour` на карточке
+# означал бы, что выбранное из списка читается обратно на языке базы.
+BASIS_TITLES = {
+    "per_hour": _("За отработанный час"),
+    "per_month": _("Суммой за месяц"),
+    "percent": _("Процентом к начислениям"),
+}
+
+
+def _allowances_of(person) -> list[dict]:
+    """Надбавки человека для карточки (issue #189).
+
+    Показываются все версии, а не только действующие: «наставничество было с
+    января по июль» — такой же факт условий работы, как ставка, и закрытый
+    месяц объясняется именно им.
+    """
+    from core.models import EmployeeAllowance
+
+    return [
+        {
+            "code": row.code,
+            "title": row.title,
+            "amount": exact(row.amount),
+            "basis": BASIS_TITLES.get(row.basis, row.basis),
+            "ledger": ledger_title(row.ledger),
+            "from": day(row.valid_from),
+            "to": day(row.valid_to),
+            "current": row.valid_to is None,
+        }
+        for row in EmployeeAllowance.objects.filter(employee_id=person.id)
+        .order_by("valid_from", "code")
+    ]
+
+
 def _employee_context(
     request, who, person: Employee, *, notice: str, error: str, may_manage: bool = True
 ) -> dict:
@@ -1096,6 +1130,12 @@ def _employee_context(
             reverse("directory-employee-pay", args=[person.id])
             if permissions.has(who, permissions.PAYRUN_CALCULATE) else ""
         ),
+        # Именованные надбавки человека (issue #189). Показываются всем, кто
+        # видит карточку: это часть условий его работы, а не сумма расчёта —
+        # управляющий должен знать, что у его наставника есть надбавка. Срез по
+        # регистру делает база: надбавку внутреннего регистра роль без него не
+        # увидит вовсе (политика `ledger_visibility`).
+        "allowances": _allowances_of(person),
         "versions": [
             {
                 "from": day(term.valid_from),

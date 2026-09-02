@@ -21,9 +21,8 @@ from __future__ import annotations
 
 from datetime import date
 
-import pytest
-
 import psycopg
+import pytest
 
 from conftest import T2, USER_DIRECTOR, as_app_user
 

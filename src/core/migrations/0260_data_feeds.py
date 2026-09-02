@@ -45,7 +45,6 @@ from django.db import migrations, models
 import core.fields
 from core.models import now_default, uuid_pk
 
-
 TYPES = """
 create type data_feed as enum (
     'hours',       -- отработанные часы; единственное, что берётся из Dodo IS по D062

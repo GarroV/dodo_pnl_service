@@ -53,7 +53,6 @@ admin, против которого возражало само устройс�
 """
 from django.db import migrations
 
-
 FUNCTION = """
 create or replace function app_is_platform_admin()
 returns boolean

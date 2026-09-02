@@ -119,6 +119,45 @@
 {% endif %}
 
 <h2>{% translate "Условия найма" %}</h2>
+{% if allowances %}
+{% comment %}
+Именованные надбавки человека (issue #189, модуль эталона 16).
+
+Раньше всё, кроме ставки, приходилось прятать в один коэффициент: «1,15» — и
+через полгода никто не помнит, что это наставничество. Здесь у каждой надбавки
+своё имя, своя величина, свой регистр и свои даты, поэтому её видно и в
+ведомости отдельной строкой.
+
+Показаны и закончившиеся: «наставничество было с января по июль» объясняет
+закрытый месяц так же, как ставка того периода.
+{% endcomment %}
+<h2>{% translate "Надбавки" %}</h2>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Надбавка" %}</th>
+      <th class="num">{% translate "Величина" %}</th>
+      <th>{% translate "Как считается" %}</th>
+      <th>{% translate "Регистр" %}</th>
+      <th>{% translate "Действует с" %}</th>
+      <th>{% translate "По" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in allowances %}
+    <tr data-allowance="{{ row.code }}">
+      <td>{{ row.title }}</td>
+      <td class="{{ row.amount|numclass }}">{{ row.amount }}</td>
+      <td>{{ row.basis }}</td>
+      <td>{% ledger row.ledger %}</td>
+      <td>{{ row.from }}</td>
+      <td>{{ row.to }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% endif %}
+
 {% if versions %}
 <p class="note">{% translate "Расчёт берёт версию, действующую в считаемом месяце. Поэтому закрытый месяц не меняется от новой версии." %}</p>
 {% scroll %}<table>

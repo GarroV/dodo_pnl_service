@@ -1,0 +1,34 @@
+{
+  "Надбавки": {
+    "en": "Allowances",
+    "sr": "Dodaci"
+  },
+  "Надбавка": {
+    "en": "Allowance",
+    "sr": "Dodatak"
+  },
+  "Величина": {
+    "en": "Value",
+    "sr": "Vrednost"
+  },
+  "Как считается": {
+    "en": "How it is counted",
+    "sr": "Kako se računa"
+  },
+  "За отработанный час": {
+    "en": "Per hour worked",
+    "sr": "Po odrađenom satu"
+  },
+  "Суммой за месяц": {
+    "en": "A monthly amount",
+    "sr": "Iznosom mesečno"
+  },
+  "Процентом к начислениям": {
+    "en": "A percentage of the accruals",
+    "sr": "Procentom na obračun"
+  },
+  "По": {
+    "en": "Until",
+    "sr": "Do"
+  }
+}

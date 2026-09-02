@@ -1048,6 +1048,75 @@ class EmployeeUnit(models.Model):
         ]
 
 
+class EmployeeAllowance(models.Model):
+    """Именованная надбавка человека (issue #189, T196).
+
+    **Зачем, если есть `coefficient`.** Он один, а причин отличаться у оплаты
+    много: наставничество, старшинство, надбавка за точку. Всё это приходилось
+    зашивать в единственный множитель — и через полгода никто не мог сказать,
+    почему у человека 1,15 вместо 1,0. Это прямо запрещено принципом «правила
+    предметной области комментируем обязательно», только комментировать было
+    нечего: имени у надбавки не существовало.
+
+    **Живёт своей жизнью, а не внутри условий найма.** Снятое наставничество
+    раньше означало новую версию всей записи найма — вместе со ставкой, группой
+    и точкой. Теперь надбавка закрывается своей датой, и ставка не трогается.
+
+    **Регистр у надбавки свой.** В эталоне (модуль 16) наставничество лежит в
+    дополнительном регистре, а ночные — в официальном, у одного и того же
+    человека. Взять регистр у условий найма значило бы запретить такую пару, а
+    она обычная.
+
+    **Величина и способ начисления разведены.** «30 за час наставника» и «15% к
+    ставке» — разные вещи, и складывать их в одно поле означало бы угадывать
+    смысл числа по его размеру.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    employee = models.ForeignKey(
+        "Employee", on_delete=models.CASCADE, db_column="employee_id",
+        related_name="allowances",
+    )
+    # Код — то, чем надбавку опознаёт расчёт и след; название — то, что читает
+    # человек в ведомости. Снимок названия хранится здесь, а не берётся из
+    # справочника на момент чтения: закрытый месяц обязан выглядеть так, как в
+    # день закрытия (тот же довод, что у названия позиции в фактах).
+    code = models.TextField()
+    title = models.TextField()
+    amount = models.DecimalField(max_digits=12, decimal_places=4)
+    # `per_hour` — за отработанный час, `per_month` — суммой за месяц (с
+    # пропорцией по отработанному), `percent` — процентом к сумме начислений.
+    basis = models.TextField(db_default="per_month")
+    ledger = ledger_field(db_default="official")
+    valid_from = models.DateField()
+    valid_to = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = "employee_allowances"
+        indexes = [
+            models.Index("tenant", "employee", name="employee_allowances_person"),
+        ]
+        constraints = [
+            # Одна надбавка с этим кодом на человека в один период: две
+            # действующие строки одного кода начислились бы дважды, и заметил бы
+            # это человек в ведомости, а не мы.
+            models.UniqueConstraint(
+                fields=["employee", "code", "valid_from"],
+                name="employee_allowances_no_repeat",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(basis__in=["per_hour", "per_month", "percent"]),
+                name="employee_allowances_known_basis",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(valid_to__isnull=True)
+                | models.Q(valid_to__gt=models.F("valid_from")),
+                name="employee_allowances_dates_in_order",
+            ),
+        ]
+
+
 class Timesheet(models.Model):
     """Часы за период. Сначала руками, позже из Dodo IS."""
 

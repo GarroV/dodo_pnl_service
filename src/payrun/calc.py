@@ -47,8 +47,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, PayslipTotals, Tenant
 from core.feeds import trusted_sources
+from core.models import EmploymentTerm, PayComponent, Payrun, Payslip, PayslipTotals, Tenant
 from core.models import Timesheet as TimesheetRow
 from payroll import (
     HOURS,
@@ -144,9 +144,33 @@ def terms_in_force(tenant_id: UUID, period: date) -> dict[UUID, EmploymentTerm]:
     return terms
 
 
+def allowances_in_force(tenant_id: UUID, period: date) -> dict:
+    """Именованные надбавки, действующие в этом месяце (issue #189).
+
+    Правило «какая версия действует» то же, что у условий найма, и по той же
+    причине: закрытый месяц обязан считаться теми надбавками, которые были у
+    человека тогда. Наставничество, снятое в сентябре, не должно исчезать из
+    июньской ведомости.
+
+    Спрашивается одним запросом на весь расчёт: людей три десятка, и запрос на
+    каждого дал бы столько же обращений к базе за тем же ответом.
+    """
+    from core.models import EmployeeAllowance
+
+    found: dict = {}
+    for row in (
+        EmployeeAllowance.objects.filter(tenant_id=tenant_id, valid_from__lte=month_end(period))
+        .exclude(valid_to__lte=period)
+        .order_by("valid_from")
+    ):
+        found.setdefault(row.employee_id, []).append(row)
+    return found
+
+
 def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
     """Табели периода вместе с действующими условиями найма."""
     terms = terms_in_force(tenant_id, period)
+    extras = allowances_in_force(tenant_id, period)
 
     # Какие источники часов партнёр берёт в расчёт (D063). Спрашивается один раз
     # на весь сбор, а не у каждой строки: состояние потока за время одного
@@ -195,6 +219,10 @@ def collect_cases(tenant_id: UUID, period: date) -> list[Case]:
                     # и решает это одна функция `payroll.work_measure`, а не
                     # ветка здесь.
                     work_measure=term.work_measure,
+                    # Именованные надбавки человека (issue #189). Приходят
+                    # строками со своим регистром — в ведомости их видно
+                    # отдельно, а не растворёнными в коэффициенте.
+                    allowances=extras.get(sheet.employee_id, []),
                 ),
                 timesheet=Timesheet(
                     hours={k: d(v) for k, v in (sheet.hours or {}).items()},
