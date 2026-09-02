@@ -231,7 +231,9 @@ def read_po(path: Path) -> list[dict]:
             continue
         if line.startswith("msgid_plural"):
             # Ключ записи — единственное число: множественный msgid нужен только
-            # сборке каталога, а проверкам он ничего не добавляет.
+            # сборке каталога, а проверкам он ничего не добавляет. Но сам факт
+            # его наличия запоминается: по нему видно подделку (см. ниже).
+            current["plural"] = True
             sink = None
             continue
         if line.startswith("msgid"):
@@ -239,8 +241,13 @@ def read_po(path: Path) -> list[dict]:
             line = line[len("msgid"):].strip()
         elif line.startswith("msgstr"):
             line = line[len("msgstr"):].strip()
+            # `msgstr[0]` — форма, голый `msgstr` — перевод записи без форм.
+            # Различать их обязательно: запись, где есть и то и другое, —
+            # сломанный каталог, и отличить его можно только здесь.
             if line.startswith("["):
                 line = line.split("]", 1)[1].strip()
+            else:
+                current["single"] = True
             current["forms"].append([])
             sink = current["forms"][-1]
         if sink is not None and line.startswith('"'):
@@ -255,13 +262,15 @@ def read_po(path: Path) -> list[dict]:
             # Все формы: по ним видно непереведённую вторую форму.
             "forms": ["".join(form) for form in item["forms"]],
             "fuzzy": item["fuzzy"],
+            # Подделка: в записи есть и голый `msgstr`, и `msgid_plural`.
+            "mixed": item["single"] and item["plural"],
         }
         for item in entries
     ]
 
 
 def _blank_entry() -> dict:
-    return {"msgid": [], "forms": [], "fuzzy": False}
+    return {"msgid": [], "forms": [], "fuzzy": False, "plural": False, "single": False}
 
 
 def catalog(language: str) -> list[dict]:
@@ -293,6 +302,58 @@ def test_the_catalog_reader_understands_plural_forms(tmp_path):
     assert entries[0]["msgid"] == "Итого по %(counter)s строке"
     assert "Total for %(counter)s row" in entries[0]["msgstr"], (
         "перевод формы множественного числа потерян при разборе каталога"
+    )
+
+
+FORGED_PLURAL = (
+    'msgid "Итого по %(counter)s строке"\n'
+    'msgstr "Total for %(counter)s row"\n'
+    'msgid_plural "Итого по %(counter)s строкам"\n'
+    'msgstr[0] "Total for %(counter)s invoice"\n'
+    'msgstr[1] "Total for %(counter)s invoices"\n'
+)
+
+
+def test_the_reader_notices_a_single_translation_inside_a_plural_entry(tmp_path):
+    """Проверка самой проверки: подделка обязана быть видна разбором.
+
+    Так каталог портил `tools/apply_translations.py` (issue #195): дописывал
+    одиночный `msgstr` в запись с формами. Без этой строки разбор считал
+    дописанный перевод просто ещё одной формой — запись выглядела здоровой:
+    формы непустые, `fuzzy` снята, а `.mo` (собранный до порчи) на `gettext`
+    отдавал ровно первую форму, то есть и сверка `.mo` с `.po` молчала.
+    """
+    catalog_file = tmp_path / "django.po"
+    catalog_file.write_text(FORGED_PLURAL, encoding="utf-8")
+    entries = read_po(catalog_file)
+    assert len(entries) == 1, entries
+    assert entries[0]["mixed"], (
+        "разбор не заметил, что в записи есть и msgstr, и msgid_plural — "
+        "значит проверка ниже на испорченном каталоге останется зелёной"
+    )
+    # И обратно: правильная запись подделкой считаться не должна.
+    good = tmp_path / "good.po"
+    good.write_text(FORGED_PLURAL.replace('msgstr "Total for %(counter)s row"\n', ""),
+                    encoding="utf-8")
+    assert not read_po(good)[0]["mixed"]
+
+
+@pytest.mark.parametrize("language", sorted(CATALOG_DIRS))
+def test_no_entry_mixes_a_single_translation_with_plural_forms(language):
+    """`msgstr` и `msgid_plural` в одной записи — каталог не соберётся.
+
+    Ловит это и `msgfmt --check` (`test_the_catalog_survives_a_strict_compile`),
+    но он **пропускается**, если в системе нет gettext, и говорит «syntax error
+    в строке 4612», не называя причины. Эта проверка не зависит ни от чего
+    внешнего и называет запись по имени: на машине без gettext она и есть
+    единственный сторож.
+    """
+    forged = [item["msgid"] for item in catalog(language) if item["mixed"]]
+    assert not forged, (
+        f"{language}: в записи есть и одиночный перевод, и формы "
+        f"множественного числа — gettext такой каталог не соберёт вовсе "
+        f"(похоже на след tools/apply_translations.py, issue #195):\n"
+        + "\n".join(forged)
     )
 
 
