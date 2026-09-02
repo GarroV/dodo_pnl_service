@@ -353,11 +353,17 @@ def test_the_policies_hold_under_the_app_role(web_env, sql, tenant, tills):  # n
     import psycopg
 
     from conftest import as_app_user
+    from core.management.commands.seed_dev import det_id
 
-    manager = str(sql.execute(
-        "select m.user_id from memberships m join roles r on r.id = m.role_id "
-        "where r.code = 'manager' and m.tenant_id = %s", (tenant,)
-    ).fetchone()[0])
+    # Именно СИДОВЫЙ управляющий, а не «любой, у кого роль управляющего».
+    #
+    # Роль управляющего есть и у людей, заведённых соседними проверками: экран
+    # ролей приглашает своих, и приглашённому роль выдаётся без списка точек, то
+    # есть на все сразу. Прежний запрос брал `fetchone()` без порядка и
+    # возвращал кого придётся — иногда приглашённого, и тогда «управляющий»
+    # видел все кассы партнёра. Поодиночке проверка была зелёной, краснела
+    # только в полном прогоне и выглядела как дырка в политиках.
+    manager = str(det_id("user", "manager"))
 
     with psycopg.connect(web_env) as conn:
         with as_app_user(conn, manager):

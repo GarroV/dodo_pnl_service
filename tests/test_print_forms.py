@@ -557,3 +557,94 @@ def test_the_print_stylesheet_pins_a4_and_a_light_sheet():
     assert f"width: {printing.SHEET_WIDTH_MM}mm" in css
     assert f"height: {printing.SHEET_MM}mm" in css
     assert f"--print-row: {printing.ROW_MM}mm" in css
+
+
+# =============================================================================
+# Юрлицо на бумаге — то, что было в тот месяц (T189, issue #179)
+# =============================================================================
+
+
+@pytest.fixture
+def moved_to_another_entity(sql):  # noqa: F811
+    """Точки партнёра переехали в другое юрлицо с 1 июля 2026 года.
+
+    Дата переноса в прошлом нарочно: тогда снимок `units.legal_entity_id`
+    показывает УЖЕ НОВОЕ лицо. Именно этим снимком печать пользовалась до T189 —
+    и именно поэтому июньская ведомость, в том числе уже подписанная,
+    перерисовывалась задним числом на юрлицо, которого в июне не существовало.
+    """
+    tenant, old, old_title = sql.execute(
+        """select t.id, e.id, e.title
+             from tenants t join legal_entities e on e.tenant_id = t.id
+            where t.code = 'rs-dev' order by e.created_at limit 1"""
+    ).fetchone()
+    new_title = "Dodo RS Novo d.o.o."
+    new = sql.execute(
+        """insert into legal_entities (tenant_id, title, tax_number)
+           values (%s, %s, '999999999') returning id""",
+        (tenant, new_title),
+    ).fetchone()[0]
+    sql.execute(
+        """update unit_legal_entities set valid_to = '2026-07-01'
+            where tenant_id = %s and valid_to is null""",
+        (tenant,),
+    )
+    sql.execute(
+        """insert into unit_legal_entities (tenant_id, unit_id, legal_entity_id, valid_from)
+           select tenant_id, unit_id, %s, '2026-07-01' from unit_legal_entities
+            where tenant_id = %s and valid_to = '2026-07-01'""",
+        (new, tenant),
+    )
+    yield old_title, new_title
+    sql.execute(
+        "delete from unit_legal_entities where tenant_id = %s and legal_entity_id = %s",
+        (tenant, new),
+    )
+    sql.execute(
+        """update unit_legal_entities set valid_to = null
+            where tenant_id = %s and valid_to = '2026-07-01'""",
+        (tenant,),
+    )
+    sql.execute("delete from legal_entities where id = %s", (new,))
+
+
+def test_the_move_really_repointed_todays_snapshot(sql, moved_to_another_entity):  # noqa: F811
+    """Страховка от зелёного впустую: без переехавшего снимка проверки ниже пусты.
+
+    Если перенос не состоялся, «на бумаге старое лицо» верно само собой, и обе
+    проверки под ним ничего не сторожат. Поэтому переезд подтверждается отдельно.
+    """
+    _old_title, new_title = moved_to_another_entity
+    now = sql.execute(
+        """select distinct e.title from units u join legal_entities e on e.id = u.legal_entity_id
+             join tenants t on t.id = u.tenant_id where t.code = 'rs-dev'"""
+    ).fetchall()
+
+    assert [row[0] for row in now] == [new_title], "снимок «сейчас» не переехал"
+
+
+def test_the_payout_sheet_of_a_past_month_keeps_the_entity_of_that_month(
+    client, sql, june_calculated, moved_to_another_entity,  # noqa: F811
+):
+    """Июньскую ведомость июльский переезд не переписывает.
+
+    Эталон (модуль 11): «прошлые месяцы остаются за старым юрлицом, иначе
+    разъедется отчётность обоих». На подписной ведомости это не косметика: чужое
+    юрлицо в шапке делает документ бумагой не того лица.
+    """
+    old_title, new_title = moved_to_another_entity
+    html = payout_page(client, sql)
+
+    assert old_title in html, "июнь потерял юрлицо, под которым он и был посчитан"
+    assert new_title not in html, "в июньскую ведомость попало юрлицо из июля"
+
+
+def test_the_payslip_of_a_past_month_keeps_the_entity_of_that_month(
+    client, sql, june_calculated, moved_to_another_entity,  # noqa: F811
+):
+    """Листок на руки — тот же документ и тот же довод, что и у ведомости."""
+    old_title, new_title = moved_to_another_entity
+    html = slip_page(client, payslip_id(sql))
+
+    assert old_title in html
+    assert new_title not in html

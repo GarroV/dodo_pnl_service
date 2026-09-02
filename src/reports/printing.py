@@ -356,7 +356,7 @@ def build_payout(tenant_id: UUID, period: date) -> Payout:
         ))
 
     units = sorted({row.unit for row in rows if row.unit})
-    entity, tax_number = _entity_of(tenant, [row.payslip for row in totals])
+    entity, tax_number = _entity_of(tenant, [row.payslip for row in totals], period)
     payrun = Payrun.objects.filter(tenant_id=tenant_id, period=period).first()
     signed = _people({
         who for who in (
@@ -397,21 +397,37 @@ def _who_calculated(tenant_id: UUID, period: date):
     return job.requested_by if job else None
 
 
-def _entity_of(tenant, slips) -> tuple[str, str]:
-    """Чьё это юридическое лицо и его налоговый номер.
+def _entity_of(tenant, slips, period=None) -> tuple[str, str]:
+    """Чьё это юридическое лицо и его налоговый номер — НА ТОТ период.
 
     У партнёра точек бывает несколько и юридических лиц тоже. Пока лицо одно —
     в шапке стоит оно с налоговым номером; как только их больше, вместо номера
     не ставится ничего: чужой ПИБ на подписной ведомости — это документ не того
     юридического лица.
+
+    Юрлицо спрашивается по дате периода, а не берётся из `units.legal_entity_id`
+    (T189, issue #179). Колонка знает только «сейчас»: точка, перешедшая в июле
+    в другое юрлицо, перерисовала бы задним числом всю печать за май — включая
+    уже подписанную. Эталон говорит это прямо: «прошлые месяцы остаются за
+    старым юрлицом, иначе разъедется отчётность обоих».
+
+    Без периода функция отвечает по сегодняшнему дню — так спрашивают о том,
+    что печатается сейчас.
     """
-    seen = {
-        slip.unit.legal_entity for slip in slips
-        if slip.unit_id and slip.unit.legal_entity_id
-    }
-    if len(seen) == 1:
-        only = next(iter(seen))
-        return only.title, only.tax_number or ""
+    from core.models import LegalEntity, UnitLegalEntity
+
+    on_date = period or date.today()
+    units = {slip.unit_id for slip in slips if slip.unit_id}
+    entity_ids = set(
+        UnitLegalEntity.objects
+        .filter(unit_id__in=units, valid_from__lte=on_date)
+        .exclude(valid_to__lte=on_date)
+        .values_list("legal_entity_id", flat=True)
+    )
+    if len(entity_ids) == 1:
+        only = LegalEntity.objects.filter(pk=entity_ids.pop()).first()
+        if only is not None:
+            return only.title, only.tax_number or ""
     return (tenant.title if tenant else ""), ""
 
 
@@ -519,8 +535,8 @@ def build_slip(tenant_id: UUID, payslip_id) -> Slip:
 
     paid = totals.to_bank + totals.to_cash
     return Slip(
-        entity=_entity_of(tenant, [slip])[0],
-        tax_number=_entity_of(tenant, [slip])[1],
+        entity=_entity_of(tenant, [slip], period)[0],
+        tax_number=_entity_of(tenant, [slip], period)[1],
         period=period,
         currency=tenant.base_currency if tenant else "",
         employee=f"{slip.employee.last_name} {slip.employee.first_name}".strip(),

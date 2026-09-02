@@ -31,7 +31,7 @@ from django.utils.translation import gettext as _
 
 from .models import Membership, PlatformAdmin, Role, Tenant, User
 from .role_delivery import product_shape
-from .roles import DEFAULT_TITLES, ROLE_ORDER, ROLE_SHAPES
+from .roles import DEFAULT_TITLES, ROLE_ORDER, ROLE_SHAPES, permission_states
 
 __all__ = ["SpaceRefused", "NewSpace", "create_space", "is_platform_admin"]
 
@@ -139,6 +139,9 @@ def create_space(
                     title=DEFAULT_TITLES[name],
                     visible_ledgers=list(ROLE_SHAPES[name].ledgers),
                     permissions=list(ROLE_SHAPES[name].permissions),
+                    # Матрица роли: где стена, а где отличие, которое
+                    # партнёр вправе внести сам (T203, D060).
+                    permission_states=permission_states(name),
                     # Снимок формы обязателен: без него доставка (T169) примет
                     # свежую роль за правленную партнёром и обойдёт её стороной.
                     shipped_shape=product_shape(name),

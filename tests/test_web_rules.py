@@ -35,6 +35,30 @@ import pytest
 from conftest import body, login_as, period_url, wipe_payruns
 
 JUNE = date(2026, 6, 1)
+# Управляющему точки временно выдаётся ведение правил — вместе со СНЯТОЙ стеной.
+#
+# После T203 у ролей эталона стоит матрица, и `rules.manage` для ролей партнёра
+# помечен `never` («менять правила расчёта — только администратор», эталон
+# модуля 11). Стена держится check-ом, а не политикой, поэтому одной выдачей
+# права база строку уже не примет.
+#
+# Проверки ниже от этого не теряют смысла и остаются на управляющем. Их предмет
+# — СРЕЗ по регистрам на экране правил, а не то, кому право положено. Партнёр
+# вправе завести свою роль с неполным набором регистров и ведением правил: стены
+# заведены по кодам ролей эталона, а у своей роли матрица пуста. Значит срез
+# обязан работать, и проверять его больше не на ком — у всех ролей эталона с
+# `rules.manage` регистры полные, и отбирать было бы нечего.
+GRANT_RULES_TO_MANAGER = (
+    "update roles set permission_states = permission_states - 'rules.manage', "
+    "permissions = permissions || '[\"rules.manage\"]'::jsonb "
+    "where code = 'manager' and tenant_id is not null"
+)
+REVOKE_RULES_FROM_MANAGER = (
+    "update roles set permissions = permissions - 'rules.manage', "
+    "permission_states = permission_states || '{\"rules.manage\": \"never\"}'::jsonb "
+    "where code = 'manager' and tenant_id is not null"
+)
+
 COURIERS_MEASURE = "groups.couriers.work_measure"
 NIGHT_PERCENT = "hour_types.night.pay_percent"
 # Делитель пересчёта нето в бруто: правило, которое двигает деньги у каждого.
@@ -361,10 +385,7 @@ def test_the_rules_never_name_a_ledger_the_role_cannot_see(client, sql):
     проверяется отдельно как контроль: он обязан остаться на месте, иначе
     непонятно, срез это или дырка в другую сторону.
     """
-    sql.execute(
-        "update roles set permissions = permissions || '[\"rules.manage\"]'::jsonb "
-        "where code = 'manager' and tenant_id is not null"
-    )
+    sql.execute(GRANT_RULES_TO_MANAGER)
     try:
         login_as(client, "manager")
         html = body(client.get("/rules/"))
@@ -376,10 +397,7 @@ def test_the_rules_never_name_a_ledger_the_role_cannot_see(client, sql):
         assert client.get(f"/rules/{COURIERS_MEASURE}/").status_code == 404
         client.post("/logout/")
     finally:
-        sql.execute(
-            "update roles set permissions = permissions - 'rules.manage' "
-            "where code = 'manager' and tenant_id is not null"
-        )
+        sql.execute(REVOKE_RULES_FROM_MANAGER)
 
 
 # --- способ работы группы (D032, T091) ----------------------------------------
@@ -752,10 +770,7 @@ def test_the_levels_never_name_a_group_the_role_cannot_see(client, sql, override
     подменённым запросом тоже нельзя — иначе срез держался бы на разметке.
     """
     couriers = group_id("couriers")
-    sql.execute(
-        "update roles set permissions = permissions || '[\"rules.manage\"]'::jsonb "
-        "where code = 'manager' and tenant_id is not null"
-    )
+    sql.execute(GRANT_RULES_TO_MANAGER)
     try:
         login_as(client, "manager")
         html = body(client.get(f"/rules/{NIGHT_PERCENT}/"))
@@ -768,10 +783,7 @@ def test_the_levels_never_name_a_group_the_role_cannot_see(client, sql, override
         assert answer.status_code == 400, answer.status_code
         client.post("/logout/")
     finally:
-        sql.execute(
-            "update roles set permissions = permissions - 'rules.manage' "
-            "where code = 'manager' and tenant_id is not null"
-        )
+        sql.execute(REVOKE_RULES_FROM_MANAGER)
     assert sql.execute(
         "select count(*) from rule_overrides where path = %s", (NIGHT_PERCENT,)
     ).fetchone()[0] == 0
@@ -815,10 +827,7 @@ def test_the_ledger_of_a_rule_is_chosen_from_what_the_role_sees(
     выше: `rules.manage` есть только у администратора, а он видит все три
     регистра, и проверять отбор было бы не на ком.
     """
-    sql.execute(
-        "update roles set permissions = permissions || '[\"rules.manage\"]'::jsonb "
-        "where code = 'manager' and tenant_id is not null"
-    )
+    sql.execute(GRANT_RULES_TO_MANAGER)
     try:
         login_as(client, "manager")
         html = body(client.get(f"/rules/{ALLOWANCE_LEDGER}/"))
@@ -837,7 +846,4 @@ def test_the_ledger_of_a_rule_is_chosen_from_what_the_role_sees(
         ).status_code == 302
         client.post("/logout/")
     finally:
-        sql.execute(
-            "update roles set permissions = permissions - 'rules.manage' "
-            "where code = 'manager' and tenant_id is not null"
-        )
+        sql.execute(REVOKE_RULES_FROM_MANAGER)

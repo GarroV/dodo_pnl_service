@@ -29,7 +29,7 @@ from django.utils.timezone import now
 
 from core import models
 from core.role_delivery import product_shape
-from core.roles import ROLE_ORDER, ROLE_SHAPES
+from core.roles import ROLE_ORDER, ROLE_SHAPES, permission_states
 from core.rules import import_presets
 from payrun.calc import calculate_period
 from payrun.lifecycle import approve
@@ -384,6 +384,7 @@ def _roles_and_users(tenant) -> None:
         role = models.Role.objects.create(
             id=det_id("role", code), tenant=tenant, code=code, title=title,
             visible_ledgers=list(ledgers), permissions=list(permissions),
+            permission_states=permission_states(code),
             # Снимок формы — по тому же доводу, что в сиде разработки (T169):
             # роль без снимка доставка приняла бы за правку человека и обошла
             # стороной, то есть демо однажды осталось бы на старой форме.

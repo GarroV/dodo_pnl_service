@@ -153,6 +153,7 @@ urlpatterns = [
     # словами тому, кому не положено, — как справочники и правила: сокрытие
     # адреса не защита, а проверка стоит в представлении и в политиках базы.
     path("roles/", roles_views.index, name="roles"),
+    path("roles/invite/", roles_views.invite, name="roles-invite"),
     path("roles/<uuid:role_id>/rights/", roles_views.role_rights, name="role-rights"),
     path("roles/people/<uuid:user_id>/", roles_views.person_roles, name="person-roles"),
     path("directory/", directory_views.index, name="directory"),
