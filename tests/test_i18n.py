@@ -411,7 +411,17 @@ def test_catalog_covers_everything_extracted_from_sources(language):
     known = {item["msgid"] for item in catalog(language)}
     lost = extracted_msgids(language) - known
     assert not lost, (
-        f"{language}: строки есть в коде, но не в каталоге ({len(lost)}):\n"
+        f"{language}: строки есть в коде, но не в каталоге ({len(lost)}).\n"
+        # Как чинить — прямо здесь, а не в чужом docstring. Эта краснота
+        # застаёт человека в минуту, когда он думает о другом, и подсказка
+        # «каталог обязан покрывать всё» толкает ровно к тому, чего делать
+        # нельзя: `makemessages` по рабочему каталогу переписывает файл целиком
+        # и молча сносит живые переводы (31.08.2026 — минус 30 записей, #214).
+        "Заведите перевод в tools/translations/*.json и примените:\n"
+        "    python tools/apply_translations.py --add tools/translations/ваш.json\n"
+        "    (cd src && python ../manage.py compilemessages)\n"
+        "makemessages по рабочему каталогу НЕ запускать — он снесёт живые переводы.\n"
+        "Проверьте `git diff --stat src/locale`: должны быть одни добавления.\n\n"
         + "\n".join(sorted(lost))
     )
 
