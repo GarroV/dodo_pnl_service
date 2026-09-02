@@ -12,7 +12,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from uuid import UUID
+
+from django.db.models import Q
 
 from core.models import Membership, Unit
 
@@ -109,6 +112,11 @@ def _from_membership(user) -> Principal:
     memberships = list(
         Membership.objects.select_related("role", "tenant")
         .filter(user_id=user.pk)
+        # Просроченное членство не считается — ровно так же, как в базе (T188).
+        # Экран обязан считать теми же правилами: иначе в шапке стоит роль,
+        # которой политики уже не дают ни строки, и человек не понимает, почему
+        # кнопка на месте, а действие отказывает.
+        .filter(Q(expires_at__isnull=True) | Q(expires_at__gte=date.today()))
         # Порядок обязан быть определённым: без него база вправе отдать строки
         # как угодно, и роль в шапке менялась бы от запроса к запросу.
         .order_by("created_at", "id")

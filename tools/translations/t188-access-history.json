@@ -1,0 +1,94 @@
+{
+  "%(actor)s выдал %(subject)s роль «%(role)s»": {
+    "en": "%(actor)s granted %(subject)s the role “%(role)s”",
+    "sr": "%(actor)s je dodelio %(subject)s ulogu „%(role)s“"
+  },
+  "%(actor)s пригласил %(subject)s с ролью «%(role)s»": {
+    "en": "%(actor)s invited %(subject)s with the role “%(role)s”",
+    "sr": "%(actor)s je pozvao %(subject)s sa ulogom „%(role)s“"
+  },
+  "%(actor)s снял с %(subject)s роль «%(role)s»": {
+    "en": "%(actor)s revoked the role “%(role)s” from %(subject)s",
+    "sr": "%(actor)s je oduzeo ulogu „%(role)s“ korisniku %(subject)s"
+  },
+  "%(name)s заведён с ролью «%(role)s». Войти он пока не сможет: как человек получает первый вход, у продукта ещё не решено.": {
+    "en": "%(name)s has been added with the role “%(role)s”. They cannot sign in yet: how a person gets their first sign-in has not been decided for the product.",
+    "sr": "%(name)s je dodat sa ulogom „%(role)s“. Još ne može da se prijavi: kako osoba dobija prvu prijavu, za proizvod još nije odlučeno."
+  },
+  "До какого числа": {
+    "en": "Until which date",
+    "sr": "Do kog datuma"
+  },
+  "Доступы ещё не выдавали и не снимали.": {
+    "en": "No access has been granted or revoked yet.",
+    "sr": "Pristup još nije dodeljen ni oduzet."
+  },
+  "Зачем": {
+    "en": "What for",
+    "sr": "Radi čega"
+  },
+  "Имя и почта обязательны: без них человека не отличить от другого.": {
+    "en": "A name and an email are required: without them one person cannot be told from another.",
+    "sr": "Ime i e-pošta su obavezni: bez njih se jedna osoba ne razlikuje od druge."
+  },
+  "Имя и фамилия": {
+    "en": "First and last name",
+    "sr": "Puno ime"
+  },
+  "История доступов": {
+    "en": "Access history",
+    "sr": "Istorija pristupa"
+  },
+  "Кто, кому, когда и зачем. Записи не правятся и не удаляются — этого не может\nни один экран и ни один человек: у приложения нет таких прав на эту таблицу.": {
+    "en": "Who, to whom, when and why. Records are never edited or deleted — no screen and no person can do it: the application has no such rights on this table.",
+    "sr": "Ko, kome, kada i zašto. Zapisi se ne menjaju i ne brišu — to ne može nijedan ekran ni jedna osoba: aplikacija nema takva prava nad ovom tabelom."
+  },
+  "Почта": {
+    "en": "Email",
+    "sr": "E-pošta"
+  },
+  "Пригласить": {
+    "en": "Invite",
+    "sr": "Pozovi"
+  },
+  "Пригласить человека": {
+    "en": "Invite a person",
+    "sr": "Pozovi osobu"
+  },
+  "Причина выдачи роли": {
+    "en": "Reason for granting the role",
+    "sr": "Razlog dodele uloge"
+  },
+  "Причина обязательна: она остаётся в истории рядом с вашим именем.": {
+    "en": "A reason is required: it stays in the history next to your name.",
+    "sr": "Razlog je obavezan: ostaje u istoriji pored vašeg imena."
+  },
+  "Причина снятия роли": {
+    "en": "Reason for revoking the role",
+    "sr": "Razlog oduzimanja uloge"
+  },
+  "Срок роли записан не датой.": {
+    "en": "The end of the role is not written as a date.",
+    "sr": "Rok uloge nije upisan kao datum."
+  },
+  "Срок роли уже прошёл — такой доступ не начнётся.": {
+    "en": "The end of the role has already passed — such access would never begin.",
+    "sr": "Rok uloge je već prošao — takav pristup ne bi ni počeo."
+  },
+  "Человек появится в списке сразу и с ролью. Войти он пока не сможет: как\nчеловек получает первый вход, у продукта ещё не решено — до этого доступ\nоткрывает администратор площадки.": {
+    "en": "The person appears in the list at once, already with a role. They cannot sign in yet: how a person gets their first sign-in has not been decided for the product — until then access is opened by the platform administrator.",
+    "sr": "Osoba se odmah pojavljuje na spisku, već sa ulogom. Još ne može da se prijavi: kako osoba dobija prvu prijavu, za proizvod još nije odlučeno — do tada pristup otvara administrator platforme."
+  },
+  "Человек с такой почтой уже заведён.": {
+    "en": "A person with this email already exists.",
+    "sr": "Osoba sa ovom e-poštom već postoji."
+  },
+  "Что произошло": {
+    "en": "What happened",
+    "sr": "Šta se dogodilo"
+  },
+  "до %(day)s": {
+    "en": "until %(day)s",
+    "sr": "do %(day)s"
+  }
+}

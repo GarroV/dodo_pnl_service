@@ -30,13 +30,17 @@
 """
 from __future__ import annotations
 
+from datetime import date
+from uuid import uuid4
+
 from django.contrib.auth.decorators import login_required
-from django.db import connection
+from django.contrib.auth.hashers import make_password
+from django.db import connection, transaction
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from core.models import Membership, Role
+from core.models import AccessLogEntry, Membership, Role, User
 from core.roles import ALL_PERMISSIONS, NEVER, OPTIONAL
 
 from . import permissions
@@ -65,19 +69,26 @@ def _people(tenant_id):
     Имена приходят из `users`, которую `0243` открыла тому, кто ведёт роли.
     Учётка без имени показывается логином: пусто в этом столбце означало бы,
     что человека нет, — а он есть.
+
+    Срок роли едет рядом с самой ролью (T188): «Администратор сети до 31.07» —
+    это одна вещь, и разносить её по разным столбцам значило бы предложить
+    человеку самому сопоставлять две колонки.
     """
     with connection.cursor() as cur:
         cur.execute(
             """
             select m.user_id,
                    coalesce(nullif(u.full_name, ''), u.username, m.user_id::text) as who,
+                   coalesce(u.email, '')                     as mail,
                    array_agg(r.id::text order by r.title)    as role_ids,
-                   array_agg(r.title order by r.title)       as role_titles
+                   array_agg(r.title order by r.title)       as role_titles,
+                   array_agg(coalesce(to_char(m.expires_at, 'DD.MM.YYYY'), '')
+                             order by r.title)               as role_until
               from memberships m
               join roles r on r.id = m.role_id
               left join users u on u.id = m.user_id
              where m.tenant_id = %s
-             group by m.user_id, who
+             group by m.user_id, who, mail
              order by who
             """,
             [tenant_id],
@@ -86,10 +97,51 @@ def _people(tenant_id):
             {
                 "user_id": row[0],
                 "who": row[1],
+                "mail": row[2],
                 "roles": [
-                    {"id": rid, "title": title}
-                    for rid, title in zip(row[2], row[3], strict=True)
+                    {"id": rid, "title": title, "until": until}
+                    for rid, title, until in zip(row[3], row[4], row[5], strict=True)
                 ],
+            }
+            for row in cur.fetchall()
+        ]
+
+
+# Сколько записей истории показывать сразу. История не удаляется никогда, и
+# через год её тут тысячи; экран отвечает на вопрос «что происходило недавно»,
+# а разбор давнего — отдельный разговор и отдельная страница.
+HISTORY_SHOWN = 50
+
+
+def _history(tenant_id):
+    """Кто, кому, когда и зачем открывал доступ.
+
+    Имена берутся соединением с `users` — той же выборкой, что и список людей.
+    Названия ролей — снимком из самой записи, а не по ссылке: роль переименуют,
+    и «выдал роль администратора» превратилось бы в «выдал роль».
+    """
+    with connection.cursor() as cur:
+        cur.execute(
+            """
+            select to_char(l.at, 'DD.MM.YYYY'),
+                   coalesce(nullif(a.full_name, ''), a.username, '—'),
+                   coalesce(nullif(s.full_name, ''), s.username, '—'),
+                   l.action, l.role_title,
+                   coalesce(to_char(l.until, 'DD.MM.YYYY'), ''),
+                   l.reason
+              from access_log l
+              left join users a on a.id = l.actor_user_id
+              left join users s on s.id = l.subject_user_id
+             where l.tenant_id = %s
+             order by l.at desc
+             limit %s
+            """,
+            [tenant_id, HISTORY_SHOWN],
+        )
+        return [
+            {
+                "at": row[0], "actor": row[1], "subject": row[2],
+                "action": row[3], "role": row[4], "until": row[5], "reason": row[6],
             }
             for row in cur.fetchall()
         ]
@@ -122,6 +174,8 @@ def _page(request, who, *, notice: str = "", error: str = "", status: int = 200)
             "rows": rows,
             "roles": roles,
             "people": _people(who.tenant_id),
+            "history": _history(who.tenant_id),
+            "today": date.today().isoformat(),
             "notice": notice,
             "error": error,
         },
@@ -196,24 +250,187 @@ def role_rights(request, role_id):
     return redirect(reverse("roles"))
 
 
+INVITED = "invited"
+GRANTED = "granted"
+REVOKED = "revoked"
+
+
+def _record(who, *, subject, action: str, role, until, reason: str) -> None:
+    """Записать событие доступа в историю.
+
+    Пишется в той же транзакции, что и само событие (у проекта включён
+    `ATOMIC_REQUESTS`): роль, выданная без записи в истории, — это ровно то
+    состояние, из-за которого задача и появилась.
+
+    Автор берётся из контекста, а не из формы. Подставить чужое имя нельзя и
+    физически: политика `roles_manager_write` сверяет `actor_user_id` с
+    `app_user_id()`, и запись «Х выдал роль» ценна ровно этим.
+    """
+    AccessLogEntry.objects.create(
+        tenant_id=who.tenant_id,
+        actor_user_id=who.user_id,
+        subject_user_id=subject,
+        action=action,
+        role_id=role.pk,
+        # Снимок названия: роль переименуют, а запись обязана читаться прежней.
+        role_title=role.title,
+        until=until,
+        reason=reason,
+    )
+
+
+def _term(request):
+    """Срок из формы: дата или пусто. Прошедшая дата — отказ словами.
+
+    Роль «до вчера» — это доступ, которого не было ни секунды: человек нажал
+    «выдать» и не выдал ничего, а экран сказал бы «выдана». Молчание такого
+    рода здесь дороже всего: речь о правах.
+    """
+    raw = (request.POST.get("until") or "").strip()
+    if not raw:
+        return None, ""
+    try:
+        until = date.fromisoformat(raw)
+    except ValueError:
+        return None, _("Срок роли записан не датой.")
+    if until < date.today():
+        return None, _("Срок роли уже прошёл — такой доступ не начнётся.")
+    return until, ""
+
+
+def _reason(request):
+    """Причина из формы. Пустая не принимается — по тому же доводу, что у отката.
+
+    Откат утверждения периода без причины продукт не принимает с T025: история,
+    которая не отвечает на «зачем», не отвечает ни на что. Доступ — то же
+    самое, и эталон подписывает поле теми же словами: «останется в истории
+    рядом с вашим именем».
+    """
+    return (request.POST.get("reason") or "").strip()
+
+
+def _refusal_page(request, refusal):
+    return render(
+        request, "web/roles/denied.html",
+        {"message": refusal.message}, status=refusal.http_status,
+    )
+
+
+def _insert_person(person_id, *, full_name: str, email: str) -> None:
+    """Завести учётку — запросом, а не через ORM, и это не каприз.
+
+    Django к любой вставке дописывает `returning` ради колонок с `db_default`
+    (`created_at`, `is_active`). А `returning` заставляет Postgres применить к
+    новой строке ещё и политики **чтения** — и вот их-то свежая учётка пройти не
+    может: видимой её делает членство, а членства ещё нет и быть не может, оно
+    заводится следующей строкой этой же транзакции.
+
+    Расширить политику чтения под этот случай нельзя, не заплатив дорого: любое
+    условие, охватывающее строку без членства, открывает тому, кто ведёт роли,
+    учётки людей ЧУЖИХ партнёров — вместе с хэшем пароля, который лежит в той
+    же таблице. Поэтому дешевле обойтись без `returning`.
+
+    **Пароля здесь нет намеренно.** Как человек получает первый вход — открытый
+    вопрос продукта (пароль против кода на почту), и решать его побочным
+    эффектом приглашения нельзя. `make_password(None)` даёт непригодный хэш: с
+    ним не сойдётся ни один ввод, то есть учётка заведена, но не открыта.
+
+    Логин — почта: второго имени для входа человеку заводить незачем.
+    """
+    with connection.cursor() as cur:
+        cur.execute(
+            """insert into users (id, username, full_name, email, password)
+               values (%s, %s, %s, %s, %s)""",
+            [str(person_id), email, full_name, email, make_password(None)],
+        )
+
+
 @login_required
-def person_roles(request, user_id):
-    """Выдать человеку роль или снять её."""
+def invite(request):
+    """Завести человека партнёра и сразу дать ему роль (T188, issue #178).
+
+    До этого учётки появлялись только сидом или руками в базе — то есть завести
+    сотрудника партнёр не мог вовсе.
+
+    **Пароля здесь нет намеренно.** Как человек получает первый вход — открытый
+    вопрос Q026 (пароль или одноразовый код на почту), и решать его побочным
+    эффектом этой формы нельзя. Учётка заводится непригодным для входа хэшем, а
+    экран говорит об этом словами, а не оставляет человека гадать.
+    """
     who = get_current_principal(request)
     try:
         permissions.check(who, permissions.ROLES_MANAGE)
     except permissions.PermissionRefused as refusal:
-        return render(
-            request,
-            "web/roles/denied.html",
-            {"message": refusal.message},
-            status=refusal.http_status,
+        return _refusal_page(request, refusal)
+
+    full_name = (request.POST.get("full_name") or "").strip()
+    email = (request.POST.get("email") or "").strip().lower()
+    reason = _reason(request)
+    role_id = request.POST.get("role") or ""
+    role = Role.objects.filter(pk=role_id, tenant_id=who.tenant_id).first() if role_id else None
+
+    if not full_name or not email:
+        return _page(
+            request, who,
+            error=_("Имя и почта обязательны: без них человека не отличить от другого."),
+            status=400,
         )
+    if role is None:
+        return _page(request, who, error=_("Такой роли у этого партнёра нет."), status=404)
+    if not reason:
+        return _page(
+            request, who,
+            error=_("Причина обязательна: она остаётся в истории рядом с вашим именем."),
+            status=400,
+        )
+    if User.objects.filter(email=email).exists() or User.objects.filter(username=email).exists():
+        return _page(
+            request, who,
+            error=_("Человек с такой почтой уже заведён."),
+            status=409,
+        )
+
+    until, refused = _term(request)
+    if refused:
+        return _page(request, who, error=refused, status=400)
+
+    person_id = uuid4()
+    with transaction.atomic():
+        _insert_person(person_id, full_name=full_name, email=email)
+        Membership.objects.create(
+            tenant_id=who.tenant_id, user_id=person_id, role_id=role.pk, expires_at=until,
+        )
+        _record(who, subject=person_id, action=INVITED, role=role,
+                until=until, reason=reason)
+
+    request.session["roles_notice"] = _(
+        "%(name)s заведён с ролью «%(role)s». Войти он пока не сможет: "
+        "как человек получает первый вход, у продукта ещё не решено."
+    ) % {"name": full_name, "role": role.title}
+    return redirect(reverse("roles"))
+
+
+@login_required
+def person_roles(request, user_id):
+    """Выдать человеку роль или снять её — со сроком, причиной и следом."""
+    who = get_current_principal(request)
+    try:
+        permissions.check(who, permissions.ROLES_MANAGE)
+    except permissions.PermissionRefused as refusal:
+        return _refusal_page(request, refusal)
 
     role_id = request.POST.get("role") or ""
     role = Role.objects.filter(pk=role_id, tenant_id=who.tenant_id).first() if role_id else None
     if role is None:
         return _page(request, who, error=_("Такой роли у этого партнёра нет."), status=404)
+
+    reason = _reason(request)
+    if not reason:
+        return _page(
+            request, who,
+            error=_("Причина обязательна: она остаётся в истории рядом с вашим именем."),
+            status=400,
+        )
 
     if request.POST.get("action") == "remove":
         held = Membership.objects.filter(tenant_id=who.tenant_id, user_id=user_id)
@@ -225,9 +442,16 @@ def person_roles(request, user_id):
                 error=_("Это единственная роль человека — снимать её некуда."),
                 status=409,
             )
-        held.filter(role_id=role.pk).delete()
+        with transaction.atomic():
+            held.filter(role_id=role.pk).delete()
+            _record(who, subject=user_id, action=REVOKED, role=role,
+                    until=None, reason=reason)
         request.session["roles_notice"] = _("Роль «%(role)s» снята.") % {"role": role.title}
         return redirect(reverse("roles"))
+
+    until, refused = _term(request)
+    if refused:
+        return _page(request, who, error=refused, status=400)
 
     already = Membership.objects.filter(
         tenant_id=who.tenant_id, user_id=user_id, role_id=role.pk,
@@ -235,6 +459,11 @@ def person_roles(request, user_id):
     if already:
         return _page(request, who, error=_("Эта роль у человека уже есть."), status=409)
 
-    Membership.objects.create(tenant_id=who.tenant_id, user_id=user_id, role_id=role.pk)
+    with transaction.atomic():
+        Membership.objects.create(
+            tenant_id=who.tenant_id, user_id=user_id, role_id=role.pk, expires_at=until,
+        )
+        _record(who, subject=user_id, action=GRANTED, role=role,
+                until=until, reason=reason)
     request.session["roles_notice"] = _("Роль «%(role)s» выдана.") % {"role": role.title}
     return redirect(reverse("roles"))

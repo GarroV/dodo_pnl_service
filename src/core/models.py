@@ -242,6 +242,16 @@ class Membership(models.Model):
     user_id = models.UUIDField()
     role = models.ForeignKey(Role, on_delete=models.PROTECT, db_column="role_id")
     unit_ids = ArrayField(models.UUIDField(), null=True, blank=True)  # null = все точки
+    # По какое число действует роль. Пусто — навсегда (T188, issue #178).
+    #
+    # Эталон: «выдал роль администратора до 31.07.2026. Причина: отпуск
+    # партнёра». Граница включающая: «до 31.07» человек читает как «31-го ещё
+    # можно», и база обязана понимать это так же.
+    #
+    # Срок учитывает САМА база — все функции контекста (`0264`). Срок, который
+    # знает только экран, сроком не является: доступ остаётся, а кончился он
+    # или нет, решает тот, кто вовремя посмотрел.
+    expires_at = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(db_default=now_default())
 
     class Meta:
@@ -251,6 +261,47 @@ class Membership(models.Model):
                 fields=["tenant", "user_id", "role"], name="memberships_tenant_user_role_uniq"
             ),
         ]
+
+
+class AccessLogEntry(models.Model):
+    """История доступов: кто, кому, когда и зачем (T188, issue #178).
+
+    Эталон подписывает таблицу словами «кто, кому, когда и зачем — не
+    удаляется», и «не удаляется» здесь — требование к базе. История доступов
+    существует ради одного разговора: через полгода на вопрос «почему у него
+    были эти права в июне» отвечает запись, а не память. Запись, которую можно
+    поправить тем же экраном, который её создал, этого разговора не выдержит,
+    поэтому у `app_user` нет на неё ни `update`, ни `delete` — не политикой, а
+    правами таблицы: политику можно написать неверно и не заметить.
+
+    **Название роли — снимком.** Роль переименуют, и «выдал роль
+    администратора» превратится в «выдал роль», если название читать по ссылке.
+    По той же причине снимком хранится и срок: он про ту выдачу, а не про то,
+    что стоит в членстве сейчас.
+
+    Ссылка на роль — голый uuid без внешнего ключа, как и `user_id` в
+    `memberships`: удаление роли не должно ни ронять историю, ни держать роль
+    вечно живой.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    at = models.DateTimeField(db_default=now_default())
+    # Кто сделал. Заполняется базой из контекста, а не приложением: запись
+    # «Х выдал роль» ценна ровно тем, что её физически не мог сделать не Х.
+    actor_user_id = models.UUIDField()
+    subject_user_id = models.UUIDField()
+    # invited — человека завели и сразу дали роль; granted — роль выдана;
+    # revoked — снята; changed — изменён срок уже выданной.
+    action = models.TextField()
+    role_id = models.UUIDField(null=True, blank=True)
+    role_title = models.TextField(db_default="")
+    until = models.DateField(null=True, blank=True)
+    reason = models.TextField(db_default="")
+
+    class Meta:
+        db_table = "access_log"
+        indexes = [models.Index(models.F("tenant"), models.F("at"), name="access_log_recent")]
 
 
 class Reconciliation(models.Model):

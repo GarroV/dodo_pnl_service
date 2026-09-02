@@ -148,10 +148,17 @@ def test_the_accountant_becomes_an_administrator_too(client, web_env):
     html = body(client.get("/roles/"))
     admin_role = role_id(html, "admin")
     person = re.search(
-        r'<td>[^<]*Бухгалтер[^<]*</td>.*?action="/roles/people/([0-9a-f-]+)/"', html, flags=re.S,
+        r'<td>Бухгалтер(?:(?!</td>).)*</td>.*?action="/roles/people/([0-9a-f-]+)/"',
+        html, flags=re.S,
     )
     assert person, "бухгалтера нет в списке людей — некому выдавать роль"
-    client.post(f"/roles/people/{person.group(1)}/", {"role": admin_role}, follow=True)
+    # Причина обязательна с T188: она уходит в историю доступов рядом с именем
+    # того, кто выдал.
+    client.post(
+        f"/roles/people/{person.group(1)}/",
+        {"role": admin_role, "reason": "бухгалтер ведёт проект целиком"},
+        follow=True,
+    )
 
     login_as(client, "accountant")
     assert client.get("/roles/").status_code == 200, "вторая роль не подействовала"
@@ -163,7 +170,7 @@ def test_the_accountant_becomes_an_administrator_too(client, web_env):
     login_as(client, "admin")
     client.post(
         f"/roles/people/{person.group(1)}/",
-        {"role": admin_role, "action": "remove"},
+        {"role": admin_role, "action": "remove", "reason": "уборка после проверки"},
         follow=True,
     )
     login_as(client, "accountant")

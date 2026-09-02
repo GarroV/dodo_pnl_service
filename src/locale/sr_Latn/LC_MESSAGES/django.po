@@ -8130,3 +8130,110 @@ msgstr "Prava uloge nisu promenjena: „%(right)s“ ova uloga nikada nema."
 #: новые строки, добавлены tools/apply_translations.py
 msgid "Этого права у роли не бывает: набор не расширяется в эту сторону"
 msgstr "Ova uloga nikada nema ovo pravo: skup se ne širi u tom pravcu"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "%(actor)s выдал %(subject)s роль «%(role)s»"
+msgstr "%(actor)s je dodelio %(subject)s ulogu „%(role)s“"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "%(actor)s пригласил %(subject)s с ролью «%(role)s»"
+msgstr "%(actor)s je pozvao %(subject)s sa ulogom „%(role)s“"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "%(actor)s снял с %(subject)s роль «%(role)s»"
+msgstr "%(actor)s je oduzeo ulogu „%(role)s“ korisniku %(subject)s"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"%(name)s заведён с ролью «%(role)s». Войти он пока не сможет: как "
+"человек получает первый вход, у продукта ещё не решено."
+msgstr "%(name)s je dodat sa ulogom „%(role)s“. Još ne može da se prijavi: kako osoba dobija prvu prijavu, za proizvod još nije odlučeno."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "До какого числа"
+msgstr "Do kog datuma"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Доступы ещё не выдавали и не снимали."
+msgstr "Pristup još nije dodeljen ni oduzet."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Зачем"
+msgstr "Radi čega"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Имя и почта обязательны: без них человека не отличить от другого."
+msgstr "Ime i e-pošta su obavezni: bez njih se jedna osoba ne razlikuje od druge."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Имя и фамилия"
+msgstr "Puno ime"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "История доступов"
+msgstr "Istorija pristupa"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Кто, кому, когда и зачем. Записи не правятся и не удаляются — этого не "
+"может\nни один экран и ни один человек: у приложения нет таких прав на "
+"эту таблицу."
+msgstr "Ko, kome, kada i zašto. Zapisi se ne menjaju i ne brišu — to ne može nijedan ekran ni jedna osoba: aplikacija nema takva prava nad ovom tabelom."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Почта"
+msgstr "E-pošta"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Пригласить"
+msgstr "Pozovi"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Пригласить человека"
+msgstr "Pozovi osobu"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Причина выдачи роли"
+msgstr "Razlog dodele uloge"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Причина обязательна: она остаётся в истории рядом с вашим именем."
+msgstr "Razlog je obavezan: ostaje u istoriji pored vašeg imena."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Причина снятия роли"
+msgstr "Razlog oduzimanja uloge"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Срок роли записан не датой."
+msgstr "Rok uloge nije upisan kao datum."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Срок роли уже прошёл — такой доступ не начнётся."
+msgstr "Rok uloge je već prošao — takav pristup ne bi ni počeo."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Человек появится в списке сразу и с ролью. Войти он пока не сможет: "
+"как\nчеловек получает первый вход, у продукта ещё не решено — до этого "
+"доступ\nоткрывает администратор площадки."
+msgstr "Osoba se odmah pojavljuje na spisku, već sa ulogom. Još ne može da se prijavi: kako osoba dobija prvu prijavu, za proizvod još nije odlučeno — do tada pristup otvara administrator platforme."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Человек с такой почтой уже заведён."
+msgstr "Osoba sa ovom e-poštom već postoji."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Что произошло"
+msgstr "Šta se dogodilo"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "до %(day)s"
+msgstr "do %(day)s"

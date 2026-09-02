@@ -140,9 +140,22 @@ def test_partner_roles_cannot_create_a_space(db, user_id):
                 )
 
 
-@pytest.mark.parametrize("user_id", PARTNER_ROLES)
+# Кто ведёт роли — тот приглашает людей своего партнёра (T188, issue #178).
+# Остальные роли партнёра учётку завести по-прежнему не могут: доступ в продукт
+# раздаёт не кто угодно, а тот, кому это поручено.
+ROLES_WITHOUT_ACCESS_RIGHTS = [USER_DIRECTOR, USER_ACCOUNTANT]
+
+
+@pytest.mark.parametrize("user_id", ROLES_WITHOUT_ACCESS_RIGHTS)
 def test_partner_roles_cannot_create_a_user(db, user_id):
-    """Учётку заводит платформа. Иначе доступ в продукт раздаёт кто угодно."""
+    """Учётку заводит тот, кто ведёт роли, — и больше никто из партнёра.
+
+    Проверка была на ВСЕ роли партнёра, включая администратора сети, и это
+    ровно то, с чего начинается issue #178: партнёр не мог завести своего
+    сотрудника ни одним способом, кроме сида или рук в базе. С T188 может — но
+    только тот, у кого есть `roles.manage`, и только со следом в истории
+    доступов. Обратная сторона проверяется отдельно, `test_roles_screen_access`.
+    """
     with as_app_user(db, user_id) as conn:
         with pytest.raises(DENIED):
             with conn.transaction():
@@ -150,6 +163,15 @@ def test_partner_roles_cannot_create_a_user(db, user_id):
                     "insert into users (id, username, password) values (%s, %s, 'x')",
                     (str(uuid.uuid4()), f"sneaky-{uuid.uuid4().hex[:8]}"),
                 )
+
+
+def test_the_one_who_leads_roles_creates_a_user(db):
+    """А вот администратор партнёра — может: без этого некому пригласить людей."""
+    with as_app_user(db, USER_ADMIN) as conn, conn.transaction(force_rollback=True):
+        conn.execute(
+            "insert into users (id, username, password) values (%s, %s, 'x')",
+            (str(uuid.uuid4()), f"invited-{uuid.uuid4().hex[:8]}"),
+        )
 
 
 def test_the_door_cannot_open_itself(db):

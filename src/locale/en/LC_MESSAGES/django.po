@@ -8296,3 +8296,110 @@ msgstr "The rights of the role are unchanged: “%(right)s” is never available
 #: новые строки, добавлены tools/apply_translations.py
 msgid "Этого права у роли не бывает: набор не расширяется в эту сторону"
 msgstr "This role never has this right: the set does not extend in this direction"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "%(actor)s выдал %(subject)s роль «%(role)s»"
+msgstr "%(actor)s granted %(subject)s the role “%(role)s”"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "%(actor)s пригласил %(subject)s с ролью «%(role)s»"
+msgstr "%(actor)s invited %(subject)s with the role “%(role)s”"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "%(actor)s снял с %(subject)s роль «%(role)s»"
+msgstr "%(actor)s revoked the role “%(role)s” from %(subject)s"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"%(name)s заведён с ролью «%(role)s». Войти он пока не сможет: как "
+"человек получает первый вход, у продукта ещё не решено."
+msgstr "%(name)s has been added with the role “%(role)s”. They cannot sign in yet: how a person gets their first sign-in has not been decided for the product."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "До какого числа"
+msgstr "Until which date"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Доступы ещё не выдавали и не снимали."
+msgstr "No access has been granted or revoked yet."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Зачем"
+msgstr "What for"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Имя и почта обязательны: без них человека не отличить от другого."
+msgstr "A name and an email are required: without them one person cannot be told from another."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Имя и фамилия"
+msgstr "First and last name"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "История доступов"
+msgstr "Access history"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Кто, кому, когда и зачем. Записи не правятся и не удаляются — этого не "
+"может\nни один экран и ни один человек: у приложения нет таких прав на "
+"эту таблицу."
+msgstr "Who, to whom, when and why. Records are never edited or deleted — no screen and no person can do it: the application has no such rights on this table."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Почта"
+msgstr "Email"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Пригласить"
+msgstr "Invite"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Пригласить человека"
+msgstr "Invite a person"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Причина выдачи роли"
+msgstr "Reason for granting the role"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Причина обязательна: она остаётся в истории рядом с вашим именем."
+msgstr "A reason is required: it stays in the history next to your name."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Причина снятия роли"
+msgstr "Reason for revoking the role"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Срок роли записан не датой."
+msgstr "The end of the role is not written as a date."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Срок роли уже прошёл — такой доступ не начнётся."
+msgstr "The end of the role has already passed — such access would never begin."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Человек появится в списке сразу и с ролью. Войти он пока не сможет: "
+"как\nчеловек получает первый вход, у продукта ещё не решено — до этого "
+"доступ\nоткрывает администратор площадки."
+msgstr "The person appears in the list at once, already with a role. They cannot sign in yet: how a person gets their first sign-in has not been decided for the product — until then access is opened by the platform administrator."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Человек с такой почтой уже заведён."
+msgstr "A person with this email already exists."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Что произошло"
+msgstr "What happened"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "до %(day)s"
+msgstr "until %(day)s"

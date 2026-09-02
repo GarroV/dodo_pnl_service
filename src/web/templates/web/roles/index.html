@@ -86,13 +86,15 @@
   <tbody>
     {% for person in people %}
     <tr>
-      <td>{{ person.who }}</td>
+      <td>{{ person.who }}{% if person.mail %}<br><span class="note">{{ person.mail }}</span>{% endif %}</td>
       <td>
         {% for held in person.roles %}
         <form method="post" action="{% url 'person-roles' person.user_id %}" class="inline">{% csrf_token %}
           <input type="hidden" name="role" value="{{ held.id }}">
           <input type="hidden" name="action" value="remove">
-          <span class="chip">{{ held.title }}
+          <span class="chip">{{ held.title }}{% if held.until %} <span class="note">{% blocktranslate with day=held.until %}до {{ day }}{% endblocktranslate %}</span>{% endif %}
+            <input type="text" name="reason" required maxlength="200" size="14"
+                   placeholder="{% translate "Причина" %}" aria-label="{% translate "Причина снятия роли" %}">
             <button type="submit" class="link" title="{% translate "Снять роль" %}">×</button>
           </span>
         </form>
@@ -103,10 +105,69 @@
           <select name="role" aria-label="{% translate "Роль" %}">
             {% for role in roles %}<option value="{{ role.id }}">{{ role.title }}</option>{% endfor %}
           </select>
+          <input type="date" name="until" min="{{ today }}" aria-label="{% translate "До какого числа" %}">
+          <input type="text" name="reason" required maxlength="200"
+                 placeholder="{% translate "Причина" %}" aria-label="{% translate "Причина выдачи роли" %}">
           <button type="submit">{% translate "Выдать" %}</button>
         </form>
       </td>
     </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+
+<h2>{% translate "Пригласить человека" %}</h2>
+{% comment %}
+Пароля в форме нет намеренно. Как человек получает первый вход — открытый
+вопрос продукта (пароль против одноразового кода на почту), и решать его
+побочным эффектом этой формы нельзя. Учётка заводится непригодным для входа
+хэшем, и об этом сказано словами: молчаливая учётка, в которую нельзя войти,
+читалась бы как поломка.
+{% endcomment %}
+<form method="post" action="{% url 'roles-invite' %}" class="stack">{% csrf_token %}
+  <label>{% translate "Имя и фамилия" %}
+    <input type="text" name="full_name" required maxlength="120">
+  </label>
+  <label>{% translate "Почта" %}
+    <input type="email" name="email" required maxlength="200">
+  </label>
+  <label>{% translate "Роль" %}
+    <select name="role">
+      {% for role in roles %}<option value="{{ role.id }}">{{ role.title }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>{% translate "До какого числа" %}
+    <input type="date" name="until" min="{{ today }}">
+  </label>
+  <label>{% translate "Причина" %}
+    <input type="text" name="reason" required maxlength="200">
+  </label>
+  <button type="submit">{% translate "Пригласить" %}</button>
+</form>
+<p class="note under">{% blocktranslate %}Человек появится в списке сразу и с ролью. Войти он пока не сможет: как
+человек получает первый вход, у продукта ещё не решено — до этого доступ
+открывает администратор площадки.{% endblocktranslate %}</p>
+
+<h2>{% translate "История доступов" %}</h2>
+<p class="note under">{% blocktranslate %}Кто, кому, когда и зачем. Записи не правятся и не удаляются — этого не может
+ни один экран и ни один человек: у приложения нет таких прав на эту таблицу.{% endblocktranslate %}</p>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Когда" %}</th>
+      <th>{% translate "Что произошло" %}</th>
+      <th>{% translate "Зачем" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in history %}
+    <tr>
+      <td>{{ entry.at }}</td>
+      <td>{% if entry.action == "invited" %}{% blocktranslate with actor=entry.actor subject=entry.subject role=entry.role %}{{ actor }} пригласил {{ subject }} с ролью «{{ role }}»{% endblocktranslate %}{% elif entry.action == "revoked" %}{% blocktranslate with actor=entry.actor subject=entry.subject role=entry.role %}{{ actor }} снял с {{ subject }} роль «{{ role }}»{% endblocktranslate %}{% else %}{% blocktranslate with actor=entry.actor subject=entry.subject role=entry.role %}{{ actor }} выдал {{ subject }} роль «{{ role }}»{% endblocktranslate %}{% endif %}{% if entry.until %} <span class="note">{% blocktranslate with day=entry.until %}до {{ day }}{% endblocktranslate %}</span>{% endif %}</td>
+      <td>{{ entry.reason }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3" class="note">{% translate "Доступы ещё не выдавали и не снимали." %}</td></tr>
     {% endfor %}
   </tbody>
 </table>{% endscroll %}
