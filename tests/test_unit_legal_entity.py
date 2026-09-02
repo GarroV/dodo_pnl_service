@@ -31,7 +31,8 @@ from conftest import (
 
 def link(conn, *, unit=U_BG1, entity=LE1, since="2023-01-01", until=None, tenant=T1):
     return conn.execute(
-        """insert into unit_legal_entities (tenant_id, unit_id, legal_entity_id, valid_from, valid_to)
+        """insert into unit_legal_entities
+               (tenant_id, unit_id, legal_entity_id, valid_from, valid_to)
            values (%s, %s, %s, %s, %s) returning id""",
         (tenant, unit, entity, since, until),
     ).fetchone()[0]
@@ -89,7 +90,8 @@ def test_the_one_who_keeps_the_directories_moves_a_unit(db):
     """Иначе перенести точку было бы некому, и задача бессмысленна."""
     db.execute("delete from unit_legal_entities where unit_id = %s", (U_BG1,))
     db.execute(
-        """insert into unit_legal_entities (tenant_id, unit_id, legal_entity_id, valid_from, valid_to)
+        """insert into unit_legal_entities
+               (tenant_id, unit_id, legal_entity_id, valid_from, valid_to)
            values (%s, %s, %s, '2023-01-01', '2026-07-01')""",
         (T1, U_BG1, LE1),
     )
@@ -157,3 +159,106 @@ def test_the_first_version_starts_when_the_unit_opened(db):
         (T1, LE1),
     ).fetchone()[0]
     assert str(at(db, "2024-06-01", unit=fresh)) == LE1
+
+
+# ------------------------------------------- стена: закрытый месяц не переезжает
+
+def close_month(conn, month="2026-05-01", *, tenant=T1):
+    """Закрыть учётный месяц — то самое состояние, которое стережёт `facts_guard`.
+
+    Через `periods`, а не через утверждение расчёта: одно следует из другого
+    (`0190`), а расчёт в тестовой базе пришлось бы вести через весь цикл ради
+    единственного нужного здесь факта — «этот месяц уже закрыт».
+    """
+    conn.execute(
+        """insert into periods (tenant_id, period, status) values (%s, %s, 'closed')
+           on conflict (tenant_id, period) do update set status = 'closed'""",
+        (tenant, month),
+    )
+
+
+def test_a_transfer_dated_into_a_closed_month_is_refused(db):
+    """Главное свойство задачи: перенос не переписывает закрытый месяц.
+
+    Проверка идёт БЕЗ `as_app_user` намеренно — соединение теста и есть владелец
+    схемы. Политики он обходит, и правило, написанное политикой, было бы зелёным
+    здесь и мёртвым на деле. Стену держит триггер, а он одинаков для всех.
+    """
+    db.execute("delete from unit_legal_entities where unit_id = %s", (U_BG1,))
+    link(db, entity=LE1, since="2023-01-01")
+    close_month(db, "2026-05-01")
+
+    with pytest.raises(psycopg.errors.RaiseException) as refused, db.transaction():
+        link(db, entity=LE2, since="2026-05-15")
+    assert "2026-05" in str(refused.value)
+
+
+def test_a_transfer_dated_after_the_closed_month_goes_through(db):
+    """Иначе стена запрещала бы и то, ради чего задача затевалась."""
+    db.execute("delete from unit_legal_entities where unit_id = %s", (U_BG1,))
+    first = link(db, entity=LE1, since="2023-01-01")
+    close_month(db, "2026-05-01")
+
+    db.execute(
+        "update unit_legal_entities set valid_to = '2026-06-01' where id = %s", (first,)
+    )
+    link(db, entity=LE2, since="2026-06-01")
+
+    assert str(at(db, "2026-05-01")) == LE1, "закрытый май остался за прежним юрлицом"
+    assert str(at(db, "2026-06-01")) == LE2
+
+
+def test_the_owner_of_a_closed_month_cannot_be_repointed(db):
+    """Перенос запрещён — значит запрещена и правка той же версии на другое лицо.
+
+    Иначе стену обходили бы не датой, а ссылкой: версия остаётся на месте, а
+    юрлицо у неё становится другим, и закрытый май меняет владельца молча.
+    """
+    db.execute("delete from unit_legal_entities where unit_id = %s", (U_BG1,))
+    first = link(db, entity=LE1, since="2023-01-01")
+    close_month(db, "2026-05-01")
+
+    with pytest.raises(psycopg.errors.RaiseException), db.transaction():
+        db.execute(
+            "update unit_legal_entities set legal_entity_id = %s where id = %s",
+            (LE2, first),
+        )
+
+
+def test_a_version_cannot_be_cut_short_inside_a_closed_month(db):
+    """Закрыть версию задним числом — тот же перенос, только другой рукой."""
+    db.execute("delete from unit_legal_entities where unit_id = %s", (U_BG1,))
+    first = link(db, entity=LE1, since="2023-01-01")
+    close_month(db, "2026-05-01")
+
+    with pytest.raises(psycopg.errors.RaiseException), db.transaction():
+        db.execute(
+            "update unit_legal_entities set valid_to = '2026-05-20' where id = %s", (first,)
+        )
+
+
+def test_a_version_that_covers_a_closed_month_is_not_deleted(db):
+    """Стереть версию — это тоже ответ на вопрос «чей был май», только пустой."""
+    db.execute("delete from unit_legal_entities where unit_id = %s", (U_BG1,))
+    first = link(db, entity=LE1, since="2023-01-01")
+    close_month(db, "2026-05-01")
+
+    with pytest.raises(psycopg.errors.RaiseException), db.transaction():
+        db.execute("delete from unit_legal_entities where id = %s", (first,))
+
+
+def test_the_first_link_of_a_unit_is_not_a_transfer(db):
+    """Новая точка заводится и после закрытия месяца — ей нечего переписывать.
+
+    Первая версия идёт от открытия точки, то есть формально накрывает и закрытый
+    май. Отказать здесь значило бы запретить заводить точки всякому партнёру,
+    который хоть раз закрыл месяц, — а закрытый май от этого не меняется: у
+    новой точки в нём нет ни строки.
+    """
+    close_month(db, "2026-05-01")
+    fresh = db.execute(
+        """insert into units (tenant_id, legal_entity_id, code, title, opened_at)
+           values (%s, %s, 'NEW2', 'Ещё одна', '2024-03-01') returning id""",
+        (T1, LE1),
+    ).fetchone()[0]
+    assert str(at(db, "2026-05-01", unit=fresh)) == LE1

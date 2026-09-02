@@ -194,7 +194,10 @@ class UnitLegalEntity(models.Model):
                 expressions=[("unit", "="), (validity_range(), RangeOperators.OVERLAPS)],
             ),
             models.CheckConstraint(
-                condition=models.Q(valid_to__isnull=True) | models.Q(valid_to__gt=models.F("valid_from")),
+                condition=(
+                    models.Q(valid_to__isnull=True)
+                    | models.Q(valid_to__gt=models.F("valid_from"))
+                ),
                 name="unit_legal_entities_dates_in_order",
             ),
         ]

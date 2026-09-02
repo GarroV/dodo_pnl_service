@@ -29,11 +29,11 @@
 июля» — стык, а не пересечение.
 """
 
-import core.models
 import django.contrib.postgres.constraints
 import django.db.models.deletion
 from django.db import migrations, models
 
+import core.models
 
 COMMENTS = """
 comment on table unit_legal_entities is
