@@ -31,6 +31,7 @@ Compose берёт имя проекта из каталога — а катал
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -197,3 +198,68 @@ def test_with_a_project_name_the_stand_configures_and_takes_that_name():
     config = yaml.safe_load(done.stdout)
     assert config["name"] == "dodo-pnl-probe"
     assert config["services"]["app"]["image"] == "dodo-pnl-probe-app"
+
+
+# =============================================================================
+# Документы называют службы их настоящими именами (issue #202)
+# =============================================================================
+
+
+SERVICE_MENTION = re.compile(r"служб[а-я]* `([a-z0-9_-]+)`")
+
+
+@pytest.mark.parametrize("doc", ["\u002eenv.example", "README.md"])
+def test_documents_name_services_that_actually_exist(doc):
+    """Названная в документе служба обязана существовать в compose.
+
+    Дефект был ровно такой: `.env.example` и README отправляли за рабочим
+    процессом очереди к службе `queue`, а в compose она называется `worker`
+    (issue #202). Цена не в опечатке, а в том, куда она приводит: человек
+    выполняет `docker compose logs queue`, получает «no such service», и
+    следующая мысль — «очередь не поднялась», хотя она работает. Имя службы
+    правится в одном файле, а поминается в трёх, поэтому разъезжается молча.
+    """
+    text = (ROOT / doc).read_text(encoding="utf-8")
+    services = set(compose()["services"])
+    named = set(SERVICE_MENTION.findall(text))
+    assert named, f"в {doc} не нашлось ни одного упоминания службы — тест проверял бы не то"
+    unknown = sorted(named - services)
+    assert not unknown, (
+        f"{doc} отправляет к службам, которых в compose нет: {unknown}. "
+        f"Есть: {sorted(services)}"
+    )
+
+
+# =============================================================================
+# Настройки доезжают до контейнера, а не остаются в .env
+# =============================================================================
+
+
+def test_every_payrun_knob_in_the_example_reaches_the_container():
+    """Переменная приложения, не переданная в контейнер, — молчаливая ручка.
+
+    Compose передаёт в контейнер только то, что перечислено явно. Переменная,
+    оставшаяся в `.env`, выглядит настроенной: она есть в файле, её видно
+    глазами, — а приложение внутри берёт своё умолчание и об этом не говорит.
+    Этот файл платил за такое дважды: `DEV_LOGIN=0` не доезжал, и на площадке
+    любой открывший страницу входил директором; `SEED_USER_PASSWORD` не
+    доезжал, и сменить пароль было нечем.
+
+    Проверяются именно `PAYRUN_*`: это настройки самого приложения, а не
+    параметры compose вроде портов, — то есть ровно тот класс, который обязан
+    доехать.
+    """
+    example = ENV_EXAMPLE.read_text(encoding="utf-8")
+    declared = {
+        line.split("=", 1)[0].strip()
+        for line in example.splitlines()
+        if line.strip().startswith("PAYRUN_")
+    }
+    assert declared, "в примере окружения не осталось ни одной PAYRUN_* — тест проверял бы не то"
+
+    passed = set(compose()["x-app-env"])
+    missing = sorted(declared - passed)
+    assert not missing, (
+        f"эти переменные есть в .env.example, но в контейнер не передаются: {missing}. "
+        "На площадке их можно будет задать и не заметить, что они не действуют"
+    )
