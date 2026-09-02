@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from psycopg.conninfo import conninfo_to_dict
 
 # Модуль без единого импорта Django: настройки читаются раньше, чем поднимаются
@@ -251,12 +252,38 @@ PAYRUN_BACKGROUND = os.environ.get("PAYRUN_BACKGROUND", "1") == "1"
 # большим запасом.
 PAYRUN_QUEUE_STALE_SECONDS = int(os.environ.get("PAYRUN_QUEUE_STALE_SECONDS", "10"))
 
+# Как часто рабочий процесс спрашивает у базы, не появилось ли задачи (T180,
+# issue #190). Число задано явно, потому что умолчание `django-q2` — 0,2 с, а
+# брокер здесь сама база: это пять запросов в секунду круглосуточно при пустой
+# очереди, 432 тысячи в день. Замер на стенде в полном простое: рабочий процесс
+# 6,08 % CPU, база 10,15 %, — при том что веб, который реально отвечает на
+# запросы, стоял на 1 %. Площадка при этом ноутбук на батарее.
+#
+# Два соседних числа связаны, и связь односторонняя: порог «задачу никто не
+# взял» обязан быть кратно больше цикла опроса. Иначе страница объявит мёртвой
+# очередь, которая просто ещё не проснулась, — то есть соврёт человеку про
+# работающий продукт. Разъезд отвергается ниже вслух: подогнать значение самим
+# значило бы, что на площадке работает не то, что написано в `.env`.
+PAYRUN_QUEUE_POLL_SECONDS = float(os.environ.get("PAYRUN_QUEUE_POLL_SECONDS", "2"))
+
+if PAYRUN_QUEUE_POLL_SECONDS * 3 > PAYRUN_QUEUE_STALE_SECONDS:
+    raise ImproperlyConfigured(
+        f"PAYRUN_QUEUE_POLL_SECONDS={PAYRUN_QUEUE_POLL_SECONDS} слишком близко к "
+        f"PAYRUN_QUEUE_STALE_SECONDS={PAYRUN_QUEUE_STALE_SECONDS}: страница начнёт "
+        "говорить, что рабочий процесс очереди не запущен, про живую очередь, "
+        "которая просто ещё не проснулась. Порог обязан быть хотя бы втрое больше "
+        "цикла опроса."
+    )
+
 Q_CLUSTER = {
     "name": "dodo-pnl",
     # Брокер — сама база: очередь живёт в тех же транзакциях, что данные.
     # Поэтому задача становится видимой рабочему процессу ровно тогда, когда
     # коммитится запрос, который её поставил, — и не раньше.
     "orm": "default",
+    # Как часто спрашивать у базы, не появилось ли работы. Без этой строки
+    # библиотека берёт своё умолчание 0,2 с — см. PAYRUN_QUEUE_POLL_SECONDS выше.
+    "poll": PAYRUN_QUEUE_POLL_SECONDS,
     "workers": int(os.environ.get("PAYRUN_QUEUE_WORKERS", "2")),
     "timeout": int(os.environ.get("PAYRUN_QUEUE_TIMEOUT", "600")),
     # retry обязан быть больше timeout: иначе очередь считает задачу потерянной
