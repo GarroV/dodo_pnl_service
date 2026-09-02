@@ -8558,3 +8558,137 @@ msgstr "not chosen"
 #: новые строки, добавлены tools/apply_translations.py
 msgid "— точка —"
 msgstr "— unit —"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"«%(label)s»: доля точки %(code)s должна быть больше нуля — точка с "
+"нулевой долей не получит ничего, и человек об этом не узнает."
+msgstr "\"%(label)s\": the share of unit %(code)s must be greater than zero — a unit with a zero share will get nothing, and the person will never know."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Все затраты на человека идут на одну точку — ту, что стоит в его "
+"условиях найма (%(home)s). Задайте набор ниже, если он работает на "
+"несколько пиццерий: тогда деньги разделятся между ними."
+msgstr "All of a person's costs go to one unit — the one set in their employment terms (%(home)s). Add a unit set below if they work at several pizzerias: the money will then be split between them."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Доли задаются либо у всех выбранных точек, либо ни у одной. Сейчас доля "
+"есть у %(named)s, а у %(silent)s её нет: пустая доля считается единицей, "
+"и рядом с заданной это дало бы не те проценты, которые вы имели в виду. "
+"Оставьте все доли пустыми — поделится поровну."
+msgstr "Shares are set either for all chosen units or for none of them. Right now %(named)s has a share, but %(silent)s does not: an empty share counts as one, and next to a share you did set, that would give percentages you did not mean. Leave all shares empty — the split will be even."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Доли можно не задавать вовсе — тогда поровну. Если задаёте, задавайте у "
+"всех отмеченных точек сразу: пустая доля считается единицей, и рядом с "
+"0,7 это дало бы не те проценты, которые вы имели в виду. Не отмечено ни "
+"одной точки — человек работает на всю сеть."
+msgstr "Shares can be left unset entirely — then the split is even. If you do set them, set them for all checked units at once: an empty share counts as one, and next to 0.7 that would give percentages you did not mean. No unit is checked — the person works for the whole network."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Доля"
+msgstr "Share"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Зарплата утверждена по %(edge)s включительно и уже разнесена по тем "
+"точкам, которые действовали тогда. Правку с более ранней датой продукт "
+"примет, но P&L утверждённых месяцев на другие точки не переедет: их "
+"разнесение остаётся таким, каким было посчитано. Новый набор точек "
+"подействует на ближайший неутверждённый месяц."
+msgstr "Payroll is approved through %(edge)s inclusive and already allocated to the units that were in effect back then. An edit dated earlier is accepted, but the P&L of approved months will not move to other units: their allocation stays as it was calculated. The new unit set will take effect from the nearest month that is not approved yet."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Затраты на человека делятся между точками, на которых он работает: "
+"управляющий ведёт две пиццерии, территориальный — город. Это не то же "
+"самое, что «Точка» в условиях найма: там сказано, где человек числится, "
+"а здесь — чьи это деньги в P&amp;L."
+msgstr "A person's costs are split between the units they work at: a store manager runs two pizzerias, a regional manager — a whole city. This is not the same as \"Unit\" in the employment terms: that says where the person is on the books, this says whose money it is in the P&amp;L."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Набор точек берётся тем, каким он был на первое число считаемого месяца."
+msgstr "The unit set is taken as it was on the first day of the month being calculated."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Набор точек не изменился — новая версия не заведена."
+msgstr "The unit set has not changed — no new version was created."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Набор точек с даты"
+msgstr "Unit set from a date"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Отмечено то, что действует сегодня. Прежний набор закрывается днём "
+"начала нового и остаётся в истории — закрытые месяцы считаются по нему."
+msgstr "What's checked is what applies today. The previous set is closed on the day the new one starts and stays in the history — closed months are still calculated using it."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Правка задела месяцы, утверждённые по %(edge)s. Их разнесение осталось "
+"прежним: P&L закрытого месяца не переехал на другие точки и не переедет "
+"— разницы по точкам не бывает, деньги там уже разнесены. Новый набор "
+"точек подействует с ближайшего неутверждённого месяца."
+msgstr "The edit touched months approved through %(edge)s. Their allocation stayed the same: the P&L of a closed month did not move to other units and will not move — there is no per-unit difference, the money there is already allocated. The new unit set will take effect from the nearest month that is not approved yet."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Пустая доля — поровну с остальными точками того же периода. Деление "
+"берётся по состоянию на первое число считаемого месяца: набор, "
+"заведённый серединой месяца, подействует со следующего."
+msgstr "An empty share means an even split with the other units of the same period. The split is taken as of the first day of the month being calculated: a set created mid-month takes effect from the next one."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Сохранить точки"
+msgstr "Save units"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Точек у человека не осталось — с этой даты он работает на всю сеть. Его "
+"затраты пойдут на разнесение общим правилом, как расход юрлица, а не на "
+"одну пиццерию."
+msgstr "The person has no units left — from this date they work for the whole network. Their costs will go to allocation by the general rule, like a legal-entity expense, rather than to one pizzeria."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Точки действуют с"
+msgstr "Units effective from"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Точки не заданы."
+msgstr "Units not set."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Точки нет и в условиях найма — значит человек работает на всю сеть. Его "
+"затраты уходят на разнесение общим правилом, как расход юрлица, а не на "
+"одну пиццерию."
+msgstr "There is no unit in the employment terms either — so the person works for the whole network. Their costs go to allocation by the general rule, like a legal-entity expense, rather than to one pizzeria."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Точки человека заведены с указанной даты. Затраты на него разделятся "
+"между ними в ближайшем расчёте; прежний набор остался в истории — по "
+"нему посчитаны прошлые месяцы."
+msgstr "The person's units were set up from the given date. Their costs will be split between them starting with the nearest calculation; the previous set stayed in the history — past months are calculated using it."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Точки, между которыми делятся затраты"
+msgstr "Units the costs are split between"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Доля задана у точки %(code)s, но сама точка не отмечена. Отметьте её "
+"галкой или сотрите долю: иначе набор запишется без неё, а число "
+"пропадёт."
+msgstr "A share is set for unit %(code)s, but the unit itself is not checked. Check it or clear the share: otherwise the set will be saved without it, and the number will be lost."

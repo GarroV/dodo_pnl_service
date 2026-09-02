@@ -8392,3 +8392,137 @@ msgstr "nije izabrana"
 #: новые строки, добавлены tools/apply_translations.py
 msgid "— точка —"
 msgstr "— lokacija —"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"«%(label)s»: доля точки %(code)s должна быть больше нуля — точка с "
+"нулевой долей не получит ничего, и человек об этом не узнает."
+msgstr "„%(label)s“: udeo objekta %(code)s mora biti veći od nule — objekat sa udelom nula neće dobiti ništa, a osoba to neće ni saznati."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Все затраты на человека идут на одну точку — ту, что стоит в его "
+"условиях найма (%(home)s). Задайте набор ниже, если он работает на "
+"несколько пиццерий: тогда деньги разделятся между ними."
+msgstr "Svi troškovi za osobu idu na jedan objekat — onaj koji je naveden u njenim uslovima zapošljavanja (%(home)s). Ispod dodajte skup objekata ako radi u više picerija: tada će se novac podeliti između njih."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Доли задаются либо у всех выбранных точек, либо ни у одной. Сейчас доля "
+"есть у %(named)s, а у %(silent)s её нет: пустая доля считается единицей, "
+"и рядом с заданной это дало бы не те проценты, которые вы имели в виду. "
+"Оставьте все доли пустыми — поделится поровну."
+msgstr "Udeli se zadaju ili za sve izabrane objekte, ili ni za jedan. Trenutno %(named)s ima udeo, a %(silent)s ga nema: prazan udeo se računa kao jedan, i pored zadatog udela to bi dalo procente koje niste želeli. Ostavite sve udele praznim — podeliće se podjednako."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Доли можно не задавать вовсе — тогда поровну. Если задаёте, задавайте у "
+"всех отмеченных точек сразу: пустая доля считается единицей, и рядом с "
+"0,7 это дало бы не те проценты, которые вы имели в виду. Не отмечено ни "
+"одной точки — человек работает на всю сеть."
+msgstr "Udele ne morate zadavati uopšte — tada se deli podjednako. Ako ih zadajete, zadajte ih za sve označene objekte odjednom: prazan udeo se računa kao jedan, i pored 0,7 to bi dalo procente koje niste želeli. Nijedan objekat nije označen — osoba radi za celu mrežu."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Доля"
+msgstr "Udeo"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Зарплата утверждена по %(edge)s включительно и уже разнесена по тем "
+"точкам, которые действовали тогда. Правку с более ранней датой продукт "
+"примет, но P&L утверждённых месяцев на другие точки не переедет: их "
+"разнесение остаётся таким, каким было посчитано. Новый набор точек "
+"подействует на ближайший неутверждённый месяц."
+msgstr "Zarada je odobrena zaključno sa %(edge)s i već je raspodeljena po objektima koji su tada važili. Izmena sa ranijim datumom se prihvata, ali P&L odobrenih meseci neće preći na druge objekte: njihova raspodela ostaje onakva kakva je obračunata. Novi skup objekata će važiti od prvog neodobrenog meseca."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Затраты на человека делятся между точками, на которых он работает: "
+"управляющий ведёт две пиццерии, территориальный — город. Это не то же "
+"самое, что «Точка» в условиях найма: там сказано, где человек числится, "
+"а здесь — чьи это деньги в P&amp;L."
+msgstr "Troškovi za osobu se dele između objekata na kojima radi: menadžer objekta vodi dve picerije, regionalni menadžer — grad. To nije isto što i „Objekat“ u uslovima zapošljavanja: tamo piše gde je osoba na spisku, a ovde — čiji je to novac u P&amp;L."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Набор точек берётся тем, каким он был на первое число считаемого месяца."
+msgstr "Skup objekata se uzima onakav kakav je bio prvog dana meseca koji se obračunava."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Набор точек не изменился — новая версия не заведена."
+msgstr "Skup objekata se nije promenio — nova verzija nije zavedena."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Набор точек с даты"
+msgstr "Skup objekata od datuma"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Отмечено то, что действует сегодня. Прежний набор закрывается днём "
+"начала нового и остаётся в истории — закрытые месяцы считаются по нему."
+msgstr "Označeno je ono što važi danas. Prethodni skup se zatvara danom kad počinje novi i ostaje u istoriji — zatvoreni meseci se i dalje obračunavaju po njemu."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Правка задела месяцы, утверждённые по %(edge)s. Их разнесение осталось "
+"прежним: P&L закрытого месяца не переехал на другие точки и не переедет "
+"— разницы по точкам не бывает, деньги там уже разнесены. Новый набор "
+"точек подействует с ближайшего неутверждённого месяца."
+msgstr "Izmena je dotakla mesece odobrene zaključno sa %(edge)s. Njihova raspodela je ostala ista: P&L zatvorenog meseca nije prešao na druge objekte i neće preći — razlike po objektima nema, novac je tamo već raspodeljen. Novi skup objekata će važiti od prvog neodobrenog meseca."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Пустая доля — поровну с остальными точками того же периода. Деление "
+"берётся по состоянию на первое число считаемого месяца: набор, "
+"заведённый серединой месяца, подействует со следующего."
+msgstr "Prazan udeo znači podjednaku podelu sa ostalim objektima istog perioda. Podela se uzima po stanju na prvi dan meseca koji se obračunava: skup zaveden sredinom meseca počinje da važi od sledećeg."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Сохранить точки"
+msgstr "Sačuvaj objekte"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Точек у человека не осталось — с этой даты он работает на всю сеть. Его "
+"затраты пойдут на разнесение общим правилом, как расход юрлица, а не на "
+"одну пиццерию."
+msgstr "Osoba više nema nijednog objekta — od ovog datuma radi za celu mrežu. Njeni troškovi idu na raspodelu opštim pravilom, kao trošak pravnog lica, a ne na jednu piceriju."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Точки действуют с"
+msgstr "Objekti važe od"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Точки не заданы."
+msgstr "Objekti nisu zadati."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Точки нет и в условиях найма — значит человек работает на всю сеть. Его "
+"затраты уходят на разнесение общим правилом, как расход юрлица, а не на "
+"одну пиццерию."
+msgstr "Objekat ne postoji ni u uslovima zapošljavanja — znači da osoba radi za celu mrežu. Njeni troškovi idu na raspodelu opštim pravilom, kao trošak pravnog lica, a ne na jednu piceriju."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Точки человека заведены с указанной даты. Затраты на него разделятся "
+"между ними в ближайшем расчёте; прежний набор остался в истории — по "
+"нему посчитаны прошлые месяцы."
+msgstr "Objekti osobe su zavedeni od navedenog datuma. Njeni troškovi će se podeliti između njih od najbližeg obračuna; prethodni skup je ostao u istoriji — po njemu su obračunati prošli meseci."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Точки, между которыми делятся затраты"
+msgstr "Objekti između kojih se dele troškovi"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Доля задана у точки %(code)s, но сама точка не отмечена. Отметьте её "
+"галкой или сотрите долю: иначе набор запишется без неё, а число "
+"пропадёт."
+msgstr "Zadat je udeo za objekat %(code)s, ali sam objekat nije označen. Označite ga ili obrišite udeo: inače će se skup sačuvati bez njega, a broj će nestati."
