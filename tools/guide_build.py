@@ -20,6 +20,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SCREENS = ROOT / "docs" / "guides" / "screens.json"
+# Предел размера опубликованной страницы артефакта.
+ARTIFACT_LIMIT = 16 * 1024 * 1024
+
 PLACEHOLDER = re.compile(r"\{\{SHOT:([0-9a-z-]+)\}\}")
 
 
@@ -56,8 +59,24 @@ def main() -> int:
         return 1
 
     target.write_text(built, encoding="utf-8")
-    size = target.stat().st_size / 1024 / 1024
+    size_bytes = target.stat().st_size
+    size = size_bytes / 1024 / 1024
     shots_count = len(PLACEHOLDER.findall(source.read_text(encoding="utf-8")))
+
+    # Артефакт не публикуется, если страница больше 16 МБ, и узнать об этом на
+    # публикации — значит переснимать всё заново. Снимки лежат в странице как
+    # `data:`-адреса, поэтому вес растёт с каждым новым экраном молча: 21 снимок
+    # дал 16,3 МБ, то есть предел перешли, не заметив. Проверка здесь потому,
+    # что здесь единственное место, где известен итоговый размер.
+    if size_bytes > ARTIFACT_LIMIT:
+        print(
+            f"собрано, но НЕ ГОДИТСЯ к публикации: {size:.1f} МБ при пределе "
+            f"{ARTIFACT_LIMIT / 1024 / 1024:.0f} МБ. Снимков {shots_count}. "
+            "Уменьшите качество съёмки (`QUALITY` в tools/guide_shots.mjs) или "
+            "высоту кадра и переснимите."
+        )
+        return 1
+
     print(f"собрано: {target} ({size:.1f} МБ, снимков {shots_count})")
     return 0
 

@@ -162,6 +162,14 @@ const shots = Object.entries(JSON.parse(listRaw))
 const WIDTH = 1280;
 const MAX_HEIGHT = 2400;
 
+// Качество jpeg. Снимки лежат в собранном гайде как `data:`-адреса, поэтому их
+// вес — это вес страницы, а страница артефакта больше 16 МБ не публикуется. На
+// 21 снимке качество 72 давало 16,3 МБ, то есть предел уже перешли; 64 держит
+// запас на новые экраны и на глаз от 72 неотличимо — текст интерфейса читается
+// одинаково, потому что снимается он в двойном масштабе. Проверку самого предела
+// делает сборка (`tools/guide_build.py`), а не человек.
+const QUALITY = Number(process.env.SHOT_QUALITY || 64);
+
 let failed = 0;
 for (const [name, url] of shots) {
   try {
@@ -173,7 +181,7 @@ for (const [name, url] of shots) {
     ))`);
     const shot = await send("Page.captureScreenshot", {
       format: "jpeg",
-      quality: 72,
+      quality: QUALITY,
       captureBeyondViewport: true,
       // `scale: 2` повторяет `deviceScaleFactor` окна: с явным `clip` окно уже
       // не решает, и без этого снимки стали бы вдвое мельче остальных.
