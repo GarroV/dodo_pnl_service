@@ -151,6 +151,55 @@ class Unit(models.Model):
         ]
 
 
+class UnitLegalEntity(models.Model):
+    """Под каким юрлицом точка стояла в тот или иной период (T189, issue #179).
+
+    Эталон (модуль 11): «Точка меняет юрлицо так же, как сотрудник меняет
+    ставку: новой версией с даты. Прошлые месяцы остаются за старым юрлицом,
+    иначе разъедется отчётность обоих».
+
+    До этой таблицы связь была одна на всю жизнь точки, и перенос делался
+    правкой поля — то есть задним числом и без следа: закрытые месяцы молча
+    переезжали в другое юрлицо вместе с точкой. Это тот же класс, что D020
+    запрещает для расчёта.
+
+    **`units.legal_entity_id` остаётся, но перестаёт быть источником истины.**
+    Это снимок «где точка сейчас», и его держит триггер: правка колонки заводит
+    версию с сегодняшнего дня, а правка версий обновляет колонку. Двух правд не
+    появляется, а читателям «сейчас» не приходится платить запросом к истории.
+
+    Границы полуоткрытые (`[)`), как у всех версий проекта: «по 1 июля» и «с 1
+    июля» — не пересечение, а стык.
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    unit = models.ForeignKey(
+        Unit, on_delete=models.CASCADE, db_column="unit_id", related_name="entity_versions",
+    )
+    # PROTECT, а не SET_NULL: юрлицо, за которым числится закрытый месяц, не
+    # удаляют — эталон говорит это прямо, и удаление здесь стёрло бы ответ на
+    # вопрос «чей был май».
+    legal_entity = models.ForeignKey(
+        LegalEntity, on_delete=models.PROTECT, db_column="legal_entity_id",
+    )
+    valid_from = models.DateField()
+    valid_to = models.DateField(null=True, blank=True)  # пусто — до сих пор
+
+    class Meta:
+        db_table = "unit_legal_entities"
+        constraints = [
+            ExclusionConstraint(
+                name="unit_legal_entities_no_overlap",
+                expressions=[("unit", "="), (validity_range(), RangeOperators.OVERLAPS)],
+            ),
+            models.CheckConstraint(
+                condition=models.Q(valid_to__isnull=True) | models.Q(valid_to__gt=models.F("valid_from")),
+                name="unit_legal_entities_dates_in_order",
+            ),
+        ]
+
+
 class UserManager(BaseUserManager):
     """Заведение учёток. Пароль всегда через `set_password` — хэшем, не текстом."""
 
