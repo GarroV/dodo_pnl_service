@@ -26,6 +26,8 @@
       <th>{% translate "Страна" %}</th>
       <th>{% translate "Валюта учёта" %}</th>
       <th class="num">{% translate "Людей" %}</th>
+      <th class="num">{% translate "Действующих" %}</th>
+      <th>{% translate "Последний вход" %}</th>
     </tr>
   </thead>
   <tbody>
@@ -36,9 +38,15 @@
       <td>{{ space.country_code }}</td>
       <td>{{ space.base_currency }}</td>
       <td class="num">{{ space.people }}</td>
+      <td class="num">{{ space.active }}</td>
+      {% comment %}
+      Пусто — ответ, а не пробел: словами, потому что пустая ячейка в этой
+      колонке читается как сбой выборки, а не как «никто не заходил».
+      {% endcomment %}
+      <td>{% if space.last_seen %}{{ space.last_seen|date:"d.m.Y" }}{% else %}<span class="muted">{% translate "не входили" %}</span>{% endif %}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="5">{% translate "Ни одного пространства ещё нет." %}</td></tr>
+    <tr><td colspan="7">{% translate "Ни одного пространства ещё нет." %}</td></tr>
     {% endfor %}
   </tbody>
 </table>{% endscroll %}

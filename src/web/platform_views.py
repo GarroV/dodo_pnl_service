@@ -57,15 +57,48 @@ def _refuse(request):
 
 
 def _spaces():
-    """Пространства со счётчиком людей — то, из чего состоит первый экран.
+    """Пространства со статистикой — то, из чего состоит первый экран.
 
-    Счётчик считается запросом, а не перебором членств в цикле: партнёров будет
-    много, и N+1 здесь стоил бы запроса на каждую строку списка.
+    Владелец просил в админке статистику: «сотрудники, заходы, не знаю. еще
+    что-то». Здесь ровно то, что платформенная админка **вправе** видеть: люди и
+    их входы. Дальше начинаются финансы партнёра, и туда платформенное право не
+    открыто нарочно (миграция `0261`) — счётчик посчитанных периодов пришлось бы
+    брать из таблиц, которых администратор платформы не видит.
+
+    Пустое пространство и живое выглядят в списке одинаково, а разница между ними
+    — «партнёра подключили» и «завели и забыли». Отсюда три числа: сколько людей,
+    сколько из них действующих и когда в пространство заходили в последний раз.
+
+    Три запроса на весь список, а не по запросу на строку: `Membership.user_id` —
+    голый uuid без связи с `users` (так задумано, чтобы схема не зависела от
+    того, чем окажется учётка), поэтому люди подбираются отдельно и складываются
+    здесь. Партнёров десятки, людей сотни — перебор в цикле стоил бы запроса на
+    каждого.
     """
-    return (
-        Tenant.objects.annotate(people=Count("membership", distinct=True))
-        .order_by("title")
+    spaces = list(
+        Tenant.objects.annotate(people=Count("membership", distinct=True)).order_by("title")
     )
+
+    who_where: dict = {}
+    for tenant_id, user_id in Membership.objects.values_list("tenant_id", "user_id"):
+        who_where.setdefault(tenant_id, set()).add(user_id)
+
+    everyone = {
+        user.pk: user
+        for user in User.objects.filter(
+            pk__in={user_id for people in who_where.values() for user_id in people}
+        ).only("id", "is_active", "last_login")
+    }
+
+    for space in spaces:
+        people = [everyone[uid] for uid in who_where.get(space.pk, ()) if uid in everyone]
+        space.active = sum(1 for person in people if person.is_active)
+        # Пусто — ответ, а не пробел: в пространство не входил никто. Показывается
+        # словами, а не пустой ячейкой, иначе читается как сбой выборки.
+        visits = [person.last_login for person in people if person.last_login]
+        space.last_seen = max(visits) if visits else None
+
+    return spaces
 
 
 @login_required

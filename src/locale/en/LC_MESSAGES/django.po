@@ -8142,3 +8142,15 @@ msgstr "accounting in"
 #: новые строки, добавлены tools/apply_translations.py
 msgid "← Все пространства"
 msgstr "← All spaces"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Действующих"
+msgstr "Active"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Последний вход"
+msgstr "Last sign-in"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "не входили"
+msgstr "never signed in"

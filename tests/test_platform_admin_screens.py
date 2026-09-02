@@ -206,3 +206,54 @@ def test_a_role_of_another_space_cannot_be_granted(client, platform_admin, space
     assert not Membership.objects.filter(user_id=person.pk).exists(), (
         "выдана роль чужого пространства"
     )
+
+
+# --- статистика по пространствам ---------------------------------------------
+
+
+def test_the_list_shows_life_of_each_space(client, platform_admin):
+    """Пустое пространство и живое в списке различимы — этого владелец и просил.
+
+    «В админке также в будущем нужна будет статистика по пространствам.
+    сотрудники, заходы, не знаю» — здесь то, что платформенная админка вправе
+    видеть: сколько людей, сколько действующих, когда заходили. Дальше начинаются
+    финансы партнёра, и туда платформенное право не открыто нарочно (`0261`).
+    """
+    login_as(client, "admin")
+    html = body(client.get("/platform/"))
+    assert "Людей" in html and "Действующих" in html and "Последний вход" in html
+
+
+def test_a_space_nobody_entered_says_so_in_words(client, platform_admin, spaces_restored):
+    """Никто не заходил — сказано словами, а не пустой ячейкой.
+
+    Пустая ячейка в колонке дат читается как сбой выборки, и человек идёт искать
+    поломку вместо того, чтобы увидеть ответ: партнёра завели и забыли.
+    """
+    login_as(client, "admin")
+    client.post("/platform/new/", {
+        "title": "Тихий", "code": "quiet", "country_code": "RS",
+        "base_currency": "RSD", "report_currency": "EUR",
+        "admin_username": "quiet-boss", "admin_password": "secret-1",
+    })
+    html = body(client.get("/platform/"))
+    assert "не входили" in html
+
+
+def test_the_counters_are_honest(client, platform_admin, spaces_restored):
+    """Числа считаются, а не показываются нулями: свежий партнёр — один человек."""
+    from core.models import Tenant
+
+    login_as(client, "admin")
+    client.post("/platform/new/", {
+        "title": "Считалка", "code": "counted", "country_code": "RS",
+        "base_currency": "RSD", "report_currency": "EUR",
+        "admin_username": "counted-boss", "admin_password": "secret-1",
+    })
+    space = Tenant.objects.get(code="counted")
+    from web.platform_views import _spaces
+
+    row = next(item for item in _spaces() if item.pk == space.pk)
+    assert row.people == 1, "у нового партнёра ровно один человек — тот, кого мы завели"
+    assert row.active == 1, "он действующий: отключать его никто не просил"
+    assert row.last_seen is None, "он ещё не входил"

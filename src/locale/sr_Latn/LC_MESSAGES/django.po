@@ -7988,3 +7988,15 @@ msgstr "knjiženje u"
 #: новые строки, добавлены tools/apply_translations.py
 msgid "← Все пространства"
 msgstr "← Svi prostori"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Действующих"
+msgstr "Aktivnih"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Последний вход"
+msgstr "Poslednja prijava"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "не входили"
+msgstr "nije se prijavljivao"
