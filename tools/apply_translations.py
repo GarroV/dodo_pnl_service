@@ -212,7 +212,12 @@ def add(po: Path, table: dict[str, str], source_hint: str) -> tuple[int, list[st
             problems.append(f"{'; '.join(broken)}: {source[:60]}")
             continue
         marker = "#, python-format\n" if PLACEHOLDER.search(source) else ""
-        blocks.append(f"#: {source_hint}\n{marker}" + wrap("msgid", source) + "\n" + wrap("msgstr", translated))
+        blocks.append(
+            f"#: {source_hint}\n{marker}"
+            + wrap("msgid", source)
+            + "\n"
+            + wrap("msgstr", translated)
+        )
     if not blocks:
         return 0, problems
     with po.open("a", encoding="utf-8") as handle:
@@ -241,7 +246,9 @@ def main(argv: list[str]) -> int:
         column = {key: value[language] for key, value in table.items() if value.get(language)}
         added = 0
         if allow_add:
-            added, add_problems = add(po, column, "новые строки, добавлены tools/apply_translations.py")
+            added, add_problems = add(
+                po, column, "новые строки, добавлены tools/apply_translations.py"
+            )
             problems_of_add = add_problems
         else:
             problems_of_add = []

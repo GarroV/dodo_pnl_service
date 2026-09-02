@@ -82,7 +82,8 @@ def test_platform_admin_creates_a_space(db, platform_admin):
     with as_app_user(db, platform_admin) as conn, pytest.raises(_Rollback):
         with conn.transaction():
             conn.execute(
-                "insert into tenants (id, code, title, country_code, base_currency, report_currency) "
+                "insert into tenants "
+                "(id, code, title, country_code, base_currency, report_currency) "
                 "values (%s, 'new-partner', 'Новый партнёр', 'RS', 'RSD', 'EUR')",
                 (str(uuid.uuid4()),),
             )
@@ -132,7 +133,8 @@ def test_partner_roles_cannot_create_a_space(db, user_id):
         with pytest.raises(DENIED):
             with conn.transaction():
                 conn.execute(
-                    "insert into tenants (id, code, title, country_code, base_currency, report_currency) "
+                    "insert into tenants "
+                    "(id, code, title, country_code, base_currency, report_currency) "
                     "values (%s, 'sneaky', 'Сам себе партнёр', 'RS', 'RSD', 'EUR')",
                     (str(uuid.uuid4()),),
                 )

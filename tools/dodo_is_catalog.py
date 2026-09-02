@@ -98,7 +98,11 @@ def fields(schema: Any, prefix: str = "", depth: int = 0) -> list[str]:
             continue
         kind = value.get("type")
         description = " ".join((value.get("description") or "").split())
-        found.append(f"{prefix}{name}: {kind} — {description}" if description else f"{prefix}{name}: {kind}")
+        found.append(
+            f"{prefix}{name}: {kind} — {description}"
+            if description
+            else f"{prefix}{name}: {kind}"
+        )
         if kind == "object":
             found += fields(value, f"{prefix}{name}.", depth + 1)
         elif kind == "array" and isinstance(value.get("items"), dict):
@@ -181,7 +185,11 @@ def main() -> int:
                 if needle in (row["title"] + row["path"] + row["description"]).lower():
                     where.append("метод")
                 where += [f for f in row["response"] if needle in f.lower()]
-                where += [f"?{q['name']}: {q['description']}" for q in row["query"] if needle in (q["name"] + q["description"]).lower()]
+                where += [
+                    f"?{q['name']}: {q['description']}"
+                    for q in row["query"]
+                    if needle in (q["name"] + q["description"]).lower()
+                ]
                 if where:
                     hits += 1
                     print(f"\n{row['method']} {row['path']}  [{project}] — {row['title']}")
