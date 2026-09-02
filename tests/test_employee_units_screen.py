@@ -272,7 +272,7 @@ def test_the_form_comes_checked_by_what_is_effective_now(client, web_env, sql):
     import re
 
     tag = re.search(
-        r"<input[^>]*name=\"units\"[^>]*value=\"%s\"[^>]*>" % re.escape(bg1), page,
+        rf"<input[^>]*name=\"units\"[^>]*value=\"{re.escape(bg1)}\"[^>]*>", page,
     )
     assert tag and "checked" in tag.group(0), (
         f"действующая точка пришла в форму неотмеченной: {tag.group(0) if tag else page[-2000:]}"
@@ -297,6 +297,27 @@ def test_half_typed_shares_are_refused_with_the_real_arithmetic(client, web_env,
     assert answer.status_code == 400, answer.status_code
     assert "либо у всех" in body(answer), body(answer)[:800]
     assert not bindings(sql, person), "отвергнутая форма записала половину набора"
+    client.post("/logout/")
+
+
+def test_a_share_without_a_tick_is_refused_not_swallowed(client, web_env, sql):
+    """Доля вписана, галка не поставлена — отказ, а не тихо пропавшее число.
+
+    Самая тихая ошибка формы: набор записался бы без этой точки, а число, ради
+    которого человек и открыл блок, исчезло бы без следа. Отметить точку за него
+    нельзя — это распорядиться его деньгами.
+    """
+    person, _ext = somebody(sql)
+    bg1, ns1 = unit(sql, "BG1"), unit(sql, "NS1")
+    login_as(client, "admin")
+
+    answer = client.post(f"{LIST}{person}/", {
+        "what": "units", "units_from": "2026-06-01", "units": [bg1],
+        f"share_{ns1}": "0,3",
+    })
+    assert answer.status_code == 400, answer.status_code
+    assert "не отмечена" in body(answer), body(answer)[:800]
+    assert not bindings(sql, person), "отвергнутая форма всё-таки записала набор"
     client.post("/logout/")
 
 
