@@ -503,6 +503,30 @@ def test_a_manager_does_not_learn_about_foreign_units_from_the_card(rls, sql):
     assert seen == ["NS1"], f"управляющему видны чужие точки его человека: {seen}"
 
 
+def test_the_reader_is_refused_in_words_if_he_posts_anyway(client, web_env, sql):
+    """Адрес остаётся рабочим, а запись отвечает 403 словами — и ничего не пишет.
+
+    Право спрашивается до разбора формы, то есть общее для всех трёх её видов.
+    Проверка всё равно своя: новый вид записи (`what=units`) — это новая ветка, и
+    перенеси кто-нибудь проверку внутрь ветки условий найма, дыра открылась бы
+    молча именно здесь.
+    """
+    person, _ext = sql.execute(
+        """select e.id, e.external_id from employees e
+             join employment_terms t on t.employee_id = e.id
+             join units u on u.id = t.unit_id
+            where u.code = 'NS1' order by e.external_id limit 1"""
+    ).fetchone()
+    login_as(client, "manager")
+    answer = client.post(f"{LIST}{person}/", {
+        "what": "units", "units_from": "2026-06-01", "units": [unit(sql, "NS1")],
+    })
+    assert answer.status_code == 403, answer.status_code
+    assert "Ведение справочников" in body(answer), body(answer)[:600]
+    assert not bindings(sql, person), "отказ 403 всё-таки завёл набор точек"
+    client.post("/logout/")
+
+
 def test_a_reader_gets_no_form_but_gets_the_words(client, web_env, sql):
     """У читателя формы набора нет, и на её месте объяснение, а не пустота (T072)."""
     person, _ext = sql.execute(
