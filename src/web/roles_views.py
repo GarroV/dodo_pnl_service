@@ -35,13 +35,14 @@ from uuid import uuid4
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import connection, transaction
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 
-from core.models import AccessLogEntry, Membership, Role, User
-from core.roles import ALL_PERMISSIONS, NEVER, OPTIONAL
+from core.models import AccessLogEntry, Membership, Role, Unit, User
+from core.roles import ALL_PERMISSIONS, NEVER, OPTIONAL, ROLE_SHAPES
 
 from . import permissions
 from .principal import get_current_principal
@@ -147,6 +148,60 @@ def _history(tenant_id):
         ]
 
 
+
+def _unit_scoped(role) -> bool:
+    """Роль ведёт ОДНУ точку, а не всего партнёра.
+
+    Форма роли объявлена в `core/roles.py`: у управляющего точки там стоит
+    точка, у остальных — `None`. Сид её читает и заводит членство со списком,
+    а экран ролей — не читал вовсе (T188): членство создавалось без `unit_ids`.
+
+    Цена этой пропущенной строки велика. `unit_ids is null` в функциях
+    контекста (`0264`) означает ВСЕ точки тенанта, поэтому приглашённый
+    управляющий получал кассы, наличные, табели и надбавки всего партнёра
+    вместо своей точки — молча, вопреки D031, и тем отменяя смысл роли.
+    """
+    shape = ROLE_SHAPES.get(role.code)
+    return shape is not None and shape.unit is not None
+
+
+def _membership_units(request, who, role):
+    """Точки членства и отказ словами, если выбор не сходится с ролью.
+
+    Возвращает `(unit_ids, отказ)`. `unit_ids is None` — все точки партнёра, и
+    это законно ровно для тех ролей, которые его целиком и ведут.
+
+    Молчаливого умолчания здесь нет намеренно: и «забыл выбрать точку», и
+    «выбрал точку роли, которая ведёт всё» — это расхождение между тем, что
+    человек имел в виду, и тем, что получит. Оба случая называются словами, а
+    не разрешаются за него в ту или другую сторону.
+    """
+    chosen = (request.POST.get("unit") or "").strip()
+
+    if not _unit_scoped(role):
+        if chosen:
+            return None, _(
+                "Роль «%(role)s» ведёт всего партнёра — точка для неё не выбирается."
+            ) % {"role": role.title}
+        return None, ""
+
+    if not chosen:
+        return None, _(
+            "Роль «%(role)s» ведёт одну точку — выберите её. "
+            "Без точки человек получил бы все точки партнёра."
+        ) % {"role": role.title}
+
+    try:
+        unit = Unit.objects.filter(pk=chosen, tenant_id=who.tenant_id).first()
+    except (DjangoValidationError, ValueError):
+        unit = None
+    if unit is None:
+        # Теми же словами, что у чужой строки: по ответу нельзя понять, есть ли
+        # такая точка у другого партнёра (D023).
+        return None, _("Такой точки у этого партнёра нет.")
+    return [unit.pk], ""
+
+
 def _page(request, who, *, notice: str = "", error: str = "", status: int = 200):
     roles = list(Role.objects.filter(tenant_id=who.tenant_id).order_by("title"))
     rows = [
@@ -174,6 +229,7 @@ def _page(request, who, *, notice: str = "", error: str = "", status: int = 200)
             "rows": rows,
             "roles": roles,
             "people": _people(who.tenant_id),
+            "units": list(Unit.objects.filter(tenant_id=who.tenant_id).order_by("code")),
             "history": _history(who.tenant_id),
             "today": date.today().isoformat(),
             "notice": notice,
@@ -394,11 +450,16 @@ def invite(request):
     if refused:
         return _page(request, who, error=refused, status=400)
 
+    unit_ids, refused_unit = _membership_units(request, who, role)
+    if refused_unit:
+        return _page(request, who, error=refused_unit, status=400)
+
     person_id = uuid4()
     with transaction.atomic():
         _insert_person(person_id, full_name=full_name, email=email)
         Membership.objects.create(
             tenant_id=who.tenant_id, user_id=person_id, role_id=role.pk, expires_at=until,
+            unit_ids=unit_ids,
         )
         _record(who, subject=person_id, action=INVITED, role=role,
                 until=until, reason=reason)
@@ -459,9 +520,14 @@ def person_roles(request, user_id):
     if already:
         return _page(request, who, error=_("Эта роль у человека уже есть."), status=409)
 
+    unit_ids, refused_unit = _membership_units(request, who, role)
+    if refused_unit:
+        return _page(request, who, error=refused_unit, status=400)
+
     with transaction.atomic():
         Membership.objects.create(
             tenant_id=who.tenant_id, user_id=user_id, role_id=role.pk, expires_at=until,
+            unit_ids=unit_ids,
         )
         _record(who, subject=user_id, action=GRANTED, role=role,
                 until=until, reason=reason)

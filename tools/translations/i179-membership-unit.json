@@ -1,0 +1,26 @@
+{
+  "Роль «%(role)s» ведёт одну точку — выберите её. Без точки человек получил бы все точки партнёра.": {
+    "en": "The role “%(role)s” covers a single unit — choose it. Without a unit the person would get every unit of the partner.",
+    "sr": "Uloga „%(role)s“ vodi jednu lokaciju — izaberite je. Bez lokacije čovek bi dobio sve lokacije partnera."
+  },
+  "Роль «%(role)s» ведёт всего партнёра — точка для неё не выбирается.": {
+    "en": "The role “%(role)s” covers the whole partner — no unit is chosen for it.",
+    "sr": "Uloga „%(role)s“ vodi celog partnera — lokacija se za nju ne bira."
+  },
+  "Такой точки у этого партнёра нет.": {
+    "en": "This partner has no such unit.",
+    "sr": "Ovaj partner nema takvu lokaciju."
+  },
+  "Нужна ролям, которые ведут одну точку: без неё человек получил бы все точки партнёра.": {
+    "en": "Needed for roles that cover a single unit: without it the person would get every unit of the partner.",
+    "sr": "Potrebna je ulogama koje vode jednu lokaciju: bez nje bi čovek dobio sve lokacije partnera."
+  },
+  "не выбрана": {
+    "en": "not chosen",
+    "sr": "nije izabrana"
+  },
+  "— точка —": {
+    "en": "— unit —",
+    "sr": "— lokacija —"
+  }
+}

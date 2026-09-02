@@ -26,6 +26,15 @@ def role_option(html: str, title: str) -> str:
     raise AssertionError(f"роли «{title}» нет в списке: {[n for _, n in found]}")
 
 
+def unit_option(html: str, code: str) -> str:
+    """Идентификатор точки из выпадающего списка — по коду, а не по месту."""
+    found = re.findall(r'<option value="([0-9a-f-]+)">([^<]+)</option>', html)
+    for unit_id, label in found:
+        if label.strip().split(" — ")[0] == code:
+            return unit_id
+    raise AssertionError(f"точки «{code}» нет в списке: {[n for _, n in found]}")
+
+
 def held_roles(html: str, name: str) -> str:
     """Только выданные роли человека — плашки, без выпадающего списка выдачи.
 
@@ -63,6 +72,7 @@ def test_the_administrator_invites_a_person(client, web_env):
         "full_name": "Jovana Kostić",
         "email": "jovana@example.test",
         "role": manager,
+        "unit": unit_option(html, "NS1"),
         "reason": "Новый управляющий вместо уволенного",
     })
     assert response.status_code == 302
@@ -76,11 +86,12 @@ def test_an_invitation_without_a_reason_is_refused_in_words(client, web_env):
     """Причина обязательна везде, как у отката периода: пустое «зачем» —
     это история, которая ни на что не отвечает."""
     login_as(client, "admin")
-    manager = role_option(body(client.get("/roles/")), "Управляющий точки")
+    html = body(client.get("/roles/"))
+    manager = role_option(html, "Управляющий точки")
 
     response = client.post("/roles/invite/", {
         "full_name": "Без причины", "email": "no-reason@example.test",
-        "role": manager, "reason": "",
+        "role": manager, "unit": unit_option(html, "NS1"), "reason": "",
     })
     assert response.status_code == 400
     assert "Причина" in body(response)
@@ -90,10 +101,11 @@ def test_an_invitation_without_a_reason_is_refused_in_words(client, web_env):
 def test_a_person_is_not_invited_twice_by_the_same_mail(client, web_env):
     """Второй человек с той же почтой — это не второй человек."""
     login_as(client, "admin")
-    manager = role_option(body(client.get("/roles/")), "Управляющий точки")
+    html = body(client.get("/roles/"))
     payload = {
         "full_name": "Дубль", "email": "dubl@example.test",
-        "role": manager, "reason": "проверка",
+        "role": role_option(html, "Управляющий точки"),
+        "unit": unit_option(html, "NS1"), "reason": "проверка",
     }
     client.post("/roles/invite/", payload)
     response = client.post("/roles/invite/", payload)
@@ -180,7 +192,7 @@ def test_revoking_a_role_records_who_and_why(client, web_env):
 
     client.post("/roles/invite/", {
         "full_name": "Petar Petrović", "email": "petar@example.test",
-        "role": manager, "reason": "принял точку",
+        "role": manager, "unit": unit_option(html, "NS1"), "reason": "принял точку",
     })
     html = body(client.get("/roles/"))
     user_id = re.search(
@@ -212,7 +224,7 @@ def test_a_role_is_not_revoked_without_a_reason(client, web_env):
 
     client.post("/roles/invite/", {
         "full_name": "Miloš Stojanović", "email": "milos@example.test",
-        "role": manager, "reason": "принял точку",
+        "role": manager, "unit": unit_option(html, "NS1"), "reason": "принял точку",
     })
     html = body(client.get("/roles/"))
     user_id = re.search(
@@ -258,3 +270,122 @@ def test_an_expired_role_no_longer_opens_the_screen(client, web_env):
     assert client.get("/roles/").status_code == 403, (
         "просроченная роль всё ещё пускает на экран ролей"
     )
+
+
+# =============================================================================
+# Точка членства: роль на одну точку не должна открывать все (D031)
+# =============================================================================
+#
+# `unit_ids is null` в функциях контекста (`0264`) означает ВСЕ точки тенанта.
+# Экран ролей этого поля не заполнял вовсе, поэтому приглашённый управляющий
+# получал кассы, наличные, табели и надбавки всего партнёра вместо своей точки —
+# молча и вопреки форме роли, объявленной в `core/roles.py`.
+#
+# Проверки ниже смотрят В БАЗУ, а не на экран: разграничение делают функции
+# контекста по этой самой колонке, и зелёная разметка о ней ничего не говорит.
+
+
+def invited_membership(name: str):
+    """Единственное членство приглашённого — по имени человека."""
+    from core.models import Membership, User
+
+    person = User.objects.get(full_name=name)
+    return Membership.objects.get(user_id=person.pk)
+
+
+def test_an_invited_manager_gets_only_the_chosen_unit(client, web_env):
+    """Главная проверка задачи: у роли на одну точку членство названо точкой.
+
+    Пустой `unit_ids` здесь — не «не заполнили», а «все точки партнёра». Разница
+    невидима на экране и видна только в базе, поэтому проверяется база.
+    """
+    from core.models import Unit
+
+    login_as(client, "admin")
+    html = body(client.get("/roles/"))
+    ns1 = Unit.objects.get(code="NS1")
+
+    response = client.post("/roles/invite/", {
+        "full_name": "Ana Marković", "email": "ana@example.test",
+        "role": role_option(html, "Управляющий точки"),
+        "unit": unit_option(html, "NS1"),
+        "reason": "приняла точку",
+    })
+    assert response.status_code == 302
+
+    held = invited_membership("Ana Marković")
+    assert held.unit_ids == [ns1.id], (
+        f"членство управляющего не названо точкой: {held.unit_ids} — "
+        "пустой список означает ВСЕ точки партнёра"
+    )
+
+
+def test_a_role_of_one_unit_is_not_granted_without_a_unit(client, web_env):
+    """Забыли выбрать точку — отказ словами, а не тихая выдача всех точек."""
+    from core.models import User
+
+    login_as(client, "admin")
+    html = body(client.get("/roles/"))
+
+    response = client.post("/roles/invite/", {
+        "full_name": "Bez tačke", "email": "bez-tacke@example.test",
+        "role": role_option(html, "Управляющий точки"), "reason": "проверка",
+    })
+
+    assert response.status_code == 400
+    assert "точк" in body(response).lower(), "отказ не называет причину"
+    assert not User.objects.filter(full_name="Bez tačke").exists(), (
+        "человек всё-таки заведён — отказ оказался только на словах"
+    )
+
+
+def test_a_role_of_the_whole_partner_takes_no_unit(client, web_env):
+    """Точка у роли, которая ведёт партнёра целиком, — противоречие, а не мелочь.
+
+    Промолчать и выдать все точки значило бы сделать не то, что человек просил,
+    и не сказать об этом; молча сузить до одной точки — тем более.
+    """
+    from core.models import User
+
+    login_as(client, "admin")
+    html = body(client.get("/roles/"))
+
+    response = client.post("/roles/invite/", {
+        "full_name": "Lišnja tačka", "email": "lisnja@example.test",
+        "role": role_option(html, "Бухгалтер"),
+        "unit": unit_option(html, "NS1"), "reason": "проверка",
+    })
+
+    assert response.status_code == 400
+    assert not User.objects.filter(full_name="Lišnja tačka").exists()
+
+
+def test_granting_a_unit_role_to_a_person_also_names_the_unit(client, web_env):
+    """Второй путь выдачи — тот же самый, и дыра в нём была такая же.
+
+    Роль выдают не только при заведении человека, но и потом, из строки списка.
+    Проверять только приглашение значило бы закрыть одну дверь из двух.
+    """
+    from core.models import Membership, Unit, User
+
+    login_as(client, "admin")
+    html = body(client.get("/roles/"))
+    bg1 = Unit.objects.get(code="BG1")
+
+    client.post("/roles/invite/", {
+        "full_name": "Nikola Ilić", "email": "nikola@example.test",
+        "role": role_option(html, "Оперативный директор"), "reason": "ведёт партнёра",
+    })
+    person = User.objects.get(full_name="Nikola Ilić")
+
+    response = client.post(f"/roles/people/{person.pk}/", {
+        "role": role_option(body(client.get("/roles/")), "Управляющий точки"),
+        "unit": unit_option(body(client.get("/roles/")), "BG1"),
+        "reason": "подменяет управляющего",
+    })
+    assert response.status_code == 302
+
+    granted = Membership.objects.get(
+        user_id=person.pk, role__code="manager",
+    )
+    assert granted.unit_ids == [bg1.id], granted.unit_ids

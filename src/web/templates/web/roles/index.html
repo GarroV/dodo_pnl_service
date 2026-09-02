@@ -105,6 +105,14 @@
           <select name="role" aria-label="{% translate "Роль" %}">
             {% for role in roles %}<option value="{{ role.id }}">{{ role.title }}</option>{% endfor %}
           </select>
+          {# Точка обязательна для ролей, которые ведут одну точку, и запрещена
+             для тех, кто ведёт партнёра целиком. Какая роль какая — знает вид:
+             держать эту развилку в разметке значило бы завести ей второе,
+             расходящееся описание. #}
+          <select name="unit" aria-label="{% translate "Точка" %}">
+            <option value="">{% translate "— точка —" %}</option>
+            {% for unit in units %}<option value="{{ unit.id }}">{{ unit.code }}</option>{% endfor %}
+          </select>
           <input type="date" name="until" min="{{ today }}" aria-label="{% translate "До какого числа" %}">
           <input type="text" name="reason" required maxlength="200"
                  placeholder="{% translate "Причина" %}" aria-label="{% translate "Причина выдачи роли" %}">
@@ -135,6 +143,15 @@
     <select name="role">
       {% for role in roles %}<option value="{{ role.id }}">{{ role.title }}</option>{% endfor %}
     </select>
+  </label>
+  <label>{% translate "Точка" %}
+    <select name="unit">
+      <option value="">{% translate "не выбрана" %}</option>
+      {% for unit in units %}
+      <option value="{{ unit.id }}">{{ unit.code }} — {{ unit.title }}</option>
+      {% endfor %}
+    </select>
+    <span class="note">{% translate "Нужна ролям, которые ведут одну точку: без неё человек получил бы все точки партнёра." %}</span>
   </label>
   <label>{% translate "До какого числа" %}
     <input type="date" name="until" min="{{ today }}">

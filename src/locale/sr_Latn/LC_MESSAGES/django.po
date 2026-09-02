@@ -8361,3 +8361,34 @@ msgid ""
 "  наверху самого экрана. Раздел без пометки готов."
 msgstr ""
 "Neki odeljci su označeni. „Dorada“ znači da ekran radi, ali ne dostiže ono što je zamišljeno, a pored piše šta tačno nedostaje. „U izradi“ znači da ekrana još nema — umesto njega stoji stranica sa opisom šta će ovde biti: tako su rešeni „Bankovni izvod“, „Isplate“, „Analitika o ljudima“ i „Integracija sa Dodo IS“. Oznaka stoji i kao tačka pored stavke u zaglavlju i kao traka na vrhu samog ekrana. Odeljak bez oznake je gotov."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Нужна ролям, которые ведут одну точку: без неё человек получил бы все "
+"точки партнёра."
+msgstr "Potrebna je ulogama koje vode jednu lokaciju: bez nje bi čovek dobio sve lokacije partnera."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Роль «%(role)s» ведёт всего партнёра — точка для неё не выбирается."
+msgstr "Uloga „%(role)s“ vodi celog partnera — lokacija se za nju ne bira."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Роль «%(role)s» ведёт одну точку — выберите её. Без точки человек "
+"получил бы все точки партнёра."
+msgstr "Uloga „%(role)s“ vodi jednu lokaciju — izaberite je. Bez lokacije čovek bi dobio sve lokacije partnera."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Такой точки у этого партнёра нет."
+msgstr "Ovaj partner nema takvu lokaciju."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "не выбрана"
+msgstr "nije izabrana"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "— точка —"
+msgstr "— lokacija —"

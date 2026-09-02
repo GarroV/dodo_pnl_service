@@ -8527,3 +8527,34 @@ msgid ""
 "  наверху самого экрана. Раздел без пометки готов."
 msgstr ""
 "Some sections are marked. “Refining” means the screen works but does not yet match what was designed, and the note beside it says what exactly is missing. “In development” means the screen does not exist yet — instead there is a page describing what will be here: that is how “Bank statement”, “Payouts”, “People analytics” and “Dodo IS integration” work. The mark appears both as a dot next to the item in the header and as a banner at the top of the screen itself. A section without a mark is ready."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Нужна ролям, которые ведут одну точку: без неё человек получил бы все "
+"точки партнёра."
+msgstr "Needed for roles that cover a single unit: without it the person would get every unit of the partner."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Роль «%(role)s» ведёт всего партнёра — точка для неё не выбирается."
+msgstr "The role “%(role)s” covers the whole partner — no unit is chosen for it."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Роль «%(role)s» ведёт одну точку — выберите её. Без точки человек "
+"получил бы все точки партнёра."
+msgstr "The role “%(role)s” covers a single unit — choose it. Without a unit the person would get every unit of the partner."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Такой точки у этого партнёра нет."
+msgstr "This partner has no such unit."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "не выбрана"
+msgstr "not chosen"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "— точка —"
+msgstr "— unit —"
