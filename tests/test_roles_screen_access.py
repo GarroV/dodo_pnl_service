@@ -113,13 +113,32 @@ def test_only_the_one_who_leads_roles_invites(client, web_env):
 
 
 def test_a_role_is_granted_until_a_date_and_the_screen_says_so(client, web_env):
-    """Сценарий эталона: роль администратора бухгалтеру на время отпуска."""
+    """Сценарий эталона: роль администратора бухгалтеру на время отпуска.
+
+    Человек заводится свой, а не берётся из сида, — по тому же доводу, что
+    расписан ниже. Смысл проверки в том, что выданная роль ОСТАЁТСЯ со сроком,
+    поэтому снять её в конце нельзя: снятие проверяет соседняя. Достанься она
+    сидовому бухгалтеру — он оставался бы администратором до конца прогона,
+    потому что база у веб-проверок одна на весь.
+
+    Так и было: `test_web_rules` видел у бухгалтера ведение правил, которого
+    его роли не выдают ни при каких условиях, и краснел на ровном месте — но
+    только в полном прогоне, а поодиночке был зелёным.
+    """
     login_as(client, "admin")
     html = body(client.get("/roles/"))
+    accountant = role_option(html, "Бухгалтер")
     admin_role = role_option(html, "Администратор сети")
-    person = person_row(html, "Бухгалтер")
-    user_id = re.search(r"/roles/people/([0-9a-f-]+)/", person).group(1)
     until = (date.today() + timedelta(days=30)).isoformat()
+
+    client.post("/roles/invite/", {
+        "full_name": "Jelena Nikolić", "email": "jelena@example.test",
+        "role": accountant, "reason": "ведёт учёт партнёра",
+    })
+    html = body(client.get("/roles/"))
+    user_id = re.search(
+        r"/roles/people/([0-9a-f-]+)/", person_row(html, "Jelena Nikolić")
+    ).group(1)
 
     response = client.post(f"/roles/people/{user_id}/", {
         "role": admin_role, "until": until, "reason": "Отпуск партнёра, нужно закрыть июнь",
@@ -127,7 +146,7 @@ def test_a_role_is_granted_until_a_date_and_the_screen_says_so(client, web_env):
     assert response.status_code == 302
 
     html = body(client.get("/roles/"))
-    assert "до " in person_row(html, "Бухгалтер"), "срок роли не показан рядом с ролью"
+    assert "до " in person_row(html, "Jelena Nikolić"), "срок роли не показан рядом с ролью"
     assert "Отпуск партнёра" in html, "в истории нет причины выдачи"
 
 

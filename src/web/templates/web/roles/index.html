@@ -124,7 +124,7 @@
 хэшем, и об этом сказано словами: молчаливая учётка, в которую нельзя войти,
 читалась бы как поломка.
 {% endcomment %}
-<form method="post" action="{% url 'roles-invite' %}" class="stack">{% csrf_token %}
+<form method="post" action="{% url 'roles-invite' %}" class="card wide">{% csrf_token %}
   <label>{% translate "Имя и фамилия" %}
     <input type="text" name="full_name" required maxlength="120">
   </label>
