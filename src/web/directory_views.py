@@ -111,6 +111,20 @@ def _saved_notices() -> dict:
         "person": _("Карточка сохранена."),
         "terms": _("Заведена новая версия условий найма."),
         "same": _("Ничего не изменилось — новая версия не заведена."),
+        # Точки человека (T210). Свой ответ, а не «сохранено»: сказанное здесь
+        # отвечает на вопрос, ради которого набор и заводили, — куда пойдут
+        # деньги. «Сохранено» оставило бы его открытым до расчёта месяца.
+        "units": _(
+            "Точки человека заведены с указанной даты. Затраты на него "
+            "разделятся между ними в ближайшем расчёте; прежний набор остался "
+            "в истории — по нему посчитаны прошлые месяцы."
+        ),
+        "units_office": _(
+            "Точек у человека не осталось — с этой даты он работает на всю "
+            "сеть. Его затраты пойдут на разнесение общим правилом, как расход "
+            "юрлица, а не на одну пиццерию."
+        ),
+        "units_same": _("Набор точек не изменился — новая версия не заведена."),
         # Заведение (T164) — свой ответ, а не «карточка сохранена»: человек
         # только что появился в продукте, и следующий его шаг другой — часы.
         # Сказать об этом надо здесь, иначе он ждёт, что сотрудник сам окажется
@@ -768,9 +782,15 @@ def employee(request, employee_id):
             # (повторный сквозной ключ, ссылка в никуда) становится отказом
             # формы, а не оборванным запросом (T136, issue #109 и #98).
             with saving():
-                if request.POST.get("what") == "person":
+                what = request.POST.get("what")
+                if what == "person":
                     _save_person(request, person)
                     saved = "person"
+                elif what == "units":
+                    # Точки человека (T210) — своя форма и своя точка
+                    # сохранения: набор пишется целиком, и отвергнутый набор не
+                    # должен оставить человека на половине точек.
+                    saved, carried = _save_units(request, who, person)
                 else:
                     saved, carried = _save_terms(request, who, person)
             # Перенаправление после записи: обновление страницы не сохраняет
@@ -793,6 +813,13 @@ def employee(request, employee_id):
             error, status = refusal.message, refusal.http_status
 
     notice = _saved_notices().get(request.GET.get("saved", ""), "")
+    if request.GET.get("posted") == "1":
+        # Набор точек заведён датой, которую уже разнесли по P&L (T210). Слова
+        # тут другие, чем у условий найма, и это не косметика: разницы по
+        # точкам не бывает вовсе — см. `directory.split_already_posted_notice`.
+        notice = " ".join(filter(None, [
+            notice, directory.split_already_posted_notice(who.tenant_id),
+        ]))
     if request.GET.get("retro") == "1":
         # Версия завелась с датой внутри утверждённого месяца (T121). Одной
         # фразой «версия заведена» тут не обойтись: человек обязан узнать, что
@@ -961,6 +988,175 @@ def _last_term(employee_id) -> EmploymentTerm | None:
         .order_by("valid_from")
         .last()
     )
+
+
+# --- точки человека (T210, D055) ----------------------------------------------
+#
+# Затраты человека делятся по точкам, на которых он работает: управляющий ведёт
+# две пиццерии, территориальный — город, а у офисного точек нет вовсе и его
+# деньги разносятся общим правилом. Связь `employee_units` умела это с T197, но
+# завести её можно было только SQL-ом — то есть партнёр без разработчика
+# управляющего на две точки не оформил бы.
+#
+# Набор задаётся целиком и с даты, а не строкой на точку. Правило и его «почему»
+# — в `web/directory.py` (`save_units`); здесь показ, разбор ввода и слова.
+
+
+def _units_for_choice(who) -> list[Unit]:
+    """Точки, которые предлагаются в наборе. Порядок — по коду, как в справочнике.
+
+    Отбора по роли здесь нет и не нужно: строки режет база — с `0267` на
+    `employee_units` стоит тот же `unit_visibility`, что на условиях найма, а
+    саму таблицу точек он закрывает с `0011`. Роль, которой видна одна точка,
+    получит в списке одну точку, и это не свойство того, что экран не спросил
+    лишнего.
+    """
+    return list(Unit.objects.order_by("code"))
+
+
+def _wanted_units(request, who) -> list[tuple]:
+    """Набор точек, заявленный формой: пары «точка — доля».
+
+    Доля пустая — «поровну со всеми остальными»: умолчание названо владельцем
+    прямо (D055), и хранить у каждой строки одинаковое число значило бы
+    заставлять партнёра пересчитывать доли при каждой новой точке.
+    """
+    allowed = {unit.id: unit for unit in _units_for_choice(who)}
+    wanted: dict = {}
+    named, silent = [], []
+    for raw in request.POST.getlist("units"):
+        chosen = next((unit_id for unit_id in allowed if str(unit_id) == raw), None)
+        if chosen is None:
+            raise BadInput(_("«%(label)s»: такого варианта нет.") % {"label": _("Точки")})
+        share = _number(request, f"share_{chosen}", _("Доля"), required=False)
+        if share is not None and share <= 0:
+            raise BadInput(
+                _("«%(label)s»: доля точки %(code)s должна быть больше нуля — "
+                  "точка с нулевой долей не получит ничего, и человек об этом "
+                  "не узнает.")
+                % {"label": _("Доля"), "code": allowed[chosen].code}
+            )
+        wanted[chosen] = share
+        (named if share is not None else silent).append(allowed[chosen].code)
+    # Доля вписана, а галка не поставлена — самая тихая ошибка этой формы:
+    # набор запишется без этой точки, а число, которое человек набрал, исчезнет
+    # без следа. Молча «понять, что он имел в виду» тоже нельзя: отметить точку
+    # за него — это распорядиться его деньгами. Поэтому громкий отказ.
+    forgotten = [
+        allowed[unit_id].code
+        for unit_id in allowed
+        if unit_id not in wanted and (request.POST.get(f"share_{unit_id}") or "").strip()
+    ]
+    if forgotten:
+        raise BadInput(
+            _("Доля задана у точки %(code)s, но сама точка не отмечена. Отметьте "
+              "её галкой или сотрите долю: иначе набор запишется без неё, а "
+              "число пропадёт.")
+            % {"code": ", ".join(forgotten)}
+        )
+    # Половина долей заданных, половина пустых — самая дорогая ошибка этой формы,
+    # и отвергается она здесь, а не «как-нибудь считается». Пустая доля идёт в
+    # расчёт весом 1 (`payrun.posting._shares`), поэтому 0,7 рядом с пустой дала
+    # бы не 70 % и 30 %, а 41 % и 59 %: числа, которых никто не вводил, и
+    # разошлись бы они молча — в P&L двух пиццерий.
+    if named and silent:
+        raise BadInput(
+            _("Доли задаются либо у всех выбранных точек, либо ни у одной. "
+              "Сейчас доля есть у %(named)s, а у %(silent)s её нет: пустая доля "
+              "считается единицей, и рядом с заданной это дало бы не те проценты, "
+              "которые вы имели в виду. Оставьте все доли пустыми — поделится "
+              "поровну.")
+            % {"named": ", ".join(named), "silent": ", ".join(silent)}
+        )
+    return sorted(wanted.items(), key=lambda row: str(row[0]))
+
+
+def _save_units(request, who, person: Employee) -> tuple[str, str]:
+    """Набор точек человека с даты. Возвращает код случившегося и хвост адреса.
+
+    Хвост — признак того, что дата попала в уже разнесённый месяц (T210). Слова
+    у него свои, не те, что у условий найма: разницы по точкам не бывает вовсе,
+    и обещать её значило бы отправить человека искать несуществующую строку
+    (`directory.split_already_posted_notice`).
+    """
+    valid_from = _date(request, "units_from", _("Точки действуют с"), required=True)
+    wanted = _wanted_units(request, who)
+    change = directory.save_units(
+        who.tenant_id, person.id, valid_from=valid_from, wanted=wanted,
+    )
+    if not change.changed:
+        return "units_same", ""
+    carried = "&posted=1" if directory.touches_closed_month(
+        who.tenant_id, valid_from,
+    ) else ""
+    # Пустой набор — не «ничего не задали», а осознанный офис: человек работает
+    # на всю сеть. Ответ у него свой, иначе человек уйдёт со страницы уверенным,
+    # что точки просто не сохранились.
+    return ("units" if wanted else "units_office"), carried
+
+
+def _unit_rows(person: Employee) -> list[dict]:
+    """Точки человека для карточки — все версии, а не только действующие.
+
+    Показываются и закрытые: «до июня он вёл одну пиццерию, с июня две» — такой
+    же факт условий работы, как ставка, и P&L закрытого месяца объясняется
+    именно им.
+    """
+    from core.models import EmployeeUnit
+
+    return [
+        {
+            "code": row.unit.code,
+            "title": row.unit.title,
+            # Доля как есть, без округления до копеек: это основание деления, а
+            # не деньги (`format.exact`, T116). Пустая — прочерк, а что он
+            # значит, сказано словами под таблицей: «поровну».
+            "share": exact(row.share) if row.share is not None else EMPTY,
+            "from": day(row.valid_from),
+            "to": day(row.valid_to),
+        }
+        for row in EmployeeUnit.objects.filter(employee_id=person.id)
+        .select_related("unit")
+        .order_by("valid_from", "unit__code")
+    ]
+
+
+def _unit_options(who, person: Employee) -> list[dict]:
+    """Галки формы: все точки партнёра, отмечено то, что действует сегодня.
+
+    Отмечено именно действующее, и это не удобство, а защита от молчаливой
+    потери. Набор пишется целиком (`save_units`), поэтому форма с пустыми
+    галками означала бы «снять человека со всех точек»: тот, кто пришёл
+    добавить вторую пиццерию, снял бы первую и узнал бы об этом из P&L
+    следующего месяца.
+    """
+    now = {
+        row.unit_id: row.share
+        for row in directory.units_at(who.tenant_id, person.id, date.today())
+    }
+    return [
+        {
+            "id": str(unit.id),
+            "code": unit.code,
+            "title": f"{unit.code} · {unit.title}",
+            "checked": unit.id in now,
+            # Значение поля — как его примет разбор, а не как его красит
+            # страница: показанное `exact()` число несёт разделитель тысяч
+            # (пробел), и большой вес, вернувшись в форму, был бы отвергнут как
+            # «не число». Ставка по той же причине показывается сырой.
+            "share": _plain(now.get(unit.id)),
+        }
+        for unit in _units_for_choice(who)
+    ]
+
+
+def _plain(value: Decimal | None) -> str:
+    """Число для поля ввода: без хвостовых нулей и без экспоненты.
+
+    `Decimal("0.700000")` в поле читается как ошибка, а `normalize()` у целого
+    даёт `7E+1`. Формат `f` разворачивает и то и другое обычной записью.
+    """
+    return f"{value.normalize():f}" if value is not None else ""
 
 
 def _wanted_terms(request, who, current: EmploymentTerm | None) -> dict:
@@ -1136,6 +1332,16 @@ def _employee_context(
         # регистру делает база: надбавку внутреннего регистра роль без него не
         # увидит вовсе (политика `ledger_visibility`).
         "allowances": _allowances_of(person),
+        # Точки, между которыми делятся затраты на человека (T210, D055).
+        # Показываются всем, кто видит карточку, — как и надбавки: это часть
+        # условий его работы, а не сумма расчёта. Чужие точки при этом не
+        # покажутся никому: с `0267` на таблице стоит `unit_visibility`, тот же,
+        # что на условиях найма.
+        "units": _unit_rows(person),
+        # Точка из условий найма. Нужна пустому состоянию блока: набора точек
+        # нет — деньги идут не «никуда», а именно на неё
+        # (`payrun.posting._shares`), и молчать об этом нельзя.
+        "units_home": current.unit.code if current and current.unit else "",
         "versions": [
             {
                 "from": day(term.valid_from),
@@ -1218,6 +1424,11 @@ def _employee_context(
         **shown,
         "closed_through": edge,
         "closed_note": directory.closed_month_warning(who.tenant_id),
+        # Форма набора точек (T210) и слова о том, что уже разнесено. Слова
+        # свои, не `closed_note`: у точек закрытый месяц ведёт себя иначе —
+        # разницы по ним не бывает вовсе, см. `web/directory.py`.
+        "unit_options": _unit_options(who, person),
+        "units_posted_note": directory.split_already_posted_warning(who.tenant_id),
         "person_fields": [
             *_person_fields(person),
             {"kind": "date", "name": "hired_at", "label": _("Принят"),

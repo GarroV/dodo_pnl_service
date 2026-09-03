@@ -219,4 +219,92 @@
   <button type="submit" class="primary">{% translate "Завести версию" %}</button>
 </form>
 {% endif %}
+
+{% comment %}
+Точки, между которыми делятся затраты на человека (T210, D055).
+
+Отдельным блоком от условий найма, и это не вёрстка. «Точка» в условиях найма
+отвечает на вопрос «где человек числится» — она одна и участвует в расчёте его
+ведомости. Здесь другой вопрос: **чьи это затраты**. У управляющего двумя
+пиццериями ответ «обе», у территориального — «весь город», у офисного — «сеть
+целиком». Сложить их в одно поле значило бы запретить второй ответ.
+
+Набор задаётся целиком и с даты, а не строкой на точку: перевод человека — это
+одно действие и одна дата, а не пара «снять» и «добавить», между которыми он
+оказывается ничей. Поэтому галки приходят отмеченными по действующему набору:
+пустая форма означала бы «снять со всех точек», и тот, кто пришёл добавить
+вторую пиццерию, снял бы первую.
+
+Прежние версии остаются в таблице: закрытый месяц разнесён по тем точкам,
+которые были у человека тогда, и объясняется он именно ими.
+{% endcomment %}
+<h2>{% translate "Точки, между которыми делятся затраты" %}</h2>
+<p class="note">{% blocktranslate %}Затраты на человека делятся между точками, на которых он работает: управляющий ведёт две пиццерии, территориальный — город. Это не то же самое, что «Точка» в условиях найма: там сказано, где человек числится, а здесь — чьи это деньги в P&amp;L.{% endblocktranslate %}</p>
+
+{% if units %}
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Точка" %}</th>
+      <th class="num">{% translate "Доля" %}</th>
+      <th>{% translate "Действует с" %}</th>
+      <th>{% translate "По" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in units %}
+    <tr data-unit="{{ row.code }}">
+      <td>{{ row.code }} · {{ row.title }}</td>
+      <td class="{{ row.share|numclass }}">{{ row.share }}</td>
+      <td>{{ row.from }}</td>
+      <td>{{ row.to }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+<p class="note">{% blocktranslate %}Пустая доля — поровну с остальными точками того же периода. Деление берётся по состоянию на первое число считаемого месяца: набор, заведённый серединой месяца, подействует со следующего.{% endblocktranslate %}</p>
+{% else %}
+{% translate "Точки не заданы." as no_units %}
+{% notice "empty" title=no_units %}{% if units_home %}{% blocktranslate with home=units_home %}Все затраты на человека идут на одну точку — ту, что стоит в его условиях найма ({{ home }}). Задайте набор ниже, если он работает на несколько пиццерий: тогда деньги разделятся между ними.{% endblocktranslate %}{% else %}{% blocktranslate %}Точки нет и в условиях найма — значит человек работает на всю сеть. Его затраты уходят на разнесение общим правилом, как расход юрлица, а не на одну пиццерию.{% endblocktranslate %}{% endif %}{% endnotice %}
+{% endif %}
+
+{% if may_manage %}
+<h2>{% translate "Набор точек с даты" %}</h2>
+<p class="note">{% translate "Отмечено то, что действует сегодня. Прежний набор закрывается днём начала нового и остаётся в истории — закрытые месяцы считаются по нему." %}</p>
+{% comment %}
+Что случится с уже разнесённым месяцем, сказано ДО правки — тем же приёмом, что
+у условий найма (T121), но другими словами. У ставки разница едет вперёд
+помеченной строкой; у точек её не бывает вовсе: P&L утверждённого месяца
+разнесён и заморожен, и обещать дельту значило бы отправить человека искать
+строку, которой не будет.
+{% endcomment %}
+{% if units_posted_note %}<p class="note">{{ units_posted_note }}</p>{% endif %}
+<form class="card" method="post">{% csrf_token %}
+  <input type="hidden" name="what" value="units">
+  <p class="field">
+    {% translate "Набор точек берётся тем, каким он был на первое число считаемого месяца." as units_from_help %}
+    {% translate "Точки действуют с" as units_from_label %}
+    {% include "web/components/field.html" with id="units_from" name="units_from" label=units_from_label required=True type="date" help=units_from_help %}
+  </p>
+  <p class="field">
+    <fieldset class="checks">
+      <legend class="field-label">{% translate "Точки" %}</legend>
+      {% for option in unit_options %}
+      <span class="check share-pick">
+        <input type="checkbox" id="unit_{{ option.id }}" name="units" value="{{ option.id }}"
+               {% if option.checked %}checked{% endif %}>
+        <label for="unit_{{ option.id }}">{{ option.title }}</label>
+        <span class="share">
+          <label for="share_{{ option.id }}">{% translate "Доля" %}</label>
+          <input type="text" inputmode="decimal" id="share_{{ option.id }}"
+                 name="share_{{ option.id }}" value="{{ option.share }}">
+        </span>
+      </span>
+      {% endfor %}
+      <span class="note">{% blocktranslate %}Доли можно не задавать вовсе — тогда поровну. Если задаёте, задавайте у всех отмеченных точек сразу: пустая доля считается единицей, и рядом с 0,7 это дало бы не те проценты, которые вы имели в виду. Не отмечено ни одной точки — человек работает на всю сеть.{% endblocktranslate %}</span>
+    </fieldset>
+  </p>
+  <button type="submit" class="primary">{% translate "Сохранить точки" %}</button>
+</form>
+{% endif %}
 {% endblock %}

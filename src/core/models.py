@@ -1155,6 +1155,30 @@ class EmployeeUnit(models.Model):
                 fields=["employee", "unit", "valid_from"],
                 name="employee_units_no_repeat",
             ),
+            # Одна точка не может действовать у человека дважды в один день
+            # (T210). Уникальность выше ловила только повтор с той же датой
+            # начала, а деньги портит именно пересечение: `payrun.posting`
+            # берёт все действующие строки списком и считает каждую отдельным
+            # весом. Две пересекающиеся строки одной точки дают ей двойной вес
+            # — то есть чужую долю ФОТ, — и заметить это можно только сверив
+            # P&L двух пиццерий вручную.
+            ExclusionConstraint(
+                name="employee_units_no_overlap",
+                expressions=[
+                    ("employee", "="), ("unit", "="),
+                    (validity_range(), RangeOperators.OVERLAPS),
+                ],
+            ),
+            # Версия, которая кончается раньше, чем началась, не действует
+            # никогда: расчёт её просто не увидит, а человек будет уверен, что
+            # точку задал. Молчаливый сбой на ровном месте.
+            models.CheckConstraint(
+                condition=(
+                    models.Q(valid_to__isnull=True)
+                    | models.Q(valid_to__gt=models.F("valid_from"))
+                ),
+                name="employee_units_dates_in_order",
+            ),
         ]
         indexes = [
             models.Index("tenant", "employee", name="employee_units_person"),

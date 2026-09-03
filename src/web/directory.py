@@ -53,6 +53,15 @@ issue #100). Производственный календарь один на �
 `shared_calendar_notice` (после), тем же приёмом и в том же месте, что и слова
 про закрытый месяц.
 
+**Правило шестое: точки человека задаются НАБОРОМ с даты, а не строкой на
+точку** (T210, D055). Управляющий на две пиццерии — это не «две записи, которые
+завели по одной»: расчёт делит его ФОТ между всеми точками, действующими в
+месяце, и половина набора означает половину денег не там. Поэтому `save_units`
+принимает весь набор сразу и закрывает прежние версии тем же днём — как
+`save_terms` закрывает прежнюю версию условий найма. Перевод человека с одной
+точки на другую при этом остаётся одним действием и одной датой, а не парой
+«снять» и «добавить», между которыми человек оказывается ничей.
+
 **Правило четвёртое: у чего нет версий по датам — то при закрытом месяце не
 правится.** Схема расчёта и регистр группы действуют всегда, задним числом их
 править нечем: разницу считает пересчёт месяца по версиям, а версии здесь нет.
@@ -67,7 +76,7 @@ from datetime import date
 from django.db import transaction
 from django.utils.translation import gettext as _
 
-from core.models import EmploymentTerm, Payrun
+from core.models import EmployeeUnit, EmploymentTerm, Payrun
 from payrun.calc import month_end
 from payrun.retro import DELTA
 from payrun.retro import mode as retro_mode
@@ -246,6 +255,55 @@ def closed_month_notice(tenant_id) -> str:
     ) % {"edge": edge.isoformat()}
 
 
+def split_already_posted_warning(tenant_id) -> str:
+    """Что случится с уже разнесённым месяцем — сказано **до** правки точек (T210).
+
+    Отдельными словами от `closed_month_warning`, и это не косметика: у условий
+    найма и у точек человека закрытый месяц ведёт себя **по-разному**, а одна
+    общая фраза обещала бы то, чего не произойдёт.
+
+    Ставка, заведённая задним числом, меняет суммы расчёта — их разницу считает
+    `payrun.retro` и кладёт помеченной строкой в ближайший неутверждённый месяц.
+    Точки суммы не меняют вовсе: они решают, **на какую пиццерию** уже
+    посчитанные деньги легли в P&L. Разнесение утверждённого месяца выполнено в
+    момент утверждения (`payrun.posting`), его строки заморожены сторожем фактов,
+    и никакой дельты у них не бывает — ни сейчас, ни потом. Сказать здесь «разница
+    ляжет помеченной строкой» значило бы отправить человека искать её на странице
+    месяца, где её не будет.
+
+    Пусто, если утверждённых месяцев нет: предупреждать не о чем, а
+    предупреждение «на всякий случай» читается как запрет.
+    """
+    edge = closed_through(tenant_id)
+    if edge is None:
+        return ""
+    return _(
+        "Зарплата утверждена по %(edge)s включительно и уже разнесена по тем "
+        "точкам, которые действовали тогда. Правку с более ранней датой продукт "
+        "примет, но P&L утверждённых месяцев на другие точки не переедет: их "
+        "разнесение остаётся таким, каким было посчитано. Новый набор точек "
+        "подействует на ближайший неутверждённый месяц."
+    ) % {"edge": edge.isoformat()}
+
+
+def split_already_posted_notice(tenant_id) -> str:
+    """То же самое **после** правки: что уже случилось и чего ждать не надо.
+
+    Отдельным текстом, а не тем же в будущем времени, — по той же причине, что у
+    `closed_month_notice`: «продукт примет» после нажатия кнопки читается так,
+    будто ничего ещё не произошло.
+    """
+    edge = closed_through(tenant_id)
+    if edge is None:
+        return ""
+    return _(
+        "Правка задела месяцы, утверждённые по %(edge)s. Их разнесение осталось "
+        "прежним: P&L закрытого месяца не переехал на другие точки и не переедет "
+        "— разницы по точкам не бывает, деньги там уже разнесены. Новый набор "
+        "точек подействует с ближайшего неутверждённого месяца."
+    ) % {"edge": edge.isoformat()}
+
+
 def shared_calendar_warning() -> str:
     """Кого заденет правка производственного календаря — сказано **до** неё.
 
@@ -362,3 +420,93 @@ def save_terms(tenant_id, employee_id, *, valid_from: date, wanted: dict) -> Ter
         **wanted,
     )
     return TermChange(changed=True, previous=current)
+
+
+@dataclass(frozen=True)
+class UnitsChange:
+    """Что случилось с набором точек человека: завели новую версию или нет."""
+
+    changed: bool
+    previous: tuple
+
+
+def units_at(tenant_id, employee_id, moment: date) -> list[EmployeeUnit]:
+    """Точки человека, действующие на дату. Тем же правилом, что и у расчёта.
+
+    Границы полуоткрытые (`[valid_from, valid_to)`) — как у условий найма и как
+    их читает `payrun.posting._units_of`. Второе прочтение тех же дат означало
+    бы, что экран показывает один набор точек, а деньги делятся по другому.
+    """
+    return list(
+        EmployeeUnit.objects.filter(
+            tenant_id=tenant_id, employee_id=employee_id, valid_from__lte=moment
+        )
+        .exclude(valid_to__lte=moment)
+        .order_by("valid_from", "unit_id")
+    )
+
+
+def units_differ(current: list[EmployeeUnit], wanted: list[tuple]) -> bool:
+    """Отличается ли заявленный набор точек от действующего — вместе с долями."""
+    return {(row.unit_id, row.share) for row in current} != set(wanted)
+
+
+@transaction.atomic
+def save_units(tenant_id, employee_id, *, valid_from: date, wanted: list[tuple]) -> UnitsChange:
+    """Завести набор точек человека с указанной даты (T210, D055).
+
+    Набор целиком, а не строка на точку. Довод — в шапке модуля: расчёт делит
+    ФОТ между всеми точками, действующими в месяце, и «добавить вторую» и
+    «перевести на другую» отличаются ровно тем, осталась ли первая. Одним
+    действием это одна дата и один ответ; двумя — промежуток, в котором человек
+    либо ничей, либо на трёх точках сразу.
+
+    Прежние версии **закрываются**, а не переписываются: закрытый месяц обязан
+    остаться разнесённым по тем точкам, которые были у человека тогда (D020,
+    D055). `valid_to` ставится в день начала нового набора — границы
+    полуоткрытые, как у условий найма.
+
+    Новый набор не переезжает через уже назначенную границу. Если у человека
+    дальше по времени есть ещё версии (или действующая заканчивается своей
+    датой), набор кончается там же: иначе правка задним числом молча отменила
+    бы будущий перевод, о котором её никто не спрашивал.
+
+    Ничего не изменилось — версия не заводится вовсе, тем же правилом, что у
+    условий найма: история из строк «то же самое с другой даты» перестаёт
+    отвечать на вопрос, когда человека действительно перевели.
+    """
+    current = units_at(tenant_id, employee_id, valid_from)
+    previous = tuple((row.unit_id, row.share) for row in current)
+    if not units_differ(current, wanted):
+        return UnitsChange(changed=False, previous=previous)
+
+    edges = [row.valid_to for row in current if row.valid_to is not None]
+    following = (
+        EmployeeUnit.objects.filter(
+            tenant_id=tenant_id, employee_id=employee_id, valid_from__gt=valid_from
+        )
+        .order_by("valid_from")
+        .values_list("valid_from", flat=True)
+        .first()
+    )
+    if following is not None:
+        edges.append(following)
+    edge = min(edges) if edges else None
+
+    for row in current:
+        if row.valid_from == valid_from:
+            # Версия начинается тем же днём — отдельно от новой она не
+            # действовала ни одного дня, и хранить её незачем. Оставленная, она
+            # ещё и упёрлась бы в `employee_units_no_overlap`.
+            EmployeeUnit.objects.filter(pk=row.pk).delete()
+        else:
+            EmployeeUnit.objects.filter(pk=row.pk).update(valid_to=valid_from)
+
+    EmployeeUnit.objects.bulk_create([
+        EmployeeUnit(
+            tenant_id=tenant_id, employee_id=employee_id, unit_id=unit_id,
+            share=share, valid_from=valid_from, valid_to=edge,
+        )
+        for unit_id, share in wanted
+    ])
+    return UnitsChange(changed=True, previous=previous)

@@ -1,0 +1,86 @@
+{
+  "«%(label)s»: доля точки %(code)s должна быть больше нуля — точка с нулевой долей не получит ничего, и человек об этом не узнает.": {
+    "en": "\"%(label)s\": the share of unit %(code)s must be greater than zero — a unit with a zero share will get nothing, and the person will never know.",
+    "sr": "„%(label)s“: udeo objekta %(code)s mora biti veći od nule — objekat sa udelom nula neće dobiti ništa, a osoba to neće ni saznati."
+  },
+  "Все затраты на человека идут на одну точку — ту, что стоит в его условиях найма (%(home)s). Задайте набор ниже, если он работает на несколько пиццерий: тогда деньги разделятся между ними.": {
+    "en": "All of a person's costs go to one unit — the one set in their employment terms (%(home)s). Add a unit set below if they work at several pizzerias: the money will then be split between them.",
+    "sr": "Svi troškovi za osobu idu na jedan objekat — onaj koji je naveden u njenim uslovima zapošljavanja (%(home)s). Ispod dodajte skup objekata ako radi u više picerija: tada će se novac podeliti između njih."
+  },
+  "Доли задаются либо у всех выбранных точек, либо ни у одной. Сейчас доля есть у %(named)s, а у %(silent)s её нет: пустая доля считается единицей, и рядом с заданной это дало бы не те проценты, которые вы имели в виду. Оставьте все доли пустыми — поделится поровну.": {
+    "en": "Shares are set either for all chosen units or for none of them. Right now %(named)s has a share, but %(silent)s does not: an empty share counts as one, and next to a share you did set, that would give percentages you did not mean. Leave all shares empty — the split will be even.",
+    "sr": "Udeli se zadaju ili za sve izabrane objekte, ili ni za jedan. Trenutno %(named)s ima udeo, a %(silent)s ga nema: prazan udeo se računa kao jedan, i pored zadatog udela to bi dalo procente koje niste želeli. Ostavite sve udele praznim — podeliće se podjednako."
+  },
+  "Доли можно не задавать вовсе — тогда поровну. Если задаёте, задавайте у всех отмеченных точек сразу: пустая доля считается единицей, и рядом с 0,7 это дало бы не те проценты, которые вы имели в виду. Не отмечено ни одной точки — человек работает на всю сеть.": {
+    "en": "Shares can be left unset entirely — then the split is even. If you do set them, set them for all checked units at once: an empty share counts as one, and next to 0.7 that would give percentages you did not mean. No unit is checked — the person works for the whole network.",
+    "sr": "Udele ne morate zadavati uopšte — tada se deli podjednako. Ako ih zadajete, zadajte ih za sve označene objekte odjednom: prazan udeo se računa kao jedan, i pored 0,7 to bi dalo procente koje niste želeli. Nijedan objekat nije označen — osoba radi za celu mrežu."
+  },
+  "Доля": {
+    "en": "Share",
+    "sr": "Udeo"
+  },
+  "Доля задана у точки %(code)s, но сама точка не отмечена. Отметьте её галкой или сотрите долю: иначе набор запишется без неё, а число пропадёт.": {
+    "en": "A share is set for unit %(code)s, but the unit itself is not checked. Check it or clear the share: otherwise the set will be saved without it, and the number will be lost.",
+    "sr": "Zadat je udeo za objekat %(code)s, ali sam objekat nije označen. Označite ga ili obrišite udeo: inače će se skup sačuvati bez njega, a broj će nestati."
+  },
+  "Зарплата утверждена по %(edge)s включительно и уже разнесена по тем точкам, которые действовали тогда. Правку с более ранней датой продукт примет, но P&L утверждённых месяцев на другие точки не переедет: их разнесение остаётся таким, каким было посчитано. Новый набор точек подействует на ближайший неутверждённый месяц.": {
+    "en": "Payroll is approved through %(edge)s inclusive and already allocated to the units that were in effect back then. An edit dated earlier is accepted, but the P&L of approved months will not move to other units: their allocation stays as it was calculated. The new unit set will take effect from the nearest month that is not approved yet.",
+    "sr": "Zarada je odobrena zaključno sa %(edge)s i već je raspodeljena po objektima koji su tada važili. Izmena sa ranijim datumom se prihvata, ali P&L odobrenih meseci neće preći na druge objekte: njihova raspodela ostaje onakva kakva je obračunata. Novi skup objekata će važiti od prvog neodobrenog meseca."
+  },
+  "Затраты на человека делятся между точками, на которых он работает: управляющий ведёт две пиццерии, территориальный — город. Это не то же самое, что «Точка» в условиях найма: там сказано, где человек числится, а здесь — чьи это деньги в P&amp;L.": {
+    "en": "A person's costs are split between the units they work at: a store manager runs two pizzerias, a regional manager — a whole city. This is not the same as \"Unit\" in the employment terms: that says where the person is on the books, this says whose money it is in the P&amp;L.",
+    "sr": "Troškovi za osobu se dele između objekata na kojima radi: menadžer objekta vodi dve picerije, regionalni menadžer — grad. To nije isto što i „Objekat“ u uslovima zapošljavanja: tamo piše gde je osoba na spisku, a ovde — čiji je to novac u P&amp;L."
+  },
+  "Набор точек берётся тем, каким он был на первое число считаемого месяца.": {
+    "en": "The unit set is taken as it was on the first day of the month being calculated.",
+    "sr": "Skup objekata se uzima onakav kakav je bio prvog dana meseca koji se obračunava."
+  },
+  "Набор точек не изменился — новая версия не заведена.": {
+    "en": "The unit set has not changed — no new version was created.",
+    "sr": "Skup objekata se nije promenio — nova verzija nije zavedena."
+  },
+  "Набор точек с даты": {
+    "en": "Unit set from a date",
+    "sr": "Skup objekata od datuma"
+  },
+  "Отмечено то, что действует сегодня. Прежний набор закрывается днём начала нового и остаётся в истории — закрытые месяцы считаются по нему.": {
+    "en": "What's checked is what applies today. The previous set is closed on the day the new one starts and stays in the history — closed months are still calculated using it.",
+    "sr": "Označeno je ono što važi danas. Prethodni skup se zatvara danom kad počinje novi i ostaje u istoriji — zatvoreni meseci se i dalje obračunavaju po njemu."
+  },
+  "Правка задела месяцы, утверждённые по %(edge)s. Их разнесение осталось прежним: P&L закрытого месяца не переехал на другие точки и не переедет — разницы по точкам не бывает, деньги там уже разнесены. Новый набор точек подействует с ближайшего неутверждённого месяца.": {
+    "en": "The edit touched months approved through %(edge)s. Their allocation stayed the same: the P&L of a closed month did not move to other units and will not move — there is no per-unit difference, the money there is already allocated. The new unit set will take effect from the nearest month that is not approved yet.",
+    "sr": "Izmena je dotakla mesece odobrene zaključno sa %(edge)s. Njihova raspodela je ostala ista: P&L zatvorenog meseca nije prešao na druge objekte i neće preći — razlike po objektima nema, novac je tamo već raspodeljen. Novi skup objekata će važiti od prvog neodobrenog meseca."
+  },
+  "Пустая доля — поровну с остальными точками того же периода. Деление берётся по состоянию на первое число считаемого месяца: набор, заведённый серединой месяца, подействует со следующего.": {
+    "en": "An empty share means an even split with the other units of the same period. The split is taken as of the first day of the month being calculated: a set created mid-month takes effect from the next one.",
+    "sr": "Prazan udeo znači podjednaku podelu sa ostalim objektima istog perioda. Podela se uzima po stanju na prvi dan meseca koji se obračunava: skup zaveden sredinom meseca počinje da važi od sledećeg."
+  },
+  "Сохранить точки": {
+    "en": "Save units",
+    "sr": "Sačuvaj objekte"
+  },
+  "Точек у человека не осталось — с этой даты он работает на всю сеть. Его затраты пойдут на разнесение общим правилом, как расход юрлица, а не на одну пиццерию.": {
+    "en": "The person has no units left — from this date they work for the whole network. Their costs will go to allocation by the general rule, like a legal-entity expense, rather than to one pizzeria.",
+    "sr": "Osoba više nema nijednog objekta — od ovog datuma radi za celu mrežu. Njeni troškovi idu na raspodelu opštim pravilom, kao trošak pravnog lica, a ne na jednu piceriju."
+  },
+  "Точки действуют с": {
+    "en": "Units effective from",
+    "sr": "Objekti važe od"
+  },
+  "Точки не заданы.": {
+    "en": "Units not set.",
+    "sr": "Objekti nisu zadati."
+  },
+  "Точки нет и в условиях найма — значит человек работает на всю сеть. Его затраты уходят на разнесение общим правилом, как расход юрлица, а не на одну пиццерию.": {
+    "en": "There is no unit in the employment terms either — so the person works for the whole network. Their costs go to allocation by the general rule, like a legal-entity expense, rather than to one pizzeria.",
+    "sr": "Objekat ne postoji ni u uslovima zapošljavanja — znači da osoba radi za celu mrežu. Njeni troškovi idu na raspodelu opštim pravilom, kao trošak pravnog lica, a ne na jednu piceriju."
+  },
+  "Точки человека заведены с указанной даты. Затраты на него разделятся между ними в ближайшем расчёте; прежний набор остался в истории — по нему посчитаны прошлые месяцы.": {
+    "en": "The person's units were set up from the given date. Their costs will be split between them starting with the nearest calculation; the previous set stayed in the history — past months are calculated using it.",
+    "sr": "Objekti osobe su zavedeni od navedenog datuma. Njeni troškovi će se podeliti između njih od najbližeg obračuna; prethodni skup je ostao u istoriji — po njemu su obračunati prošli meseci."
+  },
+  "Точки, между которыми делятся затраты": {
+    "en": "Units the costs are split between",
+    "sr": "Objekti između kojih se dele troškovi"
+  }
+}
