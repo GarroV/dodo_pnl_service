@@ -507,3 +507,127 @@ def test_frames_do_not_leak_into_the_rules_of_the_engine(serbia_preset):
 
     listed = [leaf.path for leaf in rules.leaves(serbia_preset)]
     assert [path for path in listed if path.startswith("frames")] == []
+
+
+# --- брак в рамке не доезжает до базы -------------------------------------------
+#
+# Находка приёмки T192, блокирующая. `problems_in` обещала докстрингом, что её
+# зовёт первичная загрузка, — а звал её только тест. Барьера не было нигде.
+#
+# Чем это кончалось. Тело пресета лежит без `tenant_id`: одну строку читают ВСЕ
+# партнёры страны. Разбор рамок (`frames_of`) обходит весь раздел на каждое
+# чтение и падает на первом плохом узле — независимо от того, какое правило
+# сохраняют. Значит один опечатанный узел, однажды загруженный в базу, закрывал
+# правку ЛЮБОГО правила ЛЮБОМУ партнёру этой страны. И не отказом формы:
+# `FrameMisconfigured` — не `RuleInputRefused`, и `except` на формах его не
+# ловит, наружу выходила голая пятисотая.
+#
+# Единственный канал попадания брака — правка YAML плюс `load_presets`. Барьер
+# поэтому стоит там, и проверки ниже держат именно его.
+
+
+@pytest.fixture
+def presets_restored(web_env, sql):
+    """Тело правил страны не переживает теста.
+
+    Нужна не «на всякий случай»: если барьер сломается, тест ниже положит в
+    общую базу стенда пресет с неприменимой рамкой — и следующий, кто откроет
+    любое правило, получит ту самую пятисотую.
+    """
+    before = sql.execute(
+        "select id, body, valid_from, valid_to, edited_at from rule_presets order by valid_from"
+    ).fetchall()
+    yield
+    kept = [row[0] for row in before]
+    if kept:
+        sql.execute("delete from rule_presets where id <> all(%s)", (kept,))
+    else:
+        sql.execute("delete from rule_presets")
+    for row_id, row_body, valid_from, valid_to, edited_at in before:
+        sql.execute(
+            "update rule_presets set body = %s, valid_from = %s, valid_to = %s, "
+            "edited_at = %s where id = %s",
+            (json.dumps(row_body), valid_from, valid_to, edited_at, row_id),
+        )
+
+
+def broken_preset():
+    """Пресет с одной опечаткой в режиме рамки — и корректный во всём остальном.
+
+    Узел выбран НЕ связанным с тем правилом, которое потом сохраняют: в этом и
+    была суть дефекта — падало сохранение постороннего правила.
+    """
+    from payroll.presets import Preset, load_preset_body
+
+    body = json.loads(json.dumps(dict(load_preset_body("serbia-2026")), default=str))
+    body["frames"]["constants"]["typo_field"] = {"mode": "framee", "source": "опечатка"}
+    return Preset(body)
+
+
+def test_a_typo_in_a_frame_stops_the_load_and_writes_nothing(
+    web_env, sql, presets_restored, monkeypatch,
+):
+    """Опечатка в рамке валит первичную загрузку — и база остаётся прежней."""
+    from core import rules as core_rules
+    from payroll.frames import FrameMisconfigured
+
+    monkeypatch.setattr(core_rules, "load_preset_body", lambda code: broken_preset())
+    before = sql.execute("select count(*), max(body::text) from rule_presets").fetchone()
+
+    with pytest.raises(FrameMisconfigured) as refusal:
+        core_rules.import_presets_detailed(["serbia-2026"])
+
+    words = str(refusal.value)
+    assert "serbia-2026.yaml" in words, words
+    assert "framee" in words, "отказ не назвал саму опечатку"
+    assert "не положено ничего" in words, "отказ не сказал, что база не тронута"
+    assert sql.execute(
+        "select count(*), max(body::text) from rule_presets"
+    ).fetchone() == before, "сломанный пресет всё-таки доехал до базы"
+
+
+def test_the_load_command_refuses_in_words_not_a_traceback(
+    web_env, presets_restored, monkeypatch,
+):
+    """`manage.py load_presets` отвечает отказом, а не трассировкой.
+
+    Загрузку зовут из скриптов развёртывания, и трассировка там читается как
+    «упало что-то в Django», а не как «поправь опечатку в YAML вот в этой
+    строке».
+    """
+    from django.core.management import call_command
+    from django.core.management.base import CommandError
+
+    from core import rules as core_rules
+
+    monkeypatch.setattr(core_rules, "load_preset_body", lambda code: broken_preset())
+    with pytest.raises(CommandError) as refusal:
+        call_command("load_presets", "serbia-2026")
+    assert "serbia-2026.yaml" in str(refusal.value), str(refusal.value)
+
+
+def test_nothing_is_written_when_a_later_preset_is_broken(
+    web_env, sql, presets_restored, monkeypatch,
+):
+    """Сломанный второй файл не оставляет базу с загруженным первым.
+
+    Проверка порядка, а не отказа: сначала проверяются ВСЕ запрошенные пресеты и
+    только потом пишется первый. Иначе состояние базы зависело бы от того, в
+    каком порядке перечислили страны.
+    """
+    from core import rules as core_rules
+    from payroll.frames import FrameMisconfigured
+    from payroll.presets import load_preset_body as real_body
+
+    def one_of_two(code: str):
+        return real_body("serbia-2026") if code == "good" else broken_preset()
+
+    monkeypatch.setattr(core_rules, "load_preset_body", one_of_two)
+    before = sql.execute("select count(*) from rule_presets").fetchone()[0]
+
+    with pytest.raises(FrameMisconfigured):
+        core_rules.import_presets_detailed(["good", "bad"])
+
+    assert sql.execute(
+        "select count(*) from rule_presets"
+    ).fetchone()[0] == before, "первый пресет записан, хотя второй сломан"
