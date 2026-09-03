@@ -1655,6 +1655,10 @@ def group(request, group_id=None):
         except BadInput as bad:
             error, status = bad.message, bad.http_status
         except rules.RuleInputRefused as bad:
+            # То же, что на экране правил: мера работы группы — обычное правило,
+            # и рамка страны держит его здесь так же. Запись попытки — снаружи
+            # `saving()`, иначе её унесло бы откатом точки сохранения (T192).
+            rules.remember_attempt(bad)
             error, status = bad.message, bad.http_status
         except permissions.PermissionRefused as refusal:
             error, status = refusal.message, refusal.http_status
@@ -1774,7 +1778,7 @@ def _save_measure(request, who, item, preset) -> None:
     valid_from = _date(request, "measure_from", _("Способ действует с")) or _first_free_day(who)
     rules.save_override(
         who.tenant_id, WORK_MEASURE_PATH % item.code, wanted,
-        valid_from=valid_from, actor_id=who.user_id,
+        valid_from=valid_from, actor_id=who.user_id, actor_name=who.display_name,
     )
 
 

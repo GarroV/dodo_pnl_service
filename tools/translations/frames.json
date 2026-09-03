@@ -1,0 +1,70 @@
+{
+  "Закон": {
+    "en": "Law",
+    "sr": "Zakon"
+  },
+  "Внутри рамки": {
+    "en": "Within the frame",
+    "sr": "U okviru"
+  },
+  "Решает партнёр": {
+    "en": "Partner decides",
+    "sr": "Odlučuje partner"
+  },
+  "Кто меняет": {
+    "en": "Who changes it",
+    "sr": "Ko menja"
+  },
+  "Кто меняет: %(owner)s": {
+    "en": "Who changes it: %(owner)s",
+    "sr": "Ko menja: %(owner)s"
+  },
+  "Значение задано законом и на уровне партнёра не переопределяется. Источник: %(source)s.": {
+    "en": "The value is set by law and cannot be changed at partner level. Source: %(source)s.",
+    "sr": "Vrednost je propisana zakonom i ne može se menjati na nivou partnera. Izvor: %(source)s."
+  },
+  "Рамка страны: %(limits)s. Источник: %(source)s.": {
+    "en": "Country frame: %(limits)s. Source: %(source)s.",
+    "sr": "Okvir zemlje: %(limits)s. Izvor: %(source)s."
+  },
+  "от %(low)s до %(high)s": {
+    "en": "from %(low)s to %(high)s",
+    "sr": "od %(low)s do %(high)s"
+  },
+  "не ниже %(bound)s": {
+    "en": "not below %(bound)s",
+    "sr": "ne ispod %(bound)s"
+  },
+  "не выше %(bound)s": {
+    "en": "not above %(bound)s",
+    "sr": "ne iznad %(bound)s"
+  },
+  "Поставить можно столько же или больше.": {
+    "en": "You can set the same value or higher.",
+    "sr": "Može se postaviti ista vrednost ili veća."
+  },
+  "Поставить можно столько же или меньше.": {
+    "en": "You can set the same value or lower.",
+    "sr": "Može se postaviti ista vrednost ili manja."
+  },
+  "«%(path)s» задано законом и на уровне партнёра не меняется. Источник: %(source)s. Поменять его можно только в правилах страны, а их ведёт администратор платформы.": {
+    "en": "\"%(path)s\" is set by law and cannot be changed at partner level. Source: %(source)s. It can only be changed in the country rules, and those are managed by the platform administrator.",
+    "sr": "„%(path)s“ je propisano zakonom i ne može se menjati na nivou partnera. Izvor: %(source)s. Može se promeniti samo u pravilima zemlje, a njih vodi administrator platforme."
+  },
+  "«%(path)s»: значение мягче правил страны. Рамка — %(limit)s (%(source)s). %(advice)s Попытка записана в журнал правила.": {
+    "en": "\"%(path)s\": the value is softer than the country rules. Frame — %(limit)s (%(source)s). %(advice)s The attempt has been logged against the rule.",
+    "sr": "„%(path)s“: vrednost je blaža od pravila zemlje. Okvir — %(limit)s (%(source)s). %(advice)s Pokušaj je zabeležen u dnevnik pravila."
+  },
+  "Попытки выйти за рамку": {
+    "en": "Attempts to go beyond the frame",
+    "sr": "Pokušaji izlaska iz okvira"
+  },
+  "Ставили": {
+    "en": "Wanted",
+    "sr": "Traženo"
+  },
+  "Это правило не переопределяется.": {
+    "en": "This rule cannot be changed.",
+    "sr": "Ovo pravilo se ne može menjati."
+  }
+}

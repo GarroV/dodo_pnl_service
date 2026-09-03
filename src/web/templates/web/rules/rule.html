@@ -29,6 +29,32 @@
 
 <p class="sub">{% blocktranslate with value=value origin=origin %}Сейчас действует: {{ value }} — {{ origin }}{% endblocktranslate %}{% if since %} ({% blocktranslate with day=since %}с {{ day }}{% endblocktranslate %}){% endif %}</p>
 
+{% comment %}
+Рамка страны — до всего остального, потому что она отвечает на первый вопрос
+человека, открывшего правило: можно ли его вообще менять и в какую сторону.
+Эталон модуля 17 держит её плашкой у самого значения по той же причине.
+
+Слово «мягче» здесь не звучит само по себе: рамка называет границу числом и
+сторону словами. «Не мягче страны» без числа переспрашивают, а не выполняют.
+{% endcomment %}
+<p class="sub">{% translate "Кто меняет:" %}
+  {% if frame_mode == "lock" %}<span class="mark mark--lock">{{ frame_owner }}</span>
+  {% elif frame_mode == "frame" %}<span class="mark mark--frame">{{ frame_owner }}</span>
+  {% else %}{{ frame_owner }}{% endif %}</p>
+{% if frame_note %}
+<p class="note">{{ frame_note }}</p>
+{% endif %}
+{% comment %}
+Действующее значение уже мягче рамки — плашкой, а не примечанием: правка при
+записи такое значение не пропустила бы, но заведено оно было раньше, чем рамка
+стала такой, и расчёт берёт именно его. Продукт знает обе величины и видит их на
+одной странице, поэтому молчать здесь нельзя.
+{% endcomment %}
+{% if frame_breach %}
+{% translate "Действующее значение вне рамки страны." as out_of_frame %}
+{% notice "alert" title=out_of_frame %}{{ frame_breach }}{% endnotice %}
+{% endif %}
+
 {% if country_layer %}
 {% comment %}
 Слой страны — до слоя партнёра, потому что он под ним и лежит: значение
@@ -139,9 +165,28 @@
 </table>{% endscroll %}
 {% else %}
 {% translate "Это правило никто не переопределял." as never_changed %}
+{% comment %}
+У запертого правила пустота объясняется иначе, и это не придирка: формы ниже у
+него нет, а прежний текст обещал «первую же версию ниже» — то есть звал к
+действию, которого на странице не существует.
+{% endcomment %}
+{% if frame_locked %}
+{% notice "empty" title=never_changed %}{% translate "Значение приходит из правил страны и остаётся её значением: это правило закрыто законом, и переопределить его нельзя ни партнёру, ни группе, ни человеку." %}{% endnotice %}
+{% else %}
 {% notice "empty" title=never_changed %}{% translate "Значение приходит из правил страны. Первая же версия ниже станет переопределением — на том уровне и с той даты, которые вы укажете." %}{% endnotice %}
 {% endif %}
+{% endif %}
 
+{% if frame_locked %}
+{% comment %}
+Формы у запертого правила нет вовсе, а не «есть и отвергает». Форма, которая
+гарантированно откажет, — это работа, отнятая у человека до того, как он её
+сделал: он выберет уровень, наберёт дату и значение и только тогда прочитает,
+что так было нельзя с самого начала. Тот же приём, что у подписи правила страны.
+{% endcomment %}
+{% translate "Это правило не переопределяется." as no_override %}
+{% notice "empty" title=no_override %}{{ frame_note }}{% endnotice %}
+{% else %}
 <h2>{% translate "Новая версия правила" %}</h2>
 <p class="note">{% translate "Прежняя версия закрывается днём начала новой и остаётся в истории. Ничего не изменилось — версия не заводится." %}</p>
 {% comment %}
@@ -193,7 +238,7 @@
     {% elif kind == "bool" %}
       {% include "web/components/select.html" with id="value" name="value" label=value_label options=bool_options required=True %}
     {% elif kind == "number" %}
-      {% include "web/components/field.html" with id="value" name="value" label=value_label value=value required=True inputmode="decimal" %}
+      {% include "web/components/field.html" with id="value" name="value" label=value_label value=value required=True inputmode="decimal" help=frame_note %}
     {% elif kind == "list" %}
       {% translate "Через запятую." as list_help %}
       {% include "web/components/field.html" with id="value" name="value" label=value_label value=value help=list_help %}
@@ -203,4 +248,35 @@
   </p>
   <button type="submit" class="primary">{% translate "Завести версию" %}</button>
 </form>
+{% endif %}
+
+{% comment %}
+Отвергнутые попытки. Эталон модуля 17 объясняет, зачем они на экране: «Отказ,
+который никуда не записан, повторят завтра» — это след для аудита, а не защита
+от дурака. Пустой список поэтому и не показывается: строка «попыток не было»
+рассказывала бы о механизме тому, кто с ним не столкнулся.
+{% endcomment %}
+{% if attempts %}
+<h2>{% translate "Попытки выйти за рамку" %}</h2>
+{% scroll %}<table>
+  <thead>
+    <tr>
+      <th>{% translate "Когда" %}</th>
+      <th>{% translate "Кто" %}</th>
+      <th>{% translate "Уровень" %}</th>
+      <th>{% translate "Ставили" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for attempt in attempts %}
+    <tr>
+      <td>{{ attempt.at }}</td>
+      <td>{{ attempt.who }}</td>
+      <td>{{ attempt.level }}</td>
+      <td class="{{ attempt.wanted|numclass }}">{{ attempt.wanted }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>{% endscroll %}
+{% endif %}
 {% endblock %}

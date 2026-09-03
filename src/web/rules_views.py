@@ -43,6 +43,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from core.rules import PresetNotFound, load_rules_at
@@ -213,6 +214,11 @@ def index(request):
                         "origin": rules.level_title(leaf.level),
                         "since": leaf.valid_from.isoformat() if leaf.valid_from else "",
                         "lower": rule_targets.counts_words(lower.get(leaf.path, {})),
+                        # Кто решает значение: закон, рамка или партнёр (T192).
+                        # Колонка эталона модуля 17 — без неё рамка узнаётся
+                        # только отказом, то есть после набранного значения.
+                        "owner": rules.frame_owner(preset, leaf.path),
+                        "owner_mode": rules.frame_mode(preset, leaf.path),
                         "url": (
                             f"{reverse('rule', args=[leaf.path])}?on={on_date.isoformat()}"
                             if leaf.editable else ""
@@ -324,7 +330,7 @@ def rule(request, path: str):
     # Скрытое роли правило и несуществующее отвечают одинаково (D023): «нельзя
     # смотреть» и «нет такого» отличались бы кодом ответа, и по нему можно было
     # бы перебрать, какие группы существуют.
-    if not rules.is_visible(path, hidden) or path.split(".")[0] in rules.IDENTITY:
+    if not rules.is_visible(path, hidden) or path.split(".")[0] in rules.NOT_RULES:
         raise Http404("правило не найдено")
     try:
         current = rules.value_at(preset, path)
@@ -371,7 +377,11 @@ def rule(request, path: str):
                 change = rules.save_override(
                     who.tenant_id, path, wanted,
                     scope_type=target.scope_type, scope_id=target.scope_id,
-                    valid_from=valid_from, actor_id=who.user_id, effective=current,
+                    valid_from=valid_from, actor_id=who.user_id,
+                    # Имя автора уезжает снимком в журнал отвергнутых попыток:
+                    # право вести правила не даёт читать чужие строки `users`,
+                    # и подписать строку журнала было бы нечем (T192).
+                    actor_name=who.display_name, effective=current,
                 )
             if not change.changed:
                 notice = _("Ничего не изменилось — новая версия не заведена.")
@@ -384,6 +394,13 @@ def rule(request, path: str):
         except ConstraintRefused as refused:
             error, status = refused.message, refused.http_status
         except rules.RuleInputRefused as bad:
+            # Отвергнутая рамкой попытка записывается ЗДЕСЬ, а не там, где
+            # отказ родился (T192). К этому месту точка сохранения `saving()`
+            # уже откачена, а транзакция запроса жива — строка журнала доживёт
+            # до конца запроса. Записанная внутри `saving()`, она уехала бы
+            # вместе с откатом, и журнал остался бы пустым при верных словах на
+            # экране: ровно так первый заход этой задачи и вышел.
+            rules.remember_attempt(bad)
             error, status = bad.message, bad.http_status
         except directory.DirectoryRefused as refusal:
             error, status = refusal.message, refusal.http_status
@@ -447,7 +464,56 @@ def rule(request, path: str):
         ],
         "closed_note": directory.closed_month_warning(who.tenant_id),
         **_country_block(who, path, on_date),
+        **_frame_block(who, path, on_date, current),
     }, status=status)
+
+
+def _frame_block(who, path: str, on_date: date, current) -> dict:
+    """Рамка правила на карточке: что разрешено, откуда это и кто уже пробовал.
+
+    Рамка и её граница читаются из ТЕЛА СТРАНЫ, а не из собранного пресета, и
+    это не мелочь. Сам раздел `frames` в обоих один и тот же — переопределить
+    его нельзя ни на одном уровне (`rules.NOT_RULES`). А вот граница «не ниже
+    страны» разворачивается в значение, и в собранном пресете поверх страны
+    лежит настройка партнёра: у того, кто уже поставил себе 1,40, подсказка
+    сказала бы «не ниже 1,40», то есть назвала бы рамкой его собственную
+    правку. Проверка при записи берёт тело страны (`rules.country_body_at`) —
+    экран обязан брать то же, иначе он обещает не то, что продукт сделает.
+
+    Формы правки у запертого правила нет вовсе, а не «есть и отвергает»: форма,
+    которая гарантированно откажет, — это работа, отнятая у человека до того,
+    как он её сделал. Ровно тот же приём, что у подписи правила страны
+    (`country_locked`).
+    """
+    body = rules.country_body_at(who.tenant_id, on_date) or {}
+    frame = rules.frame_at(body, path)
+    try:
+        country_value = rules.value_at(body, path)
+    except KeyError:
+        # Правило завёл сам партнёр переопределением: слоя страны у него нет, а
+        # значит нет и рамки — врать о ней нечего.
+        country_value = None
+    return {
+        "frame_owner": rules.frame_owner(body, path),
+        "frame_mode": "free" if frame is None else frame.mode,
+        "frame_locked": frame is not None and frame.mode == "lock",
+        # Границы и статья приходят одной готовой фразой, а не полями: из них
+        # шаблон собрал бы вторую формулировку рядом с той, которой отказывает
+        # запись, и разошлись бы они на первой правке.
+        "frame_note": rules.frame_help(frame, country_value),
+        # Не «что можно», а «что уже не так»: действующее значение бывает мягче
+        # рамки, если рамка появилась или поднялась после него.
+        "frame_breach": rules.frame_breach_now(frame, current, country_value),
+        "attempts": [
+            {
+                "at": timezone.localtime(row.created_at).strftime("%Y-%m-%d %H:%M"),
+                "who": row.created_by_name or EMPTY,
+                "wanted": rules.show(row.wanted),
+                "level": rules.level_title(row.scope_type),
+            }
+            for row in rules.frame_attempts(who.tenant_id, path)
+        ],
+    }
 
 
 def _country_block(who, path: str, on_date: date) -> dict:
