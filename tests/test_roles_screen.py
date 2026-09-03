@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 
-from conftest import body, login_as, period_url
+from conftest import body, login_as, period_url, person_row
 
 
 def role_id(html: str, code: str) -> str:
@@ -147,10 +147,12 @@ def test_the_accountant_becomes_an_administrator_too(client, web_env):
     login_as(client, "admin")
     html = body(client.get("/roles/"))
     admin_role = role_id(html, "admin")
-    person = re.search(
-        r'<td>Бухгалтер(?:(?!</td>).)*</td>.*?action="/roles/people/([0-9a-f-]+)/"',
-        html, flags=re.S,
-    )
+    # Строка человека берётся хелпером, а не поиском первой ячейки с этим
+    # текстом: выше по странице стоит таблица прав, где «Бухгалтер» написано как
+    # название роли, и регулярка попадала в неё, а форму хватала у первого
+    # человека списка. Кто окажется первым, решает коллация базы — на macOS это
+    # был нужный человек, на glibc администратор, и тест падал только в CI.
+    person = re.search(r'/roles/people/([0-9a-f-]+)/', person_row(html, "Бухгалтер"))
     assert person, "бухгалтера нет в списке людей — некому выдавать роль"
     # Причина обязательна с T188: она уходит в историю доступов рядом с именем
     # того, кто выдал.

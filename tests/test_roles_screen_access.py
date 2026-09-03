@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from datetime import date, timedelta
 
-from conftest import body, login_as
+from conftest import body, login_as, person_row
 
 
 def role_option(html: str, title: str) -> str:
@@ -43,23 +43,6 @@ def held_roles(html: str, name: str) -> str:
     """
     row = person_row(html, name)
     return " ".join(re.findall(r'<span class="chip">.*?</span>', row, flags=re.S))
-
-
-def person_row(html: str, name: str) -> str:
-    """Строка человека, а не первая строка с таким текстом.
-
-    Первая версия брала любой `<tr>` с этим словом — и попадала в таблицу
-    ПРАВ, где ровно так же написано название роли «Бухгалтер». Тест, который
-    зависит от того, что встретится раньше, врёт молча.
-    """
-    rows = [
-        row for row in re.findall(r"<tr>.*?</tr>", html, flags=re.S)
-        if "/roles/people/" in row
-    ]
-    for row in rows:
-        if name in row:
-            return row
-    raise AssertionError(f"человека «{name}» нет в списке людей ({len(rows)} строк)")
 
 
 def test_the_administrator_invites_a_person(client, web_env):
