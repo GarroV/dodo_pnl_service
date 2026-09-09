@@ -27,8 +27,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MAP = ROOT / "docs" / "product-map.md"
 DESIGN = ROOT / "Дизайн-система Dodo P&L"
-BLOCKS = ROOT / "docs" / "forge" / "blocks"
-DECISIONS = ROOT / "docs" / "forge" / "decisions.md"
+BLOCKS = ROOT / "docs" / "furca" / "blocks"
+DECISIONS = ROOT / "docs" / "furca" / "decisions.md"
 
 LIMIT = 40
 

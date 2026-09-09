@@ -147,7 +147,7 @@ def test_states_are_from_the_dictionary():
 # три файла целиком, чего никто не делал два десятка задач подряд.
 
 TASKS = ROOT / "tasks.md"
-PLAN = ROOT / "docs" / "forge" / "plan.md"
+PLAN = ROOT / "docs" / "furca" / "plan.md"
 
 
 def graph_ids() -> set[str]:
