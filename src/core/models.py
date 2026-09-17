@@ -950,6 +950,54 @@ class RuleOverride(models.Model):
         ]
 
 
+class RuleFrameAttempt(models.Model):
+    """Попытка выйти за рамку страны: отказ, который остался следом (T192).
+
+    Эталон модуля 17 держит это отдельной строкой на экране юрлица — «Попытка
+    выйти за рамку — 24.07, Nikola Perić» — и объясняет зачем: «это не защита от
+    дурака, а след для аудита». Отказ, который никуда не записан, повторят
+    завтра, и никто не узнает, что бухгалтер третий месяц пытается опустить
+    процент больничного.
+
+    **Строк отсюда не убывает.** Политик на `update` и `delete` у таблицы нет, а
+    права роли `app_user` на них отозваны — два замка, как у `platform_admins`.
+    Журнал, из которого можно вычеркнуть строку, журналом не является.
+
+    **Имя автора лежит снимком, а не ссылкой.** Право вести правила
+    (`rules.manage`) не даёт читать чужие строки `users` — их отдаёт только
+    `roles.manage` (миграция `0243`). Заводить ради подписи ещё одну политику на
+    `users` значило бы расширить доступ к учёткам ради журнала; снимок к тому же
+    переживает переименование и отключение учётки, а для следа аудита это и
+    нужно (тот же приём, что у `employee_allowances.title`).
+    """
+
+    id = uuid_pk()
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, db_column="tenant_id")
+    path = models.TextField()
+    scope_type = EnumField(db_type_name=RULE_SCOPE)
+    scope_id = models.UUIDField(null=True, blank=True)
+    # Что пытались поставить и что стояло у страны — оба значения, а не разница:
+    # рамка со временем едет (индексация минималки), и строка обязана читаться
+    # через год без пересборки пресета той даты.
+    wanted = models.JSONField()
+    country_value = models.JSONField(null=True, blank=True)
+    # Снимок самой рамки: режим, границы и источник на момент отказа.
+    frame = models.JSONField()
+    valid_from = models.DateField()
+    created_by = models.UUIDField(null=True, blank=True)
+    created_by_name = models.TextField(db_default="")
+    created_at = models.DateTimeField(db_default=now_default())
+
+    class Meta:
+        db_table = "rule_frame_attempts"
+        indexes = [
+            models.Index(
+                "tenant", "path", models.F("created_at").desc(),
+                name="rule_frame_attempts_lookup",
+            ),
+        ]
+
+
 class Position(models.Model):
     """Должность: шаблон условий найма (issue #181).
 

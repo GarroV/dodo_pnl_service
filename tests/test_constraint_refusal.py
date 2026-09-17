@@ -154,8 +154,12 @@ def test_the_rules_screen_refuses_an_overlap_in_words(client, sql, monkeypatch):
     """
     from web import rules
 
+    # `**_` намеренно: заглушка воспроизводит ОШИБКУ логики, а не её подпись, и
+    # каждый новый параметр `save_override` (в T192 добавился `actor_name`)
+    # ронял бы этот тест пятисотой вместо проверяемого отказа — то есть красным
+    # не по делу, ровно там, где проверяется чужой рубеж.
     def overlapping(tenant_id, path, value, *, valid_from, scope_type="tenant",
-                    scope_id=None, actor_id=None, effective=None):
+                    scope_id=None, actor_id=None, effective=None, **_):
         for start in (date(2026, 9, 1), date(2026, 10, 1)):
             RuleOverride.objects.create(
                 tenant_id=tenant_id, scope_type=scope_type, scope_id=scope_id,

@@ -5,10 +5,11 @@
 """
 from __future__ import annotations
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from core.rules import import_presets_detailed
 from payroll import list_presets
+from payroll.frames import FrameMisconfigured
 
 
 class Command(BaseCommand):
@@ -21,7 +22,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options) -> None:
-        result = import_presets_detailed(options["codes"] or None)
+        # Неприменимая рамка — отказ словами и ненулевой код возврата, а не
+        # трассировка (T192). Загрузку зовут из скриптов развёртывания, и
+        # трассировка там читается как «упало что-то в Django», а не как
+        # «поправь опечатку в YAML вот в этой строке».
+        try:
+            result = import_presets_detailed(options["codes"] or None)
+        except FrameMisconfigured as broken:
+            raise CommandError(str(broken)) from broken
         self.stdout.write(self.style.SUCCESS(f"Загружено пресетов: {len(result.loaded)}"))
         for code in result.loaded:
             self.stdout.write(f"  {code}")
