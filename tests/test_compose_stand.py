@@ -15,7 +15,7 @@
 `docker/healthcheck.py` знает его одной константой. Тесты ниже сторожат
 равенство этих трёх чисел и отсутствие переменной.
 
-**Имя проекта было зашито** (issue #51). `name: dodo-pnl` в файле означает, что
+**Имя проекта было зашито** (issue #51). `name: maximus` в файле означает, что
 все рабочие копии репозитория управляют одними контейнерами и томами: `up` из
 соседней копии молча меняет вам порты, `down -v` уносит вашу базу вместе с
 сидом. Воспроизведено на живой стройке дважды.
@@ -115,7 +115,7 @@ def test_every_built_image_is_tagged_with_the_project_name():
     """Тег образа берёт имя проекта — иначе копии перетирают сборки друг другу.
 
     Умолчание в этой подстановке было бы дефектом: с ним забытая переменная
-    означала бы общий тег `dodo-pnl-app`, то есть соседняя копия молча
+    означала бы общий тег `maximus-app`, то есть соседняя копия молча
     подсовывает свой код при следующем перезапуске службы. `:?` оставлен затем,
     чтобы на compose, который имя проекта в интерполяцию не подставляет, вышел
     внятный отказ, а не пустой тег `-app`.
@@ -193,11 +193,11 @@ def test_without_a_project_name_the_stand_takes_the_name_of_the_working_copy():
 @needs_docker
 def test_with_a_project_name_the_stand_configures_and_takes_that_name():
     """С именем — обычная работа, и стенд называется именно так."""
-    done = _compose_config({"COMPOSE_PROJECT_NAME": "dodo-pnl-probe"})
+    done = _compose_config({"COMPOSE_PROJECT_NAME": "maximus-probe"})
     assert done.returncode == 0, done.stderr
     config = yaml.safe_load(done.stdout)
-    assert config["name"] == "dodo-pnl-probe"
-    assert config["services"]["app"]["image"] == "dodo-pnl-probe-app"
+    assert config["name"] == "maximus-probe"
+    assert config["services"]["app"]["image"] == "maximus-probe-app"
 
 
 # =============================================================================

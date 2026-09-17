@@ -160,7 +160,7 @@ def test_the_migration_opens_the_rights_where_the_seed_is_never_run():
     except psycopg.OperationalError as exc:
         pytest.skip(f"нет доступного Postgres по {ADMIN_DSN}: {exc}")
 
-    dbname = f"dodo_pnl_test_accountant_{os.getpid()}"
+    dbname = f"maximus_test_accountant_{os.getpid()}"
     with admin:
         admin.execute(f'drop database if exists "{dbname}"')
         admin.execute(f'create database "{dbname}"')

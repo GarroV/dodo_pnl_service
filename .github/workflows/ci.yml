@@ -53,7 +53,7 @@ jobs:
         image: pgvector/pgvector:pg17
         env:
           POSTGRES_USER: app
-          POSTGRES_DB: dodo_pnl
+          POSTGRES_DB: maximus
           # Пароля нет намеренно, и это не послабление: контейнер живёт внутри
           # одного прогона, слушает только его runner и умирает вместе с ним.
           # Пароль здесь был бы строкой в открытом файле, которая изображает
@@ -62,7 +62,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U app -d dodo_pnl"
+          --health-cmd "pg_isready -U app -d maximus"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -125,7 +125,7 @@ jobs:
       # Только сборка, без публикации: реестра у проекта нет, а образ на
       # площадке собирается из этого же Dockerfile. Проверяем ровно то, что
       # ломается чаще всего, — что он вообще собирается.
-      - run: docker build -t dodo-pnl-app:ci .
+      - run: docker build -t maximus-app:ci .
       # Заодно — что compose-файл разбирается с примером окружения. Дешевле
       # поймать опечатку здесь, чем при раскатке на площадку. Читаем сам
       # .env.example, а не копию: проверять надо тот файл, который человек

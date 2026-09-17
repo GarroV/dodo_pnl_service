@@ -5,7 +5,7 @@
 # только в .env, не в коде (решение D006).
 #
 # Имени проекта здесь НЕТ намеренно (issue #51). Пока в файле стояло
-# `name: dodo-pnl`, все рабочие копии репозитория управляли одними и теми же
+# `name: maximus`, все рабочие копии репозитория управляли одними и теми же
 # контейнерами и томами: `up` из соседней копии молча менял порты, а
 # `down -v` — уносил чужую базу с сидом посреди проверки. Воспроизведено
 # дважды на живой стройке.
@@ -315,10 +315,10 @@ services:
       # Роль владельца схемы: эта служба создаёт и удаляет базы и накатывает
       # миграции. Роль продукта на это не уполномочена и уполномочена быть не
       # должна — на разделении ролей стоит разграничение доступа (T058).
-      DATABASE_URL: postgresql://${MIGRATION_DB_USER:-${POSTGRES_USER}}:${MIGRATION_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-dodo_pnl_demo}
+      DATABASE_URL: postgresql://${MIGRATION_DB_USER:-${POSTGRES_USER}}:${MIGRATION_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-maximus_demo}
       # Адрес демо-базы внутри сети compose. Он же сверяется предохранителем:
       # команда демо не выполняется, если подключена не сюда (см. demo/guard.py).
-      DEMO_DATABASE_URL: postgresql://${MIGRATION_DB_USER:-${POSTGRES_USER}}:${MIGRATION_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-dodo_pnl_demo}
+      DEMO_DATABASE_URL: postgresql://${MIGRATION_DB_USER:-${POSTGRES_USER}}:${MIGRATION_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-maximus_demo}
       SECRET_KEY: ${SECRET_KEY:?задайте SECRET_KEY в .env}
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-1}
@@ -361,8 +361,8 @@ services:
       # Единственное отличие от служб обслуживания — роль подключения: сам стенд
       # ходит в базу ролью продукта, как и продукт. Иначе демо показывало бы
       # разграничение доступа, которого у партнёра не будет.
-      DATABASE_URL: postgresql://${APP_DB_USER:-${POSTGRES_USER}}:${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-dodo_pnl_demo}
-      DEMO_DATABASE_URL: postgresql://${APP_DB_USER:-${POSTGRES_USER}}:${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-dodo_pnl_demo}
+      DATABASE_URL: postgresql://${APP_DB_USER:-${POSTGRES_USER}}:${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-maximus_demo}
+      DEMO_DATABASE_URL: postgresql://${APP_DB_USER:-${POSTGRES_USER}}:${APP_DB_PASSWORD:-${POSTGRES_PASSWORD}}@db:5432/${POSTGRES_DEMO_DB:-maximus_demo}
       # Вход без регистрации живёт только здесь. У продукта этой переменной нет,
       # и тогда маршрутов /demo/* не существует вовсе.
       DEMO_MODE: "1"

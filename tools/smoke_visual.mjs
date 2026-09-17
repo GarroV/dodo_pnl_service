@@ -18,7 +18,7 @@
  * Экран ролей выпадает намеренно: в его строке решётка из двадцати флажков, и
  * шаг 30 пикселей там невозможен по природе содержимого.
  */
-import { attach, loginWith, ensureCalculated } from "/Users/garva/Documents/projects/dodo_pnl_service/tools/cdp.mjs";
+import { attach, loginWith, ensureCalculated } from "/Users/garva/Documents/projects/maximus/tools/cdp.mjs";
 const APP = process.env.APP || "http://127.0.0.1:8001";
 const ЭТАЛОН = { строка: 30, кнопка: 32, кнопкаМалая: 27, тело: 13, заголовок: 20, вес: "600", шрифт: "Golos Text" };
 const page = await attach({ cdpPort: 9390 });

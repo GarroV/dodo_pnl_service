@@ -18,7 +18,7 @@ import pytest
 
 from conftest import ADMIN_DSN, MANAGE_PY
 
-DEMO_MARKER = "dodo-pnl-demo"
+DEMO_MARKER = "maximus-demo"
 
 
 def dsn_for(dbname: str) -> str:
@@ -62,7 +62,7 @@ def demo_stand():
     except psycopg.OperationalError as exc:
         pytest.skip(f"нет доступного Postgres по {ADMIN_DSN}: {exc}")
 
-    dbname = f"dodo_pnl_demo_test_{os.getpid()}"
+    dbname = f"maximus_demo_test_{os.getpid()}"
     template = f"{dbname}_template"
     demo = dsn_for(dbname)
     drop(dbname)
@@ -161,7 +161,7 @@ def test_reset_refuses_a_database_it_did_not_create(demo_stand):
     import psycopg
 
     demo, _dbname, _template = demo_stand
-    stranger = f"dodo_pnl_stranger_{os.getpid()}"
+    stranger = f"maximus_stranger_{os.getpid()}"
     drop(stranger)
     with psycopg.connect(ADMIN_DSN, autocommit=True) as admin:
         admin.execute(f'create database "{stranger}"')

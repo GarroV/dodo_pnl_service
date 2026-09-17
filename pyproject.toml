@@ -1,5 +1,5 @@
 [project]
-name = "dodo-pnl-service"
+name = "maximus"
 version = "0.1.0"
 description = "Сбор первичных данных и сборка P&L для партнёров Dodo"
 # 3.11 и 3.12 уже security-only; Django 6.1 требует 3.12+ (решения D010, D018).

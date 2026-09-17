@@ -28,11 +28,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REMOTE_PATH = r"C:\projects\dodo_pnl_service"
+REMOTE_PATH = r"C:\projects\maximus"
 
 # Имя compose-проекта = префикс имён наших контейнеров. Всё, что не начинается
 # с него, принадлежит чужому проекту и не наше дело — ни смотреть, ни трогать.
-DEFAULT_PREFIX = "dodo-pnl"
+DEFAULT_PREFIX = "maximus"
 
 OK, WARN, BAD, DIM = "\033[32m", "\033[33m", "\033[31m", "\033[90m"
 BOLD, OFF = "\033[1m", "\033[0m"

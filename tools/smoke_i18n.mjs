@@ -26,7 +26,7 @@
  *
  *     google-chrome --headless=new --remote-debugging-port=9351 \
  *         --user-data-dir=/tmp/chrome-i18n &
- *     PARTNER_DATA="$(docker exec <база стенда> psql -U app -d dodo_pnl -Atc "
+ *     PARTNER_DATA="$(docker exec <база стенда> psql -U app -d maximus -Atc "
  *         select title from tenants
  *         union select title from units
  *         union select code from units

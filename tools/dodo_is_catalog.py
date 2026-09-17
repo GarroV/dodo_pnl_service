@@ -50,7 +50,7 @@ PAUSE = 0.12  # чужой сервис; выкачка идёт в один п�
 
 def fetch(url: str) -> Any:
     request = urllib.request.Request(
-        url, headers={"Accept": "application/json", "User-Agent": "dodo-pnl-service"}
+        url, headers={"Accept": "application/json", "User-Agent": "maximus"}
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.loads(response.read())

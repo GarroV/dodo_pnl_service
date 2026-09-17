@@ -130,7 +130,7 @@ export function standFromSeed() {
 /** Оператор SQL на базе стенда. Читающий — вернёт вывод psql построчно. */
 export function sql(statement, { quiet = true } = {}) {
   const user = process.env.POSTGRES_USER || "app";
-  const database = process.env.POSTGRES_DB || "dodo_pnl";
+  const database = process.env.POSTGRES_DB || "maximus";
   const flags = quiet ? ["-q", "-tA"] : ["-tA"];
   return compose(
     ["exec", "-T", "db", "psql", ...flags, "-U", user, "-d", database, "-c", statement],

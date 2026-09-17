@@ -1,6 +1,6 @@
 # Готовые решения: что не писать самим
 
-Исследование фазы «готовые решения» для зарплатного модуля dodo_pnl_service.
+Исследование фазы «готовые решения» для зарплатного модуля maximus.
 Дата: 2026-08-06. Ограничение по всем находкам: **self-hosted на одной машине
 (Windows + Docker), без облаков третьих лиц**.
 
@@ -99,7 +99,7 @@ RLS. У `django-multitenant` fail-closed нет вовсе — то есть з�
 ### ⚠️ Побочная находка: в нашем `db/migrations/0003_rls.sql` не работает изоляция слоёв учёта
 
 Не входило в задание, но всплыло при сверке найденного паттерна с нашим кодом.
-Файл `/Users/garva/Documents/projects/dodo_pnl_service/db/migrations/0003_rls.sql`.
+Файл `/Users/garva/Documents/projects/maximus/db/migrations/0003_rls.sql`.
 
 Первоисточник — документация PostgreSQL 17, `CREATE POLICY`
 (https://www.postgresql.org/docs/17/sql-createpolicy.html) **[читал целиком, раздел о

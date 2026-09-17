@@ -33,8 +33,8 @@ const login = loginWith(APP, evalIn, goto);
  * где была причина. */
 function sql(statement) {
   const out = execFileSync(
-    "docker", ["compose", "-p", "dodo-pnl-money", "exec", "-T", "db",
-               "psql", "-U", "app", "-d", "dodo_pnl", "-tAc", statement],
+    "docker", ["compose", "-p", "maximus-money", "exec", "-T", "db",
+               "psql", "-U", "app", "-d", "maximus", "-tAc", statement],
     { cwd: ROOT, encoding: "utf8" },
   );
   return out.split("\n").map((line) => line.trim()).filter(Boolean)[0] || "";

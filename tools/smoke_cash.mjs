@@ -18,7 +18,7 @@
  * `cdp.mjs`). Поэтому запускать его можно в любом порядке и в одиночку, а
  * COMPOSE_PROJECT_NAME обязателен: без него сброс ушёл бы на чужой стенд.
  *
- *     COMPOSE_PROJECT_NAME=dodo-pnl-cash APP=http://127.0.0.1:8083 CDP_PORT=9383 \
+ *     COMPOSE_PROJECT_NAME=maximus-cash APP=http://127.0.0.1:8083 CDP_PORT=9383 \
  *         node tools/smoke_cash.mjs
  */
 import { attach, loginWith, sql, standFromSeed } from "./cdp.mjs";

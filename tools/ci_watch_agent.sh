@@ -15,7 +15,7 @@
 # бубна, а сторожу нужен тайлнет — иначе до канала он не дозвонится.
 set -euo pipefail
 
-LABEL="io.dodobrands.dodo-pnl.ci-watch"
+LABEL="io.dodobrands.maximus.ci-watch"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG_DIR="$HOME/.claude/forge/ci-watch"
 INTERVAL="${CI_WATCH_INTERVAL:-900}"

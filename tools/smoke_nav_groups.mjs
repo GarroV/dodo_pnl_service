@@ -24,7 +24,7 @@
  * `cdp.mjs`). Материал инбокса заводится прямо в базе: путь, которым строка
  * попадает в инбокс, проверяют смоуки счетов, а здесь важна шапка.
  *
- *     COMPOSE_PROJECT_NAME=dodo-pnl-web2 APP=http://127.0.0.1:8080 CDP_PORT=9352 \
+ *     COMPOSE_PROJECT_NAME=maximus-web2 APP=http://127.0.0.1:8080 CDP_PORT=9352 \
  *         node tools/smoke_nav_groups.mjs
  */
 import { attach, loginWith, sql, standFromSeed } from "./cdp.mjs";

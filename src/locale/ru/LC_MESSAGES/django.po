@@ -21,7 +21,7 @@
 # строк продукта и потребует переводить русский на русский.
 msgid ""
 msgstr ""
-"Project-Id-Version: dodo-pnl\n"
+"Project-Id-Version: maximus\n"
 "Report-Msgid-Bugs-To: \n"
 "PO-Revision-Date: 2026-08-21 00:00+0000\n"
 "Language: ru\n"

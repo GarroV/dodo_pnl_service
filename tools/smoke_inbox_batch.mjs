@@ -15,7 +15,7 @@
  * прямо в базе: экраны счетов проверяются своими смоуками, а здесь важен
  * инбокс, а не путь, которым строки в него попали.
  *
- *     COMPOSE_PROJECT_NAME=dodo-pnl-inbox APP=http://127.0.0.1:8096 CDP_PORT=9361 \
+ *     COMPOSE_PROJECT_NAME=maximus-inbox APP=http://127.0.0.1:8096 CDP_PORT=9361 \
  *         node tools/smoke_inbox_batch.mjs
  */
 import { attach, loginWith, sql, standFromSeed } from "./cdp.mjs";

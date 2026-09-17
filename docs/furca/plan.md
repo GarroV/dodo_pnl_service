@@ -1,6 +1,6 @@
 # Технический план
 
-**Проект:** dodo_pnl_service — зарплатный модуль
+**Проект:** maximus — зарплатный модуль
 **Дата:** 2026-08-06
 
 Обоснования решений со ссылками на первоисточники — в
@@ -259,7 +259,7 @@ manage.py seed_demo --reset   # пересоздаёт демо-базу из ш
 | Тесты | `pytest -rs --junitxml=pytest-report.xml` | всё остальное. `-rs` печатает причину каждого пропуска прямо в лог |
 | Состав пропусков | `python .github/scripts/check_skips.py pytest-report.xml` | пропуск без объявленной причины. Гоняется **даже если pytest упал**: пропуск, спрятавшийся за падением, — тот же необнаруженный пробел |
 | Схема | `python manage.py makemigrations --check` | модель разошлась с миграциями |
-| Образ | `docker build -t dodo-pnl-app:ci .` | образ перестал собираться |
+| Образ | `docker build -t maximus-app:ci .` | образ перестал собираться |
 | Пример окружения | `docker compose --env-file .env.example config --quiet` | `.env.example` протух и по нему стенд не поднимется |
 
 **Машинный отчёт прогона — `pytest-report.xml`** (формат JUnit XML). По нему

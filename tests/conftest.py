@@ -80,7 +80,7 @@ def test_db_name(suffix: str) -> str:
     строкой, разъехались бы молча: Django ходил бы в одну базу, а миграции
     накатывались бы в другую.
     """
-    return f"dodo_pnl_test_{suffix}_{os.getpid()}"
+    return f"maximus_test_{suffix}_{os.getpid()}"
 
 
 # Адрес базы веб-тестов известен заранее — он зависит только от номера процесса.

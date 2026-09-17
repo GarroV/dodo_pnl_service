@@ -88,7 +88,7 @@ def _plain_owner_cluster():
     # и проверять его надо на конфигурации площадки, где ни у кого нет права
     # обходить политики.
     queue_login = f"dodo_queue_{pid}"
-    dbname = f"dodo_pnl_test_owner_{pid}"
+    dbname = f"maximus_test_owner_{pid}"
 
     params = conninfo_to_dict(ADMIN_DSN)
     host = params.get("host") or "localhost"

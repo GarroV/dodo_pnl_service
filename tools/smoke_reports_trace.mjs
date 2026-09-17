@@ -310,7 +310,7 @@ const PLANTED = 9000;
   `;
   const out = execFileSync(
     "docker",
-    ["compose", "exec", "-T", "db", "psql", "-q", "-U", "app", "-d", "dodo_pnl",
+    ["compose", "exec", "-T", "db", "psql", "-q", "-U", "app", "-d", "maximus",
      "-v", "ON_ERROR_STOP=1"],
     {
       cwd: new URL("..", import.meta.url).pathname,

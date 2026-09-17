@@ -15,7 +15,7 @@
  *
  *     google-chrome --headless=new --remote-debugging-port=9386 \
  *         --user-data-dir=/tmp/chrome-smoke-api &
- *     COMPOSE_PROJECT_NAME=dodo-pnl-cash3 APP=http://127.0.0.1:8086 CDP_PORT=9386 \
+ *     COMPOSE_PROJECT_NAME=maximus-cash3 APP=http://127.0.0.1:8086 CDP_PORT=9386 \
  *         node tools/smoke_api.mjs
  */
 import { attach, loginWith, sql, standFromSeed } from "./cdp.mjs";

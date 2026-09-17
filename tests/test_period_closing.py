@@ -255,7 +255,7 @@ def test_the_migration_closes_months_that_were_already_approved():
 
     import os
 
-    dbname = f"dodo_pnl_test_backfill_{os.getpid()}"
+    dbname = f"maximus_test_backfill_{os.getpid()}"
     with admin:
         admin.execute(f'drop database if exists "{dbname}"')
         admin.execute(f'create database "{dbname}"')

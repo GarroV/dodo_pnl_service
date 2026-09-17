@@ -13,7 +13,7 @@
  * Стенд смоук приводит к сиду сам — и в начале, и после себя (договор в шапке
  * `cdp.mjs`).
  *
- *     COMPOSE_PROJECT_NAME=dodo-pnl-roles APP=http://127.0.0.1:8096 CDP_PORT=9361 \
+ *     COMPOSE_PROJECT_NAME=maximus-roles APP=http://127.0.0.1:8096 CDP_PORT=9361 \
  *         node tools/smoke_roles.mjs
  */
 import { attach, loginWith, standFromSeed } from "./cdp.mjs";

@@ -7,7 +7,7 @@
 Таблица содержит ФИО, ставки и суммы живых людей, поэтому в репозитории её нет.
 Путь задаётся переменной окружения:
 
-    PAYROLL_FIXTURE=~/Documents/projects/_private/dodo_pnl/plata-2026-06.xlsx pytest
+    PAYROLL_FIXTURE=~/Documents/projects/_private/maximus/plata-2026-06.xlsx pytest
 
 Без неё тест пропускается — и это значит, что сверка НЕ выполнена, а не что всё
 сошлось. Постоянная регрессия на обезличенных данных живёт в

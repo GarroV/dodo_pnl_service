@@ -1,7 +1,7 @@
 # Сверка свежим взглядом, итерация 8
 
-Рабочая копия: `/Users/garva/Documents/projects/worktrees/dodo_pnl_service-conv8`, ветка `feat/converge8`.
-Стенд: `dodo-pnl-conv8`, продукт 8094, демо 8104, база 5504.
+Рабочая копия: `/Users/garva/Documents/projects/worktrees/maximus-conv8`, ветка `feat/converge8`.
+Стенд: `maximus-conv8`, продукт 8094, демо 8104, база 5504.
 
 Статус: сверка проведена, стенд убран. Восемь находок (Н1–Н8), ни одна не чинилась.
 
@@ -30,7 +30,7 @@
 
 - Стенд поднят предыдущим (оборвавшимся) агентом, контейнеры app/db/worker здоровы.
 - Стенд приведён к сиду, наполнен через продукт, проверен, затем снят
-  (`docker compose -p dodo-pnl-conv8 --profile demo down -v`).
+  (`docker compose -p maximus-conv8 --profile demo down -v`).
 
 ## Находки
 
@@ -407,7 +407,7 @@ Definition of Done** — сид и флоу должны её показыват
 **Чем проверил.** Живой демо-стенд на 8104, поднят профилем `demo` этого же
 compose-проекта; вход по всем трём ссылкам лендинга (HTTP 200, роль в шапке
 верная); экран Expenses прочитан как есть; сид сверен запросами к базе
-`dodo_pnl_demo`; источник — `src/demo/dataset.py`.
+`maximus_demo`; источник — `src/demo/dataset.py`.
 
 **Готово, когда** в августе демо есть хотя бы один расход из кассы и хотя бы один
 с НДС, а строка с комментарием «Fuel paid from the till» либо получает кассу,

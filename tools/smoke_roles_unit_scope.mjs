@@ -32,7 +32,7 @@
  * Стенд смоук приводит к сиду сам и возвращает после себя (договор в шапке
  * `cdp.mjs`) — в том числе если упадёт на полпути.
  *
- *     COMPOSE_PROJECT_NAME=dodo-pnl-roles4 APP=http://127.0.0.1:8090 CDP_PORT=9391 \
+ *     COMPOSE_PROJECT_NAME=maximus-roles4 APP=http://127.0.0.1:8090 CDP_PORT=9391 \
  *         SMOKE_SHOTS=/путь/к/снимкам node tools/smoke_roles_unit_scope.mjs
  */
 import { mkdirSync, writeFileSync } from "node:fs";

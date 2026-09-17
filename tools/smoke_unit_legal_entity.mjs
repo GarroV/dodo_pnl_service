@@ -24,7 +24,7 @@
  * перехода дополнительно ждётся текст или элемент, которых на прежней странице
  * точно нет, а не только факт загрузки.
  *
- *     COMPOSE_PROJECT_NAME=dodo-pnl-roles4 APP=http://127.0.0.1:8090 CDP_PORT=9390 \
+ *     COMPOSE_PROJECT_NAME=maximus-roles4 APP=http://127.0.0.1:8090 CDP_PORT=9390 \
  *         SMOKE_SHOTS=/путь/к/снимкам node tools/smoke_unit_legal_entity.mjs
  */
 import { mkdirSync, writeFileSync } from "node:fs";

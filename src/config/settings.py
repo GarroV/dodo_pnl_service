@@ -219,7 +219,7 @@ def _database_from_url(url: str) -> dict:
     }
 
 
-_DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql:///dodo_pnl")
+_DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql:///maximus")
 
 DATABASES = {
     "default": _database_from_url(_DATABASE_URL),
@@ -280,7 +280,7 @@ if PAYRUN_QUEUE_POLL_SECONDS * 3 > PAYRUN_QUEUE_STALE_SECONDS:
     )
 
 Q_CLUSTER = {
-    "name": "dodo-pnl",
+    "name": "maximus",
     # Брокер — сама база: очередь живёт в тех же транзакциях, что данные.
     # Поэтому задача становится видимой рабочему процессу ровно тогда, когда
     # коммитится запрос, который её поставил, — и не раньше.

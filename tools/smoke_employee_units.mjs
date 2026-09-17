@@ -19,7 +19,7 @@
  * `document.readyState` **прежней** страницы, поэтому после каждого перехода
  * ждётся текст, которого на прежней странице точно нет.
  *
- *     COMPOSE_PROJECT_NAME=dodo-pnl-hr2 APP=http://127.0.0.1:8120 CDP_PORT=9420 \
+ *     COMPOSE_PROJECT_NAME=maximus-hr2 APP=http://127.0.0.1:8120 CDP_PORT=9420 \
  *         SMOKE_SHOTS=/путь/к/снимкам node tools/smoke_employee_units.mjs
  */
 import { mkdirSync, writeFileSync } from "node:fs";
