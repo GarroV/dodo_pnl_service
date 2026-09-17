@@ -50,7 +50,7 @@ from test_supplier_invoices import (  # noqa: F401
 
 ROOT = Path(__file__).resolve().parent.parent
 APP_CSS = ROOT / "src" / "web" / "static" / "web" / "app.css"
-REFERENCE = ROOT / "Дизайн-система Dodo P&L" / "Модуль 10 - Вход и каркас.dc.html"
+REFERENCE = ROOT / "Дизайн-система MAXIMUS" / "Модуль 10 - Вход и каркас.dc.html"
 
 
 # --- материал -----------------------------------------------------------------

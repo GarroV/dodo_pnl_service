@@ -26,7 +26,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REFERENCE = ROOT / "Дизайн-система Dodo P&L" / "Модуль 10 - Вход и каркас.dc.html"
+REFERENCE = ROOT / "Дизайн-система MAXIMUS" / "Модуль 10 - Вход и каркас.dc.html"
 
 
 def reference_words() -> set[str]:

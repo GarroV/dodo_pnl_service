@@ -76,7 +76,7 @@ def test_the_reference_menu_is_covered():
     from web import navigation
 
     root = Path(__file__).resolve().parent.parent
-    text = (root / "Дизайн-система Dodo P&L" / "Модуль 10 - Вход и каркас.dc.html").read_text(
+    text = (root / "Дизайн-система MAXIMUS" / "Модуль 10 - Вход и каркас.dc.html").read_text(
         encoding="utf-8",
     )
     menu = re.search(r"menu:\s*\{(.*?)\n\s*\}", text, re.S).group(1)

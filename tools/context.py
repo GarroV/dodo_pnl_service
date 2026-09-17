@@ -26,7 +26,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MAP = ROOT / "docs" / "product-map.md"
-DESIGN = ROOT / "Дизайн-система Dodo P&L"
+DESIGN = ROOT / "Дизайн-система MAXIMUS"
 BLOCKS = ROOT / "docs" / "furca" / "blocks"
 DECISIONS = ROOT / "docs" / "furca" / "decisions.md"
 

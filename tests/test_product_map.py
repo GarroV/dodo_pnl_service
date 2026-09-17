@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MAP = ROOT / "docs" / "product-map.md"
-DESIGN = ROOT / "Дизайн-система Dodo P&L"
+DESIGN = ROOT / "Дизайн-система MAXIMUS"
 
 
 def pages() -> set[str]:
@@ -64,7 +64,7 @@ def test_the_reference_folder_is_named_in_one_normal_form():
     tops = {
         entry.decode().split("/")[0]
         for entry in listing
-        if entry and b"Dodo P&L" in entry
+        if entry and b"MAXIMUS" in entry
     }
     assert tops, "эталона нет в индексе git"
     wrong = [name for name in tops if not unicodedata.is_normalized("NFC", name)]
