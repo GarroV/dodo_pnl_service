@@ -186,5 +186,5 @@
 | Внешний API Dodo IS: справочник | [dodo-is-api.md](dodo-is-api.md) |
 | Долги по схеме фактов | [backlog-facts.md](backlog-facts.md) |
 | Полный список адресов | [routes.md](routes.md) |
-| Спека, план, решения, вопросы владельцу | [forge/](forge/) |
+| Спека, план, решения, вопросы владельцу | [forge/](furca/) |
 | Что делать сейчас | `tasks.md` в корне и задачи на GitHub |

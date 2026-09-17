@@ -634,7 +634,7 @@ T023/T025: триггеры на `payruns`, `payslips`, `payslip_totals`,
 ### 2026-08-08 — T027 сделан
 ### 2026-08-08 — T024, решения до кода
 
-Прочитано фактически: этот контракт, `docs/forge/plan.md` (стек, контракты между
+Прочитано фактически: этот контракт, `docs/furca/plan.md` (стек, контракты между
 блоками, строка риска про контекст в фоновых задачах), конституция, спека,
 решения, `tasks.md` (строка T024), `src/payrun/calc.py`, `src/payrun/lifecycle.py`,
 `src/web/views.py`, `src/web/dbcontext.py`, `src/web/principal.py`,
@@ -884,7 +884,7 @@ psycopg отдал бы массив таких значений строкой 
 
 ### 2026-08-08 — T024, решения до кода
 
-Прочитано фактически: этот контракт, `docs/forge/plan.md` (стек, контракты между
+Прочитано фактически: этот контракт, `docs/furca/plan.md` (стек, контракты между
 блоками, строка риска про контекст в фоновых задачах), конституция, спека,
 решения, `tasks.md` (строка T024), `src/payrun/calc.py`, `src/payrun/lifecycle.py`,
 `src/web/views.py`, `src/web/dbcontext.py`, `src/web/principal.py`,

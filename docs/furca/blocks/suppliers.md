@@ -15,7 +15,7 @@
 `source_documents`, `facts` с `doc_date`/`period` и `facts_unallocated` уже есть —
 строить надо **поверх них**, а не рядом.
 
-Полная спека очереди — `docs/forge/spec-suppliers.md`. Читать её целиком до
+Полная спека очереди — `docs/furca/spec-suppliers.md`. Читать её целиком до
 первой строки кода: там сценарии, user stories и границы.
 
 ## Задачи

@@ -237,7 +237,7 @@ D023 требует «ни строк, ни следа». Разрез — но�
 ### Найдено по дороге, чужое
 
 В `master` лежат **неразрешённые маркеры слияния** — `CHANGELOG.md` (2),
-`docs/forge/blocks/payrun.md` (10), `src/payrun/calc.py` (2, внутри модульного
+`docs/furca/blocks/payrun.md` (10), `src/payrun/calc.py` (2, внутри модульного
 docstring, поэтому Python парсится и тесты зелёные). Оставлены коммитом слияния
 `5035263`. Не мой блок, поэтому не тронуто; заведён
 [issue #64](https://github.com/GarroV/dodo_pnl_service/issues/64).

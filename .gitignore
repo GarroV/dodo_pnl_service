@@ -10,7 +10,7 @@ venv/
 .ruff_cache/
 .coverage
 htmlcov/
-# Отчёт прогона: его пишет команда гейта из docs/forge/plan.md
+# Отчёт прогона: его пишет команда гейта из docs/furca/plan.md
 report.xml
 
 .DS_Store

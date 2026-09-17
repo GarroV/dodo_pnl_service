@@ -1,4 +1,4 @@
-<!-- managed by forge: формат строк ниже не менять — файл парсят forge-build и forge-status -->
+<!-- managed by furca: формат строк ниже не менять — файл парсят fabrica и cursus -->
 # Решения
 
 <!-- id: Dnnn (D001, D002, ...). кто: owner (решил владелец) | auto (решено автономно диспетчером). -->
