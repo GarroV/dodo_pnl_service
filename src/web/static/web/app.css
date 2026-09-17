@@ -136,7 +136,7 @@ p.back a:hover { color: var(--accent); }
 }
 .brand:hover { text-decoration: none; }
 .brand__name { font-weight: var(--w-bold); font-size: var(--fs-lead); letter-spacing: -.01em; }
-.brand__mark { font-weight: var(--w-medium); font-size: var(--fs-lead); color: var(--accent); }
+.brand__mark { font-weight: var(--w-medium); font-size: var(--fs-lead); color: var(--ink-2); }
 
 /* Без `flex-wrap` — как в эталоне: список разделов не рвётся посередине.
    Место кончилось — переносится шапка целиком (см. `.appbar` выше). На узком
