@@ -8294,10 +8294,6 @@ msgstr "Pozivanje osobe, istorija pristupa, podesivi skupovi prava"
 msgid "Именованные надбавки и вилка ставки должности"
 msgstr "Imenovani dodaci i raspon stope radnog mesta"
 
-#: web/stages.py
-msgid "Рамка страны, за которую правило юрлица не выходит"
-msgstr "Okvir zemlje koji pravilo pravnog lica ne prelazi"
-
 
 #: web/stages.py
 msgid "Шестая очередь продуктовой карты"
@@ -8526,3 +8522,116 @@ msgid ""
 "галкой или сотрите долю: иначе набор запишется без неё, а число "
 "пропадёт."
 msgstr "Zadat je udeo za objekat %(code)s, ali sam objekat nije označen. Označite ga ili obrišite udeo: inače će se skup sačuvati bez njega, a broj će nestati."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"«%(path)s» задано законом и на уровне партнёра не меняется. Источник: "
+"%(source)s. Поменять его можно только в правилах страны, а их ведёт "
+"администратор платформы."
+msgstr "„%(path)s“ je propisano zakonom i ne može se menjati na nivou partnera. Izvor: %(source)s. Može se promeniti samo u pravilima zemlje, a njih vodi administrator platforme."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"«%(path)s»: значение мягче правил страны. Рамка — %(limit)s "
+"(%(source)s). %(advice)s Попытка записана в журнал правила."
+msgstr "„%(path)s“: vrednost je blaža od pravila zemlje. Okvir — %(limit)s (%(source)s). %(advice)s Pokušaj je zabeležen u dnevnik pravila."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Внутри рамки"
+msgstr "U okviru"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Закон"
+msgstr "Zakon"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Значение задано законом и на уровне партнёра не переопределяется. "
+"Источник: %(source)s."
+msgstr "Vrednost je propisana zakonom i ne može se menjati na nivou partnera. Izvor: %(source)s."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Кто меняет"
+msgstr "Ko menja"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Попытки выйти за рамку"
+msgstr "Pokušaji izlaska iz okvira"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Поставить можно столько же или больше."
+msgstr "Može se postaviti ista vrednost ili veća."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Поставить можно столько же или меньше."
+msgstr "Može se postaviti ista vrednost ili manja."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "Рамка страны: %(limits)s. Источник: %(source)s."
+msgstr "Okvir zemlje: %(limits)s. Izvor: %(source)s."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Решает партнёр"
+msgstr "Odlučuje partner"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Ставили"
+msgstr "Pokušali su"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Это правило не переопределяется."
+msgstr "Ovo pravilo se ne može menjati."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "не выше %(bound)s"
+msgstr "ne iznad %(bound)s"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "не ниже %(bound)s"
+msgstr "ne ispod %(bound)s"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "от %(low)s до %(high)s"
+msgstr "od %(low)s do %(high)s"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Значение приходит из правил страны и остаётся её значением: это правило "
+"закрыто законом, и переопределить его нельзя ни партнёру, ни группе, ни "
+"человеку."
+msgstr "Vrednost dolazi iz pravila zemlje i tu i ostaje: ovo pravilo je zatvoreno zakonom i ne može se promeniti — ni za partnera, ni za grupu, ni za osobu."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Действующее значение вне рамки страны."
+msgstr "Vrednost koja važi je izvan okvira zemlje."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Сейчас действует %(value)s — мягче рамки страны (%(limit)s, %(source)s). "
+"Значение заведено раньше, чем рамка стала такой, и расчёт берёт именно "
+"его. Заведите новую версию внутри рамки."
+msgstr "Sada važi %(value)s — blaže od okvira zemlje (%(limit)s, %(source)s). Vrednost je uneta pre nego što je okvir postao ovakav i obračun uzima baš nju. Unesite novu verziju unutar okvira."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Сейчас действует %(value)s, хотя правило задано законом (%(source)s). "
+"Переопределение заведено раньше рамки, и расчёт берёт именно его — "
+"вернуть значение страны можно новой версией."
+msgstr "Sada važi %(value)s, iako pravilo zadaje zakon (%(source)s). Izmena je uneta pre okvira i obračun uzima baš nju — vrednost zemlje se vraća novom verzijom."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Кто меняет:"
+msgstr "Ko menja:"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Что читает правило, последствия правки и сравнение стран"
+msgstr "Šta čita pravilo, posledice izmene i poređenje zemalja"

@@ -69,7 +69,8 @@ from typing import Any
 from django.db import transaction
 from django.utils.translation import gettext as _
 
-from core.models import RuleOverride
+from core.models import RuleFrameAttempt, RuleOverride
+from payroll import frames
 
 # Ключи, которыми пресет называет сам себя. Не настройки расчёта, а его имя,
 # страна, валюта и дата начала действия — переопределять их поверх самих себя
@@ -81,6 +82,15 @@ from core.models import RuleOverride
 # уже подписаны над таблицей, и четыре строки-раздела из одного значения только
 # мешали бы читать остальные сто тридцать.
 IDENTITY = ("preset", "country", "currency", "valid_from", "title")
+
+# Разделы верхнего уровня, которых на экране правил нет и которые с него не
+# правятся: имя пресета плюс рамка страны (T192).
+#
+# Рамка — не правило, а условие, при котором правило меняют, и переопределять её
+# нельзя ни на одном уровне: рамка, которую двигает тот, кого она держит, рамкой
+# быть перестаёт. Отказ здесь не нужен и был бы враньём про существование такого
+# правила — раздела просто нет ни в списке, ни по адресу.
+NOT_RULES = IDENTITY + (frames.FRAMES_KEY,)
 
 # Названия разделов пресета на языке страницы. Словарём, а не полем в теле
 # правил: тело — это правила страны, и подписи интерфейса ему не принадлежат.
@@ -138,6 +148,25 @@ class RuleInputRefused(Exception):
     def __init__(self, message: str):
         self.message = message
         super().__init__(message)
+
+
+class RuleFrameRefused(RuleInputRefused):
+    """Значение мягче правил страны (T192).
+
+    Наследник, а не сосед: для того, кто смотрит на код ответа, «набрано не то»
+    и «так менять нельзя» — одно событие, форма не принята. Отдельным классом —
+    чтобы отличать его в проверках и не ловить рамку широким `except`.
+
+    Отказ несёт с собой **несделанную запись** в журнал попыток. Записывает её
+    не тот, кто отказал, а тот, кто отказ поймал, и это не разделение ради
+    красоты: запись идёт внутри `saving()`, то есть внутри точки сохранения,
+    и отказ, брошенный оттуда, унёс бы её с собой откатом. Ловят же отказ уже
+    снаружи — см. `remember_attempt`.
+    """
+
+    def __init__(self, message: str, attempt: dict | None = None):
+        super().__init__(message)
+        self.attempt = attempt or {}
 
 
 def section_title(name: str) -> str:
@@ -392,7 +421,7 @@ def leaves(preset, *, hidden: tuple[str, ...] = ()) -> list[Leaf]:
     def walk(node: dict, prefix: str) -> None:
         for key, value in sorted(node.items()):
             path = f"{prefix}{key}"
-            if not is_visible(path, hidden) or path in IDENTITY:
+            if not is_visible(path, hidden) or path.split(".")[0] in NOT_RULES:
                 continue
             if isinstance(value, dict):
                 walk(value, path + ".")
@@ -515,6 +544,247 @@ def effective_month_notice(valid_from: date) -> str:
     }
 
 
+# --- рамка страны -------------------------------------------------------------
+#
+# Правило шестое, и оно про то, чего продукт обещал, но не делал (T192, issue
+# #182). Эталон модуля 17: «страна задаёт значение и рамку, юрлицо доопределяет
+# внутри рамки… юрлицо может стать строже рамки, но никогда — мягче». У нас была
+# только первая половина: значение страны есть, рамки нет, и процент больничного
+# опускался с 0,65 до 0,10 обычной формой этого экрана.
+#
+# Сама рамка — данные страны (`payroll/frames.py`, раздел `frames` в теле
+# пресета), а здесь три вещи, которые к ней добавляет продукт: слова отказа,
+# запись отвергнутой попытки и подпись рамки на экране.
+#
+# Почему проверка стоит в `save_override`, а не в представлении. Дорога к записи
+# переопределения одна, но входов на неё два: экран правил и форма группы в
+# справочниках (`directory_views._save_measure`, там правится
+# `groups.<код>.work_measure`). Проверка, поставленная на экране, второго входа
+# не закрыла бы, а узнали бы мы об этом на правиле, у которого появится рамка.
+# Тот же довод, по которому проверка списка допустимого переехала в `parse()`.
+
+# Кто решает значение — словами эталона (колонка «Кто меняет»). «Сеть» из
+# эталона у нас зовётся партнёром: своего слова «сеть» продукт не знает, и
+# заводить его ради одной колонки значило бы завести второе имя тому же.
+FRAME_OWNERS = {
+    "lock": lambda: _("Закон"),
+    "frame": lambda: _("Внутри рамки"),
+    "free": lambda: _("Решает партнёр"),
+}
+
+
+def frame_at(preset: dict, path: str):
+    """Рамка правила из тела страны. Нет рамки — None, и это разрешение."""
+    return frames.frame_for(preset, path)
+
+
+def frame_owner(preset: dict, path: str) -> str:
+    """Кто решает значение этого правила — одним словом, для списка правил.
+
+    Спрашивать можно и у собранного пресета: режим рамки переопределить нельзя
+    ни на одном уровне, поэтому в собранном он тот же, что в теле страны. С
+    ГРАНИЦЕЙ так нельзя — см. `_frame_block` в представлениях.
+    """
+    frame = frame_at(preset, path)
+    return FRAME_OWNERS["free" if frame is None else frame.mode]()
+
+
+def frame_mode(preset: dict, path: str) -> str:
+    """Режим рамки одним словом: `lock`, `frame` или `free`.
+
+    Отдельно от `frame_owner`, потому что у них разные читатели: слово читает
+    человек, режим — разметка, которая этим словом красит метку. Собирать класс
+    из переведённого слова нельзя: на английском экране он стал бы другим.
+    """
+    frame = frame_at(preset, path)
+    return "free" if frame is None else frame.mode
+
+
+def frame_help(frame, country_value: Any) -> str:
+    """Что рамка разрешает — словами, ДО правки.
+
+    Отказ после набранного значения — худший способ узнать о рамке: человек уже
+    решил, что ставит, и переспорить его текстом отказа нельзя, можно только
+    отнять работу. Поэтому те же границы стоят подсказкой под полем.
+    """
+    if frame is None or frame.mode == "free":
+        return ""
+    if frame.mode == "lock":
+        return _(
+            "Значение задано законом и на уровне партнёра не переопределяется. "
+            "Источник: %(source)s."
+        ) % {"source": frame.source}
+    return _("Рамка страны: %(limits)s. Источник: %(source)s.") % {
+        "limits": _frame_limits(frame, country_value),
+        "source": frame.source,
+    }
+
+
+def _frame_limits(frame, country_value: Any) -> str:
+    """Границы рамки одной фразой: «не ниже 1,26», «от 4 до 16».
+
+    Стороны названы теми же словами, что и в отказе, и это одни и те же строки
+    перевода: подсказка «не ниже 1,26» и отказ «Рамка — не ниже 1,26» обязаны
+    совпасть буквально, иначе человек ищет разницу там, где её нет.
+    """
+    low = frame.bound("min", country_value)
+    high = frame.bound("max", country_value)
+    if low is not None and high is not None:
+        return _("от %(low)s до %(high)s") % {"low": show(low), "high": show(high)}
+    return _side(low if low is not None else high, "below" if low is not None else "above")
+
+
+def _side(bound: Any, kind: str) -> str:
+    """Одна сторона рамки словами."""
+    if kind == "below":
+        return _("не ниже %(bound)s") % {"bound": show(bound)}
+    return _("не выше %(bound)s") % {"bound": show(bound)}
+
+
+def frame_breach_now(frame, value: Any, country_value: Any) -> str:
+    """Слова о том, что ДЕЙСТВУЮЩЕЕ значение уже мягче рамки. Нет — пусто.
+
+    Рамка проверяется при записи, и заведённое вчера значение было тогда верным.
+    Верным оно быть перестаёт, когда страна поднимает минимум: индексация
+    минималки двигает рамку, а переопределение партнёра остаётся прежним — и
+    расчёт продолжает считать по нему, ничего не сказав. Молчать об этом хуже
+    всего: продукт знает обе величины и видит их рядом на одной странице.
+
+    Чинить это правкой чужого значения нельзя (D020: закрытые месяцы считаны по
+    нему), поэтому продукт говорит, а не исправляет.
+
+    Сравнивается только значение, ОТЛИЧАЮЩЕЕСЯ от страны. Иначе запертое
+    правило, которого никто не трогал, каждый раз объявлялось бы нарушением
+    самого себя: у `lock` любое переопределение — нарушение, а отсутствие
+    переопределения нарушением не является.
+    """
+    if frame is None or country_value is None or value == country_value:
+        return ""
+    breach = frames.check(frame, value, country_value)
+    if breach is None:
+        return ""
+    if breach.kind == "locked":
+        return _(
+            "Сейчас действует %(value)s, хотя правило задано законом "
+            "(%(source)s). Переопределение заведено раньше рамки, и расчёт "
+            "берёт именно его — вернуть значение страны можно новой версией."
+        ) % {"value": show(value), "source": breach.source}
+    return _(
+        "Сейчас действует %(value)s — мягче рамки страны (%(limit)s, "
+        "%(source)s). Значение заведено раньше, чем рамка стала такой, и расчёт "
+        "берёт именно его. Заведите новую версию внутри рамки."
+    ) % {"value": show(value), "limit": _side(breach.bound, breach.kind),
+         "source": breach.source}
+
+
+def frame_refusal(breach, frame, path: str) -> str:
+    """Отказ словами: чем не подошло значение и что поставить можно.
+
+    Отказ обязан советовать выполнимое — тот же приём, что у
+    `refuse_if_unversioned_touches_closed_month`. «Мягче страны» без границы и
+    без стороны оставляет человека гадать, куда двигаться.
+    """
+    if breach.kind == "locked":
+        return _(
+            "«%(path)s» задано законом и на уровне партнёра не меняется. "
+            "Источник: %(source)s. Поменять его можно только в правилах страны, "
+            "а их ведёт администратор платформы."
+        ) % {"path": path, "source": breach.source}
+    if breach.kind == "below":
+        advice = _("Поставить можно столько же или больше.")
+    else:
+        advice = _("Поставить можно столько же или меньше.")
+    limit = _side(breach.bound, breach.kind)
+    return _(
+        "«%(path)s»: значение мягче правил страны. Рамка — %(limit)s "
+        "(%(source)s). %(advice)s Попытка записана в журнал правила."
+    ) % {"path": path, "limit": limit, "source": breach.source, "advice": advice}
+
+
+def country_body_at(tenant_id, on_date: date) -> dict | None:
+    """Тело правил страны партнёра, действовавшее на эту дату.
+
+    Берётся версия на дату ПРАВКИ, а не на сегодня: рамка версионируется вместе
+    со значением (индексация минималки двигает и то и другое), и версия, которую
+    заводят задним числом, обязана мериться рамкой того времени.
+    """
+    from . import directory, rules_country
+
+    version = rules_country.in_force_at(directory.country_of(tenant_id), on_date)
+    return None if version is None else version.body
+
+
+def refuse_if_softer(tenant_id, path: str, value: Any, *, valid_from: date,
+                     scope_type: str, scope_id, actor_id, actor_name: str) -> None:
+    """Не пустить значение мягче страны — и оставить след отказа.
+
+    Запись попытки идёт ДО исключения и вне транзакции записи версии: у
+    `_write_version` свой сейвпойнт, и отказ, брошенный изнутри, откатил бы его
+    вместе с записью — журнал остался бы пустым ровно в тот момент, ради
+    которого он заведён.
+
+    Рамки нет — молчим. Это не «проверка не сработала», а прямое умолчание
+    продукта: правило, у которого страна рамку не объявила, партнёр ставит как
+    считает нужным.
+    """
+    body = country_body_at(tenant_id, valid_from)
+    if body is None:
+        return
+    frame = frames.frame_for(body, path)
+    if frame is None:
+        return
+    try:
+        country_value = value_at(body, path)
+    except KeyError:
+        country_value = None
+    breach = frames.check(frame, value, country_value)
+    if breach is None:
+        return
+
+    raise RuleFrameRefused(frame_refusal(breach, frame, path), attempt={
+        "tenant_id": tenant_id,
+        "path": path,
+        "scope_type": scope_type,
+        "scope_id": scope_id,
+        "wanted": value,
+        "country_value": country_value,
+        "frame": {"mode": frame.mode, "min": frame.minimum, "max": frame.maximum,
+                  "source": frame.source},
+        "valid_from": valid_from,
+        "created_by": actor_id,
+        "created_by_name": actor_name,
+    })
+
+
+def remember_attempt(refusal: Exception) -> None:
+    """Записать отвергнутую попытку — из обработчика отказа, а не из проверки.
+
+    Зовётся там, где отказ пойман: к этому месту точка сохранения `saving()`
+    уже откачена, а транзакция запроса ещё жива, поэтому строка журнала
+    доживает до конца запроса. Записанная на месте отказа, она уехала бы вместе
+    с откатом — именно так первый заход этой задачи и вышел с пустым журналом
+    при верных словах на экране.
+
+    Обычный отказ ввода проходит мимо молча: у него записывать нечего, и
+    развилка здесь дешевле двух почти одинаковых `except` у каждой формы.
+    """
+    attempt = getattr(refusal, "attempt", None)
+    if attempt:
+        RuleFrameAttempt.objects.create(**attempt)
+
+
+def frame_attempts(tenant_id, path: str):
+    """Отвергнутые попытки по этому правилу — от свежей к старой.
+
+    Свежая первой, в отличие от версий правила: версии читают как историю
+    значения слева направо, а попытки — как «что тут происходит сейчас».
+    """
+    return (
+        RuleFrameAttempt.objects.filter(tenant_id=tenant_id, path=path)
+        .order_by("-created_at")
+    )
+
+
 # --- история и правка ---------------------------------------------------------
 
 
@@ -539,10 +809,10 @@ class RuleChange:
     previous: RuleOverride | None
 
 
-@transaction.atomic
 def save_override(tenant_id, path: str, value: Any, *, valid_from: date,
                   scope_type: str = "tenant", scope_id=None,
-                  actor_id=None, effective: Any = None) -> RuleChange:
+                  actor_id=None, actor_name: str = "",
+                  effective: Any = None) -> RuleChange:
     """Завести новую версию правила с указанной даты на указанном уровне.
 
     `effective` — значение, действующее на эту дату сейчас **для этого же
@@ -567,10 +837,37 @@ def save_override(tenant_id, path: str, value: Any, *, valid_from: date,
     складываются, а не спорят, и версия партнёра не должна закрываться правкой
     группы. Так же читает и ограничение непересечения в базе — оно включает
     `scope_type` и `scope_id` в ключ.
+
+    **Рамка страны проверяется здесь, а не у вызывающих** (T192): входов на эту
+    дорогу два — экран правил и форма группы в справочниках, — и проверка,
+    поставленная на одном из них, второй оставила бы открытым.
+
+    Порядок важен: сначала «ничего не изменилось», потом рамка. Иначе тот, кто
+    сохранил форму запертого правила, ничего в ней не поменяв, получал бы отказ
+    за бездействие, а в журнал попадала бы попытка, которой не было.
     """
     if effective is not None and value == effective:
         return RuleChange(changed=False, previous=None)
+    refuse_if_softer(
+        tenant_id, path, value, valid_from=valid_from, scope_type=scope_type,
+        scope_id=scope_id, actor_id=actor_id, actor_name=actor_name,
+    )
+    return _write_version(
+        tenant_id, path, value, valid_from=valid_from, scope_type=scope_type,
+        scope_id=scope_id, actor_id=actor_id,
+    )
 
+
+@transaction.atomic
+def _write_version(tenant_id, path: str, value: Any, *, valid_from: date,
+                   scope_type: str, scope_id, actor_id) -> RuleChange:
+    """Закрыть прежнюю версию и завести новую — одной транзакцией.
+
+    Отделено от `save_override` ровно ради этой транзакции. Отвергнутая рамкой
+    правка не должна оставлять за собой закрытую версию без пришедшей ей на
+    смену, а записанная попытка не должна уезжать вместе с откатом сейвпойнта —
+    см. `refuse_if_softer`.
+    """
     current = (
         RuleOverride.objects.filter(
             tenant_id=tenant_id, scope_type=scope_type, scope_id=scope_id,

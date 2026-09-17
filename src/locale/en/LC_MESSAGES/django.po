@@ -8460,10 +8460,6 @@ msgstr "Inviting a person, access history, configurable permission sets"
 msgid "Именованные надбавки и вилка ставки должности"
 msgstr "Named allowances and a rate range for the position"
 
-#: web/stages.py
-msgid "Рамка страны, за которую правило юрлица не выходит"
-msgstr "A country frame the legal entity rule cannot step outside"
-
 
 #: web/stages.py
 msgid "Шестая очередь продуктовой карты"
@@ -8692,3 +8688,116 @@ msgid ""
 "галкой или сотрите долю: иначе набор запишется без неё, а число "
 "пропадёт."
 msgstr "A share is set for unit %(code)s, but the unit itself is not checked. Check it or clear the share: otherwise the set will be saved without it, and the number will be lost."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"«%(path)s» задано законом и на уровне партнёра не меняется. Источник: "
+"%(source)s. Поменять его можно только в правилах страны, а их ведёт "
+"администратор платформы."
+msgstr "\"%(path)s\" is set by law and cannot be changed at partner level. Source: %(source)s. It can only be changed in the country rules, and those are managed by the platform administrator."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"«%(path)s»: значение мягче правил страны. Рамка — %(limit)s "
+"(%(source)s). %(advice)s Попытка записана в журнал правила."
+msgstr "\"%(path)s\": the value is softer than the country rules. Frame — %(limit)s (%(source)s). %(advice)s The attempt has been logged against the rule."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Внутри рамки"
+msgstr "Within the frame"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Закон"
+msgstr "Law"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Значение задано законом и на уровне партнёра не переопределяется. "
+"Источник: %(source)s."
+msgstr "The value is set by law and cannot be changed at partner level. Source: %(source)s."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Кто меняет"
+msgstr "Who changes it"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Попытки выйти за рамку"
+msgstr "Attempts to go beyond the frame"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Поставить можно столько же или больше."
+msgstr "You can set the same value or higher."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Поставить можно столько же или меньше."
+msgstr "You can set the same value or lower."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "Рамка страны: %(limits)s. Источник: %(source)s."
+msgstr "Country frame: %(limits)s. Source: %(source)s."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Решает партнёр"
+msgstr "Partner decides"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Ставили"
+msgstr "Tried to set"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Это правило не переопределяется."
+msgstr "This rule cannot be changed."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "не выше %(bound)s"
+msgstr "not above %(bound)s"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "не ниже %(bound)s"
+msgstr "not below %(bound)s"
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid "от %(low)s до %(high)s"
+msgstr "from %(low)s to %(high)s"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid ""
+"Значение приходит из правил страны и остаётся её значением: это правило "
+"закрыто законом, и переопределить его нельзя ни партнёру, ни группе, ни "
+"человеку."
+msgstr "The value comes from the country rules and stays theirs: this rule is closed by law and cannot be overridden — not by the partner, not by a group, not by a person."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Действующее значение вне рамки страны."
+msgstr "The value in force is outside the country frame."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Сейчас действует %(value)s — мягче рамки страны (%(limit)s, %(source)s). "
+"Значение заведено раньше, чем рамка стала такой, и расчёт берёт именно "
+"его. Заведите новую версию внутри рамки."
+msgstr "The value in force is %(value)s — softer than the country frame (%(limit)s, %(source)s). It was set before the frame became what it is, and the calculation uses it. Create a new version within the frame."
+
+#: новые строки, добавлены tools/apply_translations.py
+#, python-format
+msgid ""
+"Сейчас действует %(value)s, хотя правило задано законом (%(source)s). "
+"Переопределение заведено раньше рамки, и расчёт берёт именно его — "
+"вернуть значение страны можно новой версией."
+msgstr "The value in force is %(value)s, although the rule is set by law (%(source)s). The override was created before the frame, and the calculation uses it — a new version can restore the country value."
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Кто меняет:"
+msgstr "Who changes it:"
+
+#: новые строки, добавлены tools/apply_translations.py
+msgid "Что читает правило, последствия правки и сравнение стран"
+msgstr "What reads the rule, the effect of changing it, and a country comparison"
