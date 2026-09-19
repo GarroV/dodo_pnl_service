@@ -240,7 +240,7 @@ D023 требует «ни строк, ни следа». Разрез — но�
 `docs/furca/blocks/payrun.md` (10), `src/payrun/calc.py` (2, внутри модульного
 docstring, поэтому Python парсится и тесты зелёные). Оставлены коммитом слияния
 `5035263`. Не мой блок, поэтому не тронуто; заведён
-[issue #64](https://github.com/GarroV/dodo_pnl_service/issues/64).
+[issue #64](https://github.com/GarroV/maximus/issues/64).
 
 ## T029 — экран следа расчёта (2026-08-08)
 
@@ -1213,12 +1213,12 @@ Excel (−100,00) возвращается одной разошедшейся �
 - Находки разбора таблицы партнёра (`payroll/importers/plata_xlsx.py`) не
   переведены вовсе — на английской странице сверки они выходят по-русски. Мои
   собственные находки (`reports/own_export.py`) переведены; чужой файл я не
-  трогал, это блок `timesheets`. Заведено [issue #96](https://github.com/GarroV/dodo_pnl_service/issues/96).
+  трогал, это блок `timesheets`. Заведено [issue #96](https://github.com/GarroV/maximus/issues/96).
 - `pnl`-выгрузка ищет статью P&L по **отображаемому имени** (`row.employee` —
   «ФАМИЛИЯ ИМЯ»), а справочник статей собран по `external_id` («ИМЯ ФАМИЛИЯ»):
   совпасть они не могут, и в файле у всех стоит «Без статьи» (проверено на
   стенде: 26 строк из 32). Не моя задача, заведено
-  [issue #95](https://github.com/GarroV/dodo_pnl_service/issues/95).
+  [issue #95](https://github.com/GarroV/maximus/issues/95).
 
 ### 2026-08-14 — T137, разрез по регистру знает и о расходах
 
@@ -1362,7 +1362,7 @@ T141).
 
 - приём «отказ базы словами формы» не применён к экрану правил
   (`rule_overrides_no_overlap`) — заведено
-  [issue #111](https://github.com/GarroV/dodo_pnl_service/issues/111);
+  [issue #111](https://github.com/GarroV/maximus/issues/111);
 - CHANGELOG за эти три задачи не тронут намеренно: он общий, а рядом идёт блок
   `fix2`, и две записи под одной датой дали бы конфликт при сведении. Запись —
   за диспетчером при слиянии.

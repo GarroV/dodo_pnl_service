@@ -362,13 +362,13 @@ D028) и журнал блока `db`. Задача в этот заход — *
 
 **И главное, что нельзя сделать файлом.** «Падающий тест блокирует слияние» —
 наполовину настройка репозитория, а не конфигурация в нём. Проверено:
-`gh api repos/GarroV/dodo_pnl_service/branches/master/protection` отдаёт
+`gh api repos/GarroV/maximus/branches/master/protection` отдаёт
 `404 Branch not protected` — то есть сейчас слить можно что угодно, даже с
 красным CI. Включает это владелец, одной командой, после первого удачного
 прогона (раньше нельзя: проверок с такими именами GitHub ещё не видел):
 
 ```bash
-gh api -X PUT repos/GarroV/dodo_pnl_service/branches/master/protection \
+gh api -X PUT repos/GarroV/maximus/branches/master/protection \
   -H "Accept: application/vnd.github+json" \
   -f 'required_status_checks[strict]=true' \
   -f 'required_status_checks[contexts][]=Линт' \
