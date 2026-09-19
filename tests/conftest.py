@@ -194,11 +194,14 @@ def _sweep_orphan_databases(admin) -> None:
     постороннему процессу, и тогда база доживёт до следующего прогона. Это
     дешевле, чем снести базу идущему рядом тесту.
     """
-    rows = admin.execute(
-        "select datname from pg_database where datname like %s",
-        (f"{TEST_DB_PREFIX}%",),
-    ).fetchall()
+    from psycopg import sql
+
+    # Фильтр в Python, а не в LIKE: «_» в шаблоне LIKE значит «любой символ»,
+    # и префикс `maximus_test_` захватывал бы и чужие имена.
+    rows = admin.execute("select datname from pg_database").fetchall()
     for (name,) in rows:
+        if not name.startswith(TEST_DB_PREFIX):
+            continue
         tail = name.rsplit("_", 1)[-1]
         if not tail.isdigit():
             continue
@@ -210,7 +213,11 @@ def _sweep_orphan_databases(admin) -> None:
             continue      # процесс есть, просто чужой — не наш мусор
         else:
             continue      # процесс жив: рядом идёт прогон
-        admin.execute(f'drop database if exists "{name}" with (force)')
+        # Имя пришло из базы, а не из нашего кода, — только через Identifier:
+        # в имени базы может стоять кавычка, и f-строка выполнила бы хвост.
+        admin.execute(
+            sql.SQL("drop database if exists {} with (force)").format(sql.Identifier(name))
+        )
 
 
 @contextmanager
