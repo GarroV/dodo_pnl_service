@@ -72,6 +72,9 @@ MANAGE_PY = ROOT / "manage.py"
 ADMIN_DSN = os.environ.get("DODO_TEST_ADMIN_DSN", "postgresql:///postgres")
 
 
+TEST_DB_PREFIX = "maximus_test_"
+
+
 def test_db_name(suffix: str) -> str:
     """Имя временной базы прогона. Одно место, потому что имён два потребителя.
 
@@ -80,7 +83,7 @@ def test_db_name(suffix: str) -> str:
     строкой, разъехались бы молча: Django ходил бы в одну базу, а миграции
     накатывались бы в другую.
     """
-    return f"maximus_test_{suffix}_{os.getpid()}"
+    return f"{TEST_DB_PREFIX}{suffix}_{os.getpid()}"
 
 
 # Адрес базы веб-тестов известен заранее — он зависит только от номера процесса.
@@ -179,9 +182,45 @@ def run_manage(dsn: str, *args: str) -> subprocess.CompletedProcess:
     )
 
 
+def _sweep_orphan_databases(admin) -> None:
+    """Убрать базы прогонов, чей процесс уже мёртв.
+
+    Базы от оборванных прогонов иначе не убирает никто, и за месяцы их
+    набирается столько, что среди них не видно базы живого прогона: на этой
+    машине к 19.09.2026 накопилось семнадцать. Имя несёт номер процесса,
+    поэтому мёртвый прогон отличим от чужого идущего — живой не трогаем.
+
+    Ошибка здесь безопасна только в одну сторону: номер процесса мог достаться
+    постороннему процессу, и тогда база доживёт до следующего прогона. Это
+    дешевле, чем снести базу идущему рядом тесту.
+    """
+    rows = admin.execute(
+        "select datname from pg_database where datname like %s",
+        (f"{TEST_DB_PREFIX}%",),
+    ).fetchall()
+    for (name,) in rows:
+        tail = name.rsplit("_", 1)[-1]
+        if not tail.isdigit():
+            continue
+        try:
+            os.kill(int(tail), 0)
+        except ProcessLookupError:
+            pass          # процесса нет — база осиротела, убираем
+        except PermissionError:
+            continue      # процесс есть, просто чужой — не наш мусор
+        else:
+            continue      # процесс жив: рядом идёт прогон
+        admin.execute(f'drop database if exists "{name}" with (force)')
+
+
 @contextmanager
 def temp_database(suffix: str):
-    """Временная база с накатанной схемой. Удаляется в любом случае."""
+    """Временная база с накатанной схемой.
+
+    Удаляется в `finally` — то есть при любом исходе самого теста, но НЕ когда
+    процесс убит жёстко: машина ушла в сон, окно закрыли, `kill -9`. Поэтому
+    перед созданием своей базы прогон подметает чужие осиротевшие.
+    """
     psycopg = pytest.importorskip("psycopg", reason="нужен psycopg: pip install -e '.[dev]'")
     from psycopg.conninfo import make_conninfo
 
@@ -192,6 +231,7 @@ def temp_database(suffix: str):
 
     dbname = test_db_name(suffix)
     with admin:
+        _sweep_orphan_databases(admin)
         admin.execute(f'drop database if exists "{dbname}"')
         admin.execute(f'create database "{dbname}"')
 
